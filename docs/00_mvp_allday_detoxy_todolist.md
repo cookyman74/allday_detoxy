@@ -52,7 +52,7 @@
 
 #### 1.1.0 프로젝트 생성 및 Git/README 설정
 
-- [ ] **Android Studio 프로젝트 생성**
+- [x] **Android Studio 프로젝트 생성**
   1. Android Studio 실행 → "New Project" 선택
   2. 템플릿: "Empty Activity" 선택
   3. 프로젝트 설정:
@@ -63,14 +63,14 @@
      - Build configuration language: `Kotlin DSL (build.gradle.kts)`
   4. "Finish" 클릭하여 프로젝트 생성
 
-- [ ] **Git 저장소 초기화**
+- [x] **Git 저장소 초기화**
   ```bash
   cd /Users/junghojang/Developments/myProject/allday_detoxy
   git init
   git branch -M main
   ```
 
-- [ ] **.gitignore 설정**
+- [x] **.gitignore 설정**
   - Android Studio에서 자동 생성된 .gitignore 확인 및 보완
   ```gitignore
   # Android Studio
@@ -96,7 +96,7 @@
   google-services.json
   ```
 
-- [ ] **README.md 작성**
+- [x] **README.md 작성**
   - 프로젝트 루트에 README.md 파일 생성
   ```markdown
   # Allday Detoxy - 스마트폰 습관 교정 코치 앱
@@ -230,372 +230,14 @@
   - [기술 설계 문서](./docs/00_android_allday_detoxy_plan.md) - 상세 기술 설계
   - [개발환경 설정](./docs/00_kotlin_environment_todolist.md) - macOS 환경 구성
 
-  ## 📄 라이선스
 
-  MIT License (예정)
+[1.1 작업 이전 기록 참조](working_history/2025-10-05_1.1.md)
 
-  ## 👨‍💻 개발자
-
-  Jung Ho Jang - [@junghojang](https://github.com/junghojang)
-  ```
-
-- [ ] **초기 커밋**
-  ```bash
-  git add .
-  git commit -m "Initial commit: Android project setup with README"
-  ```
-
-#### 1.1.1 MVP 최소 폴더 구조 생성
-
-- [ ] **Clean Architecture 폴더 구조 생성**
-
-  Android Studio에서 다음 패키지를 순서대로 생성:
-
-  1. **core 패키지 생성**
-     - `app/src/main/java/com/allday/detoxy` 우클릭 → New → Package
-     - `core` 입력하여 생성
-     - `core` 내부에 `di`, `utils` 패키지 생성
-     - **목적**: 전역 의존성 주입 모듈과 공통 유틸리티 함수 관리
-
-  2. **data 계층 패키지 생성**
-     - `com.allday.detoxy` 하위에 `data` 패키지 생성
-     - `data` 내부에 `local`, `repository` 패키지 생성
-     - **목적**: Room 데이터베이스 엔티티/DAO와 Repository 구현체 관리
-     - **예시 파일**:
-       - `data/local/entity/FocusSessionEntity.kt`
-       - `data/local/dao/FocusSessionDao.kt`
-       - `data/local/DetoxyDatabase.kt`
-       - `data/repository/FocusRepositoryImpl.kt`
-
-  3. **domain 계층 패키지 생성**
-     - `com.allday.detoxy` 하위에 `domain` 패키지 생성
-     - `domain` 내부에 `model`, `usecase` 패키지 생성
-     - **목적**: 비즈니스 로직과 도메인 모델 정의
-     - **예시 파일**:
-       - `domain/model/FocusSession.kt` (데이터 클래스)
-       - `domain/model/UserSettings.kt` (데이터 클래스)
-       - `domain/usecase/StartFocusUseCase.kt`
-       - `domain/usecase/EndFocusUseCase.kt`
-
-  4. **presentation 계층 패키지 생성**
-     - `com.allday.detoxy` 하위에 `presentation` 패키지 생성
-     - `presentation` 내부에 `ui`, `viewmodel` 패키지 생성
-     - `ui` 내부에 `timer`, `report`, `onboarding` 패키지 생성
-     - **목적**: Jetpack Compose UI와 ViewModel 관리
-     - **예시 파일**:
-       - `presentation/ui/timer/TimerScreen.kt`
-       - `presentation/ui/report/ReportScreen.kt`
-       - `presentation/viewmodel/TimerViewModel.kt`
-
-  5. **service 패키지 생성**
-     - `com.allday.detoxy` 하위에 `service` 패키지 생성
-     - `service` 내부에 `accessibility`, `overlay` 패키지 생성
-     - **목적**: Android 시스템 서비스 구현
-     - **예시 파일**:
-       - `service/accessibility/FocusAccessibilityService.kt`
-       - `service/overlay/LockOverlayService.kt`
-
-  **최종 구조**:
-  ```
-  app/src/main/java/com/allday/detoxy/
-  ├── core/
-  │   ├── di/           # AppModule.kt, DatabaseModule.kt
-  │   └── utils/        # DateUtils.kt, TimeFormatter.kt
-  ├── data/
-  │   ├── local/        # DetoxyDatabase.kt, FocusSessionDao.kt
-  │   └── repository/   # FocusRepositoryImpl.kt
-  ├── domain/
-  │   ├── model/        # FocusSession.kt, UserSettings.kt
-  │   └── usecase/      # StartFocusUseCase.kt, EndFocusUseCase.kt
-  ├── presentation/
-  │   ├── ui/
-  │   │   ├── timer/    # TimerScreen.kt
-  │   │   ├── report/   # ReportScreen.kt
-  │   │   └── onboarding/ # OnboardingScreen.kt
-  │   └── viewmodel/    # TimerViewModel.kt, ReportViewModel.kt
-  └── service/
-      ├── accessibility/ # FocusAccessibilityService.kt
-      └── overlay/      # LockOverlayService.kt
-  ```
-
-  - **참조**: [00_android_allday_detoxy_plan.md](./00_android_allday_detoxy_plan.md) - 2.2 프로젝트 구조
-  - **확인 방법**: Project 뷰에서 폴더 트리가 위 구조와 일치하는지 확인
-
-#### 1.1.2 Hilt 의존성 주입 설정
-
-- [ ] **build.gradle.kts 의존성 추가**
-
-  1. **프로젝트 레벨 build.gradle.kts** (`/build.gradle.kts`)
-     ```kotlin
-     plugins {
-         id("com.android.application") version "8.2.0" apply false
-         id("org.jetbrains.kotlin.android") version "1.9.20" apply false
-         id("com.google.dagger.hilt.android") version "2.48" apply false
-     }
-     ```
-
-  2. **앱 레벨 build.gradle.kts** (`/app/build.gradle.kts`)
-     ```kotlin
-     plugins {
-         id("com.android.application")
-         id("org.jetbrains.kotlin.android")
-         id("kotlin-kapt")
-         id("com.google.dagger.hilt.android")
-     }
-
-     android {
-         namespace = "com.allday.detoxy"
-         compileSdk = 34
-
-         defaultConfig {
-             applicationId = "com.allday.detoxy"
-             minSdk = 26
-             targetSdk = 34
-             versionCode = 1
-             versionName = "1.0.0"
-         }
-
-         compileOptions {
-             sourceCompatibility = JavaVersion.VERSION_17
-             targetCompatibility = JavaVersion.VERSION_17
-         }
-
-         kotlinOptions {
-             jvmTarget = "17"
-         }
-
-         buildFeatures {
-             compose = true
-         }
-
-         composeOptions {
-             kotlinCompilerExtensionVersion = "1.5.4"
-         }
-     }
-
-     dependencies {
-         // Hilt
-         implementation("com.google.dagger:hilt-android:2.48")
-         kapt("com.google.dagger:hilt-compiler:2.48")
-
-         // Jetpack Compose
-         implementation(platform("androidx.compose:compose-bom:2023.10.01"))
-         implementation("androidx.compose.ui:ui")
-         implementation("androidx.compose.material3:material3")
-         implementation("androidx.compose.ui:ui-tooling-preview")
-         implementation("androidx.activity:activity-compose:1.8.1")
-
-         // Lifecycle
-         implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
-         implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
-
-         // Room
-         implementation("androidx.room:room-runtime:2.6.1")
-         implementation("androidx.room:room-ktx:2.6.1")
-         kapt("androidx.room:room-compiler:2.6.1")
-
-         // Coroutines
-         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-     }
-     ```
-
-  3. **Gradle 동기화**
-     - File → Sync Project with Gradle Files
-     - 또는 Gradle 동기화 알림 팝업에서 "Sync Now" 클릭
-
-- [ ] **Application 클래스 생성**
-
-  **파일**: `app/src/main/java/com/allday/detoxy/DetoxyApplication.kt`
-
-  ```kotlin
-  package com.allday.detoxy
-
-  import android.app.Application
-  import dagger.hilt.android.HiltAndroidApp
-
-  /**
-   * Hilt 의존성 주입을 위한 Application 클래스
-   *
-   * @HiltAndroidApp 어노테이션으로 Hilt의 코드 생성 트리거
-   * 앱의 전체 생명주기 동안 DI 컨테이너 유지
-   */
-  @HiltAndroidApp
-  class DetoxyApplication : Application() {
-      override fun onCreate() {
-          super.onCreate()
-          // TODO: Timber 로그 초기화 (추후 추가)
-          // TODO: Crashlytics 초기화 (Week 4)
-      }
-  }
-  ```
-
-  **AndroidManifest.xml 수정**
-
-  `app/src/main/AndroidManifest.xml` 파일에서 `<application>` 태그에 `android:name` 추가:
-
-  ```xml
-  <application
-      android:name=".DetoxyApplication"
-      android:allowBackup="true"
-      android:icon="@mipmap/ic_launcher"
-      android:label="@string/app_name"
-      android:theme="@style/Theme.AlldayDetoxy">
-
-      <activity
-          android:name=".MainActivity"
-          android:exported="true">
-          <intent-filter>
-              <action android:name="android.intent.action.MAIN" />
-              <category android:name="android.intent.category.LAUNCHER" />
-          </intent-filter>
-      </activity>
-  </application>
-  ```
-
-- [ ] **MainActivity Hilt 설정**
-
-  **파일**: `app/src/main/java/com/allday/detoxy/MainActivity.kt`
-
-  ```kotlin
-  package com.allday.detoxy
-
-  import android.os.Bundle
-  import androidx.activity.ComponentActivity
-  import androidx.activity.compose.setContent
-  import dagger.hilt.android.AndroidEntryPoint
-
-  /**
-   * 앱의 메인 액티비티
-   *
-   * @AndroidEntryPoint 어노테이션으로 Hilt가 의존성 주입 가능
-   * Jetpack Compose를 사용하여 UI 렌더링
-   */
-  @AndroidEntryPoint
-  class MainActivity : ComponentActivity() {
-      override fun onCreate(savedInstanceState: Bundle?) {
-          super.onCreate(savedInstanceState)
-
-          setContent {
-              // TODO: DetoxyTheme 적용 (Week 3)
-              // TODO: MainScreen 구현 (Week 3)
-          }
-      }
-  }
-  ```
-
-- [ ] **기본 DI 모듈 생성**
-
-  1. **DatabaseModule** - Room 데이터베이스 제공
-
-     **파일**: `app/src/main/java/com/allday/detoxy/core/di/DatabaseModule.kt`
-
-     ```kotlin
-     package com.allday.detoxy.core.di
-
-     import android.content.Context
-     import androidx.room.Room
-     import com.allday.detoxy.data.local.DetoxyDatabase
-     import dagger.Module
-     import dagger.Provides
-     import dagger.hilt.InstallIn
-     import dagger.hilt.android.qualifiers.ApplicationContext
-     import dagger.hilt.components.SingletonComponent
-     import javax.inject.Singleton
-
-     /**
-      * Room 데이터베이스 의존성 제공 모듈
-      *
-      * @InstallIn(SingletonComponent::class)로 앱 전체 생명주기 동안 싱글톤 유지
-      */
-     @Module
-     @InstallIn(SingletonComponent::class)
-     object DatabaseModule {
-
-         @Provides
-         @Singleton
-         fun provideDetoxyDatabase(
-             @ApplicationContext context: Context
-         ): DetoxyDatabase {
-             return Room.databaseBuilder(
-                 context,
-                 DetoxyDatabase::class.java,
-                 "detoxy_database"
-             ).build()
-         }
-
-         @Provides
-         fun provideFocusSessionDao(database: DetoxyDatabase) =
-             database.sessionDao()
-
-         @Provides
-         fun provideUserSettingsDao(database: DetoxyDatabase) =
-             database.settingsDao()
-     }
-     ```
-
-  2. **RepositoryModule** - Repository 구현체 제공
-
-     **파일**: `app/src/main/java/com/allday/detoxy/core/di/RepositoryModule.kt`
-
-     ```kotlin
-     package com.allday.detoxy.core.di
-
-     import com.allday.detoxy.data.repository.FocusRepositoryImpl
-     import com.allday.detoxy.domain.repository.FocusRepository
-     import dagger.Binds
-     import dagger.Module
-     import dagger.hilt.InstallIn
-     import dagger.hilt.components.SingletonComponent
-     import javax.inject.Singleton
-
-     /**
-      * Repository 인터페이스와 구현체 바인딩 모듈
-      *
-      * @Binds를 사용하여 인터페이스를 구현체로 매핑
-      * Clean Architecture의 의존성 역전 원칙(DIP) 구현
-      */
-     @Module
-     @InstallIn(SingletonComponent::class)
-     abstract class RepositoryModule {
-
-         @Binds
-         @Singleton
-         abstract fun bindFocusRepository(
-             impl: FocusRepositoryImpl
-         ): FocusRepository
-     }
-     ```
-
-  - **DatabaseModule 설명**:
-    - `@Module`: Hilt에게 이 클래스가 의존성 제공 모듈임을 알림
-    - `@InstallIn(SingletonComponent::class)`: 앱 전체 생명주기 동안 싱글톤으로 유지
-    - `@Provides`: 의존성 제공 메서드 표시
-    - `@Singleton`: 인스턴스를 하나만 생성
-    - Room 데이터베이스와 DAO를 제공
-
-  - **RepositoryModule 설명**:
-    - `@Binds`: 인터페이스와 구현체를 연결 (추상 메서드 사용)
-    - Clean Architecture 원칙에 따라 domain 계층은 data 계층을 직접 의존하지 않음
-    - Repository 인터페이스(domain)를 구현체(data)로 매핑
-
-- [ ] **Hilt 설정 확인**
-
-  1. **빌드 성공 확인**
-     - Build → Rebuild Project
-     - "BUILD SUCCESSFUL" 메시지 확인
-
-  2. **Hilt 코드 생성 확인**
-     - `app/build/generated/hilt` 폴더에 Hilt 생성 코드 존재 확인
-     - `Hilt_DetoxyApplication.java` 파일 생성 확인
-
-  3. **에러 해결**
-     - kapt 오류 발생 시: File → Invalidate Caches → Restart
-     - 의존성 오류 시: Gradle 버전 및 Kotlin 버전 확인
 
 ### 1.2 AccessibilityService 구현 (Day 2-3)
 
 #### 1.2.1 AccessibilityService 기본 구조
-- [ ] **FocusAccessibilityService 클래스 생성**
+- [x] **FocusAccessibilityService 클래스 생성**
   ```kotlin
   class FocusAccessibilityService : AccessibilityService() {
       override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -608,7 +250,7 @@
   - **참조**: [00_android_allday_detoxy_plan.md](./00_android_allday_detoxy_plan.md) - 2.2 AccessibilityService
 
 #### 1.2.2 앱 차단 로직 (MVP 간소화)
-- [ ] **하드코딩된 차단 앱 리스트**
+- [x] **하드코딩된 차단 앱 리스트**
   ```kotlin
   private val blockedApps = setOf(
       "com.instagram.android",
@@ -621,7 +263,7 @@
   - 성능 측정: 차단 반응 시간 < 500ms
 
 #### 1.2.3 접근성 서비스 설정
-- [ ] **accessibility_service_config.xml**
+- [x] **accessibility_service_config.xml**
   ```xml
   <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
       android:accessibilityEventTypes="typeWindowStateChanged"
@@ -635,6 +277,8 @@
   - 설정 화면으로 이동 버튼
   - 권한 상태 확인 로직
   - **MVP**: 복잡한 튜토리얼 없이 간단 안내만
+
+[1.2 작업 이전 기록 참조](working_history/2025-10-05_1.2.md)
 
 ### 1.3 기본 타이머 기능 (Day 4-5)
 

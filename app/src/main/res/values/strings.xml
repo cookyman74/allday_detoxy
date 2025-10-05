@@ -1,3 +1,6 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">Allday Detoxy</string>
+
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_description">Allday Detoxy는 집중 타이머 실행 중 특정 앱(Instagram, TikTok, YouTube, Facebook)을 차단하여 집중력 향상을 돕습니다. 이 서비스는 차단된 앱 실행 시 홈 화면으로 이동시킵니다.</string>
 </resources>
