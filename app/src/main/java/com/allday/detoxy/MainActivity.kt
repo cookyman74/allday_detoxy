@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -13,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.ui.timer.TimerScreen
+import com.allday.detoxy.presentation.viewmodel.TimerViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -24,16 +26,15 @@ import dagger.hilt.android.AndroidEntryPoint
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val timerViewModel: TimerViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         // 타이머 포기로 돌아온 경우 처리
-        val timerGaveUp = intent.getBooleanExtra("TIMER_GAVE_UP", false)
-        if (timerGaveUp) {
-            // 타이머가 포기된 경우, TimerScreen이 IDLE 상태로 시작됨
-            // ViewModel의 BroadcastReceiver가 자동으로 처리
-        }
+        handleTimerGiveUp(intent)
 
         setContent {
             DetoxyTheme {
@@ -44,11 +45,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        intent?.let { newIntent ->
-            val timerGaveUp = newIntent.getBooleanExtra("TIMER_GAVE_UP", false)
+        setIntent(intent)  // Update the intent
+        handleTimerGiveUp(intent)
+    }
+
+    private fun handleTimerGiveUp(intent: Intent?) {
+        intent?.let {
+            val timerGaveUp = it.getBooleanExtra("TIMER_GAVE_UP", false)
             if (timerGaveUp) {
-                // 앱이 이미 실행 중인 경우 새 인텐트 처리
-                // ViewModel의 BroadcastReceiver가 자동으로 처리
+                // 타이머가 포기된 경우, 타이머 리셋
+                timerViewModel.giveUpTimer()
             }
         }
     }

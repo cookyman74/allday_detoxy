@@ -25,6 +25,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
+import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -266,6 +267,11 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
     private fun handleGiveUp() {
         Log.d(TAG, "User gave up timer")
 
+        // AccessibilityService 상태 초기화
+        FocusAccessibilityService.isTimerRunning = false
+        FocusAccessibilityService.remainingSeconds = 0
+        FocusAccessibilityService.totalSeconds = 0
+
         // 오버레이 숨기기
         hideOverlay()
 
@@ -273,13 +279,10 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
         val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             putExtra("TIMER_GAVE_UP", true)  // 타이머 포기 상태 전달
         }
         startActivity(intent)
-
-        // TimerViewModel의 상태 초기화를 위해 브로드캐스트 전송
-        val giveUpBroadcast = Intent("com.allday.detoxy.TIMER_GIVE_UP")
-        sendBroadcast(giveUpBroadcast)
 
         // 서비스 종료
         stopSelf()

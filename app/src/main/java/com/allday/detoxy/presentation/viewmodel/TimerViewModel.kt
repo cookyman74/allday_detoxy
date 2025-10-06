@@ -1,10 +1,6 @@
 package com.allday.detoxy.presentation.viewmodel
 
 import android.app.Application
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -61,20 +57,7 @@ class TimerViewModel @Inject constructor(
     // 현재 세션 ID (타이머 시작 시 생성)
     private var currentSessionId: String? = null
 
-    // BroadcastReceiver for timer give-up
-    private val timerGiveUpReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == "com.allday.detoxy.TIMER_GIVE_UP") {
-                // 타이머 포기 처리
-                giveUpTimer()
-            }
-        }
-    }
-
     init {
-        // BroadcastReceiver 등록
-        val filter = IntentFilter("com.allday.detoxy.TIMER_GIVE_UP")
-        application.registerReceiver(timerGiveUpReceiver, filter)
         // 사용자 설정 초기화 (최초 실행 시)
         viewModelScope.launch {
             val settings = repository.getSettings().first()
@@ -244,8 +227,6 @@ class TimerViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        // BroadcastReceiver 해제
-        application.unregisterReceiver(timerGiveUpReceiver)
         // ViewModel 종료 시 타이머도 중지
         if (timerState.value == FocusState.RUNNING) {
             resetTimer()
