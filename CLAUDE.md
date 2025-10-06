@@ -92,27 +92,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Timer Lifecycle Integration
 
-The timer integrates three components that must be synchronized:
+The timer integrates FOUR components that must be synchronized:
 
 1. **FocusTimer** (domain model): Manages countdown with coroutines
 2. **AccessibilityService**: Blocks apps when `isTimerRunning = true`
 3. **LockOverlayService**: Shows full-screen overlay on blocked app access
+4. **DndManager** (Week 2): Activates Do Not Disturb mode during focus sessions
 
-**Startup sequence**:
+**Startup sequence** (see `TimerViewModel.startTimer()`):
 ```kotlin
 // In TimerViewModel.startTimer()
 1. FocusAccessibilityService.isTimerRunning = true
-2. LockOverlayService.showOverlay(context, seconds, total)
-3. focusTimer.start(duration) { onFinish() }
+2. LockOverlayService.showOverlay(context, remainingSeconds, totalSeconds)
+3. dndManager.enableDnd() // Android 6.0+ only
+4. focusTimer.start(duration) { success -> onTimerFinish(success) }
 ```
 
-**Cleanup sequence**:
+**Cleanup sequence** (applies to `giveUpTimer()`, `resetTimer()`, `onTimerFinish()`):
 ```kotlin
 // In TimerViewModel (giveUp/reset/onFinish)
 1. FocusAccessibilityService.isTimerRunning = false
 2. LockOverlayService.hideOverlay(context)
-3. focusTimer.reset() or giveUp()
+3. dndManager.disableDnd() // Android 6.0+ only
+4. focusTimer.giveUp() or reset()
 ```
+
+**Critical**: All four components must be synchronized. If one fails, all must be cleaned up to avoid inconsistent state.
 
 ### AccessibilityService Implementation
 
@@ -184,13 +189,54 @@ All development work is documented in `working_history/` with the pattern:
 6. Add commit ID to work history
 7. Commit work history update
 
+### DND (Do Not Disturb) Manager
+
+**DndManager** (`core/manager/DndManager.kt`) controls notification blocking during focus sessions:
+
+**Key features**:
+- Blocks all notifications except alarms (`INTERRUPTION_FILTER_ALARMS`)
+- Requires Android 6.0+ (API 23) and manual permission grant
+- Permission check: `hasNotificationPolicyAccess()`
+- Graceful degradation: Timer works even without DND permission
+
+**Integration**:
+```kotlin
+// TimerViewModel creates instance
+private val dndManager = DndManager(application)
+
+// Enabled on timer start (if permission granted)
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    dndManager.enableDnd()
+}
+
+// Disabled on timer stop/finish/give-up
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    dndManager.disableDnd()
+}
+```
+
+**Permission utilities** (in `PermissionUtils`):
+- `hasNotificationPolicyAccess(context)`: Check DND permission
+- `openNotificationPolicySettings(context)`: Navigate to DND settings
+
 ## Required Permissions & User Setup
 
-After app installation, users must manually enable:
+After app installation, users must manually enable three permissions:
 
 1. **Accessibility Service**: Settings → Accessibility → Allday Detoxy → Enable
+   - Required for app blocking functionality
+   - Cannot be granted programmatically (Android security restriction)
+
 2. **Display over other apps**: Settings → Apps → Special app access → Display over other apps → Allday Detoxy → Allow
-3. **Do Not Disturb** (Week 2+): Settings → Notifications → Do Not Disturb access → Allday Detoxy → Allow
+   - Required for lock overlay screen
+   - Check with `Settings.canDrawOverlays(context)`
+
+3. **Do Not Disturb**: Settings → Notifications → Do Not Disturb access → Allday Detoxy → Allow
+   - Required for notification blocking during focus sessions
+   - Android 6.0+ only
+   - Check with `NotificationManager.isNotificationPolicyAccessGranted`
+
+**Note**: All three permissions use `PermissionUtils` for checking and settings navigation.
 
 ## MVP Development Phases
 
@@ -201,9 +247,9 @@ After app installation, users must manually enable:
 - Lock overlay screen
 
 **Week 2 (In Progress)**:
-- DND (Do Not Disturb) mode control
-- Room database for session storage
-- Real-time timer updates in overlay
+- ✅ Lock overlay service (2.1)
+- ✅ DND (Do Not Disturb) mode control (2.2)
+- ⏳ Room database for session storage (2.3)
 
 **Week 3**:
 - Points and streak system
@@ -220,16 +266,23 @@ After app installation, users must manually enable:
 - Cannot be programmatically enabled (user must do it manually)
 - May be killed by aggressive battery optimization on some devices
 - Performance target: Block reaction time < 500ms
+- Hardcoded blocked apps in MVP (Instagram, TikTok, YouTube, Facebook)
 
 **Overlay Service**:
 - Requires foreground notification (cannot be hidden on Android 8+)
-- Static timer display in MVP (real-time update in Week 2)
-- Some OEMs may restrict overlay permissions
+- Static timer display in MVP (real-time update planned for Week 2)
+- Some OEMs may restrict overlay permissions (Samsung, Xiaomi, Huawei)
+
+**DND Manager**:
+- Requires Android 6.0+ (API 23), gracefully degrades on older versions
+- Permission must be granted manually, cannot be programmatically requested
+- Only blocks notifications, not alarms (using `INTERRUPTION_FILTER_ALARMS`)
+- Timer works without DND but notifications won't be blocked
 
 **Timer Communication**:
-- Current MVP uses static flags (suboptimal)
-- Week 2 refactor: Migrate to StateFlow for proper reactive updates
-- Week 2 refactor: Bidirectional ViewModel ↔ Service communication
+- Current MVP uses static flags (`isTimerRunning`) - suboptimal but functional
+- Week 2 refactor planned: Migrate to StateFlow for proper reactive updates
+- Week 2 refactor planned: Bidirectional ViewModel ↔ Service communication
 
 ## Tech Stack
 
@@ -242,9 +295,32 @@ After app installation, users must manually enable:
 - **Target SDK**: 34 (Android 14)
 - **Build Tool**: Gradle 8.7 with Kotlin DSL
 
+## Key Files for Understanding System
+
+**Core Domain & State**:
+- `domain/model/FocusTimer.kt`: Timer logic with StateFlow, coroutine-based countdown
+- `domain/model/FocusState.kt`: Timer state enum (IDLE, RUNNING, FINISHED, FAILED)
+
+**ViewModels**:
+- `presentation/viewmodel/TimerViewModel.kt`: Orchestrates all services and timer lifecycle
+
+**Services**:
+- `service/accessibility/FocusAccessibilityService.kt`: App blocking via AccessibilityEvent
+- `service/overlay/LockOverlayService.kt`: Full-screen overlay with Compose integration
+
+**Managers**:
+- `core/manager/DndManager.kt`: Do Not Disturb mode control
+
+**Utilities**:
+- `core/utils/PermissionUtils.kt`: Centralized permission checks and settings navigation
+
+**Configuration**:
+- `app/src/main/res/xml/accessibility_service_config.xml`: AccessibilityService configuration
+- `app/src/main/AndroidManifest.xml`: Service declarations and permissions
+
 ## Reference Documentation
 
 - `docs/prd.md`: Product requirements and feature specifications
 - `docs/00_mvp_allday_detoxy_todolist.md`: 4-week development plan with checklist
 - `docs/00_android_allday_detoxy_plan.md`: Technical architecture details
-- `working_history/`: Day-by-day implementation logs with commit IDs
+- `working_history/`: Day-by-day implementation logs with commit IDs and code examples
