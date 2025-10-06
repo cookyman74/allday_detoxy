@@ -1,4 +1,4 @@
-package com.example.myapplication
+package com.allday.detoxy
 
 import org.junit.Test
 
