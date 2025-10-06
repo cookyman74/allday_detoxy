@@ -388,7 +388,7 @@
 ### 2.3 Room 데이터베이스 (Day 9-10)
 
 #### 2.3.1 핵심 엔티티 (MVP 최소)
-- [ ] **FocusSession 엔티티**
+- [x] **FocusSession 엔티티**
   ```kotlin
   @Entity(tableName = "focus_sessions")
   data class FocusSession(
@@ -400,7 +400,7 @@
   )
   ```
 
-- [ ] **UserSettings 엔티티**
+- [x] **UserSettings 엔티티**
   ```kotlin
   @Entity(tableName = "user_settings")
   data class UserSettings(
@@ -412,7 +412,7 @@
   ```
 
 #### 2.3.2 DAO 인터페이스
-- [ ] **FocusSessionDao**
+- [x] **FocusSessionDao**
   ```kotlin
   @Dao
   interface FocusSessionDao {
@@ -424,7 +424,7 @@
   }
   ```
 
-- [ ] **UserSettingsDao**
+- [x] **UserSettingsDao**
   ```kotlin
   @Dao
   interface UserSettingsDao {
@@ -437,7 +437,7 @@
   ```
 
 #### 2.3.3 데이터베이스 구성
-- [ ] **DetoxyDatabase**
+- [x] **DetoxyDatabase**
   ```kotlin
   @Database(
       entities = [FocusSession::class, UserSettings::class],
