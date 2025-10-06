@@ -362,7 +362,7 @@
 ### 2.2 DND 제어 (Day 8)
 
 #### 2.2.1 DND 모드 제어
-- [ ] **DndManager 구현**
+- [x] **DndManager 구현**
   ```kotlin
   class DndManager(private val context: Context) {
       fun enableDnd() {
@@ -381,7 +381,7 @@
   - **참조**: [prd.md](./prd.md) - 3) 핵심 기능 B. 연락·알림 정책
 
 #### 2.2.2 DND 권한 요청
-- [ ] **알림 정책 접근 권한**
+- [x] **알림 정책 접근 권한**
   - 설정 화면으로 이동
   - 권한 상태 확인
 
