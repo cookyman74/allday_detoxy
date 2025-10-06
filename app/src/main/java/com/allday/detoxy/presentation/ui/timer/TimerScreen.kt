@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
@@ -48,8 +49,8 @@ fun TimerScreen(
         // 원형 프로그레스 바 & 타이머 표시
         CircularTimerDisplay(
             state = timerState,
-            formattedTime = viewModel.getFormattedTime(),
-            progress = viewModel.getProgress()
+            remainingSeconds = remainingSeconds,
+            totalSeconds = totalSeconds
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -136,15 +137,30 @@ fun TimerScreen(
  * 원형 타이머 표시
  *
  * @param state 타이머 상태
- * @param formattedTime 포맷된 시간 (MM:SS)
- * @param progress 진행률 (0.0 ~ 1.0)
+ * @param remainingSeconds 남은 시간 (초)
+ * @param totalSeconds 전체 시간 (초)
  */
 @Composable
 fun CircularTimerDisplay(
     state: FocusState,
-    formattedTime: String,
-    progress: Float
+    remainingSeconds: Int,
+    totalSeconds: Int
 ) {
+    // 포맷된 시간 계산
+    val formattedTime = remember(remainingSeconds) {
+        val minutes = remainingSeconds / 60
+        val seconds = remainingSeconds % 60
+        String.format("%02d:%02d", minutes, seconds)
+    }
+
+    // 진행률 계산
+    val progress = remember(remainingSeconds, totalSeconds) {
+        if (totalSeconds == 0) 0f
+        else {
+            val elapsed = totalSeconds - remainingSeconds
+            elapsed.toFloat() / totalSeconds.toFloat()
+        }
+    }
     Box(
         modifier = Modifier
             .size(240.dp)
