@@ -47,7 +47,14 @@ class FocusAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null) return
+        if (event == null) {
+            Log.d(TAG, "Received null event")
+            return
+        }
+
+        // 타이머 실행 상태 로그
+        Log.d(TAG, "Event received - Timer running: $isTimerRunning, Event type: ${event.eventType}, Package: ${event.packageName}")
+
         if (!isTimerRunning) return  // 타이머가 실행 중이 아니면 차단하지 않음
 
         // TYPE_WINDOW_STATE_CHANGED 이벤트만 처리
@@ -55,9 +62,11 @@ class FocusAccessibilityService : AccessibilityService() {
 
         val packageName = event.packageName?.toString() ?: return
 
+        Log.d(TAG, "Checking package: $packageName")
+
         // 차단 앱인지 확인
         if (packageName in BLOCKED_APPS) {
-            Log.d(TAG, "Blocked app detected: $packageName")
+            Log.w(TAG, "⚠️ BLOCKED APP DETECTED: $packageName")
             navigateToHome()
         }
     }

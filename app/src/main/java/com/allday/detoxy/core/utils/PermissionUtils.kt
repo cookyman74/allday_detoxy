@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Build
 import android.provider.Settings
 import android.text.TextUtils
+import android.util.Log
 
 /**
  * 권한 관련 유틸리티 함수 모음
@@ -14,6 +15,8 @@ import android.text.TextUtils
  * 설정 화면 이동 기능을 제공합니다.
  */
 object PermissionUtils {
+
+    private const val TAG = "PermissionUtils"
 
     /**
      * 접근성 서비스 활성화 여부 확인
@@ -30,7 +33,11 @@ object PermissionUtils {
                 Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
             )
 
+            Log.d(TAG, "Checking accessibility service: $service")
+            Log.d(TAG, "Enabled services: $enabledServices")
+
             if (enabledServices.isNullOrEmpty()) {
+                Log.w(TAG, "No accessibility services enabled")
                 false
             } else {
                 val colonSplitter = TextUtils.SimpleStringSplitter(':')
@@ -39,12 +46,15 @@ object PermissionUtils {
                 while (colonSplitter.hasNext()) {
                     val componentName = colonSplitter.next()
                     if (componentName.equals(service, ignoreCase = true)) {
+                        Log.i(TAG, "✅ Accessibility service is ENABLED")
                         return true
                     }
                 }
+                Log.w(TAG, "❌ Accessibility service is NOT enabled")
                 false
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Error checking accessibility service", e)
             false
         }
     }

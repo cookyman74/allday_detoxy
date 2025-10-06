@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
@@ -12,10 +11,10 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
 import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
 import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
@@ -31,7 +30,7 @@ import dagger.hilt.android.AndroidEntryPoint
  * @see LockOverlayScreen
  */
 @AndroidEntryPoint
-class LockOverlayService : Service() {
+class LockOverlayService : LifecycleService() {
 
     companion object {
         private const val TAG = "LockOverlayService"
@@ -102,8 +101,6 @@ class LockOverlayService : Service() {
         return START_STICKY
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
     /**
      * 오버레이 화면 표시
      */
@@ -116,6 +113,9 @@ class LockOverlayService : Service() {
         try {
             // ComposeView 생성
             overlayView = ComposeView(this).apply {
+                // LifecycleOwner 설정 (LifecycleService가 LifecycleOwner를 구현함)
+                setViewTreeLifecycleOwner(this@LockOverlayService)
+
                 setContent {
                     DetoxyTheme {
                         LockOverlayScreen(
