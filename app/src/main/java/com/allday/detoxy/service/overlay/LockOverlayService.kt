@@ -12,13 +12,19 @@ import android.os.IBinder
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
-import androidx.compose.ui.platform.ComposeView
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.TextView
+import android.widget.Button
+import android.widget.ProgressBar
 import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.*
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
-import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
-import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -30,7 +36,12 @@ import dagger.hilt.android.AndroidEntryPoint
  * @see LockOverlayScreen
  */
 @AndroidEntryPoint
-class LockOverlayService : LifecycleService() {
+class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
+
+    private val savedStateRegistryController = SavedStateRegistryController.create(this)
+
+    override val savedStateRegistry: SavedStateRegistry
+        get() = savedStateRegistryController.savedStateRegistry
 
     companion object {
         private const val TAG = "LockOverlayService"
@@ -69,13 +80,27 @@ class LockOverlayService : LifecycleService() {
     }
 
     private var windowManager: WindowManager? = null
-    private var overlayView: ComposeView? = null
+    private var overlayView: View? = null
     private var isOverlayShowing = false
+    private var timerJob: Job? = null
+
+    // View 참조
+    private var timerTextView: TextView? = null
+    private var progressBar: ProgressBar? = null
+
+    // 타이머 상태
+    private var currentRemainingSeconds = 0
+    private var currentTotalSeconds = 0
 
     override fun onCreate() {
         super.onCreate()
+        savedStateRegistryController.performRestore(null)
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
+
+        // Lifecycle 이벤트를 명시적으로 처리
+        lifecycle.currentState
+
         Log.d(TAG, "LockOverlayService created")
     }
 
@@ -105,31 +130,37 @@ class LockOverlayService : LifecycleService() {
      * 오버레이 화면 표시
      */
     private fun showOverlay(remainingSeconds: Int, totalSeconds: Int) {
+        // 기존 오버레이가 있으면 제거 (새로운 시간으로 업데이트하기 위함)
         if (isOverlayShowing) {
-            Log.d(TAG, "Overlay already showing")
-            return
+            Log.d(TAG, "Removing existing overlay to update with new time: $remainingSeconds seconds")
+            hideOverlay()
         }
 
         try {
-            // ComposeView 생성
-            overlayView = ComposeView(this).apply {
-                // LifecycleOwner 설정 (LifecycleService가 LifecycleOwner를 구현함)
-                setViewTreeLifecycleOwner(this@LockOverlayService)
+            Log.d(TAG, "Creating new overlay - Remaining: $remainingSeconds, Total: $totalSeconds")
 
-                setContent {
-                    DetoxyTheme {
-                        LockOverlayScreen(
-                            remainingSeconds = remainingSeconds,
-                            totalSeconds = totalSeconds,
-                            onGiveUp = {
-                                val intent = Intent(this@LockOverlayService, LockOverlayService::class.java).apply {
-                                    action = ACTION_GIVE_UP
-                                }
-                                startService(intent)
-                            }
-                        )
-                    }
+            // 초기값 설정
+            currentRemainingSeconds = remainingSeconds
+            currentTotalSeconds = totalSeconds
+
+            // XML 레이아웃 inflate
+            val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+            overlayView = inflater.inflate(R.layout.lock_overlay_layout, null)
+
+            // View 참조 가져오기
+            timerTextView = overlayView?.findViewById(R.id.timerText)
+            progressBar = overlayView?.findViewById(R.id.progressBar)
+            val giveUpButton = overlayView?.findViewById<Button>(R.id.giveUpButton)
+
+            // 초기값 설정
+            updateTimerDisplay()
+
+            // 포기 버튼 리스너
+            giveUpButton?.setOnClickListener {
+                val intent = Intent(this@LockOverlayService, LockOverlayService::class.java).apply {
+                    action = ACTION_GIVE_UP
                 }
+                startService(intent)
             }
 
             // WindowManager 파라미터 설정
@@ -154,7 +185,10 @@ class LockOverlayService : LifecycleService() {
             // 오버레이 추가
             windowManager?.addView(overlayView, params)
             isOverlayShowing = true
-            Log.d(TAG, "Overlay shown: $remainingSeconds / $totalSeconds seconds")
+            Log.d(TAG, "Overlay shown: $currentRemainingSeconds / $currentTotalSeconds seconds")
+
+            // 타이머 시작
+            startTimerUpdate()
 
         } catch (e: Exception) {
             Log.e(TAG, "Failed to show overlay: ${e.message}", e)
@@ -162,9 +196,56 @@ class LockOverlayService : LifecycleService() {
     }
 
     /**
+     * 타이머 표시 업데이트
+     */
+    private fun updateTimerDisplay() {
+        val minutes = currentRemainingSeconds / 60
+        val seconds = currentRemainingSeconds % 60
+        val timeText = String.format("%02d:%02d", minutes, seconds)
+        timerTextView?.text = timeText
+
+        // 프로그레스바 업데이트
+        if (currentTotalSeconds > 0) {
+            val progress = ((currentTotalSeconds - currentRemainingSeconds) * 100) / currentTotalSeconds
+            progressBar?.progress = progress
+        }
+    }
+
+    /**
+     * 타이머 업데이트 시작
+     */
+    private fun startTimerUpdate() {
+        timerJob?.cancel()
+        timerJob = lifecycleScope.launch {
+            while (isActive && currentRemainingSeconds > 0) {
+                delay(1000)
+                // Main 스레드에서 UI 업데이트
+                withContext(Dispatchers.Main) {
+                    currentRemainingSeconds--
+                    updateTimerDisplay()
+
+                    if (currentRemainingSeconds % 5 == 0 || currentRemainingSeconds <= 5) {
+                        Log.d(TAG, "Timer update: $currentRemainingSeconds seconds remaining")
+                    }
+                }
+            }
+
+            if (currentRemainingSeconds == 0) {
+                Log.d(TAG, "Timer finished")
+                hideOverlay()
+                stopSelf()
+            }
+        }
+    }
+
+    /**
      * 오버레이 화면 숨김
      */
     private fun hideOverlay() {
+        // 타이머 중지
+        timerJob?.cancel()
+        timerJob = null
+
         if (!isOverlayShowing || overlayView == null) {
             return
         }

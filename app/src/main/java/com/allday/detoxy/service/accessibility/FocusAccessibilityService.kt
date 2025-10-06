@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.allday.detoxy.service.overlay.LockOverlayService
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
@@ -39,6 +40,15 @@ class FocusAccessibilityService : AccessibilityService() {
          */
         @Volatile
         var isTimerRunning: Boolean = false
+
+        /**
+         * 타이머 정보 (LockOverlayScreen에 표시할 데이터)
+         */
+        @Volatile
+        var remainingSeconds: Int = 0
+
+        @Volatile
+        var totalSeconds: Int = 0
     }
 
     override fun onServiceConnected() {
@@ -76,12 +86,21 @@ class FocusAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * 홈 화면으로 이동
+     * 차단된 앱 실행 시 처리
      *
-     * Intent.ACTION_MAIN + Intent.CATEGORY_HOME을 사용하여
-     * 사용자를 홈 화면으로 강제 이동시킵니다.
+     * 1. LockOverlayScreen을 전체 화면으로 표시
+     * 2. 차단된 앱을 종료하기 위해 홈 화면으로 이동
      */
     private fun navigateToHome() {
+        // 1. LockOverlayScreen 표시
+        LockOverlayService.showOverlay(
+            context = applicationContext,
+            remainingSeconds = remainingSeconds,
+            totalSeconds = totalSeconds
+        )
+        Log.d(TAG, "Lock overlay shown: $remainingSeconds / $totalSeconds seconds")
+
+        // 2. 홈 화면으로 이동 (차단된 앱 종료)
         val homeIntent = Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_HOME)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK

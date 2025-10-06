@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F2000000"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- 잠금 아이콘 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🔒"
+        android:textSize="80sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 타이틀 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="집중 모드 실행 중"
+        android:textColor="@android:color/white"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 서브타이틀 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="차단된 앱입니다"
+        android:textColor="#B3FFFFFF"
+        android:textSize="18sp"
+        android:layout_marginBottom="48dp" />
+
+    <!-- 남은 시간 라벨 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="남은 시간"
+        android:textColor="#B3FFFFFF"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp" />
+
+    <!-- 타이머 표시 -->
+    <TextView
+        android:id="@+id/timerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="25:00"
+        android:textColor="@color/purple_500"
+        android:textSize="64sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 프로그레스바 -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="200dp"
+        android:layout_height="4dp"
+        android:progressTint="@color/purple_500"
+        android:progressBackgroundTint="#33FFFFFF"
+        android:max="100"
+        android:progress="100"
+        android:layout_marginBottom="32dp" />
+
+    <!-- 안내 메시지 -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="타이머가 끝나면 다시 사용할 수 있습니다"
+        android:textColor="#80FFFFFF"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="48dp" />
+
+    <!-- 빈 공간 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- 포기 버튼 -->
+    <Button
+        android:id="@+id/giveUpButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="타이머 포기하기"
+        android:textColor="#B3FFFFFF"
+        android:background="@android:color/transparent"
+        android:layout_marginBottom="32dp" />
+
+</LinearLayout>

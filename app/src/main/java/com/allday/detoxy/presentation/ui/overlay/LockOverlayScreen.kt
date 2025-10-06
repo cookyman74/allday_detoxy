@@ -10,6 +10,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
+import androidx.compose.runtime.MutableState
+import kotlinx.coroutines.delay
 
 /**
  * 오버레이 잠금 화면
@@ -25,8 +28,19 @@ import androidx.compose.ui.unit.sp
 fun LockOverlayScreen(
     remainingSeconds: Int,
     totalSeconds: Int,
+    timerState: MutableState<Int> = remember { mutableStateOf(remainingSeconds) },
     onGiveUp: () -> Unit
 ) {
+    // timerState를 observe하여 자동 recomposition
+    val currentSeconds by timerState
+
+    // LaunchedEffect로 State 변화 감지
+    LaunchedEffect(currentSeconds) {
+        Log.d("LockOverlayScreen", "Timer updated - currentSeconds: $currentSeconds")
+    }
+
+    Log.d("LockOverlayScreen", "Screen rendered - currentSeconds: $currentSeconds, totalSeconds: $totalSeconds")
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -72,7 +86,7 @@ fun LockOverlayScreen(
                 )
 
                 Text(
-                    text = formatTime(remainingSeconds),
+                    text = formatTime(currentSeconds),
                     style = MaterialTheme.typography.displayLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -81,7 +95,7 @@ fun LockOverlayScreen(
 
                 // 진행률 표시
                 LinearProgressIndicator(
-                    progress = { getProgress(remainingSeconds, totalSeconds) },
+                    progress = { getProgress(currentSeconds, totalSeconds) },
                     modifier = Modifier
                         .width(200.dp)
                         .padding(top = 16.dp),

@@ -12,7 +12,6 @@ import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.domain.model.FocusTimer
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
-import com.allday.detoxy.service.overlay.LockOverlayService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -24,8 +23,8 @@ import javax.inject.Inject
  * 타이머 화면 ViewModel
  *
  * FocusTimer를 관리하고 UI 상태를 제공합니다.
- * AccessibilityService, LockOverlayService, DndManager와 연동하여
- * 앱 차단, 잠금 화면, 방해금지 모드 기능을 제어합니다.
+ * AccessibilityService, DndManager와 연동하여
+ * 앱 차단, 방해금지 모드 기능을 제어합니다.
  *
  * Week 3: FocusRepository와 GamificationManager를 통해
  * 세션 저장 및 포인트/스트릭 업데이트 기능을 제공합니다.
@@ -73,6 +72,14 @@ class TimerViewModel @Inject constructor(
                 )
             }
         }
+
+        // 타이머 남은 시간을 AccessibilityService에 실시간 동기화
+        // (크롬 실행 시 정확한 남은 시간을 LockOverlayScreen에 전달하기 위함)
+        viewModelScope.launch {
+            remainingSeconds.collect { seconds ->
+                FocusAccessibilityService.remainingSeconds = seconds
+            }
+        }
     }
 
     /**
@@ -96,22 +103,18 @@ class TimerViewModel @Inject constructor(
             )
         }
 
-        // 1. AccessibilityService 활성화
+        // 1. AccessibilityService 활성화 및 타이머 정보 전달
+        val totalSec = durationMinutes * 60
         FocusAccessibilityService.isTimerRunning = true
+        FocusAccessibilityService.remainingSeconds = totalSec
+        FocusAccessibilityService.totalSeconds = totalSec
 
-        // 2. LockOverlayService 시작 (포그라운드 서비스)
-        LockOverlayService.showOverlay(
-            application,
-            remainingSeconds = durationMinutes * 60,
-            totalSeconds = durationMinutes * 60
-        )
-
-        // 3. DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
+        // 2. DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             dndManager.enableDnd()
         }
 
-        // 4. 타이머 시작
+        // 3. 타이머 시작
         focusTimer.start(durationMinutes) { success ->
             onTimerFinish(success)
         }
@@ -136,15 +139,12 @@ class TimerViewModel @Inject constructor(
         // 1. AccessibilityService 비활성화
         FocusAccessibilityService.isTimerRunning = false
 
-        // 2. LockOverlayService 중지
-        LockOverlayService.hideOverlay(application)
-
-        // 3. DND 모드 비활성화
+        // 2. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             dndManager.disableDnd()
         }
 
-        // 4. 타이머 포기
+        // 3. 타이머 포기
         focusTimer.giveUp()
     }
 
@@ -158,15 +158,12 @@ class TimerViewModel @Inject constructor(
         // 1. AccessibilityService 비활성화
         FocusAccessibilityService.isTimerRunning = false
 
-        // 2. LockOverlayService 중지
-        LockOverlayService.hideOverlay(application)
-
-        // 3. DND 모드 비활성화
+        // 2. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             dndManager.disableDnd()
         }
 
-        // 4. 타이머 리셋
+        // 3. 타이머 리셋
         focusTimer.reset()
     }
 
@@ -179,10 +176,7 @@ class TimerViewModel @Inject constructor(
         // 1. AccessibilityService 비활성화
         FocusAccessibilityService.isTimerRunning = false
 
-        // 2. LockOverlayService 중지
-        LockOverlayService.hideOverlay(application)
-
-        // 3. DND 모드 비활성화
+        // 2. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             dndManager.disableDnd()
         }
