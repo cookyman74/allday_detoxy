@@ -23,13 +23,14 @@ class FocusAccessibilityService : AccessibilityService() {
         /**
          * 차단할 앱의 패키지명 목록 (MVP 하드코딩)
          *
-         * Instagram, TikTok, YouTube, Facebook을 기본으로 차단
+         * Instagram, TikTok, YouTube, Facebook, Chrome을 기본으로 차단
          */
         private val BLOCKED_APPS = setOf(
             "com.instagram.android",           // Instagram
             "com.zhiliaoapp.musically",        // TikTok
             "com.google.android.youtube",      // YouTube
-            "com.facebook.katana"              // Facebook
+            "com.facebook.katana",             // Facebook
+            "com.android.chrome"               // Chrome (테스트용)
         )
 
         /**
