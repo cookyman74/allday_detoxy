@@ -324,7 +324,7 @@
 ### 2.1 오버레이 잠금 화면 (Day 6-7)
 
 #### 2.1.1 LockOverlayService 구현
-- [ ] **포그라운드 서비스**
+- [x] **포그라운드 서비스**
   ```kotlin
   class LockOverlayService : Service() {
       override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -338,9 +338,12 @@
   }
   ```
   - **참조**: [00_android_allday_detoxy_plan.md](./00_android_allday_detoxy_plan.md) - 2.4 오버레이
+  - ComposeView를 사용한 오버레이 구현
+  - 포그라운드 서비스 알림 표시
+  - TimerViewModel과 연동
 
 #### 2.1.2 오버레이 UI (MVP 간소화)
-- [ ] **잠금 화면 최소 UI**
+- [x] **잠금 화면 최소 UI**
   ```kotlin
   // 반투명 배경
   // 남은 시간 텍스트
@@ -348,11 +351,13 @@
   ```
   - **MVP 제외**: 미션 해제, 퍼즐 해제 → 1차 릴리스
   - **참조**: [prd.md](./prd.md) - 5) UX 플로우 진행 중
+  - Material3 디자인, 진행률 표시, 반투명 검정 배경
 
 #### 2.1.3 오버레이 권한 관리
-- [ ] **SYSTEM_ALERT_WINDOW 권한**
-  - 권한 요청 및 설정 화면 이동
+- [x] **SYSTEM_ALERT_WINDOW 권한**
+  - 권한 요청 및 설정 화면 이동 (PermissionUtils 사용)
   - **MVP**: 간단한 안내 메시지만
+  - AndroidManifest에 권한 및 서비스 등록 완료
 
 ### 2.2 DND 제어 (Day 8)
 
