@@ -219,6 +219,58 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 - `hasNotificationPolicyAccess(context)`: Check DND permission
 - `openNotificationPolicySettings(context)`: Navigate to DND settings
 
+### Room Database (Week 2.3)
+
+**DetoxyDatabase** (`data/local/DetoxyDatabase.kt`) provides local data persistence:
+
+**Entities**:
+- **FocusSession**: Stores focus session records
+  - UUID-based unique ID
+  - Unix timestamp for start/end times
+  - Duration (minutes) and success status
+  - File: `data/local/entity/FocusSession.kt`
+
+- **UserSettings**: Stores user gamification data
+  - Single record (ID=1) for app-wide settings
+  - Total points, current streak, last success date
+  - File: `data/local/entity/UserSettings.kt`
+
+**DAOs**:
+- **FocusSessionDao** (`data/local/dao/FocusSessionDao.kt`):
+  - `getTodaySessions()`: Flow of today's sessions
+  - `getAllSessions()`: Flow of all sessions (newest first)
+  - `getSuccessfulSessions()`: Flow of successful sessions only
+  - `insert()`, `update()`: Session CRUD operations
+
+- **UserSettingsDao** (`data/local/dao/UserSettingsDao.kt`):
+  - `getSettings()`: Flow of user settings
+  - `addPoints(points)`: Increment total points
+  - `updateStreak(streak, date)`: Update streak and last success date
+  - `resetStreak()`: Reset streak to 0
+
+**Hilt Integration** (`core/di/DatabaseModule.kt`):
+```kotlin
+@Provides
+@Singleton
+fun provideDetoxyDatabase(@ApplicationContext context: Context): DetoxyDatabase {
+    return Room.databaseBuilder(context, DetoxyDatabase::class.java, "detoxy_database").build()
+}
+```
+
+**Key SQL Query**:
+```sql
+-- Get today's sessions (converts Unix timestamp to date)
+SELECT * FROM focus_sessions
+WHERE DATE(startTime/1000, 'unixepoch') = DATE('now')
+ORDER BY startTime DESC
+```
+
+**Usage Pattern** (Week 3 integration):
+1. Timer starts → Create FocusSession with startTime
+2. Timer completes → Update session with endTime and success=true
+3. Calculate points → Update UserSettings via DAO
+4. Update streak → Check lastSuccessDate and update accordingly
+
 ## Required Permissions & User Setup
 
 After app installation, users must manually enable three permissions:
@@ -246,10 +298,10 @@ After app installation, users must manually enable three permissions:
 - Basic timer with preset durations (25/45/60 min)
 - Lock overlay screen
 
-**Week 2 (In Progress)**:
+**Week 2 (Completed)**:
 - ✅ Lock overlay service (2.1)
 - ✅ DND (Do Not Disturb) mode control (2.2)
-- ⏳ Room database for session storage (2.3)
+- ✅ Room database for session storage (2.3)
 
 **Week 3**:
 - Points and streak system
@@ -301,6 +353,13 @@ After app installation, users must manually enable three permissions:
 - `domain/model/FocusTimer.kt`: Timer logic with StateFlow, coroutine-based countdown
 - `domain/model/FocusState.kt`: Timer state enum (IDLE, RUNNING, FINISHED, FAILED)
 
+**Data Layer**:
+- `data/local/DetoxyDatabase.kt`: Room database with 2 entities
+- `data/local/entity/FocusSession.kt`: Focus session records entity
+- `data/local/entity/UserSettings.kt`: User gamification settings entity
+- `data/local/dao/FocusSessionDao.kt`: Focus session data access
+- `data/local/dao/UserSettingsDao.kt`: User settings data access
+
 **ViewModels**:
 - `presentation/viewmodel/TimerViewModel.kt`: Orchestrates all services and timer lifecycle
 
@@ -313,6 +372,10 @@ After app installation, users must manually enable three permissions:
 
 **Utilities**:
 - `core/utils/PermissionUtils.kt`: Centralized permission checks and settings navigation
+
+**Dependency Injection**:
+- `core/di/DatabaseModule.kt`: Room database and DAO providers
+- `core/di/RepositoryModule.kt`: Repository providers (placeholder for Week 3)
 
 **Configuration**:
 - `app/src/main/res/xml/accessibility_service_config.xml`: AccessibilityService configuration
