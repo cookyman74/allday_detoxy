@@ -1,5 +1,6 @@
 package com.allday.detoxy
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -26,9 +27,28 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // 타이머 포기로 돌아온 경우 처리
+        val timerGaveUp = intent.getBooleanExtra("TIMER_GAVE_UP", false)
+        if (timerGaveUp) {
+            // 타이머가 포기된 경우, TimerScreen이 IDLE 상태로 시작됨
+            // ViewModel의 BroadcastReceiver가 자동으로 처리
+        }
+
         setContent {
             DetoxyTheme {
                 MainScreen()
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.let { newIntent ->
+            val timerGaveUp = newIntent.getBooleanExtra("TIMER_GAVE_UP", false)
+            if (timerGaveUp) {
+                // 앱이 이미 실행 중인 경우 새 인텐트 처리
+                // ViewModel의 BroadcastReceiver가 자동으로 처리
             }
         }
     }
