@@ -456,7 +456,7 @@
 ### 3.1 포인트/스릭 시스템 (Day 11-12)
 
 #### 3.1.1 GamificationManager (MVP 간소화)
-- [ ] **간단한 포인트 계산**
+- [x] **간단한 포인트 계산**
   ```kotlin
   class GamificationManager {
       fun calculatePoints(durationMinutes: Int): Int {
@@ -483,7 +483,7 @@
   - **참조**: [prd.md](./prd.md) - 11) 알고리즘
 
 #### 3.1.2 세션 완료 시 보상 지급
-- [ ] **EndFocusUseCase**
+- [x] **EndFocusUseCase**
   ```kotlin
   class EndFocusUseCase(
       private val repository: FocusRepository,
