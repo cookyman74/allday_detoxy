@@ -283,7 +283,7 @@
 ### 1.3 기본 타이머 기능 (Day 4-5)
 
 #### 1.3.1 타이머 상태 관리
-- [ ] **FocusTimer 클래스**
+- [x] **FocusTimer 클래스**
   ```kotlin
   enum class FocusState { IDLE, RUNNING, FINISHED, FAILED }
 
@@ -298,7 +298,7 @@
   ```
 
 #### 1.3.2 타이머 UI (MVP 간소화)
-- [ ] **TimerScreen Compose**
+- [x] **TimerScreen Compose**
   ```kotlin
   @Composable
   fun TimerScreen() {
@@ -311,10 +311,11 @@
   - **참조**: [prd.md](./prd.md) - 18) 샘플 코드 타이머 로직
 
 #### 1.3.3 타이머-서비스 연동
-- [ ] **타이머 시작 시**
+- [x] **타이머 시작 시**
   - AccessibilityService 상태 확인
-  - 세션 시작 기록 (Room DB)
-  - DND 활성화 (다음 주)
+  - FocusAccessibilityService.isTimerRunning 상태 업데이트
+  - TODO: 세션 시작 기록 (Room DB, Week 2)
+  - TODO: DND 활성화 (Week 2)
 
 ---
 
