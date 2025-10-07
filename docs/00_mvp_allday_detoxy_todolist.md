@@ -505,7 +505,7 @@
 ### 3.2 일일 리포트 (Day 13)
 
 #### 3.2.1 일일 통계 UI (MVP 간소화)
-- [ ] **ReportScreen Compose**
+- [x] **ReportScreen Compose**
   ```kotlin
   @Composable
   fun DailyReportScreen(viewModel: ReportViewModel) {
@@ -530,7 +530,7 @@
   - **MVP 제외**: 차트, 주간 리포트, AI 코치 메시지 → 1차 릴리스
 
 #### 3.2.2 세션 리스트
-- [ ] **오늘 세션 목록 표시**
+- [x] **오늘 세션 목록 표시**
   ```kotlin
   LazyColumn {
       items(todaySessions) { session ->
