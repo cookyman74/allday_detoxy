@@ -852,7 +852,7 @@
   - **제외**: 설정, 상점, 친구 → 1차 릴리스
 
 #### 3.3.2 Material3 테마 적용
-- [ ] **기본 테마 설정**
+- [x] **기본 테마 설정**
   ```kotlin
   @Composable
   fun DetoxyTheme(content: @Composable () -> Unit) {
