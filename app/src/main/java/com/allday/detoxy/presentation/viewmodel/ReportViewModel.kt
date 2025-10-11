@@ -41,24 +41,26 @@ class ReportViewModel @Inject constructor(
     }
 
     private fun loadData() {
-        viewModelScope.launch {
-            _isLoading.value = true
+        _isLoading.value = true
 
-            // 오늘 세션 로드
+        // 오늘 세션 로드 (Flow를 계속 관찰)
+        viewModelScope.launch {
             repository.getTodaySessions().collect { sessions ->
                 _todaySessions.value = sessions
+                // 첫 데이터 로드 완료
+                if (_isLoading.value) {
+                    _isLoading.value = false
+                }
             }
         }
 
+        // 사용자 설정 로드 (Flow를 계속 관찰)
         viewModelScope.launch {
-            // 사용자 설정 로드
             repository.getSettings().collect { userSettings ->
                 userSettings?.let {
                     _settings.value = it
                 }
             }
-
-            _isLoading.value = false
         }
     }
 
