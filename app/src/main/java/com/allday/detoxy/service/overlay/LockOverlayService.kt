@@ -12,19 +12,21 @@ import android.os.IBinder
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
-import android.view.LayoutInflater
 import android.view.View
-import android.widget.TextView
-import android.widget.Button
-import android.widget.ProgressBar
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
+import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
+import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -61,11 +63,24 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
          * 오버레이 표시
          */
         fun showOverlay(context: Context, remainingSeconds: Int, totalSeconds: Int) {
+            Log.d(TAG, "📞 showOverlay() called - remainingSeconds: $remainingSeconds, totalSeconds: $totalSeconds")
+
+            // 권한 확인
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val hasPermission = android.provider.Settings.canDrawOverlays(context)
+                Log.d(TAG, "🔐 Overlay permission check: ${if (hasPermission) "✅ GRANTED" else "❌ DENIED"}")
+                if (!hasPermission) {
+                    Log.e(TAG, "Cannot show overlay - permission not granted!")
+                }
+            }
+
             val intent = Intent(context, LockOverlayService::class.java).apply {
                 action = ACTION_SHOW_OVERLAY
                 putExtra(EXTRA_REMAINING_SECONDS, remainingSeconds)
                 putExtra(EXTRA_TOTAL_SECONDS, totalSeconds)
             }
+
+            Log.d(TAG, "🚀 Starting LockOverlayService with ACTION_SHOW_OVERLAY")
             context.startService(intent)
         }
 
@@ -85,12 +100,8 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
     private var isOverlayShowing = false
     private var timerJob: Job? = null
 
-    // View 참조
-    private var timerTextView: TextView? = null
-    private var progressBar: ProgressBar? = null
-
-    // 타이머 상태
-    private var currentRemainingSeconds = 0
+    // 타이머 상태 (Compose State)
+    private val timerState = mutableStateOf(0)
     private var currentTotalSeconds = 0
 
     override fun onCreate() {
@@ -106,18 +117,26 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(TAG, "🔔 onStartCommand() - action: ${intent?.action}")
+
         when (intent?.action) {
             ACTION_SHOW_OVERLAY -> {
                 val remainingSeconds = intent.getIntExtra(EXTRA_REMAINING_SECONDS, 0)
                 val totalSeconds = intent.getIntExtra(EXTRA_TOTAL_SECONDS, 0)
+                Log.d(TAG, "📍 ACTION_SHOW_OVERLAY received - remainingSeconds: $remainingSeconds, totalSeconds: $totalSeconds")
                 showOverlay(remainingSeconds, totalSeconds)
             }
             ACTION_HIDE_OVERLAY -> {
+                Log.d(TAG, "📍 ACTION_HIDE_OVERLAY received")
                 hideOverlay()
                 stopSelf()
             }
             ACTION_GIVE_UP -> {
+                Log.d(TAG, "📍 ACTION_GIVE_UP received")
                 handleGiveUp()
+            }
+            else -> {
+                Log.w(TAG, "⚠️ Unknown action: ${intent?.action}")
             }
         }
 
@@ -131,6 +150,13 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
      * 오버레이 화면 표시
      */
     private fun showOverlay(remainingSeconds: Int, totalSeconds: Int) {
+        // 오버레이 권한 확인
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(this)) {
+            Log.e(TAG, "❌ Overlay permission not granted! Cannot show overlay.")
+            Log.e(TAG, "Please grant 'Display over other apps' permission in settings")
+            return
+        }
+
         // 기존 오버레이가 있으면 제거 (새로운 시간으로 업데이트하기 위함)
         if (isOverlayShowing) {
             Log.d(TAG, "Removing existing overlay to update with new time: $remainingSeconds seconds")
@@ -138,31 +164,45 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
         }
 
         try {
+            Log.d(TAG, "✅ Overlay permission granted")
             Log.d(TAG, "Creating new overlay - Remaining: $remainingSeconds, Total: $totalSeconds")
 
             // 초기값 설정
-            currentRemainingSeconds = remainingSeconds
+            timerState.value = remainingSeconds
             currentTotalSeconds = totalSeconds
 
-            // XML 레이아웃 inflate
-            val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            overlayView = inflater.inflate(R.layout.lock_overlay_layout, null)
-
-            // View 참조 가져오기
-            timerTextView = overlayView?.findViewById(R.id.timerText)
-            progressBar = overlayView?.findViewById(R.id.progressBar)
-            val giveUpButton = overlayView?.findViewById<Button>(R.id.giveUpButton)
-
-            // 초기값 설정
-            updateTimerDisplay()
-
-            // 포기 버튼 리스너
-            giveUpButton?.setOnClickListener {
-                val intent = Intent(this@LockOverlayService, LockOverlayService::class.java).apply {
-                    action = ACTION_GIVE_UP
+            // ComposeView 생성 (Compose UI 사용)
+            Log.d(TAG, "📋 Creating ComposeView with LockOverlayScreen...")
+            overlayView = ComposeView(this).apply {
+                // ComposeView에 Lifecycle 설정 (중요!)
+                setViewTreeLifecycleOwner(this@LockOverlayService)
+                setViewTreeSavedStateRegistryOwner(this@LockOverlayService)
+                
+                // ComposeView 크기 명시적 설정
+                layoutParams = android.view.ViewGroup.LayoutParams(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                
+                setContent {
+                    DetoxyTheme {
+                        LockOverlayScreen(
+                            remainingSeconds = remainingSeconds,
+                            totalSeconds = totalSeconds,
+                            timerState = timerState,
+                            onGiveUp = {
+                                Log.d(TAG, "🎯 Give up button clicked from LockOverlayScreen")
+                                val intent = Intent(this@LockOverlayService, LockOverlayService::class.java).apply {
+                                    action = ACTION_GIVE_UP
+                                }
+                                startService(intent)
+                            }
+                        )
+                    }
                 }
-                startService(intent)
             }
+            Log.d(TAG, "✅ ComposeView created with Lifecycle: overlayView = ${overlayView != null}")
+            Log.d(TAG, "   - ComposeView size: ${overlayView?.layoutParams?.width} x ${overlayView?.layoutParams?.height}")
 
             // WindowManager 파라미터 설정
             val params = WindowManager.LayoutParams(
@@ -174,9 +214,11 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
                     @Suppress("DEPRECATION")
                     WindowManager.LayoutParams.TYPE_SYSTEM_ALERT
                 },
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                        WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                // FLAG_NOT_FOCUSABLE 제거: 오버레이가 포커스를 받아 최상위에 표시됨
+                // FLAG_NOT_TOUCH_MODAL 제거: 오버레이 밖의 터치를 차단함
+                // FLAG_FULLSCREEN: 전체 화면 모드로 표시
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                        WindowManager.LayoutParams.FLAG_FULLSCREEN or
                         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
                 PixelFormat.TRANSLUCENT
             ).apply {
@@ -184,9 +226,14 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
             }
 
             // 오버레이 추가
+            Log.d(TAG, "🪟 WindowManager adding view...")
+            Log.d(TAG, "   - WindowManager: ${windowManager != null}")
+            Log.d(TAG, "   - OverlayView: ${overlayView != null}")
+            Log.d(TAG, "   - Params: TYPE=${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) "TYPE_APPLICATION_OVERLAY" else "TYPE_SYSTEM_ALERT"}")
+
             windowManager?.addView(overlayView, params)
             isOverlayShowing = true
-            Log.d(TAG, "Overlay shown: $currentRemainingSeconds / $currentTotalSeconds seconds")
+            Log.d(TAG, "✅ Overlay shown successfully: ${timerState.value} / $currentTotalSeconds seconds")
 
             // 타이머 시작
             startTimerUpdate()
@@ -197,42 +244,26 @@ class LockOverlayService : LifecycleService(), SavedStateRegistryOwner {
     }
 
     /**
-     * 타이머 표시 업데이트
-     */
-    private fun updateTimerDisplay() {
-        val minutes = currentRemainingSeconds / 60
-        val seconds = currentRemainingSeconds % 60
-        val timeText = String.format("%02d:%02d", minutes, seconds)
-        timerTextView?.text = timeText
-
-        // 프로그레스바 업데이트
-        if (currentTotalSeconds > 0) {
-            val progress = ((currentTotalSeconds - currentRemainingSeconds) * 100) / currentTotalSeconds
-            progressBar?.progress = progress
-        }
-    }
-
-    /**
      * 타이머 업데이트 시작
+     * Compose State를 업데이트하여 UI가 자동으로 recompose됨
      */
     private fun startTimerUpdate() {
         timerJob?.cancel()
         timerJob = lifecycleScope.launch {
-            while (isActive && currentRemainingSeconds > 0) {
+            while (isActive && timerState.value > 0) {
                 delay(1000)
-                // Main 스레드에서 UI 업데이트
+                // Main 스레드에서 State 업데이트 (Compose가 자동으로 UI 갱신)
                 withContext(Dispatchers.Main) {
-                    currentRemainingSeconds--
-                    updateTimerDisplay()
+                    timerState.value--
 
-                    if (currentRemainingSeconds % 5 == 0 || currentRemainingSeconds <= 5) {
-                        Log.d(TAG, "Timer update: $currentRemainingSeconds seconds remaining")
+                    if (timerState.value % 5 == 0 || timerState.value <= 5) {
+                        Log.d(TAG, "🕒 Timer update: ${timerState.value} seconds remaining")
                     }
                 }
             }
 
-            if (currentRemainingSeconds == 0) {
-                Log.d(TAG, "Timer finished")
+            if (timerState.value == 0) {
+                Log.d(TAG, "✅ Timer finished")
                 hideOverlay()
                 stopSelf()
             }

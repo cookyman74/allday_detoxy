@@ -89,16 +89,16 @@ class FocusAccessibilityService : AccessibilityService() {
      * 차단된 앱 실행 시 처리
      *
      * 1. LockOverlayScreen을 전체 화면으로 표시
-     * 2. 차단된 앱을 종료하기 위해 홈 화면으로 이동
+     * 2. 홈 화면으로 이동하여 차단된 앱 종료
      */
     private fun navigateToHome() {
-        // 1. LockOverlayScreen 표시
+        // 1. 먼저 LockOverlayScreen 표시
         LockOverlayService.showOverlay(
             context = applicationContext,
             remainingSeconds = remainingSeconds,
             totalSeconds = totalSeconds
         )
-        Log.d(TAG, "Lock overlay shown: $remainingSeconds / $totalSeconds seconds")
+        Log.d(TAG, "🔒 Lock overlay display requested: $remainingSeconds / $totalSeconds seconds")
 
         // 2. 홈 화면으로 이동 (차단된 앱 종료)
         val homeIntent = Intent(Intent.ACTION_MAIN).apply {
@@ -108,9 +108,9 @@ class FocusAccessibilityService : AccessibilityService() {
 
         try {
             startActivity(homeIntent)
-            Log.d(TAG, "Navigated to home screen")
+            Log.d(TAG, "✅ Navigated to home screen - blocked app closed")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to navigate to home: ${e.message}", e)
+            Log.e(TAG, "❌ Failed to navigate to home: ${e.message}", e)
         }
     }
 

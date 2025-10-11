@@ -143,19 +143,32 @@ The timer integrates FOUR components that must be synchronized:
 
 **WindowManager configuration**:
 - Type: `TYPE_APPLICATION_OVERLAY` (API 26+) or `TYPE_SYSTEM_ALERT` (older)
-- Flags: `FLAG_NOT_FOCUSABLE | FLAG_NOT_TOUCH_MODAL | FLAG_LAYOUT_IN_SCREEN | FLAG_KEEP_SCREEN_ON`
+- Flags: `FLAG_LAYOUT_IN_SCREEN | FLAG_KEEP_SCREEN_ON`
+  - Note: `FLAG_NOT_FOCUSABLE` removed to allow overlay to receive focus and stay on top
+  - Note: `FLAG_NOT_TOUCH_MODAL` removed to block touches outside overlay
 - PixelFormat: `TRANSLUCENT` for semi-transparent background
 
 **Compose Integration**:
 ```kotlin
 ComposeView(context).apply {
+    // CRITICAL: Set Lifecycle for Compose to work properly
+    setViewTreeLifecycleOwner(this@LockOverlayService)
+    setViewTreeSavedStateRegistryOwner(this@LockOverlayService)
+    
     setContent {
         DetoxyTheme {
-            LockOverlayScreen(remainingSeconds, totalSeconds, onGiveUp)
+            LockOverlayScreen(
+                remainingSeconds = remainingSeconds,
+                totalSeconds = totalSeconds,
+                timerState = timerState, // mutableStateOf for reactive updates
+                onGiveUp = { /* handle give up */ }
+            )
         }
     }
 }
 ```
+
+**Timer Updates**: Uses Compose `mutableStateOf` for reactive UI updates. Service updates `timerState.value` every second, and Compose automatically recomposes the UI.
 
 **Permission required**: `SYSTEM_ALERT_WINDOW` - User must grant "Display over other apps"
 
@@ -322,8 +335,9 @@ After app installation, users must manually enable three permissions:
 
 **Overlay Service**:
 - Requires foreground notification (cannot be hidden on Android 8+)
-- Static timer display in MVP (real-time update planned for Week 2)
+- Uses Compose `mutableStateOf` for reactive real-time timer updates
 - Some OEMs may restrict overlay permissions (Samsung, Xiaomi, Huawei)
+- MainActivity must be in foreground for overlay to display properly
 
 **DND Manager**:
 - Requires Android 6.0+ (API 23), gracefully degrades on older versions
