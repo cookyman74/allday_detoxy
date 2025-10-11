@@ -317,6 +317,281 @@
   - TODO: 세션 시작 기록 (Room DB, Week 2)
   - TODO: DND 활성화 (Week 2)
 
+[1.3 작업 이전 기록 참조](working_history/2025-10-05_1.3.md)
+
+### 1.4 권한 안내 및 초기 설정 (Day 5-6)
+
+#### 1.4.1 권한 체크 로직
+- [x] **PermissionCheckScreen 생성**
+  ```kotlin
+  @Composable
+  fun PermissionCheckScreen(
+      onAllPermissionsGranted: () -> Unit
+  ) {
+      val context = LocalContext.current
+      
+      // 권한 상태 추적
+      var accessibilityGranted by remember { 
+          mutableStateOf(PermissionUtils.isAccessibilityServiceEnabled(context))
+      }
+      var overlayGranted by remember {
+          mutableStateOf(PermissionUtils.canDrawOverlays(context))
+      }
+      var dndGranted by remember {
+          mutableStateOf(PermissionUtils.hasNotificationPolicyAccess(context))
+      }
+      
+      // 모든 권한이 부여되면 자동으로 다음 화면
+      LaunchedEffect(accessibilityGranted, overlayGranted, dndGranted) {
+          if (accessibilityGranted && overlayGranted) {
+              onAllPermissionsGranted()
+          }
+      }
+  }
+  ```
+  - **참조**: [PermissionUtils.kt](app/src/main/java/com/allday/detoxy/core/utils/PermissionUtils.kt)
+  - **필수 권한**: 접근성 서비스, 오버레이 권한
+  - **선택 권한**: DND 권한 (알림 차단을 원하지 않는 사용자 고려)
+
+#### 1.4.2 권한 안내 UI 구현
+- [x] **PermissionCard 컴포넌트**
+  ```kotlin
+  @Composable
+  fun PermissionCard(
+      title: String,
+      description: String,
+      icon: ImageVector,
+      isGranted: Boolean,
+      isRequired: Boolean = true,
+      onRequestClick: () -> Unit
+  ) {
+      Card(
+          colors = CardDefaults.cardColors(
+              containerColor = if (isGranted) {
+                  Color(0xFF4CAF50).copy(alpha = 0.1f)
+              } else {
+                  MaterialTheme.colorScheme.surfaceVariant
+              }
+          )
+      ) {
+          Column {
+              Row {
+                  Icon(icon, contentDescription = null)
+                  Column {
+                      Row {
+                          Text(title)
+                          if (isRequired) {
+                              Text("*", color = Color.Red)
+                          }
+                      }
+                      Text(description, style = MaterialTheme.typography.bodySmall)
+                  }
+              }
+              
+              // 상태 표시
+              if (isGranted) {
+                  Row {
+                      Icon(Icons.Default.CheckCircle, tint = Color(0xFF4CAF50))
+                      Text("권한 허용됨", color = Color(0xFF4CAF50))
+                  }
+              } else {
+                  Button(onClick = onRequestClick) {
+                      Text("권한 설정하기")
+                  }
+              }
+          }
+      }
+  }
+  ```
+  - Material3 디자인 적용
+  - 권한 상태에 따른 시각적 피드백
+  - 필수/선택 권한 구분 표시
+
+#### 1.4.3 권한별 상세 안내
+- [x] **접근성 서비스 안내**
+  ```kotlin
+  PermissionCard(
+      title = "앱 차단 기능",
+      description = "Instagram, TikTok, YouTube, Facebook 등의 앱을 차단하기 위해 필요합니다. " +
+                   "설정에서 'Allday Detoxy'를 찾아 활성화해주세요.",
+      icon = Icons.Default.Block,
+      isGranted = accessibilityGranted,
+      isRequired = true,
+      onRequestClick = {
+          PermissionUtils.openAccessibilitySettings(context)
+      }
+  )
+  ```
+  - 사용자가 이해하기 쉬운 설명
+  - "접근성 서비스" 대신 "앱 차단 기능"으로 표현
+  - 설정 화면에서 찾는 방법 안내
+
+- [x] **오버레이 권한 안내**
+  ```kotlin
+  PermissionCard(
+      title = "잠금 화면 표시",
+      description = "차단된 앱 실행 시 집중 모드 잠금 화면을 표시하기 위해 필요합니다. " +
+                   "'다른 앱 위에 표시' 권한을 허용해주세요.",
+      icon = Icons.Default.Lock,
+      isGranted = overlayGranted,
+      isRequired = true,
+      onRequestClick = {
+          PermissionUtils.openOverlaySettings(context)
+      }
+  )
+  ```
+
+- [x] **DND 권한 안내 (선택)**
+  ```kotlin
+  PermissionCard(
+      title = "알림 차단 (선택)",
+      description = "집중 모드 중 알림을 자동으로 차단합니다. " +
+                   "필수는 아니지만, 더 나은 집중 환경을 위해 권장됩니다.",
+      icon = Icons.Default.NotificationsOff,
+      isGranted = dndGranted,
+      isRequired = false,  // 선택 권한
+      onRequestClick = {
+          PermissionUtils.openNotificationPolicySettings(context)
+      }
+  )
+  ```
+  - 선택 권한임을 명확히 표시
+  - 사용자가 부담 없이 건너뛸 수 있도록
+
+#### 1.4.4 권한 재확인 메커니즘
+- [x] **onResume 시 권한 재확인**
+  ```kotlin
+  @Composable
+  fun PermissionCheckScreen(
+      onAllPermissionsGranted: () -> Unit
+  ) {
+      val context = LocalContext.current
+      val lifecycleOwner = LocalLifecycleOwner.current
+      
+      // 화면 재진입 시 권한 상태 재확인
+      DisposableEffect(lifecycleOwner) {
+          val observer = LifecycleEventObserver { _, event ->
+              if (event == Lifecycle.Event.ON_RESUME) {
+                  // 권한 상태 업데이트
+                  accessibilityGranted = PermissionUtils.isAccessibilityServiceEnabled(context)
+                  overlayGranted = PermissionUtils.canDrawOverlays(context)
+                  dndGranted = PermissionUtils.hasNotificationPolicyAccess(context)
+              }
+          }
+          
+          lifecycleOwner.lifecycle.addObserver(observer)
+          
+          onDispose {
+              lifecycleOwner.lifecycle.removeObserver(observer)
+          }
+      }
+  }
+  ```
+  - 사용자가 설정 화면에서 돌아왔을 때 자동으로 권한 상태 확인
+  - 모든 필수 권한이 부여되면 자동으로 메인 화면으로 이동
+  - 부드러운 UX 제공
+
+#### 1.4.5 초기 실행 플래그 관리
+- [x] **SharedPreferences로 초기 실행 여부 저장**
+  ```kotlin
+  class PreferenceManager(context: Context) {
+      private val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+      
+      fun isFirstLaunch(): Boolean {
+          return prefs.getBoolean("is_first_launch", true)
+      }
+      
+      fun setFirstLaunchCompleted() {
+          prefs.edit().putBoolean("is_first_launch", false).apply()
+      }
+  }
+  ```
+
+- [x] **MainActivity에서 초기 화면 분기**
+  ```kotlin
+  @Composable
+  fun MainScreen() {
+      val context = LocalContext.current
+      val preferenceManager = remember { PreferenceManager(context) }
+      var showPermissionCheck by remember { mutableStateOf(preferenceManager.isFirstLaunch()) }
+      
+      if (showPermissionCheck) {
+          PermissionCheckScreen(
+              onAllPermissionsGranted = {
+                  preferenceManager.setFirstLaunchCompleted()
+                  showPermissionCheck = false
+              }
+          )
+      } else {
+          // 메인 타이머 화면
+          TimerScreen()
+      }
+  }
+  ```
+  - 최초 실행 시에만 권한 안내 화면 표시
+  - 이후 실행 시 바로 타이머 화면으로 이동
+  - 사용자가 권한 설정을 건너뛰면 타이머 시작 시 다시 안내
+
+#### 1.4.6 권한 미부여 시 대응
+- [x] **타이머 시작 시 권한 재확인**
+  ```kotlin
+  fun startTimer(durationMinutes: Int) {
+      // 접근성 서비스 확인
+      if (!PermissionUtils.isAccessibilityServiceEnabled(application)) {
+          _timerState.value = FocusState.IDLE
+          // TODO: 스낵바 또는 다이얼로그로 안내
+          Log.e(TAG, "접근성 서비스가 비활성화되어 있습니다")
+          return
+      }
+      
+      // 오버레이 권한 확인
+      if (!PermissionUtils.canDrawOverlays(application)) {
+          _timerState.value = FocusState.IDLE
+          Log.e(TAG, "오버레이 권한이 없습니다")
+          return
+      }
+      
+      // 정상 진행
+      startTimerInternal(durationMinutes)
+  }
+  ```
+  - 타이머 시작 전 필수 권한 확인
+  - 권한이 없으면 타이머 시작 중단
+  - 사용자에게 권한 설정 필요성 안내
+
+#### 1.4.7 설정 화면에서 권한 관리
+- [ ] **설정 화면에 권한 관리 섹션 추가 (MVP 이후)**
+  ```kotlin
+  @Composable
+  fun SettingsScreen() {
+      Column {
+          // 기타 설정...
+          
+          Section(title = "권한 관리") {
+              SettingsItem(
+                  title = "앱 차단 기능",
+                  subtitle = if (accessibilityGranted) "활성화됨" else "비활성화됨",
+                  onClick = { PermissionUtils.openAccessibilitySettings(context) }
+              )
+              
+              SettingsItem(
+                  title = "잠금 화면 표시",
+                  subtitle = if (overlayGranted) "허용됨" else "거부됨",
+                  onClick = { PermissionUtils.openOverlaySettings(context) }
+              )
+              
+              SettingsItem(
+                  title = "알림 차단",
+                  subtitle = if (dndGranted) "허용됨" else "거부됨",
+                  onClick = { PermissionUtils.openNotificationPolicySettings(context) }
+              )
+          }
+      }
+  }
+  ```
+  - 사용자가 언제든 권한 설정 확인 및 변경 가능
+  - Week 3 UI 완성 단계에서 구현
+
 ---
 
 ## 📅 Week 2: 잠금 화면 + DND + 데이터 저장
@@ -610,32 +885,11 @@
   ```
 
 #### 4.1.2 권한 안내 화면
-- [ ] **통합 권한 가이드**
-  ```kotlin
-  @Composable
-  fun PermissionGuideScreen() {
-      Column {
-          PermissionCard(
-              title = "접근성 서비스",
-              description = "앱 차단을 위해 필요합니다",
-              onRequestClick = { /* 설정 화면 이동 */ }
-          )
-
-          PermissionCard(
-              title = "오버레이 권한",
-              description = "잠금 화면 표시를 위해 필요합니다",
-              onRequestClick = { /* 설정 화면 이동 */ }
-          )
-
-          PermissionCard(
-              title = "방해금지 모드",
-              description = "알림 차단을 위해 필요합니다",
-              onRequestClick = { /* 설정 화면 이동 */ }
-          )
-      }
-  }
-  ```
-  - **참조**: [prd.md](./prd.md) - 5) UX 플로우 1. 온보딩
+- [ ] **통합 권한 가이드 (Week 1.4 구현 완료 예정)**
+  - **참조**: [Week 1.4 권한 안내 및 초기 설정](#14-권한-안내-및-초기-설정-day-5-6)
+  - PermissionCheckScreen 구현 완료 시 온보딩에 통합
+  - 온보딩 화면과 권한 안내 화면을 자연스럽게 연결
+  - 웰컴 화면 → 권한 안내 → 완료 화면 플로우 구성
 
 ### 4.2 테스트 (Day 18)
 

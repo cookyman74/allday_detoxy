@@ -8,11 +8,13 @@ import com.allday.detoxy.core.manager.DndManager
 import com.allday.detoxy.data.local.entity.FocusSession
 import com.allday.detoxy.data.local.entity.UserSettings
 import com.allday.detoxy.domain.manager.GamificationManager
+import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.domain.model.FocusTimer
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import android.util.Log
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -57,6 +59,10 @@ class TimerViewModel @Inject constructor(
     // 현재 세션 ID (타이머 시작 시 생성)
     private var currentSessionId: String? = null
 
+    companion object {
+        private const val TAG = "TimerViewModel"
+    }
+
     init {
         // 사용자 설정 초기화 (최초 실행 시)
         viewModelScope.launch {
@@ -88,7 +94,26 @@ class TimerViewModel @Inject constructor(
      * @param durationMinutes 타이머 시간 (분 단위)
      */
     fun startTimer(durationMinutes: Int) {
-        // 0. 세션 생성 및 저장 (Week 3)
+        Log.d(TAG, "Starting timer: $durationMinutes minutes")
+
+        // 0. 필수 권한 확인
+        if (!PermissionUtils.isAccessibilityServiceEnabled(application)) {
+            Log.e(TAG, "❌ 접근성 서비스가 비활성화되어 있습니다")
+            // 타이머 상태 유지 (IDLE)
+            // TODO: 사용자에게 권한 설정 필요성 안내 (스낵바/다이얼로그)
+            return
+        }
+
+        if (!PermissionUtils.canDrawOverlays(application)) {
+            Log.e(TAG, "❌ 오버레이 권한이 없습니다")
+            // 타이머 상태 유지 (IDLE)
+            // TODO: 사용자에게 권한 설정 필요성 안내 (스낵바/다이얼로그)
+            return
+        }
+
+        Log.d(TAG, "✅ All required permissions granted")
+
+        // 1. 세션 생성 및 저장 (Week 3)
         val sessionId = UUID.randomUUID().toString()
         currentSessionId = sessionId
         viewModelScope.launch {
@@ -103,7 +128,7 @@ class TimerViewModel @Inject constructor(
             )
         }
 
-        // 1. AccessibilityService 활성화 및 타이머 정보 전달
+        // 2. AccessibilityService 활성화 및 타이머 정보 전달
         val totalSec = durationMinutes * 60
         FocusAccessibilityService.isTimerRunning = true
         FocusAccessibilityService.remainingSeconds = totalSec

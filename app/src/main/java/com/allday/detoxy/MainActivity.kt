@@ -10,8 +10,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import com.allday.detoxy.core.utils.PreferenceManager
+import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.ui.timer.TimerScreen
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
@@ -62,15 +65,30 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
-    // MVP: 타이머 화면을 메인 화면으로 사용
-    // TODO: Week 2 - 네비게이션 구조 추가 (타이머, 통계, 설정 탭)
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            TimerScreen()
+    val context = LocalContext.current
+    val preferenceManager = remember { PreferenceManager(context) }
+    var showPermissionCheck by remember { mutableStateOf(preferenceManager.isFirstLaunch()) }
+
+    if (showPermissionCheck) {
+        // 첫 실행 시 권한 안내 화면 표시
+        PermissionCheckScreen(
+            onAllPermissionsGranted = {
+                preferenceManager.setFirstLaunchCompleted()
+                showPermissionCheck = false
+            }
+        )
+    } else {
+        // 메인 타이머 화면
+        // MVP: 타이머 화면을 메인 화면으로 사용
+        // TODO: Week 2 - 네비게이션 구조 추가 (타이머, 통계, 설정 탭)
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                TimerScreen()
+            }
         }
     }
 }
