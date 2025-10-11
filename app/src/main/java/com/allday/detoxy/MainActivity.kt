@@ -21,12 +21,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.allday.detoxy.core.utils.PreferenceManager
+import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
 import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
 import com.allday.detoxy.presentation.ui.report.ReportScreen
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.ui.timer.TimerScreen
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import android.util.Log
 
 /**
  * 앱의 메인 액티비티

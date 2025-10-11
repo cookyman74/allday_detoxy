@@ -377,4 +377,5 @@ composeView.setViewTreeSavedStateRegistryOwner(savedStateRegistryOwner)
 **작업 완료자**: Claude (AI Assistant)
 **작업 승인자**: Jung Ho Jang
 **마지막 업데이트**: 2025-10-11
+**커밋 해시** : ffd32fa6d53b2bb13491097ab4e1f129533baec3
 

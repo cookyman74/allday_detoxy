@@ -28,15 +28,23 @@ import kotlinx.coroutines.delay
 fun LockOverlayScreen(
     remainingSeconds: Int,
     totalSeconds: Int,
-    timerState: MutableState<Int> = remember { mutableStateOf(remainingSeconds) },
+    timerState: MutableState<Int>,
     onGiveUp: () -> Unit
 ) {
-    // timerState를 observe하여 자동 recomposition
-    val currentSeconds by timerState
+    // 화면 자체에서 독립적으로 타이머 관리
+    var currentSeconds by remember { mutableStateOf(remainingSeconds) }
 
-    // LaunchedEffect로 State 변화 감지
-    LaunchedEffect(currentSeconds) {
-        Log.d("LockOverlayScreen", "Timer updated - currentSeconds: $currentSeconds")
+    // LaunchedEffect로 자체 타이머 구동
+    LaunchedEffect(Unit) {
+        Log.d("LockOverlayScreen", "Starting independent timer - initial: $currentSeconds seconds")
+        while (currentSeconds > 0) {
+            delay(1000)
+            currentSeconds--
+            if (currentSeconds % 5 == 0 || currentSeconds <= 5) {
+                Log.d("LockOverlayScreen", "🕒 Timer update: $currentSeconds seconds remaining")
+            }
+        }
+        Log.d("LockOverlayScreen", "✅ Timer finished")
     }
 
     Log.d("LockOverlayScreen", "Screen rendered - currentSeconds: $currentSeconds, totalSeconds: $totalSeconds")
