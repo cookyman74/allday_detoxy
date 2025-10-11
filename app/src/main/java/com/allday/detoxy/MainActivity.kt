@@ -9,12 +9,20 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.allday.detoxy.core.utils.PreferenceManager
 import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
+import com.allday.detoxy.presentation.ui.report.ReportScreen
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.ui.timer.TimerScreen
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
@@ -78,16 +86,59 @@ fun MainScreen() {
             }
         )
     } else {
-        // 메인 타이머 화면
-        // MVP: 타이머 화면을 메인 화면으로 사용
-        // TODO: Week 2 - 네비게이션 구조 추가 (타이머, 통계, 설정 탭)
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-                TimerScreen()
+        // 메인 화면 (네비게이션 포함)
+        MainScreenWithNavigation()
+    }
+}
+
+/**
+ * 네비게이션이 포함된 메인 화면
+ *
+ * Week 3.3.1: 타이머와 리포트 화면 간 탭 네비게이션 제공
+ * MVP 범위: 2개 탭만 구현 (타이머, 리포트)
+ * 제외: 설정, 상점, 친구 탭은 1차 릴리스로 연기
+ */
+@Composable
+fun MainScreenWithNavigation() {
+    var selectedTab by remember { mutableStateOf(0) }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null
+                        )
+                    },
+                    label = { Text("타이머") }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null
+                        )
+                    },
+                    label = { Text("리포트") }
+                )
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            when (selectedTab) {
+                0 -> TimerScreen()
+                1 -> ReportScreen()
             }
         }
     }
