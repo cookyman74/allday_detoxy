@@ -870,26 +870,34 @@
 ### 4.1 온보딩 플로우 (Day 16-17)
 
 #### 4.1.1 온보딩 화면 (MVP 간소화)
-- [ ] **3단계 온보딩**
+- [x] **3단계 온보딩**
   ```kotlin
   @Composable
-  fun OnboardingScreen() {
-      var step by remember { mutableStateOf(0) }
-
-      when (step) {
-          0 -> WelcomeScreen { step++ }
-          1 -> PermissionGuideScreen { step++ }
-          2 -> CompleteScreen()
-      }
+  fun WelcomeScreen(onNextClick: () -> Unit) {
+      // 앱 소개 및 주요 기능 안내
+      // - 타이머 기반 집중 모드
+      // - 앱 차단 기능
+      // - 보상 시스템
+      // "시작하기" 버튼 클릭 시 권한 안내 화면으로 이동
   }
   ```
+  - WelcomeScreen: 앱 소개 및 주요 기능 안내
+  - PermissionCheckScreen: 권한 안내 및 설정 (Week 1.4 구현 완료)
+  - MainScreen: 모든 권한 설정 완료 후 자동 이동
+  - **구현 파일**: `app/src/main/java/com/allday/detoxy/presentation/ui/onboarding/WelcomeScreen.kt`
+  - **작업 기록**: [working_history/2025-10-12_4.1.md](../working_history/2025-10-12_4.1.md)
 
 #### 4.1.2 권한 안내 화면
-- [ ] **통합 권한 가이드 (Week 1.4 구현 완료 예정)**
+- [x] **통합 권한 가이드 (Week 1.4 구현 완료)**
   - **참조**: [Week 1.4 권한 안내 및 초기 설정](#14-권한-안내-및-초기-설정-day-5-6)
-  - PermissionCheckScreen 구현 완료 시 온보딩에 통합
+  - PermissionCheckScreen 구현 완료 (Week 1.4)
   - 온보딩 화면과 권한 안내 화면을 자연스럽게 연결
-  - 웰컴 화면 → 권한 안내 → 완료 화면 플로우 구성
+  - **플로우 구성**: 웰컴 화면 → 권한 안내 → 메인 화면 (자동 이동)
+  - **PreferenceManager 플래그**:
+    - `isOnboardingCompleted()`: 환영 화면 완료 여부
+    - `isFirstLaunch()`: 권한 안내 화면 완료 여부
+  - **MainActivity 통합**: 상태 기반 화면 전환 로직 구현
+  - **작업 기록**: [working_history/2025-10-12_4.1.md](../working_history/2025-10-12_4.1.md)
 
 ### 4.2 테스트 (Day 18)
 

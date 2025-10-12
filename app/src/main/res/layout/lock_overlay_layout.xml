@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F2000000"
+    android:background="#F0000000"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="24dp">
@@ -15,24 +15,24 @@
         android:textSize="80sp"
         android:layout_marginBottom="16dp" />
 
-    <!-- 타이틀 -->
+    <!-- 제목 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="집중 모드 실행 중"
         android:textColor="@android:color/white"
-        android:textSize="28sp"
+        android:textSize="32sp"
         android:textStyle="bold"
         android:layout_marginBottom="8dp" />
 
-    <!-- 서브타이틀 -->
+    <!-- 부제목 -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="차단된 앱입니다"
         android:textColor="#B3FFFFFF"
         android:textSize="18sp"
-        android:layout_marginBottom="48dp" />
+        android:layout_marginBottom="32dp" />
 
     <!-- 남은 시간 라벨 -->
     <TextView
@@ -40,30 +40,30 @@
         android:layout_height="wrap_content"
         android:text="남은 시간"
         android:textColor="#B3FFFFFF"
-        android:textSize="14sp"
+        android:textSize="16sp"
         android:layout_marginBottom="8dp" />
 
-    <!-- 타이머 표시 -->
+    <!-- 타이머 텍스트 (업데이트되는 부분) -->
     <TextView
         android:id="@+id/timerText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="25:00"
-        android:textColor="@color/purple_500"
+        android:textColor="#BB86FC"
         android:textSize="64sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp" />
 
-    <!-- 프로그레스바 -->
+    <!-- 진행률 표시 -->
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="200dp"
-        android:layout_height="4dp"
-        android:progressTint="@color/purple_500"
-        android:progressBackgroundTint="#33FFFFFF"
+        android:layout_height="wrap_content"
         android:max="100"
-        android:progress="100"
+        android:progress="50"
+        android:progressTint="#BB86FC"
+        android:progressBackgroundTint="#33FFFFFF"
         android:layout_marginBottom="32dp" />
 
     <!-- 안내 메시지 -->
@@ -74,26 +74,23 @@
         android:textColor="#80FFFFFF"
         android:textSize="14sp"
         android:gravity="center"
-        android:layout_marginBottom="48dp" />
+        android:layout_marginBottom="32dp" />
 
-    <!-- 빈 공간 -->
-    <View
-        android:layout_width="match_parent"
+    <!-- 공간 -->
+    <Space
+        android:layout_width="wrap_content"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- 포기 버튼 -->
+    <!-- 닫기 버튼 -->
     <Button
-        android:id="@+id/giveUpButton"
-        android:layout_width="240dp"
-        android:layout_height="56dp"
-        android:text="타이머 포기하기"
-        android:textColor="#FFFF5252"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:background="@drawable/button_give_up_background"
-        android:elevation="4dp"
-        android:stateListAnimator="@null"
-        android:layout_marginBottom="32dp" />
+        android:id="@+id/closeButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="닫기"
+        android:textColor="#B3FFFFFF"
+        android:background="@android:color/transparent"
+        android:layout_marginBottom="32dp"
+        style="?android:attr/buttonBarButtonStyle" />
 
 </LinearLayout>

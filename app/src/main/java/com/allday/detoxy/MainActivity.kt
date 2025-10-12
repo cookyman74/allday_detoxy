@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.allday.detoxy.core.utils.PreferenceManager
+import com.allday.detoxy.presentation.ui.onboarding.WelcomeScreen
 import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
 import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
 import com.allday.detoxy.presentation.ui.report.ReportScreen
@@ -77,19 +78,35 @@ class MainActivity : ComponentActivity() {
 fun MainScreen() {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
-    var showPermissionCheck by remember { mutableStateOf(preferenceManager.isFirstLaunch()) }
+    
+    // 온보딩 상태 관리
+    var showOnboarding by remember { mutableStateOf(!preferenceManager.isOnboardingCompleted()) }
+    var showPermissionCheck by remember { mutableStateOf(false) }
 
-    if (showPermissionCheck) {
-        // 첫 실행 시 권한 안내 화면 표시
-        PermissionCheckScreen(
-            onAllPermissionsGranted = {
-                preferenceManager.setFirstLaunchCompleted()
-                showPermissionCheck = false
-            }
-        )
-    } else {
-        // 메인 화면 (네비게이션 포함)
-        MainScreenWithNavigation()
+    when {
+        // 1. 온보딩 미완료 -> 환영 화면
+        showOnboarding -> {
+            WelcomeScreen(
+                onNextClick = {
+                    preferenceManager.setOnboardingCompleted()
+                    showOnboarding = false
+                    showPermissionCheck = true
+                }
+            )
+        }
+        // 2. 온보딩 완료 후 권한 체크 -> 권한 안내 화면
+        showPermissionCheck -> {
+            PermissionCheckScreen(
+                onAllPermissionsGranted = {
+                    preferenceManager.setFirstLaunchCompleted()
+                    showPermissionCheck = false
+                }
+            )
+        }
+        // 3. 모두 완료 -> 메인 화면
+        else -> {
+            MainScreenWithNavigation()
+        }
     }
 }
 
