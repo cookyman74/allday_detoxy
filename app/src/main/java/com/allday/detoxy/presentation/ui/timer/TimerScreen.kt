@@ -7,10 +7,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
 
@@ -26,9 +28,30 @@ import com.allday.detoxy.presentation.viewmodel.TimerViewModel
 fun TimerScreen(
     viewModel: TimerViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val timerState by viewModel.timerState.collectAsState()
     val remainingSeconds by viewModel.remainingSeconds.collectAsState()
     val totalSeconds by viewModel.totalSeconds.collectAsState()
+    val permissionError by viewModel.permissionError.collectAsState()
+
+    // 권한 에러 다이얼로그
+    permissionError?.let { error ->
+        PermissionErrorDialog(
+            error = error,
+            onDismiss = { viewModel.clearPermissionError() },
+            onOpenSettings = {
+                when (error) {
+                    is TimerViewModel.PermissionError.AccessibilityServiceDisabled -> {
+                        PermissionUtils.openAccessibilitySettings(context)
+                    }
+                    is TimerViewModel.PermissionError.OverlayPermissionDenied -> {
+                        PermissionUtils.openOverlaySettings(context)
+                    }
+                }
+                viewModel.clearPermissionError()
+            }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -233,4 +256,56 @@ fun PresetButtons(
             }
         }
     }
+}
+
+/**
+ * 권한 에러 다이얼로그
+ *
+ * @param error 권한 에러 타입
+ * @param onDismiss 다이얼로그 닫기 콜백
+ * @param onOpenSettings 설정 화면으로 이동 콜백
+ */
+@Composable
+fun PermissionErrorDialog(
+    error: TimerViewModel.PermissionError,
+    onDismiss: () -> Unit,
+    onOpenSettings: () -> Unit
+) {
+    val (title, message) = when (error) {
+        is TimerViewModel.PermissionError.AccessibilityServiceDisabled -> {
+            "앱 차단 기능 권한 필요" to "집중 타이머를 사용하려면 앱 차단 기능(접근성 서비스)을 활성화해야 합니다.\n\n" +
+                    "설정 화면에서 'Allday Detoxy'를 찾아 활성화해주세요."
+        }
+        is TimerViewModel.PermissionError.OverlayPermissionDenied -> {
+            "잠금 화면 표시 권한 필요" to "집중 타이머를 사용하려면 잠금 화면 표시 권한(다른 앱 위에 표시)이 필요합니다.\n\n" +
+                    "설정 화면에서 권한을 허용해주세요."
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        confirmButton = {
+            Button(onClick = onOpenSettings) {
+                Text("설정으로 이동")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("취소")
+            }
+        }
+    )
 }

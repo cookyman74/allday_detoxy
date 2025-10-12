@@ -915,10 +915,17 @@
 - **세션 데이터**: Room 데이터베이스 정상 작동, CRUD 작업 정상, ReportScreen 통합 완료
 
 #### 4.2.2 권한 플로우 테스트
-- [ ] **권한 시나리오 테스트**
-  - 접근성 권한 거부 시 앱 차단 안내
-  - 오버레이 권한 거부 시 잠금 화면 안내
-  - DND 권한 거부 시 알림 차단 안내
+- [x] **권한 시나리오 테스트**
+  - ✅ 접근성 권한 거부 시 다이얼로그 표시
+  - ✅ 오버레이 권한 거부 시 다이얼로그 표시
+  - ✅ DND 권한 거부 시 정상 작동 (선택 권한)
+  
+- **테스트 결과**: [working_history/2025-10-12_4.2.2_permission_flow_test.md](../working_history/2025-10-12_4.2.2_permission_flow_test.md)
+- **구현 사항**:
+  - TimerViewModel에 PermissionError StateFlow 추가
+  - PermissionErrorDialog 컴포넌트 구현
+  - "설정으로 이동" 버튼으로 즉시 해결 가능
+- **개선 효과**: 권한 없을 때 사용자 혼란 제거, 즉각적인 해결 방법 제공
 
 ### 4.3 성능 최적화 (Day 19)
 

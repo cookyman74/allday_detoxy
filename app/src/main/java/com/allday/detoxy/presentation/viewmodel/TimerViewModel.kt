@@ -15,7 +15,9 @@ import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.util.Log
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -59,8 +61,20 @@ class TimerViewModel @Inject constructor(
     // 현재 세션 ID (타이머 시작 시 생성)
     private var currentSessionId: String? = null
 
+    // 권한 에러 이벤트
+    private val _permissionError = MutableStateFlow<PermissionError?>(null)
+    val permissionError: StateFlow<PermissionError?> = _permissionError.asStateFlow()
+
     companion object {
         private const val TAG = "TimerViewModel"
+    }
+
+    /**
+     * 권한 에러 타입
+     */
+    sealed class PermissionError {
+        object AccessibilityServiceDisabled : PermissionError()
+        object OverlayPermissionDenied : PermissionError()
     }
 
     init {
@@ -99,15 +113,13 @@ class TimerViewModel @Inject constructor(
         // 0. 필수 권한 확인
         if (!PermissionUtils.isAccessibilityServiceEnabled(application)) {
             Log.e(TAG, "❌ 접근성 서비스가 비활성화되어 있습니다")
-            // 타이머 상태 유지 (IDLE)
-            // TODO: 사용자에게 권한 설정 필요성 안내 (스낵바/다이얼로그)
+            _permissionError.value = PermissionError.AccessibilityServiceDisabled
             return
         }
 
         if (!PermissionUtils.canDrawOverlays(application)) {
             Log.e(TAG, "❌ 오버레이 권한이 없습니다")
-            // 타이머 상태 유지 (IDLE)
-            // TODO: 사용자에게 권한 설정 필요성 안내 (스낵바/다이얼로그)
+            _permissionError.value = PermissionError.OverlayPermissionDenied
             return
         }
 
@@ -238,6 +250,13 @@ class TimerViewModel @Inject constructor(
                 currentSessionId = null
             }
         }
+    }
+
+    /**
+     * 권한 에러 초기화
+     */
+    fun clearPermissionError() {
+        _permissionError.value = null
     }
 
     /**
