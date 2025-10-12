@@ -954,12 +954,16 @@
 ### 4.4 베타 준비 (Day 20)
 
 #### 4.4.1 크래시 리포팅
-- [ ] **Firebase Crashlytics 설정**
-  ```kotlin
-  dependencies {
-      implementation("com.google.firebase:firebase-crashlytics-ktx")
-  }
-  ```
+- [x] **Firebase Crashlytics 설정**
+  - [x] Gradle 의존성 추가 (Firebase BOM 32.7.0)
+  - [x] Google Services, Crashlytics 플러그인 적용
+  - [x] DetoxyApplication.kt 주석 업데이트
+  - [ ] Firebase 프로젝트 생성 (수동 작업 필요)
+  - [ ] google-services.json 다운로드 및 배치 (수동 작업 필요)
+  - [ ] 빌드 및 Crashlytics 연결 확인 (수동 작업 필요)
+  
+- **작업 기록**: [working_history/2025-10-12_4.4.md](../working_history/2025-10-12_4.4.md)
+- **설정 가이드**: [FIREBASE_SETUP.md](FIREBASE_SETUP.md)
 
 #### 4.4.2 분석 이벤트 (MVP 최소)
 - [ ] **핵심 이벤트만 기록**
@@ -969,6 +973,7 @@
   // give_up
   ```
   - **참조**: [prd.md](./prd.md) - 14) 측정 지표
+  - **TODO**: Firebase Analytics 이벤트 로깅 구현 (1차 고도화 착수 후)
 
 ---
 
