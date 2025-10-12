@@ -25,36 +25,43 @@
 
 ---
 
-## 2. 이벤트 분류
+## 2. 이벤트 분류 (PRD §4.1, §4.2 기준)
 
-### 2.1 집중모드 설정 관련
+### 2.1 디톡시 제어 설정 관련
 ```
-focus_settings_*
+detoxy_settings_*  (구 focus_settings_*)
 ```
+**변경 사유**: PRD §4.1에서 "디톡시 제어 설정"으로 정의, 중독 회복 관점 강조
 
-### 2.2 리포트 관련
+### 2.2 리포트 및 회복률 관련
 ```
 report_*
 ```
 
-### 2.3 세션 관련
+### 2.3 세션 및 루틴 관련
 ```
 session_*
+detoxy_routine_*
 ```
 
 ### 2.4 권한 관련
 ```
 permission_*
+usage_stats_*  (신규)
 ```
+
+### 2.5 총 이벤트 수
+- **1차 고도화**: 19개 이벤트 (기존 15개 + 신규 4개)
+- **마이그레이션**: `focus_settings_*` → `detoxy_settings_*` (4개 이벤트)
 
 ---
 
 ## 3. 이벤트 상세 정의
 
-### 3.1 집중모드 설정 이벤트
+### 3.1 디톡시 제어 설정 이벤트
 
-#### `focus_settings_open`
-**목적**: 설정 화면 진입 추적
+#### `detoxy_settings_open` (구 `focus_settings_open`)
+**목적**: 디톡시 제어 설정 화면 진입 추적
 
 **파라미터**:
 | 파라미터명 | 타입 | 설명 | 예시 값 |
@@ -63,43 +70,52 @@ permission_*
 
 **로깅 코드**:
 ```kotlin
-FirebaseAnalytics.getInstance(context).logEvent("focus_settings_open") {
+FirebaseAnalytics.getInstance(context).logEvent("detoxy_settings_open") {
     param("source", "timer_screen")
 }
 ```
 
+**마이그레이션 노트**: Week 1 구현 시 즉시 새 이벤트명 사용
+
 ---
 
-#### `focus_settings_saved`
-**목적**: 설정 저장 추적
+#### `detoxy_settings_saved` (구 `focus_settings_saved`)
+**목적**: 디톡시 제어 설정 저장 추적
 
 **파라미터**:
 | 파라미터명 | 타입 | 설명 | 예시 값 |
 |-----------|------|------|---------|
-| `preset` | string | 선택한 프리셋 | `"full_block"`, `"focus"`, `"relaxed"`, `"custom"` |
+| `preset` | string | 선택한 프리셋 | `"complete_block"`, `"standard"`, `"relaxed"`, `"custom"` |
 | `sns_enabled` | boolean | SNS 차단 여부 | `true` |
 | `messenger_enabled` | boolean | 메신저 차단 여부 | `false` |
 | `web_enabled` | boolean | Web 차단 여부 | `true` |
 | `video_enabled` | boolean | 영상 차단 여부 | `true` |
 | `other_enabled` | boolean | 기타 앱 차단 여부 | `true` |
 | `total_enabled_count` | number | 활성화된 카테고리 수 | `4` |
+| `risk_index` | number | 현재 위험 지수 (0-100) | `32` |
 
 **로깅 코드**:
 ```kotlin
-FirebaseAnalytics.getInstance(context).logEvent("focus_settings_saved") {
-    param("preset", "full_block")
+FirebaseAnalytics.getInstance(context).logEvent("detoxy_settings_saved") {
+    param("preset", "complete_block")  // 프리셋명 변경
     param("sns_enabled", true)
     param("messenger_enabled", false)
     param("web_enabled", true)
     param("video_enabled", true)
     param("other_enabled", true)
     param("total_enabled_count", 4)
+    param("risk_index", 32)  // 신규 파라미터
 }
 ```
 
+**프리셋 값 변경**:
+- `"full_block"` → `"complete_block"` (완전 차단)
+- `"focus"` → `"standard"` (표준 디톡시)
+- `"relaxed"` → `"relaxed"` (유지)
+
 ---
 
-#### `focus_settings_category_toggle`
+#### `detoxy_settings_category_toggle` (구 `focus_settings_category_toggle`)
 **목적**: 개별 카테고리 토글 추적
 
 **파라미터**:
@@ -107,31 +123,33 @@ FirebaseAnalytics.getInstance(context).logEvent("focus_settings_saved") {
 |-----------|------|------|---------|
 | `category` | string | 카테고리명 | `"sns"`, `"messenger"`, `"web"`, `"video"`, `"other"` |
 | `enabled` | boolean | 활성화 여부 | `true` |
+| `dialog_shown` | boolean | 메신저 안내 다이얼로그 표시 여부 | `true` (messenger 카테고리만) |
 
 **로깅 코드**:
 ```kotlin
-FirebaseAnalytics.getInstance(context).logEvent("focus_settings_category_toggle") {
+FirebaseAnalytics.getInstance(context).logEvent("detoxy_settings_category_toggle") {
     param("category", "messenger")
     param("enabled", true)
+    param("dialog_shown", true)
 }
 ```
 
 ---
 
-#### `focus_settings_preset_selected`
+#### `detoxy_settings_preset_selected` (구 `focus_settings_preset_selected`)
 **목적**: 프리셋 선택 추적
 
 **파라미터**:
 | 파라미터명 | 타입 | 설명 | 예시 값 |
 |-----------|------|------|---------|
-| `preset` | string | 선택한 프리셋 | `"full_block"`, `"focus"`, `"relaxed"` |
-| `previous_preset` | string | 이전 프리셋 | `"focus"` |
+| `preset` | string | 선택한 프리셋 | `"complete_block"`, `"standard"`, `"relaxed"` |
+| `previous_preset` | string | 이전 프리셋 | `"standard"` |
 
 **로깅 코드**:
 ```kotlin
-FirebaseAnalytics.getInstance(context).logEvent("focus_settings_preset_selected") {
-    param("preset", "full_block")
-    param("previous_preset", "focus")
+FirebaseAnalytics.getInstance(context).logEvent("detoxy_settings_preset_selected") {
+    param("preset", "complete_block")
+    param("previous_preset", "standard")
 }
 ```
 
@@ -203,21 +221,56 @@ FirebaseAnalytics.getInstance(context).logEvent("report_insight_expand") {
 ---
 
 #### `report_risk_index_calculated`
-**목적**: Detoxy 위험 지수 계산 추적
+**목적**: 디톡시 위험 지수 계산 추적 (중독 진단)
 
 **파라미터**:
 | 파라미터명 | 타입 | 설명 | 예시 값 |
 |-----------|------|------|---------|
 | `risk_index` | number | 위험 지수 (0-100) | `32` |
-| `risk_level` | string | 위험 단계 | `"low"`, `"medium"`, `"high"` |
+| `risk_level` | string | 위험 단계 | `"recovery"`, `"warning"`, `"high_risk"` |
+| `trend` | string | 추세 | `"improving"`, `"stable"`, `"worsening"` |
 
 **로깅 코드**:
 ```kotlin
 FirebaseAnalytics.getInstance(context).logEvent("report_risk_index_calculated") {
     param("risk_index", 32)
-    param("risk_level", "low")
+    param("risk_level", "recovery")  // 회복 단계
+    param("trend", "improving")
 }
 ```
+
+**위험 단계 매핑** (PRD §4.2 기준):
+- `"recovery"`: 0-30 (회복 중)
+- `"warning"`: 31-60 (주의)
+- `"high_risk"`: 61-100 (고위험, 중독 재발 가능성)
+
+---
+
+#### `report_recovery_rate_calculated` (신규)
+**목적**: 디톡시 회복률 계산 추적 (PRD §4.2)
+
+**파라미터**:
+| 파라미터명 | 타입 | 설명 | 예시 값 |
+|-----------|------|------|---------|
+| `recovery_rate` | number | 회복률 (0-100%) | `72` |
+| `previous_rate` | number | 이전 회복률 | `65` |
+| `change` | number | 변화량 (%p) | `+7` |
+| `period` | string | 계산 기간 | `"weekly"`, `"monthly"` |
+
+**로깅 코드**:
+```kotlin
+FirebaseAnalytics.getInstance(context).logEvent("report_recovery_rate_calculated") {
+    param("recovery_rate", 72)
+    param("previous_rate", 65)
+    param("change", 7)
+    param("period", "weekly")
+}
+```
+
+**계산 로직**:
+- 회복률 = (성공 세션 / 전체 세션) × 100
+- 주간 추세: 지난주 대비 변화율
+- PRD §4.2.2에 정의된 핵심 지표
 
 ---
 
@@ -288,6 +341,43 @@ FirebaseAnalytics.getInstance(context).logEvent("session_interrupted") {
 
 ---
 
+#### `detoxy_routine_completed` (신규)
+**목적**: 디톡시 루틴 완료 추적 (PRD §5.3)
+
+**파라미터**:
+| 파라미터명 | 타입 | 설명 | 예시 값 |
+|-----------|------|------|---------|
+| `routine_type` | string | 루틴 타입 | `"morning"`, `"lunch"`, `"evening"` |
+| `scheduled_time` | string | 예정 시간 | `"09:00"` |
+| `actual_time` | string | 실제 실행 시간 | `"09:05"` |
+| `duration_minutes` | number | 디톡시 시간 | `25` |
+| `success` | boolean | 성공 여부 | `true` |
+
+**로깅 코드**:
+```kotlin
+FirebaseAnalytics.getInstance(context).logEvent("detoxy_routine_completed") {
+    param("routine_type", "morning")
+    param("scheduled_time", "09:00")
+    param("actual_time", "09:05")
+    param("duration_minutes", 25)
+    param("success", true)
+}
+```
+
+**루틴 실패 케이스**:
+```kotlin
+// 사용자가 루틴을 건너뛴 경우
+FirebaseAnalytics.getInstance(context).logEvent("detoxy_routine_completed") {
+    param("routine_type", "lunch")
+    param("scheduled_time", "12:00")
+    param("actual_time", "null")  // 실행하지 않음
+    param("duration_minutes", 0)
+    param("success", false)
+}
+```
+
+---
+
 ### 3.4 권한 이벤트
 
 #### `permission_request_shown`
@@ -315,7 +405,53 @@ FirebaseAnalytics.getInstance(context).logEvent("permission_request_shown") {
 **파라미터**:
 | 파라미터명 | 타입 | 설명 | 예시 값 |
 |-----------|------|------|---------|
-| `permission_type` | string | 권한 타입 | `"accessibility"`, `"overlay"`, `"dnd"` |
+| `permission_type` | string | 권한 타입 | `"accessibility"`, `"overlay"`, `"dnd"`, `"usage_stats"` |
+
+---
+
+#### `usage_stats_opt_in` (신규)
+**목적**: UsageStats 권한 동의 추적 (PRD §5.2)
+
+**파라미터**:
+| 파라미터명 | 타입 | 설명 | 예시 값 |
+|-----------|------|------|---------|
+| `source` | string | 동의 요청 출처 | `"onboarding"`, `"report_screen"`, `"settings"` |
+| `granted` | boolean | 권한 허용 여부 | `true` |
+
+**로깅 코드**:
+```kotlin
+FirebaseAnalytics.getInstance(context).logEvent("usage_stats_opt_in") {
+    param("source", "report_screen")
+    param("granted", true)
+}
+```
+
+**사용 시나리오**:
+- 리포트 화면에서 "더 정확한 통계를 위해 UsageStats 권한 필요" 안내
+- 사용자가 "허용" 선택 시 `granted = true`
+- 사용자가 "거부" 선택 시 `granted = false`
+
+---
+
+#### `usage_stats_opt_out` (신규)
+**목적**: UsageStats 권한 거부/철회 추적
+
+**파라미터**:
+| 파라미터명 | 타입 | 설명 | 예시 값 |
+|-----------|------|------|---------|
+| `reason` | string | 거부 사유 | `"privacy_concern"`, `"not_needed"`, `"user_revoked"` |
+
+**로깅 코드**:
+```kotlin
+FirebaseAnalytics.getInstance(context).logEvent("usage_stats_opt_out") {
+    param("reason", "privacy_concern")
+}
+```
+
+**프라이버시 준수**:
+- UsageStats는 선택 권한 (필수 아님)
+- 사용자가 언제든 철회 가능
+- 거부 시에도 기본 리포트 제공 (FocusSession 기반)
 
 ---
 
@@ -361,20 +497,23 @@ FirebaseAnalytics.getInstance(context).setUserProperty("avg_focus_minutes", "35"
 7. onboarding_complete
 ```
 
-### 5.2 설정 Funnel
+### 5.2 설정 Funnel (업데이트됨)
 ```
-1. focus_settings_open
-2. focus_settings_preset_selected
-3. focus_settings_category_toggle (여러 번 가능)
-4. focus_settings_saved
+1. detoxy_settings_open  (구 focus_settings_open)
+2. detoxy_settings_preset_selected
+3. detoxy_settings_category_toggle (여러 번 가능)
+4. detoxy_settings_saved
 ```
 
-### 5.3 세션 Funnel
+### 5.3 세션 및 루틴 Funnel (확장됨)
 ```
 1. session_started
 2. session_interrupted (0회 이상)
 3. session_completed OR session_give_up
 4. report_view_daily
+5. report_risk_index_calculated
+6. report_recovery_rate_calculated (신규)
+7. detoxy_routine_completed (루틴 사용자만)
 ```
 
 ---
@@ -384,34 +523,45 @@ FirebaseAnalytics.getInstance(context).setUserProperty("avg_focus_minutes", "35"
 ### 6.1 사용자 참여도
 - **DAU (Daily Active Users)**: `app_open` 이벤트 발생 사용자 수
 - **세션 시작률**: `session_started` / DAU
-- **설정 변경률**: `focus_settings_saved` / DAU
+- **설정 변경률**: `detoxy_settings_saved` / DAU (업데이트)
+- **루틴 준수율**: `detoxy_routine_completed(success=true)` / 전체 루틴 (신규)
 
 ### 6.2 기능 채택률
 - **카테고리 활용률**: 
   - SNS 차단 사용자 비율: `sns_enabled=true` / 전체 사용자
   - 메신저 차단 사용자 비율: `messenger_enabled=true` / 전체 사용자
-- **프리셋 분포**:
-  - 전체 차단: X%
-  - 집중: Y%
-  - 완화: Z%
+- **프리셋 분포** (업데이트):
+  - 완전 차단: X% (`preset="complete_block"`)
+  - 표준 디톡시: Y% (`preset="standard"`)
+  - 완화: Z% (`preset="relaxed"`)
   - 커스텀: W%
+- **UsageStats 동의율**: `usage_stats_opt_in(granted=true)` / 전체 사용자 (신규)
 
-### 6.3 성과 지표
-- **집중 성공률**: `session_completed` / `session_started`
-- **평균 집중 시간**: `total_focus_minutes` 평균
+### 6.3 성과 지표 (디톡시/회복 관점)
+- **디톡시 성공률**: `session_completed` / `session_started`
+- **회복률 추세**: `report_recovery_rate_calculated` 주간 변화량 (신규)
+- **평균 디톡시 시간**: `total_focus_minutes` 평균
 - **방해요인 차단 효과**: `session_interrupted` 발생률
+- **중독 위험 감소율**: 주간 `risk_index` 변화량 (신규)
 
 ### 6.4 리포트 지표
 - **리포트 조회율**: `report_view_daily` / DAU
 - **인사이트 참여율**: `report_insight_expand` / `report_view_daily`
-- **위험 지수 분포**: low / medium / high 비율
+- **위험 지수 분포**: recovery / warning / high_risk 비율 (업데이트)
 
 ---
 
 ## 7. 구현 가이드
 
-### 7.1 Analytics Helper 클래스
+### 7.1 Analytics Helper 클래스 (업데이트)
 ```kotlin
+/**
+ * Firebase Analytics 로깅 헬퍼
+ * 
+ * 이벤트명 변경 (1차 고도화):
+ * - focus_settings_* → detoxy_settings_*
+ * - 신규 이벤트: report_recovery_rate_calculated, detoxy_routine_completed, usage_stats_opt_in/out
+ */
 object AnalyticsHelper {
     
     private lateinit var analytics: FirebaseAnalytics
@@ -420,26 +570,27 @@ object AnalyticsHelper {
         analytics = FirebaseAnalytics.getInstance(context)
     }
     
-    // 집중모드 설정 이벤트
-    fun logFocusSettingsOpen(source: String) {
-        analytics.logEvent("focus_settings_open") {
+    // 디톡시 제어 설정 이벤트
+    fun logDetoxySettingsOpen(source: String) {
+        analytics.logEvent("detoxy_settings_open") {
             param("source", source)
         }
     }
     
-    fun logFocusSettingsSaved(
-        preset: String,
+    fun logDetoxySettingsSaved(
+        preset: String,  // "complete_block", "standard", "relaxed", "custom"
         snsEnabled: Boolean,
         messengerEnabled: Boolean,
         webEnabled: Boolean,
         videoEnabled: Boolean,
-        otherEnabled: Boolean
+        otherEnabled: Boolean,
+        riskIndex: Int  // 신규 파라미터
     ) {
         val enabledCount = listOf(
             snsEnabled, messengerEnabled, webEnabled, videoEnabled, otherEnabled
         ).count { it }
         
-        analytics.logEvent("focus_settings_saved") {
+        analytics.logEvent("detoxy_settings_saved") {
             param("preset", preset)
             param("sns_enabled", snsEnabled)
             param("messenger_enabled", messengerEnabled)

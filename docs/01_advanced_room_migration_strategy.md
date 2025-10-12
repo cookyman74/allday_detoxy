@@ -81,7 +81,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             CREATE TABLE IF NOT EXISTS focus_interruptions (
                 id TEXT PRIMARY KEY NOT NULL,
                 sessionId TEXT NOT NULL,
-                timestamp LONG NOT NULL,
+                timestamp INTEGER NOT NULL,
                 packageName TEXT NOT NULL,
                 category TEXT NOT NULL,
                 FOREIGN KEY(sessionId) REFERENCES focus_sessions(id) ON DELETE CASCADE
@@ -123,7 +123,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
             CREATE TABLE IF NOT EXISTS focus_distractions (
                 id TEXT PRIMARY KEY NOT NULL,
                 sessionId TEXT,
-                timestamp LONG NOT NULL,
+                timestamp INTEGER NOT NULL,
                 packageName TEXT NOT NULL,
                 category TEXT NOT NULL,
                 wasBlocked INTEGER NOT NULL,
@@ -138,8 +138,8 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
             """
             CREATE TABLE IF NOT EXISTS detoxy_routine_logs (
                 id TEXT PRIMARY KEY NOT NULL,
-                scheduledTime LONG NOT NULL,
-                executedTime LONG,
+                scheduledTime INTEGER NOT NULL,
+                executedTime INTEGER,
                 success INTEGER NOT NULL,
                 failureReason TEXT
             )
@@ -156,7 +156,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
                 webEnabled INTEGER NOT NULL DEFAULT 1,
                 videoEnabled INTEGER NOT NULL DEFAULT 1,
                 otherEnabled INTEGER NOT NULL DEFAULT 1,
-                lastUpdated LONG NOT NULL
+                lastUpdated INTEGER NOT NULL
             )
             """.trimIndent()
         )
