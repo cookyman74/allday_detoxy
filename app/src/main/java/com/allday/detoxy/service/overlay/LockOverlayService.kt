@@ -173,10 +173,23 @@ class LockOverlayService : LifecycleService() {
             // 초기 UI 업데이트
             updateTimerDisplay()
 
-            // 닫기 버튼 클릭 리스너 (오버레이만 숨김, 타이머는 계속 실행)
+            // 닫기 버튼 클릭 리스너 (오버레이 숨김 + 홈 화면 이동, 타이머는 계속 실행)
             closeButton?.setOnClickListener {
-                Log.d(TAG, "❌ Close button clicked - hiding overlay (timer continues)")
+                Log.d(TAG, "❌ Close button clicked - hiding overlay and navigating to home (timer continues)")
                 hideOverlay(stopTimer = false)
+                
+                // 홈 화면으로 이동하여 차단된 앱이 다시 포그라운드로 오지 않도록 보장
+                val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                    addCategory(Intent.CATEGORY_HOME)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                
+                try {
+                    startActivity(homeIntent)
+                    Log.d(TAG, "✅ Navigated to home screen after closing overlay")
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Failed to navigate to home: ${e.message}", e)
+                }
             }
 
             Log.d(TAG, "✅ Layout inflated and views initialized")
