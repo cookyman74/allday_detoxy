@@ -14,8 +14,8 @@
 ---
 
 ## 1. 준비 단계 (Week 0.5)
-- [ ] PRD 리뷰 및 화면 와이어프레임 작성 (Figma 초안) → [집중모드 설정](./01_advanced_prd.md#41-집중모드-설정-화면), [리포트 고도화](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 차단 카테고리별 패키지 리스트 초안 정리 (SNS/Web/Video/기타) → [카테고리 정의](./01_advanced_prd.md#41-집중모드-설정-화면), [Week1 앱 차단 구현](../working_history/2025-10-05_1.3.md)
+- [ ] PRD 리뷰 및 화면 와이어프레임 작성 (Figma 초안) → [디톡시 제어 설정](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [리포트 고도화](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 차단 카테고리별 패키지 리스트 초안 정리 (SNS/메신저/Web/Video/기타) → [카테고리 정의](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [Week1 앱 차단 구현](../working_history/2025-10-05_1.3.md)
 - [ ] Room 마이그레이션 전략 수립 (`FocusSession` v3, `UserSettings` 영향 검토) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
 - [ ] 로깅 스키마 설계(`focus_settings_*`, `report_*`) → [데이터 및 트래킹](./01_advanced_prd.md#5-데이터-및-트래킹)
 - [ ] QA 기기 리스트 확정(최소 2종: Pixel, Samsung)
@@ -25,21 +25,27 @@
 ## 2. 집중모드 설정 화면 구축 (Week 1)
 
 ### 2.1 데이터 & 도메인 준비
-- [ ] `core/utils`에 카테고리 enum 및 패키지 매핑 정의 → [카테고리 목록](./01_advanced_prd.md#41-집중모드-설정-화면)
-- [ ] `FocusAccessibilityService`와 `LockOverlayService`에서 동적 차단 목록을 참조하도록 인터페이스 정리 → [동작 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면), [차단 로직](../working_history/2025-10-05_1.3.md)
-- [ ] DndManager는 세션 시작/종료 시 글로벌 DND 토글만 수행하고, 권한 상태 노출/안내 문구를 보강 → [DND 안내](./01_advanced_prd.md#41-집중모드-설정-화면), [DND 제어 작업](../working_history/2025-10-06_2.2.md)
+- [ ] `core/utils`에 카테고리 enum 및 패키지 매핑 정의 → [카테고리 목록](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
+- [ ] `FocusAccessibilityService`와 `LockOverlayService`에서 동적 차단 목록을 참조하도록 인터페이스 정리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [차단 로직](../working_history/2025-10-05_1.3.md)
+- [ ] DndManager는 세션 시작/종료 시 글로벌 DND 토글만 수행하고, 권한 상태 노출/안내 문구를 보강 → [DND 안내](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [DND 제어 작업](../working_history/2025-10-06_2.2.md)
+- [ ] 집중모드 중 모니터링할 패키지/카테고리 범위를 정의하고, 허용 앱 이벤트 로깅 정책을 수립 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
 
 ### 2.2 UI/UX 구현
-- [ ] `presentation/ui/settings/focus/FocusModeSettingsScreen` Compose 레이아웃 구현 → [UI 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면), [네비게이션 구조](../working_history/2025-10-11_3.3.md)
-- [ ] 프리셋(전체/집중/완화) 데이터 모델 및 Preview UI 작성 → [레이지아웃 섹션](./01_advanced_prd.md#41-집중모드-설정-화면)
-- [ ] 카테고리별 토글/슬라이더 상태를 `FocusSettingsViewModel`에서 StateFlow로 관리 → [동작 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면)
-- [ ] 권한 상태 카드(DND, 접근성) 연결 및 재요청 Intent 처리 → [권한 경고](./01_advanced_prd.md#41-집중모드-설정-화면), [권한 온보딩](../working_history/2025-10-12_4.1.md)
+- [ ] `presentation/ui/settings/focus/FocusModeSettingsScreen` Compose 레이아웃 구현 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [네비게이션 구조](../working_history/2025-10-11_3.3.md)
+- [ ] 프리셋(전체/집중/완화) 데이터 모델 및 Preview UI 작성 → [레이아웃 섹션](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
+- [ ] 카테고리별 토글/슬라이더 상태를 `FocusSettingsViewModel`에서 StateFlow로 관리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
+- [ ] 권한 상태 카드(DND, 접근성) 연결 및 재요청 Intent 처리 → [권한 경고](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [권한 온보딩](../working_history/2025-10-12_4.1.md)
+- [ ] 메신저 카테고리 초기 안내 배너/다이얼로그 구현 및 사용자 선택 흐름 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
+- [ ] 디톡시 루틴(예: 야간 전체 차단) 토글 및 설명 UI 설계 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
 
 ### 2.3 상태 저장 및 로직 연동
-- [ ] `FocusSettingsRepository` 설계(Room + DataStore 조합 검토) → [데이터 보강](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] `FocusSettingsRepository` 설계(Room + DataStore 조합 검토) → [데이터 보강](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
 - [ ] 설정 저장 후 세션 시작 시 적용되는지 통합 테스트 → [사용자 시나리오 1~2](./01_advanced_prd.md#3-주요-사용자-시나리오)
-- [ ] `TimerViewModel.startTimer`에서 최신 설정을 불러와 AccessibilityService/DndManager에 전달하도록 수정 → [동작 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] `TimerViewModel.startTimer`에서 최신 설정을 불러와 AccessibilityService/DndManager에 전달하도록 수정 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
 - [ ] 권한 미보유 시 동작 방어 로직 및 사용자 안내 구현 → [완료 기준](./01_advanced_prd.md#8-완료-기준dod), [Week1 권한 처리](../working_history/2025-10-05_1.2.md)
+- [ ] 메신저 카테고리 사용자 선택 상태를 저장/복원하고 프리셋 전환 시 충돌 로직 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
+- [ ] UsageStats opt-in UI(권한 설명/동의/건너뛰기)를 설계하고 세션과의 연동 정책 정의 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 디톡시 루틴 스케줄/알림 설정 저장 구조 설계(`DetoxyRoutineLog` 초기 스펙) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
 - [ ] 단위 테스트: ViewModel 상태 변환, Repository 기본 CRUD
 
 ### 2.4 QA & 문서화
@@ -54,27 +60,40 @@
 ### 3.1 데이터 모델 확장
 - [ ] Room 마이그레이션 작성(`FocusSession`에 `interruptedSeconds`, `primaryDistractionCategory`, `giveUpReason`) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
 - [ ] `FocusInterruption` 엔티티/DAO/Repository 설계(세션 중 차단 이벤트 로그 저장) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] `FocusDistraction` 엔티티/DAO/Repository 설계(허용/차단 여부 포함 전체 분산 이벤트 저장) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] UsageStats opt-in 사용자의 포그라운드 앱 체류 시간 저장 구조 설계 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] `DetoxyRoutineLog` 엔티티/DAO 설계(루틴 실행/실패 기록) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
 - [ ] 기존 데이터 백필 로직(기존 세션 `interruptedSeconds = 0`) 적용
 - [ ] 세션 종료 로직 수정: 중도 포기 시 경과 시간 기록
-- [ ] 차단 이벤트 로그 → 세션과 연계 저장(카테고리 누락 방지) → [정확성 요구사항](./01_advanced_prd.md#42-리포트-고도화), [세션 기록 작업](../working_history/2025-10-06_2.3.md)
+- [ ] 차단/허용 이벤트 로그 → 세션과 연계 저장(카테고리 누락 방지) → [정확성 요구사항](./01_advanced_prd.md#42-리포트-고도화), [세션 기록 작업](../working_history/2025-10-06_2.3.md)
 
-### 3.2 통계 계산 모듈
-- [ ] 집중률 성장세 계산 유틸(7일, 30일 기준) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 평균 집중 유지 시간 및 실패 분석 로직 구현 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 포인트 성장 추세 계산 및 캐싱 전략 확정 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 세션 품질 점수(0~100) 계산 함수 v1 작성 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+-### 3.2 통계 계산 모듈
+- [ ] Detoxy 위험 지수 산식 정의 및 계산 유틸 구현(차단/허용 이벤트, 사용 시간 가중치) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 회복률 추세 계산 유틸(7일, 30일 기준) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 집중률 성장세(보조 KPI) 계산 함수 구현 및 위험 지수와의 연동 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 유혹 저항 시간·포기 지점 분석 함수 구현 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 포인트/루틴 진행도 캐싱 전략 확정 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
 - [ ] `FocusInterruption` 데이터를 읽어 방해요인 Top 3 집계 유틸 구현 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] `FocusDistraction` 기반 분산 회피율·허용 앱 체류 시간 계산 유틸 구현 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] UsageStats 데이터가 존재할 때 가중치 합산·보정 로직 정의 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 위험 지수 기반 디톡시 코치 추천 매핑 로직 작성(고위험/주의/안정별 메시지) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
 
-### 3.3 UI 업데이트
-- [ ] 일간 카드 컴포넌트 업데이트(실패 포함 총 집중시간, 성공률 변화) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), [기존 리포트 구현](../working_history/2025-10-11_3.3.2.md)
-- [ ] 주간 인사이트 그래프 2종 Compose로 설치(또는 기존 라이브러리 활용) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 방해요인 Top 3 리스트 및 tooltip 정의 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+
+-### 3.3 UI 업데이트
+- [ ] 일간 카드 컴포넌트 업데이트(Detoxy 위험 지수, 총 회복 시간, 회복률/집중률 변화) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), [기존 리포트 구현](../working_history/2025-10-11_3.3.2.md)
+- [ ] 주간 인사이트 그래프 2종 Compose로 설치(회복률/총 회복 시간) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 방해요인 Top 3 카드 및 tooltip 정의 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 분산 회피율 & 허용 앱/집중률 카드 시각화 컴포넌트 추가 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] Detoxy 코치 추천 카드/다이얼로그 UI 구현(위험 단계별 메시지) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
 - [ ] 빈 상태/데이터 부족 상태에서의 안내 문구 처리 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)
 
 ### 3.4 테스트 & 품질
 - [ ] 단위 테스트: 통계 계산 유틸, DB 마이그레이션 테스트
 - [ ] 통합 테스트: 세션 시작→중도 포기→리포트 반영 플로우
 - [ ] QA 시나리오: 성공/포기/실패 세션 데이터 5개 이상 생성 후 리포트 검증
+- [ ] UsageStats opt-in/off 플로우 및 데이터 수집 여부에 따른 지표 표기 차이 검증 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] Detoxy 위험 지수 단계별 분포 및 코치 추천 메시지 QA → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 디톡시 루틴 실행/실패 로그 및 알림 연동 QA → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
 
 ---
 
@@ -83,15 +102,17 @@
 - [ ] `./gradlew assembleDebug`, `./gradlew test`, `./gradlew lint` 실행 및 결과 기록 → [비기능 요구사항](./01_advanced_prd.md#6-비기능-요구사항)
 - [ ] 성능 점검: 리포트 첫 로딩 시간 측정, 필요 시 캐싱 튜닝 → [비기능 요구사항](./01_advanced_prd.md#6-비기능-요구사항), [서비스 최적화 기록](../working_history/2025-10-12_4.3.md)
 - [ ] 사용자 가이드/README/앱 내 도움말 텍스트 업데이트 → [완료 기준](./01_advanced_prd.md#8-완료-기준dod)
-- [ ] 플레이스토어 릴리스 노트 초안 작성(집중 설정, 리포트 고도화 강조) → [배경 및 목표](./01_advanced_prd.md#1-배경-및-목표)
+- [ ] 플레이스토어 릴리스 노트 초안 작성(디톡시 제어 설정, 위험 지수 리포트 강조) → [배경 및 목표](./01_advanced_prd.md#1-배경-및-목표)
 - [ ] 내부 베타(5인) 배포 및 피드백 수집 계획 수립
+- [ ] UsageStats 권한 안내/프라이버시 FAQ 업데이트 및 비허용 시 UI 경고 문구 검증 → [위험 요소 및 대응](./01_advanced_prd.md#7-위험-요소-및-대응)
 
 ---
 
 ## 5. 산출물 체크리스트
 - [ ] `docs/01_advanced_prd.md` 최신화 여부 확인
-- [ ] 집중모드 설정 화면 UI 캡처 및 설명 문서 → [UI 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] 디톡시 제어 설정 화면 UI 캡처 및 설명 문서 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
 - [ ] Room 마이그레이션 스크립트 및 테스트 보고 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
 - [ ] 리포트 고도화 결과 스크린샷/그래프 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), [기존 리포트 구현](../working_history/2025-10-11_3.3.2.md)
+- [ ] Detoxy 코치 추천 메시지/카피 가이드 문서 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
 - [ ] `working_history/YYYY-MM-DD_x.y.md` 기록 + 커밋 ID
 - [ ] 고도화 기능 릴리스 노트 초안
