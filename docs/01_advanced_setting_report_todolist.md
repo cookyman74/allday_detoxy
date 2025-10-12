@@ -1,0 +1,97 @@
+# Allday Detoxy 1차 고도화 작업 계획
+
+- 기준 요약: [1차 고도화 PRD](./01_advanced_prd.md) 참고.
+- 레퍼런스: MVP 진행 기록은 `working_history/` 내 문서를 확인.
+
+## 0. 개요
+- **목표**: 집중모드 설정 화면 신설과 리포트 고도화 기능을 3주 이내 구현하여 1차 고도화 PRD 요구사항을 충족.
+- **주요 마일스톤** ([PRD §4](./01_advanced_prd.md#4-기능-요구사항)):
+  1. 주차 1: 차단 카테고리 정의 및 데이터 기반 정비
+  2. 주차 2: 집중모드 설정 UI/로직 완성
+  3. 주차 3: 리포트 고도화, QA, 배포 준비
+- **사전 조건**: MVP v4.3 코드 베이스, 주요 권한(Accessibility, Overlay, DND) 정상 작동 상태.
+
+---
+
+## 1. 준비 단계 (Week 0.5)
+- [ ] PRD 리뷰 및 화면 와이어프레임 작성 (Figma 초안) → [집중모드 설정](./01_advanced_prd.md#41-집중모드-설정-화면), [리포트 고도화](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 차단 카테고리별 패키지 리스트 초안 정리 (SNS/Web/Video/기타) → [카테고리 정의](./01_advanced_prd.md#41-집중모드-설정-화면), [Week1 앱 차단 구현](../working_history/2025-10-05_1.3.md)
+- [ ] Room 마이그레이션 전략 수립 (`FocusSession` v3, `UserSettings` 영향 검토) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 로깅 스키마 설계(`focus_settings_*`, `report_*`) → [데이터 및 트래킹](./01_advanced_prd.md#5-데이터-및-트래킹)
+- [ ] QA 기기 리스트 확정(최소 2종: Pixel, Samsung)
+
+---
+
+## 2. 집중모드 설정 화면 구축 (Week 1)
+
+### 2.1 데이터 & 도메인 준비
+- [ ] `core/utils`에 카테고리 enum 및 패키지 매핑 정의 → [카테고리 목록](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] `FocusAccessibilityService`와 `LockOverlayService`에서 동적 차단 목록을 참조하도록 인터페이스 정리 → [동작 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면), [차단 로직](../working_history/2025-10-05_1.3.md)
+- [ ] DndManager는 세션 시작/종료 시 글로벌 DND 토글만 수행하고, 권한 상태 노출/안내 문구를 보강 → [DND 안내](./01_advanced_prd.md#41-집중모드-설정-화면), [DND 제어 작업](../working_history/2025-10-06_2.2.md)
+
+### 2.2 UI/UX 구현
+- [ ] `presentation/ui/settings/focus/FocusModeSettingsScreen` Compose 레이아웃 구현 → [UI 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면), [네비게이션 구조](../working_history/2025-10-11_3.3.md)
+- [ ] 프리셋(전체/집중/완화) 데이터 모델 및 Preview UI 작성 → [레이지아웃 섹션](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] 카테고리별 토글/슬라이더 상태를 `FocusSettingsViewModel`에서 StateFlow로 관리 → [동작 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] 권한 상태 카드(DND, 접근성) 연결 및 재요청 Intent 처리 → [권한 경고](./01_advanced_prd.md#41-집중모드-설정-화면), [권한 온보딩](../working_history/2025-10-12_4.1.md)
+
+### 2.3 상태 저장 및 로직 연동
+- [ ] `FocusSettingsRepository` 설계(Room + DataStore 조합 검토) → [데이터 보강](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] 설정 저장 후 세션 시작 시 적용되는지 통합 테스트 → [사용자 시나리오 1~2](./01_advanced_prd.md#3-주요-사용자-시나리오)
+- [ ] `TimerViewModel.startTimer`에서 최신 설정을 불러와 AccessibilityService/DndManager에 전달하도록 수정 → [동작 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] 권한 미보유 시 동작 방어 로직 및 사용자 안내 구현 → [완료 기준](./01_advanced_prd.md#8-완료-기준dod), [Week1 권한 처리](../working_history/2025-10-05_1.2.md)
+- [ ] 단위 테스트: ViewModel 상태 변환, Repository 기본 CRUD
+
+### 2.4 QA & 문서화
+- [ ] UI 스냅샷 캡처 및 동작 체크리스트 작성
+- [ ] `docs/01_advanced_prd.md` 업데이트 사항 반영 확인
+- [ ] `working_history` 로그 생성(빌드/테스트 결과 포함)
+
+---
+
+## 3. 리포트 고도화 (Week 2)
+
+### 3.1 데이터 모델 확장
+- [ ] Room 마이그레이션 작성(`FocusSession`에 `interruptedSeconds`, `primaryDistractionCategory`, `giveUpReason`) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] `FocusInterruption` 엔티티/DAO/Repository 설계(세션 중 차단 이벤트 로그 저장) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 기존 데이터 백필 로직(기존 세션 `interruptedSeconds = 0`) 적용
+- [ ] 세션 종료 로직 수정: 중도 포기 시 경과 시간 기록
+- [ ] 차단 이벤트 로그 → 세션과 연계 저장(카테고리 누락 방지) → [정확성 요구사항](./01_advanced_prd.md#42-리포트-고도화), [세션 기록 작업](../working_history/2025-10-06_2.3.md)
+
+### 3.2 통계 계산 모듈
+- [ ] 집중률 성장세 계산 유틸(7일, 30일 기준) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 평균 집중 유지 시간 및 실패 분석 로직 구현 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 포인트 성장 추세 계산 및 캐싱 전략 확정 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 세션 품질 점수(0~100) 계산 함수 v1 작성 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] `FocusInterruption` 데이터를 읽어 방해요인 Top 3 집계 유틸 구현 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+
+### 3.3 UI 업데이트
+- [ ] 일간 카드 컴포넌트 업데이트(실패 포함 총 집중시간, 성공률 변화) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), [기존 리포트 구현](../working_history/2025-10-11_3.3.2.md)
+- [ ] 주간 인사이트 그래프 2종 Compose로 설치(또는 기존 라이브러리 활용) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 방해요인 Top 3 리스트 및 tooltip 정의 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 빈 상태/데이터 부족 상태에서의 안내 문구 처리 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)
+
+### 3.4 테스트 & 품질
+- [ ] 단위 테스트: 통계 계산 유틸, DB 마이그레이션 테스트
+- [ ] 통합 테스트: 세션 시작→중도 포기→리포트 반영 플로우
+- [ ] QA 시나리오: 성공/포기/실패 세션 데이터 5개 이상 생성 후 리포트 검증
+
+---
+
+## 4. 통합 QA 및 배포 준비 (Week 3)
+- [ ] 신규 이벤트 로깅이 Analytics 콘솔/디버그 로그에서 확인되는지 검증 → [데이터 및 트래킹](./01_advanced_prd.md#5-데이터-및-트래킹)
+- [ ] `./gradlew assembleDebug`, `./gradlew test`, `./gradlew lint` 실행 및 결과 기록 → [비기능 요구사항](./01_advanced_prd.md#6-비기능-요구사항)
+- [ ] 성능 점검: 리포트 첫 로딩 시간 측정, 필요 시 캐싱 튜닝 → [비기능 요구사항](./01_advanced_prd.md#6-비기능-요구사항), [서비스 최적화 기록](../working_history/2025-10-12_4.3.md)
+- [ ] 사용자 가이드/README/앱 내 도움말 텍스트 업데이트 → [완료 기준](./01_advanced_prd.md#8-완료-기준dod)
+- [ ] 플레이스토어 릴리스 노트 초안 작성(집중 설정, 리포트 고도화 강조) → [배경 및 목표](./01_advanced_prd.md#1-배경-및-목표)
+- [ ] 내부 베타(5인) 배포 및 피드백 수집 계획 수립
+
+---
+
+## 5. 산출물 체크리스트
+- [ ] `docs/01_advanced_prd.md` 최신화 여부 확인
+- [ ] 집중모드 설정 화면 UI 캡처 및 설명 문서 → [UI 요구사항](./01_advanced_prd.md#41-집중모드-설정-화면)
+- [ ] Room 마이그레이션 스크립트 및 테스트 보고 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 리포트 고도화 결과 스크린샷/그래프 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), [기존 리포트 구현](../working_history/2025-10-11_3.3.2.md)
+- [ ] `working_history/YYYY-MM-DD_x.y.md` 기록 + 커밋 ID
+- [ ] 고도화 기능 릴리스 노트 초안
