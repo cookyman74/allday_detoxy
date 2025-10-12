@@ -371,7 +371,18 @@ class LockOverlayService : LifecycleService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d(TAG, "🔴 onDestroy() - Cleaning up resources")
+        
+        // 타이머 Job 명시적 취소
+        timerJob?.cancel()
+        timerJob = null
+        
+        // 오버레이 뷰 제거
         hideOverlay()
-        Log.d(TAG, "LockOverlayService destroyed")
+        
+        // WindowManager 참조 해제
+        windowManager = null
+        
+        Log.d(TAG, "✅ LockOverlayService destroyed - All resources cleaned up")
     }
 }
