@@ -27,27 +27,28 @@
 ## 2. 집중모드 설정 화면 구축 (Week 1)
 
 ### 2.1 데이터 & 도메인 준비
-- [ ] `core/utils`에 카테고리 enum 및 패키지 매핑 정의 → [카테고리 목록](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
-- [ ] `FocusAccessibilityService`와 `LockOverlayService`에서 동적 차단 목록을 참조하도록 인터페이스 정리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [차단 로직](../working_history/2025-10-05_1.3.md)
+- [ ] `core/utils`에 카테고리 enum 및 패키지 매핑 정의 → [카테고리 목록](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[카테고리 매핑 스펙](./01_advanced_app_category_mapping.md)** (40개 앱, 5개 카테고리, 프리셋 정의)
+- [ ] `FocusAccessibilityService`와 `LockOverlayService`에서 동적 차단 목록을 참조하도록 인터페이스 정리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [차단 로직](../working_history/2025-10-05_1.3.md), **[카테고리 매핑](./01_advanced_app_category_mapping.md#데이터-구조-설계)**
 - [ ] DndManager는 세션 시작/종료 시 글로벌 DND 토글만 수행하고, 권한 상태 노출/안내 문구를 보강 → [DND 안내](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [DND 제어 작업](../working_history/2025-10-06_2.2.md)
-- [ ] 집중모드 중 모니터링할 패키지/카테고리 범위를 정의하고, 허용 앱 이벤트 로깅 정책을 수립 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 집중모드 중 모니터링할 패키지/카테고리 범위를 정의하고, 허용 앱 이벤트 로깅 정책을 수립 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[Analytics 스키마](./01_advanced_analytics_schema.md#31-디톡시-제어-설정-이벤트)**
 
 ### 2.2 UI/UX 구현
-- [ ] `presentation/ui/settings/focus/FocusModeSettingsScreen` Compose 레이아웃 구현 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [네비게이션 구조](../working_history/2025-10-11_3.3.md)
-- [ ] 프리셋(전체/집중/완화) 데이터 모델 및 Preview UI 작성 → [레이아웃 섹션](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
-- [ ] 카테고리별 토글/슬라이더 상태를 `FocusSettingsViewModel`에서 StateFlow로 관리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
-- [ ] 권한 상태 카드(DND, 접근성) 연결 및 재요청 Intent 처리 → [권한 경고](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [권한 온보딩](../working_history/2025-10-12_4.1.md)
-- [ ] 메신저 카테고리 초기 안내 배너/다이얼로그 구현 및 사용자 선택 흐름 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
-- [ ] 디톡시 루틴(예: 야간 전체 차단) 토글 및 설명 UI 설계 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] `presentation/ui/settings/focus/DetoxyControlSettingsScreen` Compose 레이아웃 구현 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 스펙](./01_advanced_wireframe_spec.md#1-디톡시-제어-설정-화면-detoxycontrolsettingsscreen)** (레이아웃, 컴포넌트 상세), [네비게이션 구조](../working_history/2025-10-11_3.3.md)
+- [ ] 프리셋(완전 차단/표준 디톡시/완화) 데이터 모델 및 Preview UI 작성 → [레이아웃 섹션](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[프리셋 정의](./01_advanced_app_category_mapping.md#프리셋-정의-디톡시-제어-관점)** (완전 차단/표준/완화 스펙)
+- [ ] 카테고리별 토글/슬라이더 상태를 `FocusSettingsViewModel`에서 StateFlow로 관리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 컴포넌트](./01_advanced_wireframe_spec.md#13-컴포넌트-상세)**
+- [ ] 권한 상태 카드(DND, 접근성) 연결 및 재요청 Intent 처리 → [권한 경고](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [권한 온보딩](../working_history/2025-10-12_4.1.md), **[Wireframe 권한 카드](./01_advanced_wireframe_spec.md#13-컴포넌트-상세)**
+- [ ] 메신저 카테고리 초기 안내 배너/다이얼로그 구현 및 사용자 선택 흐름 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[메신저 안내 UX](./01_advanced_app_category_mapping.md#2-메신저--커뮤니케이션)** (다이얼로그 flow), **[다이얼로그 스펙](./01_advanced_wireframe_spec.md#41-메신저-카테고리-안내-다이얼로그)**
+- [ ] 디톡시 루틴(예: 야간 전체 차단) 토글 및 설명 UI 설계 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[루틴 연동](./01_advanced_app_category_mapping.md#2-메신저--커뮤니케이션)**
 
 ### 2.3 상태 저장 및 로직 연동
-- [ ] `FocusSettingsRepository` 설계(Room + DataStore 조합 검토) → [데이터 보강](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
-- [ ] 설정 저장 후 세션 시작 시 적용되는지 통합 테스트 → [사용자 시나리오 1~2](./01_advanced_prd.md#3-주요-사용자-시나리오)
-- [ ] `TimerViewModel.startTimer`에서 최신 설정을 불러와 AccessibilityService/DndManager에 전달하도록 수정 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
+- [ ] `FocusSettingsRepository` 설계(Room + DataStore 조합 검토) → [데이터 보강](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Room 마이그레이션 v3](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** (FocusSettings 엔티티)
+- [ ] 설정 저장 후 세션 시작 시 적용되는지 통합 테스트 → [사용자 시나리오 1~2](./01_advanced_prd.md#3-주요-사용자-시나리오), **[QA 시나리오 1-2](./01_advanced_qa_devices.md#41-디톡시-제어-설정-테스트)**
+- [ ] `TimerViewModel.startTimer`에서 최신 설정을 불러와 AccessibilityService/DndManager에 전달하도록 수정 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[카테고리 매핑 로직](./01_advanced_app_category_mapping.md#데이터-구조-설계)**
 - [ ] 권한 미보유 시 동작 방어 로직 및 사용자 안내 구현 → [완료 기준](./01_advanced_prd.md#8-완료-기준dod), [Week1 권한 처리](../working_history/2025-10-05_1.2.md)
-- [ ] 메신저 카테고리 사용자 선택 상태를 저장/복원하고 프리셋 전환 시 충돌 로직 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
-- [ ] UsageStats opt-in UI(권한 설명/동의/건너뛰기)를 설계하고 세션과의 연동 정책 정의 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 디톡시 루틴 스케줄/알림 설정 저장 구조 설계(`DetoxyRoutineLog` 초기 스펙) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 메신저 카테고리 사용자 선택 상태를 저장/복원하고 프리셋 전환 시 충돌 로직 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[메신저 UX](./01_advanced_app_category_mapping.md#긴급-연락-허용-ux)**
+- [ ] UsageStats opt-in UI(권한 설명/동의/건너뛰기)를 설계하고 세션과의 연동 정책 정의 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[UsageStats 이벤트](./01_advanced_analytics_schema.md#usage_stats_opt_in-신규)**
+- [ ] 디톡시 루틴 스케줄/알림 설정 저장 구조 설계(`DetoxyRoutineLog` 초기 스펙) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[DetoxyRoutineLog 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
+- [ ] Analytics 이벤트 로깅 구현 (`detoxy_settings_*`) → **[Analytics 스키마](./01_advanced_analytics_schema.md#31-디톡시-제어-설정-이벤트)**, **[AnalyticsHelper 구현](./01_advanced_analytics_schema.md#71-analytics-helper-클래스-업데이트)**
 - [ ] 단위 테스트: ViewModel 상태 변환, Repository 기본 CRUD
 
 ### 2.4 QA & 문서화
@@ -68,17 +69,17 @@
 ### Week 2A: 데이터 기반 구축 (Day 1-6)
 
 #### 2A.1 데이터 모델 확장 (Day 1-3)
-- [ ] Room 마이그레이션 v2→v3 작성 및 단위 테스트 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] `FocusSession`에 `interruptedSeconds`, `primaryDistractionCategory`, `giveUpReason` 필드 추가
-- [ ] `FocusInterruption` 엔티티/DAO/Repository 설계 및 구현 (세션 중 차단 이벤트 로그)
-- [ ] 기존 데이터 백필 로직 (기존 세션 `interruptedSeconds = 0`) 적용
-- [ ] 마이그레이션 통합 테스트: DB 버전 업그레이드 정상 동작 확인
+- [ ] Room 마이그레이션 v1→v2 작성 및 단위 테스트 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[마이그레이션 v1→v2](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)** (SQL, 테스트 전략)
+- [ ] `FocusSession`에 `interruptedSeconds`, `primaryDistractionCategory`, `giveUpReason` 필드 추가 → **[FocusSession 스키마](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)**
+- [ ] `FocusInterruption` 엔티티/DAO/Repository 설계 및 구현 (세션 중 차단 이벤트 로그) → **[FocusInterruption 엔티티](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)**
+- [ ] 기존 데이터 백필 로직 (기존 세션 `interruptedSeconds = 0`) 적용 → **[마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)**
+- [ ] 마이그레이션 통합 테스트: DB 버전 업그레이드 정상 동작 확인 → **[QA 시나리오 3-4](./01_advanced_qa_devices.md#42-room-마이그레이션-테스트)**
 
 #### 2A.2 세션 종료 로직 개선 (Day 3-4)
-- [ ] 중도 포기 시 경과 시간(`elapsedSeconds`) 기록 로직 추가 → [정확성 요구사항](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 차단/허용 이벤트 로그 → 세션과 연계 저장 구현 (카테고리 누락 방지) → [세션 기록 작업](../working_history/2025-10-06_2.3.md)
-- [ ] `TimerViewModel.giveUp()` 수정: 경과 시간 계산 및 저장
-- [ ] 통합 테스트: 세션 시작→중도 포기→DB 저장→리포트 반영 플로우 검증
+- [ ] 중도 포기 시 경과 시간(`elapsedSeconds`) 기록 로직 추가 → [정확성 요구사항](./01_advanced_prd.md#42-리포트-고도화), **[session_give_up 이벤트](./01_advanced_analytics_schema.md#session_give_up-확장)**
+- [ ] 차단/허용 이벤트 로그 → 세션과 연계 저장 구현 (카테고리 누락 방지) → [세션 기록 작업](../working_history/2025-10-06_2.3.md), **[session_interrupted](./01_advanced_analytics_schema.md#session_interrupted-신규)**
+- [ ] `TimerViewModel.giveUp()` 수정: 경과 시간 계산 및 저장 → **[FocusSession 필드](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)**
+- [ ] 통합 테스트: 세션 시작→중도 포기→DB 저장→리포트 반영 플로우 검증 → **[QA 핵심 기능](./01_advanced_qa_devices.md#61-mvp-기능-회귀-방지)**
 
 #### 2A.3 기본 통계 계산 모듈 (Day 5-6)
 - [ ] 총 집중 시간 계산 유틸 (성공+실패 세션 포함) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
@@ -92,56 +93,61 @@
 ### Week 2B: 고급 통계 및 UI (Day 7-13)
 
 #### 2B.1 고급 데이터 모델 (Day 7-8)
-- [ ] `FocusDistraction` 엔티티/DAO/Repository 설계 (허용/차단 이벤트 전체) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] `DetoxyRoutineLog` 엔티티/DAO 설계 (루틴 실행/실패 기록)
-- [ ] UsageStats opt-in 사용자의 체류 시간 저장 구조 설계
-- [ ] 통합 테스트: 신규 테이블 CRUD 동작 확인
+- [ ] Room 마이그레이션 v2→v3 작성 및 단위 테스트 → **[마이그레이션 v2→v3](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** (SQL, 테스트)
+- [ ] `FocusDistraction` 엔티티/DAO/Repository 설계 (허용/차단 이벤트 전체) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[FocusDistraction 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
+- [ ] `DetoxyRoutineLog` 엔티티/DAO 설계 (루틴 실행/실패 기록) → **[DetoxyRoutineLog 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**, **[detoxy_routine_completed](./01_advanced_analytics_schema.md#detoxy_routine_completed-신규)**
+- [ ] `FocusSettings` 엔티티/DAO 설계 (카테고리별 차단 설정 저장) → **[FocusSettings 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
+- [ ] UsageStats opt-in 사용자의 체류 시간 저장 구조 설계 → **[FocusDistraction dwellTimeSeconds](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
+- [ ] 통합 테스트: 신규 테이블 CRUD 동작 확인 → **[마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)**
 
 #### 2B.2 고급 통계 계산 모듈 (Day 8-10)
-- [ ] **Detoxy 위험 지수** 산식 정의 및 구현 (차단/허용 이벤트, 사용 시간 가중치) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 회복률 추세 계산 유틸 (7일, 30일 기준)
-- [ ] 집중률 성장세 계산 및 위험 지수 연동
-- [ ] 유혹 저항 시간·포기 지점 분석 함수
-- [ ] 방해요인 Top 3 집계 유틸 (`FocusInterruption` 기반)
-- [ ] 분산 회피율·허용 앱 체류 시간 계산 (`FocusDistraction` 기반)
-- [ ] UsageStats 가중치 합산·보정 로직
-- [ ] 위험 지수 기반 코치 추천 매핑 (고위험/주의/안정)
-- [ ] 포인트/루틴 진행도 캐싱 전략 확정
+- [ ] **디톡시 위험 지수** 산식 정의 및 구현 (차단/허용 이벤트, 사용 시간 가중치) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화), **[report_risk_index_calculated](./01_advanced_analytics_schema.md#report_risk_index_calculated)** (recovery/warning/high_risk)
+- [ ] **디톡시 회복률 추세** 계산 유틸 (7일, 30일 기준) → **[report_recovery_rate_calculated](./01_advanced_analytics_schema.md#report_recovery_rate_calculated-신규)** (주간 변화량)
+- [ ] 집중률 성장세 계산 및 위험 지수 연동 → **[KPI](./01_advanced_analytics_schema.md#63-성과-지표-디톡시회복-관점)** (디톡시 성공률, 회복률 추세)
+- [ ] 유혹 저항 시간·포기 지점 분석 함수 → **[session_give_up 파라미터](./01_advanced_analytics_schema.md#session_give_up-확장)**
+- [ ] 방해요인 Top 3 집계 유틸 (`FocusInterruption` 기반) → **[FocusInterruptionDao](./01_advanced_room_migration_strategy.md#4-dao-업데이트-및-신규-메서드)**
+- [ ] 분산 회피율·허용 앱 체류 시간 계산 (`FocusDistraction` 기반) → **[FocusDistractionDao](./01_advanced_room_migration_strategy.md#4-dao-업데이트-및-신규-메서드)**
+- [ ] UsageStats 가중치 합산·보정 로직 → **[usage_stats_opt_in](./01_advanced_analytics_schema.md#usage_stats_opt_in-신규)**
+- [ ] 위험 지수 기반 코치 추천 매핑 (회복/주의/고위험) → **[코치 추천 메시지](./01_advanced_wireframe_spec.md#디톡시-코치-추천-카드)**, **[report_coach_recommendation_shown](./01_advanced_analytics_schema.md#report_coach_recommendation_shown)**
+- [ ] 포인트/루틴 진행도 캐싱 전략 확정 → **[DetoxyRoutineLog](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
 - [ ] 단위 테스트: 고급 통계 함수 검증
 
 #### 2B.3 UI 업데이트 (Day 10-12)
-- [ ] 일간 카드: Detoxy 위험 지수, 회복률/집중률 변화 추가 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 주간 인사이트 그래프 2종 Compose 구현 (회복률/총 회복 시간)
-- [ ] 방해요인 Top 3 카드 + Tooltip
-- [ ] 분산 회피율 & 허용 앱 카드 시각화
-- [ ] Detoxy 코치 추천 카드/다이얼로그 (위험 단계별 메시지)
-- [ ] 빈 상태/데이터 부족 안내 문구 처리
+- [ ] 일간 카드: 디톡시 위험 지수, 회복률/집중률 변화 추가 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), **[위험 지수 카드](./01_advanced_wireframe_spec.md#디톡시-위험-지수-카드)**, **[회복률 카드](./01_advanced_wireframe_spec.md#회복률-추세-카드)**
+- [ ] 주간 인사이트 그래프 2종 Compose 구현 (회복률/총 회복 시간) → **[주간 그래프](./01_advanced_wireframe_spec.md#주간-그래프-compose-canvas-기반)**
+- [ ] 방해요인 Top 3 카드 + Tooltip → **[방해요인 Top 3](./01_advanced_wireframe_spec.md#방해요인-top-3-카드)**
+- [ ] 분산 회피율 & 허용 앱 카드 시각화 → **[Wireframe §2](./01_advanced_wireframe_spec.md#2-리포트-고도화-화면)**
+- [ ] 디톡시 코치 추천 카드/다이얼로그 (위험 단계별 메시지) → **[코치 추천 카드](./01_advanced_wireframe_spec.md#디톡시-코치-추천-카드)**, **[추천 메시지](./01_advanced_wireframe_spec.md#코치-추천-메시지-예시)**
+- [ ] 빈 상태/데이터 부족 안내 문구 처리 → **[빈 상태 처리](./01_advanced_wireframe_spec.md#3-빈-상태-empty-state)**
 
 #### 2B.4 통합 테스트 & 품질 (Day 12-13)
-- [ ] QA 시나리오: 성공/포기/실패 세션 5개 생성 후 리포트 검증
-- [ ] UsageStats opt-in/off 플로우 테스트 및 지표 표기 차이 검증
-- [ ] Detoxy 위험 지수 단계별 분포 QA
-- [ ] 디톡시 루틴 실행/실패 로그 QA
-- [ ] 회귀 테스트: 기존 리포트 기능 정상 동작 확인 → [기존 리포트 구현](../working_history/2025-10-11_3.3.md)
+- [ ] QA 시나리오: 성공/포기/실패 세션 5개 생성 후 리포트 검증 → **[QA 시나리오 5-8](./01_advanced_qa_devices.md#43-리포트-고도화-테스트)** (위험 지수, 회복률, 방해요인, 코치 추천)
+- [ ] UsageStats opt-in/off 플로우 테스트 및 지표 표기 차이 검증 → **[QA 시나리오 10-11](./01_advanced_qa_devices.md#44-권한-플로우-테스트)** (UsageStats 권한)
+- [ ] 디톡시 위험 지수 단계별 분포 QA → **[위험 지수 검증](./01_advanced_qa_devices.md#시나리오-5-디톡시-위험-지수-중독-진단)** (recovery/warning/high_risk)
+- [ ] 디톡시 루틴 실행/실패 로그 QA → **[QA 시나리오 12-14](./01_advanced_qa_devices.md#45-디톡시-루틴-테스트-신규)** (스케줄, 자동 실행, 건너뛰기)
+- [ ] 회귀 테스트: 기존 리포트 기능 정상 동작 확인 → [기존 리포트 구현](../working_history/2025-10-11_3.3.md), **[회귀 체크리스트](./01_advanced_qa_devices.md#61-mvp-기능-회귀-방지)**
 
 ---
 
 ## 4. 통합 QA 및 배포 준비 (Week 3)
-- [ ] 신규 이벤트 로깅이 Analytics 콘솔/디버그 로그에서 확인되는지 검증 → [데이터 및 트래킹](./01_advanced_prd.md#5-데이터-및-트래킹)
-- [ ] `./gradlew assembleDebug`, `./gradlew test`, `./gradlew lint` 실행 및 결과 기록 → [비기능 요구사항](./01_advanced_prd.md#6-비기능-요구사항)
-- [ ] 성능 점검: 리포트 첫 로딩 시간 측정, 필요 시 캐싱 튜닝 → [비기능 요구사항](./01_advanced_prd.md#6-비기능-요구사항), [서비스 최적화 기록](../working_history/2025-10-12_4.3.md)
+- [ ] 신규 이벤트 로깅이 Analytics 콘솔/디버그 로그에서 확인되는지 검증 → [데이터 및 트래킹](./01_advanced_prd.md#5-데이터-및-트래킹), **[Analytics 전체 이벤트](./01_advanced_analytics_schema.md#3-이벤트-상세-정의)** (19개 이벤트), **[Funnel 분석](./01_advanced_analytics_schema.md#5-사용자-플로우-funnel-분석)**
+- [ ] `./gradlew assembleDebug`, `./gradlew test`, `./gradlew lint` 실행 및 결과 기록 → [비기능 요구사항](./01_advanced_prd.md#6-비기능-요구사항), **[QA 기기](./01_advanced_qa_devices.md#1-필수-테스트-기기-최소-2종)** (Pixel 7, Galaxy S23)
+- [ ] 성능 점검: 리포트 첫 로딩 시간 측정, 필요 시 캐싱 튜닝 → [비기능 요구사항](./01_advanced_prd.md#6-비기능-요구사항), [서비스 최적화 기록](../working_history/2025-10-12_4.3.md), **[성능 테스트](./01_advanced_qa_devices.md#5-성능-테스트)** (메모리, 배터리, APK 크기)
+- [ ] 전체 QA 시나리오 실행 및 체크리스트 완료 → **[테스트 시나리오 14개](./01_advanced_qa_devices.md#4-테스트-시나리오)** (설정, 마이그레이션, 리포트, 권한, 루틴)
 - [ ] 사용자 가이드/README/앱 내 도움말 텍스트 업데이트 → [완료 기준](./01_advanced_prd.md#8-완료-기준dod)
 - [ ] 플레이스토어 릴리스 노트 초안 작성(디톡시 제어 설정, 위험 지수 리포트 강조) → [배경 및 목표](./01_advanced_prd.md#1-배경-및-목표)
-- [ ] 내부 베타(5인) 배포 및 피드백 수집 계획 수립
-- [ ] UsageStats 권한 안내/프라이버시 FAQ 업데이트 및 비허용 시 UI 경고 문구 검증 → [위험 요소 및 대응](./01_advanced_prd.md#7-위험-요소-및-대응)
+- [ ] 내부 베타(5인) 배포 및 피드백 수집 계획 수립 → **[베타 테스트](./01_advanced_qa_devices.md#7-베타-테스트-및-릴리스-계획)** (내부 5인, 외부 20인)
+- [ ] UsageStats 권한 안내/프라이버시 FAQ 업데이트 및 비허용 시 UI 경고 문구 검증 → [위험 요소 및 대응](./01_advanced_prd.md#7-위험-요소-및-대응), **[프라이버시 준수](./01_advanced_analytics_schema.md#12-개인정보-보호)**
 
 ---
 
 ## 5. 산출물 체크리스트
 - [ ] `docs/01_advanced_prd.md` 최신화 여부 확인
-- [ ] 디톡시 제어 설정 화면 UI 캡처 및 설명 문서 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면)
-- [ ] Room 마이그레이션 스크립트 및 테스트 보고 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 리포트 고도화 결과 스크린샷/그래프 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), [기존 리포트 구현](../working_history/2025-10-11_3.3.2.md)
-- [ ] Detoxy 코치 추천 메시지/카피 가이드 문서 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 디톡시 제어 설정 화면 UI 캡처 및 설명 문서 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 전체 스펙](./01_advanced_wireframe_spec.md)**
+- [ ] Room 마이그레이션 스크립트 및 테스트 보고 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[마이그레이션 전략](./01_advanced_room_migration_strategy.md)** (v1→v2→v3)
+- [ ] 리포트 고도화 결과 스크린샷/그래프 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), [기존 리포트 구현](../working_history/2025-10-11_3.3.2.md), **[리포트 UI 스펙](./01_advanced_wireframe_spec.md#2-리포트-고도화-화면)**
+- [ ] 디톡시 코치 추천 메시지/카피 가이드 문서 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화), **[코치 추천 메시지](./01_advanced_wireframe_spec.md#추천-메시지-예시-위험-지수-기반-중독회복-관점)**
+- [ ] Analytics 이벤트 로깅 검증 보고서 → **[Analytics 스키마](./01_advanced_analytics_schema.md)** (19개 이벤트), **[KPI 리포트](./01_advanced_analytics_schema.md#6-핵심-지표-kpi)**
+- [ ] QA 테스트 결과 보고서 → **[QA 시나리오](./01_advanced_qa_devices.md)** (14개 시나리오), **[회귀 테스트](./01_advanced_qa_devices.md#6-회귀-테스트-체크리스트)**
 - [ ] `working_history/YYYY-MM-DD_x.y.md` 기록 + 커밋 ID
 - [ ] 고도화 기능 릴리스 노트 초안
