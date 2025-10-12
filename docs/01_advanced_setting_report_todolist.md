@@ -14,11 +14,13 @@
 ---
 
 ## 1. 준비 단계 (Week 0.5)
-- [ ] PRD 리뷰 및 화면 와이어프레임 작성 (Figma 초안) → [디톡시 제어 설정](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [리포트 고도화](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 차단 카테고리별 패키지 리스트 초안 정리 (SNS/메신저/Web/Video/기타) → [카테고리 정의](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [Week1 앱 차단 구현](../working_history/2025-10-05_1.3.md)
-- [ ] Room 마이그레이션 전략 수립 (`FocusSession` v3, `UserSettings` 영향 검토) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 로깅 스키마 설계(`focus_settings_*`, `report_*`) → [데이터 및 트래킹](./01_advanced_prd.md#5-데이터-및-트래킹)
-- [ ] QA 기기 리스트 확정(최소 2종: Pixel, Samsung)
+- [x] PRD 리뷰 및 화면 와이어프레임 작성 → [01_advanced_wireframe_spec.md](./01_advanced_wireframe_spec.md) (UI 스펙, 컴포넌트 상세)
+- [x] 차단 카테고리별 패키지 리스트 초안 정리 → [01_advanced_app_category_mapping.md](./01_advanced_app_category_mapping.md) (40개 앱, 5개 카테고리)
+- [x] Room 마이그레이션 전략 수립 → [01_advanced_room_migration_strategy.md](./01_advanced_room_migration_strategy.md) (v1→v2→v3)
+- [x] 로깅 스키마 설계 → [01_advanced_analytics_schema.md](./01_advanced_analytics_schema.md) (15개 이벤트, KPI)
+- [x] QA 기기 리스트 확정 → [01_advanced_qa_devices.md](./01_advanced_qa_devices.md) (5개 기기, 7개 시나리오)
+
+**작업 기록**: [working_history/2025-10-12_advanced_1.0.md](../working_history/2025-10-12_advanced_1.0.md)
 
 ---
 
