@@ -208,7 +208,7 @@ class DndManager(private val context: Context) {
      * @return 사용자에게 보여줄 DND 모드 설명
      */
     fun getDndDescription(): String {
-        return when (val state = getPermissionState()) {
+        return when (getPermissionState()) {
             DndPermissionState.GRANTED -> {
                 "✅ 디톡시 세션 중 알림이 차단되어 집중력을 방해받지 않습니다.\n" +
                         "긴급 알람만 허용됩니다."

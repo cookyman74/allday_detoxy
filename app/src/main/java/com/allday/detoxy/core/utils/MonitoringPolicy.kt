@@ -38,10 +38,9 @@ object MonitoringPolicy {
          * 모니터링해야 하는 앱인지 확인
          *
          * @param packageName 패키지명
-         * @param otherAppsEnabled 기타 앱 차단 여부
          * @return true: 모니터링 대상, false: 무시
          */
-        fun shouldMonitor(packageName: String, otherAppsEnabled: Boolean): Boolean {
+        fun shouldMonitor(packageName: String): Boolean {
             // 시스템 앱은 항상 모니터링 제외
             if (AppCategoryMapper.isSystemApp(packageName)) return false
 
