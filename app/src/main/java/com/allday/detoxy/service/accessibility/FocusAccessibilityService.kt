@@ -4,16 +4,21 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.allday.detoxy.core.utils.AppCategory
+import com.allday.detoxy.core.utils.AppCategoryMapper
 import com.allday.detoxy.service.overlay.LockOverlayService
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
- * 앱 차단을 위한 AccessibilityService
+ * 앱 차단을 위한 AccessibilityService (디톡시 제어)
  *
- * 사용자가 차단된 앱을 실행하려고 할 때 홈 화면으로 이동시킵니다.
- * 타이머가 실행 중일 때만 차단 기능이 활성화됩니다.
+ * 주요 기능:
+ * 1. 동적 카테고리 기반 앱 차단 (AppCategoryMapper 사용)
+ * 2. 차단 이벤트 감지 및 LockOverlayScreen 표시
+ * 3. 타이머 실행 중에만 차단 기능 활성화
  *
  * @see AccessibilityService
+ * @see AppCategoryMapper
  */
 @AndroidEntryPoint
 class FocusAccessibilityService : AccessibilityService() {
@@ -22,20 +27,7 @@ class FocusAccessibilityService : AccessibilityService() {
         private const val TAG = "FocusAccessibilityService"
 
         /**
-         * 차단할 앱의 패키지명 목록 (MVP 하드코딩)
-         *
-         * Instagram, TikTok, YouTube, Facebook, Chrome을 기본으로 차단
-         */
-        private val BLOCKED_APPS = setOf(
-            "com.instagram.android",           // Instagram
-            "com.zhiliaoapp.musically",        // TikTok
-            "com.google.android.youtube",      // YouTube
-            "com.facebook.katana",             // Facebook
-            "com.android.chrome"               // Chrome (테스트용)
-        )
-
-        /**
-         * 타이머 실행 상태를 저장하는 정적 변수
+         * 타이머 실행 상태
          * TODO: Week 2에서 StateFlow로 변경하여 ViewModel과 연동
          */
         @Volatile
@@ -49,6 +41,44 @@ class FocusAccessibilityService : AccessibilityService() {
 
         @Volatile
         var totalSeconds: Int = 0
+
+        /**
+         * 디톡시 제어 설정 (동적 차단 목록)
+         *
+         * MVP: 기본값은 표준 디톡시 프리셋 (SNS, WEB, VIDEO_SHORTS)
+         * 1차 고도화: FocusSettings 엔티티에서 로드
+         */
+        @Volatile
+        var enabledCategories: Set<AppCategory> = setOf(
+            AppCategory.SNS,
+            AppCategory.WEB,
+            AppCategory.VIDEO_SHORTS
+        )
+
+        @Volatile
+        var otherAppsEnabled: Boolean = false
+
+        /**
+         * 차단 설정 업데이트 (TimerViewModel에서 호출)
+         *
+         * @param categories 차단할 카테고리 Set
+         * @param blockOtherApps 기타 앱 차단 여부
+         */
+        fun updateBlockSettings(categories: Set<AppCategory>, blockOtherApps: Boolean) {
+            enabledCategories = categories
+            otherAppsEnabled = blockOtherApps
+            Log.i(TAG, "🔧 Block settings updated: $categories, otherApps=$blockOtherApps")
+        }
+
+        /**
+         * 프리셋 적용 (빠른 설정)
+         *
+         * @param preset 적용할 프리셋
+         */
+        fun applyPreset(preset: AppCategoryMapper.DetoxyPreset) {
+            val (categories, otherApps) = AppCategoryMapper.applyPreset(preset)
+            updateBlockSettings(categories, otherApps)
+        }
     }
 
     override fun onServiceConnected() {
@@ -63,7 +93,7 @@ class FocusAccessibilityService : AccessibilityService() {
         }
 
         // 타이머 실행 상태 로그
-        Log.d(TAG, "Event received - Timer running: $isTimerRunning, Event type: ${event.eventType}, Package: ${event.packageName}")
+        Log.d(TAG, "Event received - Timer: $isTimerRunning, Type: ${event.eventType}, Package: ${event.packageName}")
 
         if (!isTimerRunning) return  // 타이머가 실행 중이 아니면 차단하지 않음
 
@@ -72,13 +102,46 @@ class FocusAccessibilityService : AccessibilityService() {
 
         val packageName = event.packageName?.toString() ?: return
 
-        Log.d(TAG, "Checking package: $packageName")
-
-        // 차단 앱인지 확인
-        if (packageName in BLOCKED_APPS) {
-            Log.w(TAG, "⚠️ BLOCKED APP DETECTED: $packageName")
-            navigateToHome()
+        // 디톡시 제어 설정 기반 차단 여부 확인
+        if (isAppBlocked(packageName)) {
+            val category = AppCategoryMapper.getCategoryByPackage(packageName)
+            Log.w(TAG, "⚠️ BLOCKED APP DETECTED: $packageName (Category: ${category?.getDisplayName() ?: "OTHER"})")
+            handleBlockedApp(packageName, category)
         }
+    }
+
+    /**
+     * 앱 차단 여부 확인 (AppCategoryMapper 사용)
+     *
+     * @param packageName 확인할 패키지명
+     * @return true: 차단, false: 허용
+     */
+    private fun isAppBlocked(packageName: String): Boolean {
+        return AppCategoryMapper.isBlocked(
+            packageName = packageName,
+            enabledCategories = enabledCategories,
+            otherAppsEnabled = otherAppsEnabled
+        )
+    }
+
+    /**
+     * 차단된 앱 처리 (차단 이벤트 기록 + 오버레이 표시)
+     *
+     * @param packageName 차단된 앱 패키지명
+     * @param category 앱 카테고리 (null이면 OTHER)
+     */
+    private fun handleBlockedApp(packageName: String, category: AppCategory?) {
+        // TODO: Analytics 이벤트 로깅 (session_interrupted)
+        // FirebaseAnalytics.logEvent("session_interrupted", Bundle().apply {
+        //     putString("package_name", packageName)
+        //     putString("category", category?.name ?: "OTHER")
+        //     putInt("remaining_seconds", remainingSeconds)
+        // })
+
+        Log.i(TAG, "🚫 App blocked: $packageName (${category?.getDisplayName() ?: "기타 앱"})")
+
+        // LockOverlayScreen 표시 및 홈 화면 이동
+        navigateToHome()
     }
 
     override fun onInterrupt() {

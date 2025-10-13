@@ -27,10 +27,12 @@
 ## 2. 집중모드 설정 화면 구축 (Week 1)
 
 ### 2.1 데이터 & 도메인 준비
-- [ ] `core/utils`에 카테고리 enum 및 패키지 매핑 정의 → [카테고리 목록](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[카테고리 매핑 스펙](./01_advanced_app_category_mapping.md)** (40개 앱, 5개 카테고리, 프리셋 정의)
-- [ ] `FocusAccessibilityService`와 `LockOverlayService`에서 동적 차단 목록을 참조하도록 인터페이스 정리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [차단 로직](../working_history/2025-10-05_1.3.md), **[카테고리 매핑](./01_advanced_app_category_mapping.md#데이터-구조-설계)**
-- [ ] DndManager는 세션 시작/종료 시 글로벌 DND 토글만 수행하고, 권한 상태 노출/안내 문구를 보강 → [DND 안내](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [DND 제어 작업](../working_history/2025-10-06_2.2.md)
-- [ ] 집중모드 중 모니터링할 패키지/카테고리 범위를 정의하고, 허용 앱 이벤트 로깅 정책을 수립 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[Analytics 스키마](./01_advanced_analytics_schema.md#31-디톡시-제어-설정-이벤트)**
+- [x] `core/utils`에 카테고리 enum 및 패키지 매핑 정의 → [카테고리 목록](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[카테고리 매핑 스펙](./01_advanced_app_category_mapping.md)** (40개 앱, 5개 카테고리, 프리셋 정의) - `AppCategory.kt`, `AppCategoryMapper.kt` 생성
+- [x] `FocusAccessibilityService`와 `LockOverlayService`에서 동적 차단 목록을 참조하도록 인터페이스 정리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [차단 로직](../working_history/2025-10-05_1.3.md), **[카테고리 매핑](./01_advanced_app_category_mapping.md#데이터-구조-설계)** - `updateBlockSettings()`, `applyPreset()` API 추가
+- [x] DndManager는 세션 시작/종료 시 글로벌 DND 토글만 수행하고, 권한 상태 노출/안내 문구를 보강 → [DND 안내](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [DND 제어 작업](../working_history/2025-10-06_2.2.md) - `DndPermissionState` enum, `getPermissionState()`, `getDndCardInfo()` 추가
+- [x] 집중모드 중 모니터링할 패키지/카테고리 범위를 정의하고, 허용 앱 이벤트 로깅 정책을 수립 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[Analytics 스키마](./01_advanced_analytics_schema.md#31-디톡시-제어-설정-이벤트)** - `MonitoringPolicy.kt` 생성 (범위, 이벤트, 파라미터 정의)
+
+**작업 기록**: [working_history/2025-10-13_1st_advanced_2.1.md](../working_history/2025-10-13_1st_advanced_2.1.md)
 
 ### 2.2 UI/UX 구현
 - [ ] `presentation/ui/settings/focus/DetoxyControlSettingsScreen` Compose 레이아웃 구현 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 스펙](./01_advanced_wireframe_spec.md#1-디톡시-제어-설정-화면-detoxycontrolsettingsscreen)** (레이아웃, 컴포넌트 상세), [네비게이션 구조](../working_history/2025-10-11_3.3.md)
