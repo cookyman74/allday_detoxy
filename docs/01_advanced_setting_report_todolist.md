@@ -35,12 +35,14 @@
 **작업 기록**: [working_history/2025-10-13_1st_advanced_2.1.md](../working_history/2025-10-13_1st_advanced_2.1.md)
 
 ### 2.2 UI/UX 구현
-- [ ] `presentation/ui/settings/focus/DetoxyControlSettingsScreen` Compose 레이아웃 구현 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 스펙](./01_advanced_wireframe_spec.md#1-디톡시-제어-설정-화면-detoxycontrolsettingsscreen)** (레이아웃, 컴포넌트 상세), [네비게이션 구조](../working_history/2025-10-11_3.3.md)
-- [ ] 프리셋(완전 차단/표준 디톡시/완화) 데이터 모델 및 Preview UI 작성 → [레이아웃 섹션](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[프리셋 정의](./01_advanced_app_category_mapping.md#프리셋-정의-디톡시-제어-관점)** (완전 차단/표준/완화 스펙)
-- [ ] 카테고리별 토글/슬라이더 상태를 `FocusSettingsViewModel`에서 StateFlow로 관리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 컴포넌트](./01_advanced_wireframe_spec.md#13-컴포넌트-상세)**
-- [ ] 권한 상태 카드(DND, 접근성) 연결 및 재요청 Intent 처리 → [권한 경고](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [권한 온보딩](../working_history/2025-10-12_4.1.md), **[Wireframe 권한 카드](./01_advanced_wireframe_spec.md#13-컴포넌트-상세)**
-- [ ] 메신저 카테고리 초기 안내 배너/다이얼로그 구현 및 사용자 선택 흐름 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[메신저 안내 UX](./01_advanced_app_category_mapping.md#2-메신저--커뮤니케이션)** (다이얼로그 flow), **[다이얼로그 스펙](./01_advanced_wireframe_spec.md#41-메신저-카테고리-안내-다이얼로그)**
-- [ ] 디톡시 루틴(예: 야간 전체 차단) 토글 및 설명 UI 설계 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[루틴 연동](./01_advanced_app_category_mapping.md#2-메신저--커뮤니케이션)**
+- [x] `presentation/ui/settings/focus/DetoxyControlSettingsScreen` Compose 레이아웃 구현 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 스펙](./01_advanced_wireframe_spec.md#1-디톡시-제어-설정-화면-detoxycontrolsettingsscreen)** (레이아웃, 컴포넌트 상세), [네비게이션 구조](../working_history/2025-10-11_3.3.md) - `DetoxyControlSettingsScreen.kt` 구현 완료
+- [x] 프리셋(완전 차단/표준 디톡시/완화) 데이터 모델 및 Preview UI 작성 → [레이아웃 섹션](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[프리셋 정의](./01_advanced_app_category_mapping.md#프리셋-정의-디톡시-제어-관점)** (완전 차단/표준/완화 스펙) - `PresetSelectionSection` 구현
+- [x] 카테고리별 토글/슬라이더 상태를 `FocusSettingsViewModel`에서 StateFlow로 관리 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 컴포넌트](./01_advanced_wireframe_spec.md#13-컴포넌트-상세)** - `FocusSettingsViewModel.kt` 구현 (DataStore 영속화)
+- [x] 권한 상태 카드(DND, 접근성) 연결 및 재요청 Intent 처리 → [권한 경고](./01_advanced_prd.md#41-디톡시-제어-설정-화면), [권한 온보딩](../working_history/2025-10-12_4.1.md), **[Wireframe 권한 카드](./01_advanced_wireframe_spec.md#13-컴포넌트-상세)** - `PermissionStatusSection` 구현 (Intent 연동)
+- [x] 메신저 카테고리 초기 안내 배너/다이얼로그 구현 및 사용자 선택 흐름 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[메신저 안내 UX](./01_advanced_app_category_mapping.md#2-메신저--커뮤니케이션)** (다이얼로그 flow), **[다이얼로그 스펙](./01_advanced_wireframe_spec.md#41-메신저-카테고리-안내-다이얼로그)** - `MessengerCategoryDialog` 구현
+- [x] 디톡시 루틴(예: 야간 전체 차단) 토글 및 설명 UI 설계 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[루틴 연동](./01_advanced_app_category_mapping.md#2-메신저--커뮤니케이션)** - `DetoxyRoutineSection` 구현 (향후 활성화 예정)
+
+**작업 기록**: [working_history/2025-10-15_1st_advanced_2.2.md](../working_history/2025-10-15_1st_advanced_2.2.md)
 
 ### 2.3 상태 저장 및 로직 연동
 - [ ] `FocusSettingsRepository` 설계(Room + DataStore 조합 검토) → [데이터 보강](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Room 마이그레이션 v3](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** (FocusSettings 엔티티)

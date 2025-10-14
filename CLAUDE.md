@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Allday Detoxy** is an Android native app for smartphone habit correction, helping users maintain focus by blocking distracting apps during timer sessions. Built with Kotlin and Jetpack Compose following Clean Architecture principles.
+**Allday Detoxy** is a smartphone habit correction coach app for Android. It helps users overcome digital addiction by blocking distracting apps during focus timer sessions, using a gamification system with points and streaks.
 
-**MVP Goal**: Validate user focus time increase through app blocking + reward system.
+**Current Phase**: 1st Enhancement (v0.5) - Focus Mode Settings & Advanced Reporting
+**Architecture**: Clean Architecture (domain, data, presentation) + MVVM + Jetpack Compose
 
 ## Build & Development Commands
 
@@ -41,363 +42,242 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Lint check
 ./gradlew lint
+
+# Generate lint report
+./gradlew lintDebug
 ```
 
-## Architecture Overview
+## High-Level Architecture
 
 ### Clean Architecture Layers
 
-**Domain Layer** (`domain/`): Business logic, framework-independent
-- `model/`: Domain models (FocusTimer, FocusState enum)
-- `usecase/`: Business use cases (Week 3+)
-
-**Data Layer** (`data/`): Data sources and repositories
-- `local/`: Room database entities, DAOs (Week 2+)
-- `repository/`: Repository implementations (Week 2+)
-
-**Presentation Layer** (`presentation/`): UI and ViewModels
-- `ui/`: Jetpack Compose screens organized by feature
-  - `timer/`: Timer screen with circular progress
-  - `overlay/`: Lock overlay screen
-  - `permission/`: Permission dialogs and guides
-  - `theme/`: Material3 theme configuration
-- `viewmodel/`: Hilt ViewModels with StateFlow
-
-**Service Layer** (`service/`): Android system services
-- `accessibility/`: FocusAccessibilityService for app blocking
-- `overlay/`: LockOverlayService for full-screen lock
-
-**Core Layer** (`core/`): Shared utilities
-- `di/`: Hilt dependency injection modules
-- `utils/`: Permission utilities, helpers
-
-### Key Architecture Patterns
-
-**State Management**:
-- StateFlow for reactive state in ViewModels
-- Jetpack Compose collectAsState() for UI observation
-- Single source of truth in domain layer (FocusTimer)
-
-**Dependency Injection**:
-- Hilt for all ViewModels and services
-- Application context injected where needed (e.g., TimerViewModel)
-- `@AndroidEntryPoint` annotation for Android components
-
-**Service Communication**:
-- Static flags for MVP (e.g., `FocusAccessibilityService.isTimerRunning`)
-- Intent-based actions for LockOverlayService
-- TODO: Refactor to StateFlow in Week 2
-
-## Critical Implementation Details
-
-### Timer Lifecycle Integration
-
-The timer integrates FOUR components that must be synchronized:
-
-1. **FocusTimer** (domain model): Manages countdown with coroutines
-2. **AccessibilityService**: Blocks apps when `isTimerRunning = true`
-3. **LockOverlayService**: Shows full-screen overlay on blocked app access
-4. **DndManager** (Week 2): Activates Do Not Disturb mode during focus sessions
-
-**Startup sequence** (see `TimerViewModel.startTimer()`):
-```kotlin
-// In TimerViewModel.startTimer()
-1. FocusAccessibilityService.isTimerRunning = true
-2. LockOverlayService.showOverlay(context, remainingSeconds, totalSeconds)
-3. dndManager.enableDnd() // Android 6.0+ only
-4. focusTimer.start(duration) { success -> onTimerFinish(success) }
+```
+app/src/main/java/com/allday/detoxy/
+├── domain/          # Business logic (no Android dependencies)
+│   ├── model/       # FocusTimer, FocusState
+│   ├── manager/     # GamificationManager (points/streak calculations)
+│   └── repository/  # Repository interfaces
+│
+├── data/            # Data management
+│   ├── local/       # Room database (entities, DAOs)
+│   └── repository/  # Repository implementations
+│
+├── presentation/    # UI layer
+│   ├── ui/          # Jetpack Compose screens
+│   └── viewmodel/   # ViewModels with StateFlow
+│
+├── service/         # Android system services
+│   ├── accessibility/  # App blocking via AccessibilityService
+│   └── overlay/        # Full-screen lock overlay
+│
+└── core/            # Shared utilities
+    ├── di/          # Hilt dependency injection
+    ├── manager/     # DndManager (Do Not Disturb)
+    └── utils/       # AppCategory, AppCategoryMapper, MonitoringPolicy
 ```
 
-**Cleanup sequence** (applies to `giveUpTimer()`, `resetTimer()`, `onTimerFinish()`):
+### Critical Service Integration
+
+The app coordinates **four core services** that must stay synchronized:
+
+1. **FocusTimer** (domain/model): Coroutine-based countdown timer with StateFlow
+2. **FocusAccessibilityService**: Detects and blocks distracting apps (40+ apps in 5 categories)
+3. **LockOverlayService**: Shows full-screen overlay when blocked app is accessed
+4. **DndManager**: Controls Do Not Disturb mode during focus sessions
+
+**Timer Lifecycle Coordination**:
 ```kotlin
-// In TimerViewModel (giveUp/reset/onFinish)
+// Start sequence (TimerViewModel.startTimer)
+1. Create FocusSession in database
+2. FocusAccessibilityService.isTimerRunning = true
+3. LockOverlayService.showOverlay(context, seconds)
+4. dndManager.enableDnd()
+5. focusTimer.start(duration)
+
+// Cleanup sequence (giveUp/reset/onFinish)
 1. FocusAccessibilityService.isTimerRunning = false
 2. LockOverlayService.hideOverlay(context)
-3. dndManager.disableDnd() // Android 6.0+ only
-4. focusTimer.giveUp() or reset()
+3. dndManager.disableDnd()
+4. focusTimer.stop()
+5. Update FocusSession with results
+6. Calculate points/streak if successful
 ```
 
-**Critical**: All four components must be synchronized. If one fails, all must be cleaned up to avoid inconsistent state.
+### App Blocking System (v0.5 Enhancement)
 
-### AccessibilityService Implementation
+**Dynamic Category-Based Blocking**:
+- 5 categories: SNS, MESSENGER, WEB, VIDEO_SHORTS, OTHER
+- 40+ predefined apps mapped to categories
+- 3 recovery presets: COMPLETE_BLOCK, STANDARD_DETOXY, RELAXED
 
-**Purpose**: Detects when user opens blocked apps and triggers home navigation.
+**Key Components**:
+- `AppCategory`: Enum with recovery-focused descriptions
+- `AppCategoryMapper`: Package mapping & blocking logic
+- `MonitoringPolicy`: Event logging & Analytics integration
+- `FocusAccessibilityService`: Real-time app detection & blocking
 
-**Key mechanism**:
-- Listens to `TYPE_WINDOW_STATE_CHANGED` events
-- Checks package name against hardcoded blocked apps list
-- Navigates to home using `Intent.ACTION_MAIN + CATEGORY_HOME`
-- Only active when `isTimerRunning = true`
+### Database Schema (Room v3)
 
-**Blocked apps** (hardcoded in MVP):
-- Instagram: `com.instagram.android`
-- TikTok: `com.zhiliaoapp.musically`
-- YouTube: `com.google.android.youtube`
-- Facebook: `com.facebook.katana`
+**Core Entities**:
+- `FocusSession`: Timer sessions with success/failure tracking
+- `UserSettings`: Points, streaks, recovery metrics
+- `FocusInterruption`: Blocked app events during sessions (v2+)
+- `FocusDistraction`: All app access events (v3+)
+- `FocusSettings`: Category blocking preferences (v3+)
+- `DetoxyRoutineLog`: Scheduled routine execution logs (v3+)
 
-**Permission required**: User must manually enable in Settings → Accessibility → Allday Detoxy
+**Migration Strategy**: v1→v2→v3 (see `docs/01_advanced_room_migration_strategy.md`)
 
-### Overlay Service Architecture
+### Permission Management
 
-**LockOverlayService** is a foreground service that displays a ComposeView overlay:
+The app requires three critical permissions that users must manually grant:
 
-**WindowManager configuration**:
-- Type: `TYPE_APPLICATION_OVERLAY` (API 26+) or `TYPE_SYSTEM_ALERT` (older)
-- Flags: `FLAG_LAYOUT_IN_SCREEN | FLAG_KEEP_SCREEN_ON`
-  - Note: `FLAG_NOT_FOCUSABLE` removed to allow overlay to receive focus and stay on top
-  - Note: `FLAG_NOT_TOUCH_MODAL` removed to block touches outside overlay
-- PixelFormat: `TRANSLUCENT` for semi-transparent background
+1. **Accessibility Service**: Settings → Accessibility → Allday Detoxy
+2. **Display over other apps**: Settings → Apps → Special access
+3. **Do Not Disturb**: Settings → Notifications → DND access
 
-**Compose Integration**:
-```kotlin
-ComposeView(context).apply {
-    // CRITICAL: Set Lifecycle for Compose to work properly
-    setViewTreeLifecycleOwner(this@LockOverlayService)
-    setViewTreeSavedStateRegistryOwner(this@LockOverlayService)
-    
-    setContent {
-        DetoxyTheme {
-            LockOverlayScreen(
-                remainingSeconds = remainingSeconds,
-                totalSeconds = totalSeconds,
-                timerState = timerState, // mutableStateOf for reactive updates
-                onGiveUp = { /* handle give up */ }
-            )
-        }
-    }
-}
+**Permission Utils**: `core/utils/PermissionUtils.kt` provides unified checking/navigation
+
+## Current Development Focus (Week 1 of v0.5)
+
+### Completed (2025-10-13)
+- ✅ AppCategory enum & 40-app mapping
+- ✅ Dynamic blocking in FocusAccessibilityService
+- ✅ DndManager permission state enhancements
+- ✅ MonitoringPolicy for event tracking
+
+### In Progress (Week 1 Remaining)
+- [ ] DetoxyControlSettingsScreen UI (presets, category toggles)
+- [ ] FocusSettingsRepository (Room v3 or DataStore)
+- [ ] ViewModel state management with StateFlow
+- [ ] Analytics integration with MonitoringPolicy events
+
+### Upcoming (Week 2)
+- [ ] Room migrations v1→v2→v3
+- [ ] Advanced reporting metrics (risk index, recovery rate)
+- [ ] Weekly insights graphs with Compose Canvas
+
+## Key Technical Decisions
+
+### State Management
+- **StateFlow** for reactive UI updates (not LiveData)
+- **Single source of truth** in domain layer
+- **Unidirectional data flow** in ViewModels
+
+### Dependency Injection
+- **Hilt** for all DI needs (@HiltAndroidApp, @HiltViewModel)
+- **@Binds** for interface-implementation binding
+- **@Singleton** scope for database and repositories
+
+### Service Communication (Current)
+- **Static flags** for MVP (e.g., `FocusAccessibilityService.isTimerRunning`)
+- **Intent-based** actions for overlay service
+- **TODO**: Migrate to StateFlow for proper reactive updates
+
+### Analytics & Privacy
+- **Package names**: Local DB only (privacy protection)
+- **Analytics**: Category-level data only
+- **Event batching**: Immediate for interruptions, batched for allowed apps
+
+## Testing Strategy
+
+### Unit Tests
+- ViewModels: State transitions, timer logic
+- Repositories: CRUD operations, data mapping
+- Domain managers: Points/streak calculations
+
+### Integration Tests
+- Room migrations: v1→v2→v3 data preservation
+- Service coordination: Timer lifecycle flow
+- Analytics events: Parameter mapping
+
+### UI Tests
+- Compose screens: User interactions
+- Permission dialogs: Grant/deny flows
+- Timer states: Visual feedback
+
+## Performance Targets
+
+- **App blocking reaction**: < 500ms
+- **Report loading**: < 1s with caching
+- **Timer update frequency**: 1Hz (every second)
+- **APK size**: < 15MB
+- **Memory usage**: < 100MB runtime
+
+## Documentation Structure
+
+```
+docs/
+├── 01_advanced_prd.md              # Product requirements v0.5
+├── 01_advanced_setting_report_todolist.md  # 3-week task breakdown
+├── 01_advanced_wireframe_spec.md   # UI specifications
+├── 01_advanced_app_category_mapping.md  # 40-app categorization
+├── 01_advanced_room_migration_strategy.md  # Database migrations
+├── 01_advanced_analytics_schema.md  # Event tracking specs
+└── 01_advanced_qa_devices.md       # Test scenarios
+
+working_history/
+└── YYYY-MM-DD_task.md  # Daily implementation logs with commit IDs
 ```
 
-**Timer Updates**: Uses Compose `mutableStateOf` for reactive UI updates. Service updates `timerState.value` every second, and Compose automatically recomposes the UI.
+## Git Workflow
 
-**Permission required**: `SYSTEM_ALERT_WINDOW` - User must grant "Display over other apps"
+- **Branch**: `feat/v0.5` (current enhancement)
+- **Commit format**: Korean messages with task references
+- **Co-author**: Add Claude Code attribution when applicable
+- **Work logs**: Create `working_history/` entry for each task completion
 
-### Hilt Setup
+## Common Development Tasks
 
-**Application class**: `DetoxyApplication` with `@HiltAndroidApp`
+### Adding a New Blocked App
+1. Add package name to `AppCategoryMapper.categoryMap`
+2. Verify with `./gradlew compileDebugKotlin`
+3. Test with real device (Accessibility Service required)
 
-**ViewModel injection**:
-```kotlin
-@HiltViewModel
-class TimerViewModel @Inject constructor(
-    private val application: Application
-) : ViewModel()
-```
+### Modifying Room Schema
+1. Increment database version in `DetoxyDatabase`
+2. Write migration in `DatabaseModule`
+3. Test with `./gradlew connectedAndroidTest`
+4. Document in migration strategy
 
-**Service injection**: Use `@AndroidEntryPoint` on services for field injection
+### Adding Analytics Event
+1. Define event in `MonitoringPolicy`
+2. Create parameter data class with `toAnalyticsParams()`
+3. Log event in appropriate service/viewmodel
+4. Verify in Firebase console debug view
 
-## Work History & Documentation Pattern
+### Creating New Compose Screen
+1. Create screen composable in `presentation/ui/`
+2. Add preview with `@Preview` annotation
+3. Create ViewModel with `@HiltViewModel`
+4. Add navigation in `MainActivity`
+5. Test on multiple screen sizes
 
-All development work is documented in `working_history/` with the pattern:
-- Filename: `YYYY-MM-DD_[task-number].md` (e.g., `2025-10-06_2.1.md`)
-- Must include: task overview, completed items, code snippets, build verification, commit ID
-- Checklist updates in `docs/00_mvp_allday_detoxy_todolist.md`
+## Debugging Tips
 
-**When completing tasks**:
-1. Implement features
-2. Build and verify: `./gradlew assembleDebug`
-3. Update checklist with `[x]`
-4. Create work history markdown
-5. Commit with detailed message
-6. Add commit ID to work history
-7. Commit work history update
+### AccessibilityService Not Working
+- Check permission in Settings → Accessibility
+- Verify `accessibility_service_config.xml` configuration
+- Monitor logcat: `adb logcat | grep FocusAccessibilityService`
 
-### DND (Do Not Disturb) Manager
+### Overlay Not Showing
+- Verify "Display over other apps" permission
+- Check foreground service notification
+- Ensure MainActivity is in foreground when starting
 
-**DndManager** (`core/manager/DndManager.kt`) controls notification blocking during focus sessions:
+### Timer Sync Issues
+- Check all 4 components are coordinated (Timer, Accessibility, Overlay, DND)
+- Verify cleanup on all exit paths (complete, giveUp, reset)
+- Monitor StateFlow emissions in ViewModel
 
-**Key features**:
-- Blocks all notifications except alarms (`INTERRUPTION_FILTER_ALARMS`)
-- Requires Android 6.0+ (API 23) and manual permission grant
-- Permission check: `hasNotificationPolicyAccess()`
-- Graceful degradation: Timer works even without DND permission
+## Tech Stack Reference
 
-**Integration**:
-```kotlin
-// TimerViewModel creates instance
-private val dndManager = DndManager(application)
-
-// Enabled on timer start (if permission granted)
-if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-    dndManager.enableDnd()
-}
-
-// Disabled on timer stop/finish/give-up
-if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-    dndManager.disableDnd()
-}
-```
-
-**Permission utilities** (in `PermissionUtils`):
-- `hasNotificationPolicyAccess(context)`: Check DND permission
-- `openNotificationPolicySettings(context)`: Navigate to DND settings
-
-### Room Database (Week 2.3)
-
-**DetoxyDatabase** (`data/local/DetoxyDatabase.kt`) provides local data persistence:
-
-**Entities**:
-- **FocusSession**: Stores focus session records
-  - UUID-based unique ID
-  - Unix timestamp for start/end times
-  - Duration (minutes) and success status
-  - File: `data/local/entity/FocusSession.kt`
-
-- **UserSettings**: Stores user gamification data
-  - Single record (ID=1) for app-wide settings
-  - Total points, current streak, last success date
-  - File: `data/local/entity/UserSettings.kt`
-
-**DAOs**:
-- **FocusSessionDao** (`data/local/dao/FocusSessionDao.kt`):
-  - `getTodaySessions()`: Flow of today's sessions
-  - `getAllSessions()`: Flow of all sessions (newest first)
-  - `getSuccessfulSessions()`: Flow of successful sessions only
-  - `insert()`, `update()`: Session CRUD operations
-
-- **UserSettingsDao** (`data/local/dao/UserSettingsDao.kt`):
-  - `getSettings()`: Flow of user settings
-  - `addPoints(points)`: Increment total points
-  - `updateStreak(streak, date)`: Update streak and last success date
-  - `resetStreak()`: Reset streak to 0
-
-**Hilt Integration** (`core/di/DatabaseModule.kt`):
-```kotlin
-@Provides
-@Singleton
-fun provideDetoxyDatabase(@ApplicationContext context: Context): DetoxyDatabase {
-    return Room.databaseBuilder(context, DetoxyDatabase::class.java, "detoxy_database").build()
-}
-```
-
-**Key SQL Query**:
-```sql
--- Get today's sessions (converts Unix timestamp to date)
-SELECT * FROM focus_sessions
-WHERE DATE(startTime/1000, 'unixepoch') = DATE('now')
-ORDER BY startTime DESC
-```
-
-**Usage Pattern** (Week 3 integration):
-1. Timer starts → Create FocusSession with startTime
-2. Timer completes → Update session with endTime and success=true
-3. Calculate points → Update UserSettings via DAO
-4. Update streak → Check lastSuccessDate and update accordingly
-
-## Required Permissions & User Setup
-
-After app installation, users must manually enable three permissions:
-
-1. **Accessibility Service**: Settings → Accessibility → Allday Detoxy → Enable
-   - Required for app blocking functionality
-   - Cannot be granted programmatically (Android security restriction)
-
-2. **Display over other apps**: Settings → Apps → Special app access → Display over other apps → Allday Detoxy → Allow
-   - Required for lock overlay screen
-   - Check with `Settings.canDrawOverlays(context)`
-
-3. **Do Not Disturb**: Settings → Notifications → Do Not Disturb access → Allday Detoxy → Allow
-   - Required for notification blocking during focus sessions
-   - Android 6.0+ only
-   - Check with `NotificationManager.isNotificationPolicyAccessGranted`
-
-**Note**: All three permissions use `PermissionUtils` for checking and settings navigation.
-
-## MVP Development Phases
-
-**Week 1 (Completed)**:
-- Project setup with Hilt + Compose
-- AccessibilityService for app blocking
-- Basic timer with preset durations (25/45/60 min)
-- Lock overlay screen
-
-**Week 2 (Completed)**:
-- ✅ Lock overlay service (2.1)
-- ✅ DND (Do Not Disturb) mode control (2.2)
-- ✅ Room database for session storage (2.3)
-
-**Week 3**:
-- Points and streak system
-- Daily reports UI
-- Battery optimization handling
-
-**Week 4**:
-- Final testing and optimization
-- MVP release preparation
-
-## Key Constraints & Limitations
-
-**AccessibilityService**:
-- Cannot be programmatically enabled (user must do it manually)
-- May be killed by aggressive battery optimization on some devices
-- Performance target: Block reaction time < 500ms
-- Hardcoded blocked apps in MVP (Instagram, TikTok, YouTube, Facebook)
-
-**Overlay Service**:
-- Requires foreground notification (cannot be hidden on Android 8+)
-- Uses Compose `mutableStateOf` for reactive real-time timer updates
-- Some OEMs may restrict overlay permissions (Samsung, Xiaomi, Huawei)
-- MainActivity must be in foreground for overlay to display properly
-
-**DND Manager**:
-- Requires Android 6.0+ (API 23), gracefully degrades on older versions
-- Permission must be granted manually, cannot be programmatically requested
-- Only blocks notifications, not alarms (using `INTERRUPTION_FILTER_ALARMS`)
-- Timer works without DND but notifications won't be blocked
-
-**Timer Communication**:
-- Current MVP uses static flags (`isTimerRunning`) - suboptimal but functional
-- Week 2 refactor planned: Migrate to StateFlow for proper reactive updates
-- Week 2 refactor planned: Bidirectional ViewModel ↔ Service communication
-
-## Tech Stack
-
-- **Language**: Kotlin 1.9.0
-- **UI**: Jetpack Compose + Material3
-- **DI**: Hilt (Dagger)
-- **Database**: Room (Week 2+)
-- **Async**: Kotlin Coroutines + Flow/StateFlow
+- **Kotlin**: 1.9.0
+- **Compose BOM**: Latest stable
+- **Hilt**: Latest stable
+- **Room**: Latest stable with KSP
+- **Coroutines**: 1.7.x
 - **Min SDK**: 26 (Android 8.0)
 - **Target SDK**: 34 (Android 14)
-- **Build Tool**: Gradle 8.7 with Kotlin DSL
-
-## Key Files for Understanding System
-
-**Core Domain & State**:
-- `domain/model/FocusTimer.kt`: Timer logic with StateFlow, coroutine-based countdown
-- `domain/model/FocusState.kt`: Timer state enum (IDLE, RUNNING, FINISHED, FAILED)
-
-**Data Layer**:
-- `data/local/DetoxyDatabase.kt`: Room database with 2 entities
-- `data/local/entity/FocusSession.kt`: Focus session records entity
-- `data/local/entity/UserSettings.kt`: User gamification settings entity
-- `data/local/dao/FocusSessionDao.kt`: Focus session data access
-- `data/local/dao/UserSettingsDao.kt`: User settings data access
-
-**ViewModels**:
-- `presentation/viewmodel/TimerViewModel.kt`: Orchestrates all services and timer lifecycle
-
-**Services**:
-- `service/accessibility/FocusAccessibilityService.kt`: App blocking via AccessibilityEvent
-- `service/overlay/LockOverlayService.kt`: Full-screen overlay with Compose integration
-
-**Managers**:
-- `core/manager/DndManager.kt`: Do Not Disturb mode control
-
-**Utilities**:
-- `core/utils/PermissionUtils.kt`: Centralized permission checks and settings navigation
-
-**Dependency Injection**:
-- `core/di/DatabaseModule.kt`: Room database and DAO providers
-- `core/di/RepositoryModule.kt`: Repository providers (placeholder for Week 3)
-
-**Configuration**:
-- `app/src/main/res/xml/accessibility_service_config.xml`: AccessibilityService configuration
-- `app/src/main/AndroidManifest.xml`: Service declarations and permissions
-
-## Reference Documentation
-
-- `docs/prd.md`: Product requirements and feature specifications
-- `docs/00_mvp_allday_detoxy_todolist.md`: 4-week development plan with checklist
-- `docs/00_android_allday_detoxy_plan.md`: Technical architecture details
-- `working_history/`: Day-by-day implementation logs with commit IDs and code examples
+- **Java**: 17
+- **Gradle**: 8.7
