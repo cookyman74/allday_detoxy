@@ -335,12 +335,14 @@ class FocusStatisticsCalculator @Inject constructor() {
 ## 📌 커밋 정보
 
 **브랜치**: `feat/v0.5`  
-**커밋 ID**: (작성 예정)
+**커밋 ID**: `692a37d` (2025-10-19)
+
+**커밋 메시지**: `feat(statistics): Task 2A.3 기본 통계 계산 모듈 구현`
 
 **커밋 내용**:
-- 생성: 1개 파일 (~163줄)
-- 수정: 1개 파일 (~29줄)
-- 합계: ~192 insertions
+- 생성: 2개 파일 (FocusStatisticsCalculator, 작업 문서)
+- 수정: 2개 파일 (FocusSessionDao, 체크리스트)
+- 합계: 536 insertions, 5 deletions
 
 **작업 완료일**: 2025-10-19  
 **총 소요 시간**: ~1시간
