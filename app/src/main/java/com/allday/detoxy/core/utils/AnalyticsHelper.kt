@@ -162,23 +162,20 @@ object AnalyticsHelper {
     }
 
     /**
-     * session_interrupted 이벤트
+     * session_interrupted 이벤트 (v2)
      *
      * 세션 중 차단 이벤트
      *
-     * @param sessionId 세션 ID
      * @param category 차단된 앱 카테고리
-     * @param elapsedSeconds 경과 시간 (초)
+     * @param remainingSeconds 남은 시간 (초)
      */
     fun logSessionInterrupted(
-        sessionId: String,
-        category: AppCategory,
-        elapsedSeconds: Int
+        category: String,
+        remainingSeconds: Int
     ) {
         val bundle = Bundle().apply {
-            putString("session_id", sessionId)
-            putString("category", category.name.lowercase())
-            putInt("elapsed_seconds", elapsedSeconds)
+            putString("category", category.lowercase())
+            putInt("remaining_seconds", remainingSeconds)
         }
         logEvent("session_interrupted", bundle)
     }

@@ -152,6 +152,7 @@ class TimerViewModel @Inject constructor(
         FocusAccessibilityService.isTimerRunning = true
         FocusAccessibilityService.remainingSeconds = totalSec
         FocusAccessibilityService.totalSeconds = totalSec
+        FocusAccessibilityService.currentSessionId = sessionId  // 차단 이벤트 로깅용 (v2)
 
         // 3. DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -165,17 +166,29 @@ class TimerViewModel @Inject constructor(
     }
 
     /**
-     * 타이머 포기
+     * 타이머 포기 (v2: interruptedSeconds 기록)
      */
     fun giveUpTimer() {
-        // 0. 세션 종료 처리 (Week 3)
+        // 0. 경과 시간 계산 (목표 시간 - 남은 시간)
+        val elapsedSeconds = totalSeconds.value - remainingSeconds.value
+        val endTime = System.currentTimeMillis()
+        
+        Log.d(TAG, "🛑 Timer give up - elapsed: ${elapsedSeconds}s")
+
+        // 0. 세션 종료 처리 (Week 3 → v2 확장)
         currentSessionId?.let { sessionId ->
             viewModelScope.launch {
-                repository.endSession(
+                // 경과 시간과 포기 사유를 포함하여 세션 종료
+                repository.endSessionWithDetails(
                     sessionId = sessionId,
                     success = false,
-                    endTime = System.currentTimeMillis()
+                    endTime = endTime,
+                    interruptedSeconds = elapsedSeconds,
+                    giveUpReason = "user_give_up"
                 )
+                
+                Log.i(TAG, "✅ Session ended with details: $elapsedSeconds seconds elapsed")
+                
                 currentSessionId = null
             }
         }
@@ -184,6 +197,7 @@ class TimerViewModel @Inject constructor(
         FocusAccessibilityService.isTimerRunning = false
         FocusAccessibilityService.remainingSeconds = 0
         FocusAccessibilityService.totalSeconds = 0
+        FocusAccessibilityService.currentSessionId = null
 
         // 2. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -203,6 +217,7 @@ class TimerViewModel @Inject constructor(
 
         // 1. AccessibilityService 비활성화
         FocusAccessibilityService.isTimerRunning = false
+        FocusAccessibilityService.currentSessionId = null
 
         // 2. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -221,6 +236,7 @@ class TimerViewModel @Inject constructor(
     private fun onTimerFinish(success: Boolean) {
         // 1. AccessibilityService 비활성화
         FocusAccessibilityService.isTimerRunning = false
+        FocusAccessibilityService.currentSessionId = null
 
         // 2. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

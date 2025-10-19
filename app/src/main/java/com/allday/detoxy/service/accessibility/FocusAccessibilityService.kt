@@ -4,10 +4,19 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.core.utils.AppCategory
 import com.allday.detoxy.core.utils.AppCategoryMapper
+import com.allday.detoxy.data.local.entity.FocusInterruption
+import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.service.overlay.LockOverlayService
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.util.UUID
+import javax.inject.Inject
 
 /**
  * 앱 차단을 위한 AccessibilityService (디톡시 제어)
@@ -16,12 +25,18 @@ import dagger.hilt.android.AndroidEntryPoint
  * 1. 동적 카테고리 기반 앱 차단 (AppCategoryMapper 사용)
  * 2. 차단 이벤트 감지 및 LockOverlayScreen 표시
  * 3. 타이머 실행 중에만 차단 기능 활성화
+ * 4. 차단 이벤트 로깅 (FocusInterruption 엔티티) - v2
  *
  * @see AccessibilityService
  * @see AppCategoryMapper
  */
 @AndroidEntryPoint
 class FocusAccessibilityService : AccessibilityService() {
+
+    @Inject
+    lateinit var repository: FocusRepository
+
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
         private const val TAG = "FocusAccessibilityService"
@@ -41,6 +56,12 @@ class FocusAccessibilityService : AccessibilityService() {
 
         @Volatile
         var totalSeconds: Int = 0
+
+        /**
+         * 현재 세션 ID (차단 이벤트 로깅용) - v2
+         */
+        @Volatile
+        var currentSessionId: String? = null
 
         /**
          * 디톡시 제어 설정 (동적 차단 목록)
@@ -131,16 +152,37 @@ class FocusAccessibilityService : AccessibilityService() {
      * @param category 앱 카테고리 (null이면 OTHER)
      */
     private fun handleBlockedApp(packageName: String, category: AppCategory?) {
-        // TODO: Analytics 이벤트 로깅 (session_interrupted)
-        // FirebaseAnalytics.logEvent("session_interrupted", Bundle().apply {
-        //     putString("package_name", packageName)
-        //     putString("category", category?.name ?: "OTHER")
-        //     putInt("remaining_seconds", remainingSeconds)
-        // })
+        val categoryName = category?.name ?: "OTHER"
+        
+        Log.i(TAG, "🚫 App blocked: $packageName ($categoryName)")
 
-        Log.i(TAG, "🚫 App blocked: $packageName (${category?.getDisplayName() ?: "기타 앱"})")
+        // 1. 차단 이벤트 로깅 (FocusInterruption 엔티티)
+        currentSessionId?.let { sessionId ->
+            serviceScope.launch {
+                try {
+                    repository.logInterruption(
+                        FocusInterruption(
+                            id = UUID.randomUUID().toString(),
+                            sessionId = sessionId,
+                            timestamp = System.currentTimeMillis(),
+                            packageName = packageName,
+                            category = categoryName
+                        )
+                    )
+                    Log.d(TAG, "✅ Interruption logged: $packageName ($categoryName)")
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Failed to log interruption", e)
+                }
+            }
+        } ?: Log.w(TAG, "⚠️ currentSessionId is null, interruption not logged")
 
-        // LockOverlayScreen 표시 및 홈 화면 이동
+        // 2. Analytics 이벤트 로깅
+        AnalyticsHelper.logSessionInterrupted(
+            category = categoryName,
+            remainingSeconds = remainingSeconds
+        )
+
+        // 3. LockOverlayScreen 표시 및 홈 화면 이동
         navigateToHome()
     }
 

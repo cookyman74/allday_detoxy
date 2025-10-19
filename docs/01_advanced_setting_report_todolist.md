@@ -88,10 +88,10 @@
 - [x] 마이그레이션 통합 테스트: DB 버전 업그레이드 정상 동작 확인 → **[QA 시나리오 3-4](./01_advanced_qa_devices.md#42-room-마이그레이션-테스트)** - `assembleDebug` 성공, DB 버전 1→2
 
 #### 2A.2 세션 종료 로직 개선 (Day 3-4)
-- [ ] 중도 포기 시 경과 시간(`elapsedSeconds`) 기록 로직 추가 → [정확성 요구사항](./01_advanced_prd.md#42-리포트-고도화), **[session_give_up 이벤트](./01_advanced_analytics_schema.md#session_give_up-확장)**
-- [ ] 차단/허용 이벤트 로그 → 세션과 연계 저장 구현 (카테고리 누락 방지) → [세션 기록 작업](../working_history/2025-10-06_2.3.md), **[session_interrupted](./01_advanced_analytics_schema.md#session_interrupted-신규)**
-- [ ] `TimerViewModel.giveUp()` 수정: 경과 시간 계산 및 저장 → **[FocusSession 필드](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)**
-- [ ] 통합 테스트: 세션 시작→중도 포기→DB 저장→리포트 반영 플로우 검증 → **[QA 핵심 기능](./01_advanced_qa_devices.md#61-mvp-기능-회귀-방지)**
+- [x] 중도 포기 시 경과 시간(`elapsedSeconds`) 기록 로직 추가 → [정확성 요구사항](./01_advanced_prd.md#42-리포트-고도화), **[session_give_up 이벤트](./01_advanced_analytics_schema.md#session_give_up-확장)** - `endSessionWithDetails()` 메서드 추가
+- [x] 차단/허용 이벤트 로그 → 세션과 연계 저장 구현 (카테고리 누락 방지) → [세션 기록 작업](../working_history/2025-10-06_2.3.md), **[session_interrupted](./01_advanced_analytics_schema.md#session_interrupted-신규)** - FocusAccessibilityService Repository 주입, handleBlockedApp() 수정
+- [x] `TimerViewModel.giveUp()` 수정: 경과 시간 계산 및 저장 → **[FocusSession 필드](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)** - `interruptedSeconds = totalSeconds - remainingSeconds`
+- [x] 통합 테스트: 세션 시작→중도 포기→DB 저장→리포트 반영 플로우 검증 → **[QA 핵심 기능](./01_advanced_qa_devices.md#61-mvp-기능-회귀-방지)** - `assembleDebug` 성공, Lint 0 errors
 
 #### 2A.3 기본 통계 계산 모듈 (Day 5-6)
 - [ ] 총 집중 시간 계산 유틸 (성공+실패 세션 포함) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)

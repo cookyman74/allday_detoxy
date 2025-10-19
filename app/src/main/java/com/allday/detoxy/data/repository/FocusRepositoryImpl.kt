@@ -1,11 +1,14 @@
 package com.allday.detoxy.data.repository
 
+import com.allday.detoxy.data.local.dao.FocusInterruptionDao
 import com.allday.detoxy.data.local.dao.FocusSessionDao
 import com.allday.detoxy.data.local.dao.UserSettingsDao
+import com.allday.detoxy.data.local.entity.FocusInterruption
 import com.allday.detoxy.data.local.entity.FocusSession
 import com.allday.detoxy.data.local.entity.UserSettings
 import com.allday.detoxy.domain.repository.FocusRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,11 +20,13 @@ import javax.inject.Singleton
  *
  * @property sessionDao FocusSession DAO
  * @property settingsDao UserSettings DAO
+ * @property interruptionDao FocusInterruption DAO
  */
 @Singleton
 class FocusRepositoryImpl @Inject constructor(
     private val sessionDao: FocusSessionDao,
-    private val settingsDao: UserSettingsDao
+    private val settingsDao: UserSettingsDao,
+    private val interruptionDao: FocusInterruptionDao
 ) : FocusRepository {
 
     // ==================== FocusSession 관련 ====================
@@ -31,15 +36,36 @@ class FocusRepositoryImpl @Inject constructor(
     }
 
     override suspend fun endSession(sessionId: String, success: Boolean, endTime: Long) {
-        val session = sessionDao.getSessionById(sessionId)
-        session.collect { existingSession ->
-            existingSession?.let {
-                val updatedSession = it.copy(
-                    endTime = endTime,
-                    success = success
-                )
-                sessionDao.update(updatedSession)
-            }
+        val session = sessionDao.getSessionById(sessionId).first()
+        session?.let {
+            val updatedSession = it.copy(
+                endTime = endTime,
+                success = success
+            )
+            sessionDao.update(updatedSession)
+        }
+    }
+
+    override suspend fun endSessionWithDetails(
+        sessionId: String,
+        success: Boolean,
+        endTime: Long,
+        interruptedSeconds: Int,
+        giveUpReason: String?
+    ) {
+        val session = sessionDao.getSessionById(sessionId).first()
+        session?.let {
+            // 주요 방해요인 카테고리 조회 (차단 이벤트가 있는 경우)
+            val primaryCategory = interruptionDao.getPrimaryCategoryBySession(sessionId)
+            
+            val updatedSession = it.copy(
+                endTime = endTime,
+                success = success,
+                interruptedSeconds = interruptedSeconds,
+                primaryDistractionCategory = primaryCategory,
+                giveUpReason = giveUpReason
+            )
+            sessionDao.update(updatedSession)
         }
     }
 
@@ -53,6 +79,20 @@ class FocusRepositoryImpl @Inject constructor(
 
     override fun getAllSessions(): Flow<List<FocusSession>> {
         return sessionDao.getAllSessions()
+    }
+
+    // ==================== FocusInterruption 관련 ====================
+
+    override suspend fun logInterruption(interruption: FocusInterruption) {
+        interruptionDao.insert(interruption)
+    }
+
+    override fun getInterruptionsBySession(sessionId: String): Flow<List<FocusInterruption>> {
+        return interruptionDao.getInterruptionsBySession(sessionId)
+    }
+
+    override suspend fun getPrimaryCategoryBySession(sessionId: String): String? {
+        return interruptionDao.getPrimaryCategoryBySession(sessionId)
     }
 
     // ==================== UserSettings 관련 ====================

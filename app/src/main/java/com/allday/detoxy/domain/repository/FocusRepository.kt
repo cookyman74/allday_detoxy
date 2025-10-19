@@ -1,5 +1,6 @@
 package com.allday.detoxy.domain.repository
 
+import com.allday.detoxy.data.local.entity.FocusInterruption
 import com.allday.detoxy.data.local.entity.FocusSession
 import com.allday.detoxy.data.local.entity.UserSettings
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +32,23 @@ interface FocusRepository {
     suspend fun endSession(sessionId: String, success: Boolean, endTime: Long)
 
     /**
+     * 세션 종료 (확장 버전)
+     *
+     * @param sessionId 세션 ID
+     * @param success 성공 여부
+     * @param endTime 종료 시간
+     * @param interruptedSeconds 중도 포기 시 경과 시간 (초)
+     * @param giveUpReason 포기 사유
+     */
+    suspend fun endSessionWithDetails(
+        sessionId: String,
+        success: Boolean,
+        endTime: Long,
+        interruptedSeconds: Int = 0,
+        giveUpReason: String? = null
+    )
+
+    /**
      * 특정 ID의 세션 조회
      *
      * @param sessionId 세션 ID
@@ -51,6 +69,31 @@ interface FocusRepository {
      * @return 모든 세션 리스트 (Flow)
      */
     fun getAllSessions(): Flow<List<FocusSession>>
+
+    // ==================== FocusInterruption 관련 ====================
+
+    /**
+     * 차단 이벤트 로깅
+     *
+     * @param interruption 차단 이벤트
+     */
+    suspend fun logInterruption(interruption: FocusInterruption)
+
+    /**
+     * 특정 세션의 차단 이벤트 조회
+     *
+     * @param sessionId 세션 ID
+     * @return 차단 이벤트 리스트 (Flow)
+     */
+    fun getInterruptionsBySession(sessionId: String): Flow<List<FocusInterruption>>
+
+    /**
+     * 특정 세션의 가장 많이 차단된 카테고리 조회
+     *
+     * @param sessionId 세션 ID
+     * @return 가장 많이 차단된 카테고리명 (없으면 null)
+     */
+    suspend fun getPrimaryCategoryBySession(sessionId: String): String?
 
     // ==================== UserSettings 관련 ====================
 
