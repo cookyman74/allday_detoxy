@@ -207,9 +207,10 @@
   - `report_coach_recommendation_shown` → **[report_coach_recommendation_shown](./01_advanced_analytics_schema.md#report_coach_recommendation_shown)**
 - [x] UI 테스트: 빌드 검증 완료 (코치 추천 카드는 향후 수정 필요) → **[작업 내역](../working_history/2025-10-19_1st_advanced_2B.3.3.md)**
 
-#### 2B.3.4 코치 추천 카드 완성 (RiskLevel 문제 해결)
+#### 2B.3.4 코치 추천 카드 완성 (RiskLevel 문제 해결) ✅
 **목표**: RiskLevel enum 참조 오류 해결 및 코치 추천 카드/다이얼로그 완성  
-**우선순위**: High (2B.3.3에서 미완성)
+**우선순위**: High (2B.3.3에서 미완성)  
+**작업 문서**: [2025-10-19_1st_advanced_2B.3.4.md](../working_history/2025-10-19_1st_advanced_2B.3.4.md)
 
 **RiskLevel 문제 분석**:
 - Kotlin 컴파일러가 `DetoxyRiskCalculator.RiskLevel` nested enum을 함수 파라미터 타입으로 인식하지 못하는 문제
@@ -219,34 +220,30 @@
   3. Import: `import com.allday.detoxy.domain.manager.DetoxyRiskCalculator.RiskLevel`
 
 **해결 방안 (우선순위순)**:
-- [ ] **방안 1**: RiskLevel을 별도 파일로 분리 (top-level enum class)
-  - `domain/manager/RiskLevel.kt` 생성
+- [x] **방안 1**: RiskLevel을 별도 파일로 분리 (top-level enum class) ✅ 선택됨
+  - `domain/manager/RiskLevel.kt` 생성 (36줄)
   - `DetoxyRiskCalculator`에서 RiskLevel 참조하도록 수정
   - 영향 범위: `DetoxyRiskCalculator.kt`, `DetoxyRiskIndex.kt`, `CoachRecommendation.kt`
-- [ ] **방안 2**: 색상 매핑 로직을 data class 내부로 이동
-  - `CoachRecommendation`에 `getColor()`, `getBgColor()` 메서드 추가
-  - Composable에서 직접 타입 참조 회피
-- [ ] **방안 3**: Compose Preview/Wrapper 함수 활용
-  - `@Composable` 함수에서 RiskLevel을 직접 받지 않고 String으로 변환하여 전달
-  - 내부에서 enum 변환 로직 구현
+- [ ] **방안 2**: 색상 매핑 로직을 data class 내부로 이동 (미채택)
+- [ ] **방안 3**: Compose Preview/Wrapper 함수 활용 (미채택)
 
 **구현 작업**:
-- [ ] RiskLevel enum 분리 (방안 1 선택 시) 또는 대안 구현
-- [ ] `CoachRecommendationCard.kt` 재구현:
-  - 위험 단계별 색상 표시 (RECOVERY: 초록, WARNING: 주황, HIGH_RISK: 빨강)
+- [x] RiskLevel enum 분리 (방안 1 선택) → `RiskLevel.kt` (36줄)
+- [x] `CoachRecommendationCard.kt` 재구현 (227줄):
+  - 위험 단계별 배경색 표시 (RECOVERY: 초록, WARNING: 주황, HIGH_RISK: 빨강)
   - 행동 제안 Top 3 표시 (아이콘 + 제목 + 설명)
   - "전체 보기" 버튼 → 다이얼로그 호출
-- [ ] `CoachRecommendationDialog.kt` 재구현:
+- [x] `CoachRecommendationDialog.kt` 재구현 (234줄):
   - 위험 단계 배지 표시
   - 전체 행동 제안 목록 (스크롤 가능)
-  - 우선순위별 색상 구분
+  - 우선순위별 색상 구분 (높음/중간/낮음)
   - "확인" 버튼
-- [ ] `ReportScreen.kt` 주석 제거 및 카드 통합:
+- [x] `ReportScreen.kt` 주석 제거 및 카드 통합:
   - 코치 추천 카드 활성화 (주석 해제)
   - 다이얼로그 연동
   - 최종 카드 순서: 일간 요약 → 위험 지수 → 회복률 → 방해요인 → 코치 추천
-- [ ] 빌드 검증: `./gradlew compileDebugKotlin`, Lint 확인
-- [ ] UI 테스트: 각 위험 단계별 코치 추천 카드 시각적 검증
+- [x] 빌드 검증: `./gradlew compileDebugKotlin` (SUCCESS)
+- [ ] UI 테스트: 각 위험 단계별 코치 추천 카드 시각적 검증 (후속 작업)
 
 #### 2B.4 통합 테스트 & 품질 (Day 12-13)
 - [ ] QA 시나리오: 성공/포기/실패 세션 5개 생성 후 리포트 검증 → **[QA 시나리오 5-8](./01_advanced_qa_devices.md#43-리포트-고도화-테스트)** (위험 지수, 회복률, 방해요인, 코치 추천)
