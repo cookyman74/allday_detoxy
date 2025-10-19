@@ -358,5 +358,206 @@ if (!uiState.hasData && uiState.todaySessions.isEmpty()) {
 
 ---
 
-**✅ Task 2B.3.2 일간/주간 카드 UI 구현 완료!**
+## 🔧 리뷰 피드백 반영 (2025-10-19 추가)
+
+### 🚨 발견된 문제 (Critical)
+
+#### 퍼센트 값 100배 과다 표시 문제
+
+**문제점**: `DetoxyRiskCalculator`와 `DetoxyRecoveryCalculator`가 이미 0-100 범위의 백분율 값(%)을 반환하는데, UI 카드에서 다시 `* 100`을 곱해 최대 10,000%와 같은 잘못된 값이 표시되었습니다.
+
+**영향 받은 컴포넌트**:
+1. **DetoxyRiskCard** (app/src/main/java/com/allday/detoxy/presentation/ui/report/components/DetoxyRiskCard.kt:84-99)
+   - `failureRate`, `avgGiveUpTime`, `interruptionFrequency` 등이 이미 0-100 범위
+   - UI에서 다시 `* 100` 곱셈으로 잘못된 값 표시
+
+2. **RecoveryTrendCard** (app/src/main/java/com/allday/detoxy/presentation/ui/report/components/RecoveryTrendCard.kt:60-83)
+   - `overallRate`, `weeklyChange` 역시 이미 0-100 범위 (%)
+   - UI에서 다시 `* 100` 곱셈으로 최대 10,000% 변화량 노출
+
+---
+
+### ✅ 수정 내용
+
+#### 1. DetoxyRiskCard 수정
+
+**Before** (❌ 잘못된 표시):
+```kotlin
+RiskFactorItem(
+    label = "실패율",
+    value = "${(riskIndex.failureRate * 100).toInt()}%"  // 최대 10,000%
+)
+RiskFactorItem(
+    label = "포기 시점 점수",
+    value = "${riskIndex.avgGiveUpTime.toInt()}"
+)
+RiskFactorItem(
+    label = "차단 빈도 점수",
+    value = "${riskIndex.interruptionFrequency.toInt()}"
+)
+```
+
+**After** (✅ 올바른 표시):
+```kotlin
+RiskFactorItem(
+    label = "실패율",
+    value = "${String.format("%.0f", riskIndex.failureRate)}%"  // 0-100 범위
+)
+RiskFactorItem(
+    label = "포기 시점 점수",
+    value = String.format("%.0f", riskIndex.avgGiveUpTime)  // 0-100 범위
+)
+RiskFactorItem(
+    label = "차단 빈도 점수",
+    value = String.format("%.0f", riskIndex.interruptionFrequency)  // 0-100 범위
+)
+```
+
+**변경 위치**: 라인 127-138
+
+---
+
+#### 2. RecoveryTrendCard 수정
+
+**Before** (❌ 잘못된 표시):
+```kotlin
+// 전체 회복률
+Text(
+    text = "${(recoveryTrend.overallRate * 100).toInt()}",  // 최대 10,000
+    style = MaterialTheme.typography.displayMedium,
+    fontWeight = FontWeight.Bold,
+    color = MaterialTheme.colorScheme.primary
+)
+
+// 주간 변화량
+Text(
+    text = "${if (recoveryTrend.weeklyChange >= 0) "+" else ""}${(recoveryTrend.weeklyChange * 100).toInt()}%",  // 최대 ±10,000%
+    style = MaterialTheme.typography.bodyMedium,
+    fontWeight = FontWeight.Medium,
+    color = getTrendColor(recoveryTrend.trend)
+)
+```
+
+**After** (✅ 올바른 표시):
+```kotlin
+// 전체 회복률
+Text(
+    text = String.format("%.0f", recoveryTrend.overallRate),  // 0-100 범위
+    style = MaterialTheme.typography.displayMedium,
+    fontWeight = FontWeight.Bold,
+    color = MaterialTheme.colorScheme.primary
+)
+
+// 주간 변화량
+Text(
+    text = "${if (recoveryTrend.weeklyChange >= 0) "+" else ""}${String.format("%.0f", recoveryTrend.weeklyChange)}%",  // ±100 범위
+    style = MaterialTheme.typography.bodyMedium,
+    fontWeight = FontWeight.Medium,
+    color = getTrendColor(recoveryTrend.trend)
+)
+```
+
+**변경 위치**: 라인 78, 101
+
+---
+
+### 🔍 근거 확인
+
+#### DetoxyRiskIndex 데이터 클래스
+```kotlin
+data class DetoxyRiskIndex(
+    val score: Int,                     // 0-100 스코어
+    val level: RiskLevel,               // 위험 단계
+    val failureRate: Float,             // 실패율 (%) ← 이미 % 값
+    val consecutiveFailsPenalty: Float, // 연속 실패 패널티
+    val avgGiveUpTime: Float,           // 평균 포기 시점 점수 (0-100)
+    val interruptionFrequency: Float    // 차단 이벤트 빈도 점수 (0-100)
+)
+```
+
+#### DetoxyRecoveryTrend 데이터 클래스
+```kotlin
+data class DetoxyRecoveryTrend(
+    val overallRate: Float,                        // 전체 회복률 (%) ← 이미 % 값
+    val dailyRates: SortedMap<String, Float>,      // 일별 회복률 (날짜 → %)
+    val weeklyChange: Float,                       // 주간 변화량 (%) ← 이미 % 값
+    val trend: RecoveryTrendType                   // 추세
+)
+```
+
+#### 계산 로직 확인
+```kotlin
+// DetoxyRiskCalculator.kt:63-64
+// 1. 실패율 (0-100)
+val failureRate = calculateFailureRate(sessions)
+
+// DetoxyRecoveryCalculator.kt:201
+val overallRate: Float,  // 전체 회복률 (%)
+```
+
+---
+
+### ✅ 수정 검증
+
+#### 빌드 테스트
+```bash
+./gradlew compileDebugKotlin --quiet
+```
+**결과**: ✅ BUILD SUCCESSFUL
+
+#### Lint 검증
+**결과**: ✅ 0 errors (report/components)
+
+---
+
+### 📊 수정 통계
+
+| 파일 | 수정 라인 | 변경 내용 |
+|------|----------|-----------|
+| `DetoxyRiskCard.kt` | 127-138 | `* 100` 제거, `String.format("%.0f", ...)` 사용 (3개 항목) |
+| `RecoveryTrendCard.kt` | 78, 101 | `* 100` 제거, `String.format("%.0f", ...)` 사용 (2개 항목) |
+
+---
+
+### 🎯 개선 효과
+
+#### Before (잘못된 표시)
+```
+실패율: 7,500%      ← 75% 실패율이 7,500%로 표시
+회복률: 8,200      ← 82% 회복률이 8,200으로 표시
+주간 변화: +1,500%  ← +15% 변화가 +1,500%로 표시
+```
+
+#### After (올바른 표시)
+```
+실패율: 75%        ← 정확한 값
+회복률: 82%        ← 정확한 값
+주간 변화: +15%    ← 정확한 값
+```
+
+**핵심 개선**:
+1. **정확한 수치 표시**: 0-100 범위의 백분율 값을 있는 그대로 표시
+2. **사용자 경험 향상**: 혼란스러운 과다 표시 제거
+3. **데이터 일관성**: Calculator와 UI 사이의 데이터 표현 일치
+4. **코드 가독성**: `String.format()` 사용으로 의도 명확화
+
+---
+
+### 📌 리뷰 피드백 반영 커밋 정보
+
+| 항목 | 내용 |
+|------|------|
+| **브랜치** | `feat/v0.5` |
+| **커밋 ID** | (다음 커밋에서 추가) |
+| **커밋 메시지** | `fix(report): Task 2B.3.2 퍼센트 값 100배 과다 표시 수정` |
+
+**변경 파일**:
+- `DetoxyRiskCard.kt` - 실패율, 포기 시점, 차단 빈도 표시 수정
+- `RecoveryTrendCard.kt` - 전체 회복률, 주간 변화량 표시 수정
+- `2025-10-19_1st_advanced_2B.3.2.md` - 리뷰 피드백 섹션 추가
+
+---
+
+**✅ Task 2B.3.2 일간/주간 카드 UI 구현 완료!**  
+**✅ 리뷰 피드백 반영 완료 (2025-10-19) - 퍼센트 100배 과다 표시 수정**
 

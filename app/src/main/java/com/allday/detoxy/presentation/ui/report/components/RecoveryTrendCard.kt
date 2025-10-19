@@ -75,7 +75,7 @@ fun RecoveryTrendCard(
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Text(
-                        text = "${(recoveryTrend.overallRate * 100).toInt()}",
+                        text = String.format("%.0f", recoveryTrend.overallRate),
                         style = MaterialTheme.typography.displayMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -98,7 +98,7 @@ fun RecoveryTrendCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${if (recoveryTrend.weeklyChange >= 0) "+" else ""}${(recoveryTrend.weeklyChange * 100).toInt()}%",
+                            text = "${if (recoveryTrend.weeklyChange >= 0) "+" else ""}${String.format("%.0f", recoveryTrend.weeklyChange)}%",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = getTrendColor(recoveryTrend.trend)

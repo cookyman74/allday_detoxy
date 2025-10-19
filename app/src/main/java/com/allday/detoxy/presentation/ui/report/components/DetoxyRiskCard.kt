@@ -126,15 +126,15 @@ fun DetoxyRiskCard(
                 ) {
                     RiskFactorItem(
                         label = "실패율",
-                        value = "${(riskIndex.failureRate * 100).toInt()}%"
+                        value = "${String.format("%.0f", riskIndex.failureRate)}%"
                     )
                     RiskFactorItem(
                         label = "포기 시점 점수",
-                        value = "${riskIndex.avgGiveUpTime.toInt()}"
+                        value = String.format("%.0f", riskIndex.avgGiveUpTime)
                     )
                     RiskFactorItem(
                         label = "차단 빈도 점수",
-                        value = "${riskIndex.interruptionFrequency.toInt()}"
+                        value = String.format("%.0f", riskIndex.interruptionFrequency)
                     )
                 }
             } else {
