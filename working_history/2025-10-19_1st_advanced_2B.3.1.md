@@ -306,20 +306,21 @@ val todaySessions: StateFlow<List<FocusSession>>
 
 ---
 
-## 📌 커밋 정보
+## 📌 최종 커밋 정보 (Task 2B.3.1)
 
-**브랜치**: `feat/v0.5`  
-**커밋 ID**: (작성 예정)
-
-**커밋 메시지**: `feat(report): Task 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동`
+| 항목 | 내용 |
+|------|------|
+| **브랜치** | `feat/v0.5` |
+| **커밋 ID** | `87c3296` |
+| **커밋 메시지** | `feat(report): Task 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동` |
+| **변경 통계** | 7 files changed, 565 insertions(+), 62 deletions(-) |
+| **작업 완료일** | 2025-10-19 |
+| **총 소요 시간** | ~2시간 |
 
 **커밋 내용**:
-- 생성: 1개 파일 (~60줄)
-- 수정: 4개 파일 (~130줄)
-- 합계: ~190줄 추가
-
-**작업 완료일**: 2025-10-19  
-**총 소요 시간**: ~2시간
+- 생성: 1개 파일 (`ReportUiState.kt`, `2025-10-19_1st_advanced_2B.3.1.md`)
+- 수정: 5개 파일 (ReportViewModel, FocusRepository 관련 4개, todolist)
+- 합계: 565줄 추가, 62줄 삭제
 
 ---
 
