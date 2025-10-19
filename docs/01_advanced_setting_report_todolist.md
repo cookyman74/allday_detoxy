@@ -106,12 +106,14 @@
 ### Week 2B: 고급 통계 및 UI (Day 7-13)
 
 #### 2B.1 고급 데이터 모델 (Day 7-8)
-- [ ] Room 마이그레이션 v2→v3 작성 및 단위 테스트 → **[마이그레이션 v2→v3](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** (SQL, 테스트)
-- [ ] `FocusDistraction` 엔티티/DAO/Repository 설계 (허용/차단 이벤트 전체) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[FocusDistraction 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
-- [ ] `DetoxyRoutineLog` 엔티티/DAO 설계 (루틴 실행/실패 기록) → **[DetoxyRoutineLog 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**, **[detoxy_routine_completed](./01_advanced_analytics_schema.md#detoxy_routine_completed-신규)**
-- [ ] `FocusSettings` 엔티티/DAO 설계 (카테고리별 차단 설정 저장) → **[FocusSettings 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
-- [ ] UsageStats opt-in 사용자의 체류 시간 저장 구조 설계 → **[FocusDistraction dwellTimeSeconds](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
-- [ ] 통합 테스트: 신규 테이블 CRUD 동작 확인 → **[마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)**
+- [x] Room 마이그레이션 v2→v3 작성 및 단위 테스트 → **[마이그레이션 v2→v3](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** (SQL, 테스트) - `Migration_2_3.kt` (105줄), 3개 테이블 생성, 기본 레코드 삽입, 인덱스 2개
+- [x] `FocusDistraction` 엔티티/DAO 설계 (허용/차단 이벤트 전체) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[FocusDistraction 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** - 엔티티 48줄, DAO 136줄 (10개 메서드), sessionId nullable + SET_NULL, 인덱스 2개
+- [x] `DetoxyRoutineLog` 엔티티/DAO 설계 (루틴 실행/실패 기록) → **[DetoxyRoutineLog 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**, **[detoxy_routine_completed](./01_advanced_analytics_schema.md#detoxy_routine_completed-신규)** - 엔티티 41줄, DAO 100줄 (8개 메서드), RoutineFailureReason enum
+- [x] `FocusSettings` 엔티티/DAO 설계 (카테고리별 차단 설정 저장) → **[FocusSettings 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** - 엔티티 28줄 (Singleton), DAO 83줄 (11개 메서드), 프리셋 적용 메서드
+- [x] UsageStats opt-in 사용자의 체류 시간 저장 구조 설계 → **[FocusDistraction dwellTimeSeconds](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** - dwellTimeSeconds nullable 필드, 분산 회피율 계산 쿼리
+- [x] 통합 테스트: 신규 테이블 CRUD 동작 확인 → **[마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)** - compileDebugKotlin 성공, Lint 0 errors
+- [x] DetoxyDatabase v3 업데이트 및 DatabaseModule MIGRATION_2_3 추가 → **작업 문서**: [2025-10-19_1st_advanced_2B.1.md](../working_history/2025-10-19_1st_advanced_2B.1.md)
+- [x] 생성: 7개 파일 (~541줄), 수정: 2개 파일 (~66줄), 합계: ~607줄
 
 #### 2B.2 고급 통계 계산 모듈 (Day 8-10)
 - [ ] **디톡시 위험 지수** 산식 정의 및 구현 (차단/허용 이벤트, 사용 시간 가중치) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화), **[report_risk_index_calculated](./01_advanced_analytics_schema.md#report_risk_index_calculated)** (recovery/warning/high_risk)
