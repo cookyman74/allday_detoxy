@@ -139,13 +139,68 @@
 - [x] 단위 테스트: 고급 통계 함수 검증  
   ✅ 빌드 성공 (5개 파일 생성, 1개 파일 수정, ~1,153줄)
 
-#### 2B.3 UI 업데이트 (Day 10-12)
-- [ ] 일간 카드: 디톡시 위험 지수, 회복률/집중률 변화 추가 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), **[위험 지수 카드](./01_advanced_wireframe_spec.md#디톡시-위험-지수-카드)**, **[회복률 카드](./01_advanced_wireframe_spec.md#회복률-추세-카드)**
-- [ ] 주간 인사이트 그래프 2종 Compose 구현 (회복률/총 회복 시간) → **[주간 그래프](./01_advanced_wireframe_spec.md#주간-그래프-compose-canvas-기반)**
-- [ ] 방해요인 Top 3 카드 + Tooltip → **[방해요인 Top 3](./01_advanced_wireframe_spec.md#방해요인-top-3-카드)**
-- [ ] 분산 회피율 & 허용 앱 카드 시각화 → **[Wireframe §2](./01_advanced_wireframe_spec.md#2-리포트-고도화-화면)**
-- [ ] 디톡시 코치 추천 카드/다이얼로그 (위험 단계별 메시지) → **[코치 추천 카드](./01_advanced_wireframe_spec.md#디톡시-코치-추천-카드)**, **[추천 메시지](./01_advanced_wireframe_spec.md#코치-추천-메시지-예시)**
-- [ ] 빈 상태/데이터 부족 안내 문구 처리 → **[빈 상태 처리](./01_advanced_wireframe_spec.md#3-빈-상태-empty-state)**
+#### 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동 (Day 10)
+**목표**: 신규 고급 통계 계산기를 ReportViewModel에 통합하고 데이터 흐름 구성
+
+- [ ] ReportViewModel에 `DetoxyAdvancedStatistics` 의존성 주입 (Hilt) → [2B.2 작업 결과](../working_history/2025-10-19_1st_advanced_2B.2.md)
+- [ ] 기존 `ReportUiState`에 신규 통계 필드 추가:
+  - `riskIndex: DetoxyRiskIndex?`
+  - `recoveryTrend: DetoxyRecoveryTrend?`
+  - `topDistractions: List<DistractionItem>`
+  - `coachRecommendation: CoachRecommendation?`
+- [ ] `loadReportData()` 메서드 확장: 7일/30일 세션 데이터 로드 및 고급 통계 계산 → **[DetoxyAdvancedStatistics.calculateComprehensiveInsights()](../working_history/2025-10-19_1st_advanced_2B.2.md#5-detoxyadvancedstatistics-종합-통계-관리자)**
+- [ ] 빈 상태 처리 로직 구현: 세션 데이터 없을 때 기본값 표시 → **[빈 상태 처리](./01_advanced_wireframe_spec.md#3-빈-상태-empty-state)**
+- [ ] 데이터 로딩 상태 관리 (`Loading`, `Success`, `Error`) → [기존 ReportViewModel 패턴](../working_history/2025-10-11_3.3.md)
+- [ ] 단위 테스트: ReportViewModel 신규 통계 로드 검증
+
+#### 2B.3.2 일간/주간 카드 UI 구현 (Day 11)
+**목표**: 핵심 리포트 카드 UI 구현 (위험 지수, 회복률, 방해요인)
+
+- [ ] **위험 지수 카드** Composable 구현:
+  - `DetoxyRiskCard(riskIndex: DetoxyRiskIndex)` 생성
+  - 위험 단계별 색상 표시 (RECOVERY/WARNING/HIGH_RISK) → **[위험 지수 카드](./01_advanced_wireframe_spec.md#디톡시-위험-지수-카드)**
+  - 스코어(0-100) 프로그레스 바 + 텍스트 설명
+- [ ] **회복률 추세 카드** Composable 구현:
+  - `RecoveryTrendCard(recoveryTrend: DetoxyRecoveryTrend)` 생성
+  - 주간 변화량 표시 (↗️/→/↘️) → **[회복률 카드](./01_advanced_wireframe_spec.md#회복률-추세-카드)**
+  - 일별 회복률 간단한 라인 차트 (Compose Canvas)
+- [ ] **주간 인사이트 그래프 2종** Compose Canvas 구현:
+  - 회복률 추세 그래프 (7일) → **[주간 그래프](./01_advanced_wireframe_spec.md#주간-그래프-compose-canvas-기반)**
+  - 총 회복 시간 바 차트 (7일)
+- [ ] **방해요인 Top 3 카드** Composable 구현:
+  - `DistractionTopCard(distractions: List<DistractionItem>)` 생성
+  - 카테고리별 차단 횟수 + 비율(%) 표시 → **[방해요인 Top 3](./01_advanced_wireframe_spec.md#방해요인-top-3-카드)**
+  - Tooltip: 각 카테고리 설명 (Icon + 텍스트)
+- [ ] ReportScreen에 신규 카드 통합 (기존 일간/주간 섹션에 추가) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)
+- [ ] 빈 데이터 상태 UI 처리: "아직 집중 세션이 없어요" 메시지 표시
+
+#### 2B.3.3 고급 카드 & 최종 통합 (Day 12)
+**목표**: 분산 회피율, 코치 추천 UI 구현 및 전체 통합
+
+- [ ] **분산 회피율 카드** Composable 구현:
+  - `DistractionAvoidanceCard(giveUpAnalysis: GiveUpPointAnalysis)` 생성
+  - 5초 이내 이탈 비율 표시 → **[Wireframe §2](./01_advanced_wireframe_spec.md#2-리포트-고도화-화면)**
+  - 초반/중반/후반 포기 비율 도넛 차트
+- [ ] **허용 앱 체류 시간 카드** Composable 구현 (추후 UsageStats 연동 준비):
+  - `AllowedAppDwellCard()` 생성
+  - 현재는 "데이터 수집 중" 상태 표시
+  - UsageStats opt-in 유도 버튼 → **[usage_stats_opt_in](./01_advanced_analytics_schema.md#usage_stats_opt_in-신규)**
+- [ ] **디톡시 코치 추천 카드** Composable 구현:
+  - `DetoxyCoachCard(recommendation: CoachRecommendation)` 생성
+  - 위험 단계별 메시지 + 행동 제안 리스트 → **[코치 추천 카드](./01_advanced_wireframe_spec.md#디톡시-코치-추천-카드)**
+  - 우선순위별 ActionItem 표시 (아이콘 + 제목 + 설명)
+- [ ] **코치 추천 상세 다이얼로그** 구현:
+  - `CoachRecommendationDialog()` 생성
+  - 행동 제안 상세 내용 + "실천하기" 버튼 → **[추천 메시지](./01_advanced_wireframe_spec.md#코치-추천-메시지-예시)**
+- [ ] ReportScreen 최종 레이아웃 조정:
+  - 카드 순서: 일간 요약 → 위험 지수 → 회복률 → 방해요인 → 코치 추천
+  - 스크롤 성능 최적화 (LazyColumn)
+- [ ] 전체 빈 상태 UI 완성: 데이터 부족 시 가이드 메시지 + 일러스트 → **[빈 상태 처리](./01_advanced_wireframe_spec.md#3-빈-상태-empty-state)**
+- [ ] Analytics 이벤트 연동:
+  - `report_risk_index_calculated` → **[report_risk_index_calculated](./01_advanced_analytics_schema.md#report_risk_index_calculated)**
+  - `report_recovery_rate_calculated` → **[report_recovery_rate_calculated](./01_advanced_analytics_schema.md#report_recovery_rate_calculated-신규)**
+  - `report_coach_recommendation_shown` → **[report_coach_recommendation_shown](./01_advanced_analytics_schema.md#report_coach_recommendation_shown)**
+- [ ] UI 테스트: 각 카드별 시각적 검증 (스크린샷 캡처)
 
 #### 2B.4 통합 테스트 & 품질 (Day 12-13)
 - [ ] QA 시나리오: 성공/포기/실패 세션 5개 생성 후 리포트 검증 → **[QA 시나리오 5-8](./01_advanced_qa_devices.md#43-리포트-고도화-테스트)** (위험 지수, 회복률, 방해요인, 코치 추천)
