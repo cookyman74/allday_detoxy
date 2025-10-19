@@ -676,12 +676,13 @@ y 좌표: padding + chartHeight * (1 - 0.83) = 올바른 위치 ✅
 | 항목 | 내용 |
 |------|------|
 | **브랜치** | `feat/v0.5` |
-| **커밋 ID** | (다음 커밋에서 추가) |
+| **커밋 ID** | `b7baef9` |
 | **커밋 메시지** | `fix(report): Task 2B.3.2 라인 차트 범위 오류 수정` |
+| **변경 통계** | 2 files changed, 131 insertions(+), 3 deletions(-) |
 
 **변경 파일**:
 - `RecoveryTrendCard.kt` - 라인 차트 maxValue 동적 계산 (라인 168-171)
-- `2025-10-19_1st_advanced_2B.3.2.md` - 추가 리뷰 피드백 섹션
+- `2025-10-19_1st_advanced_2B.3.2.md` - 추가 리뷰 피드백 섹션 (131줄)
 
 ---
 
