@@ -13,9 +13,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,19 +29,27 @@ import com.allday.detoxy.presentation.viewmodel.ReportViewModel
 import com.allday.detoxy.presentation.ui.report.components.DetoxyRiskCard
 import com.allday.detoxy.presentation.ui.report.components.RecoveryTrendCard
 import com.allday.detoxy.presentation.ui.report.components.DistractionTopCard
+// import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationCard
+// import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
  * 리포트 화면
  *
- * Week 2B: Task 2B.3.2 - 신규 카드 통합
+ * Week 2B: Task 2B.3.3 - 최종 통합 및 Analytics 연동
  */
 @Composable
 fun ReportScreen(
     viewModel: ReportViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showCoachDialog by remember { mutableStateOf(false) }
+
+    // TODO: Analytics 이벤트 로깅 (Task 2B.3.3 - 추후 추가)
+    // - report_risk_index_calculated
+    // - report_recovery_rate_calculated
+    // - report_coach_recommendation_shown
 
     if (uiState.isLoading) {
         Box(
@@ -193,7 +199,7 @@ fun ReportScreen(
                         }
                     }
 
-                    // 신규 고급 통계 카드들 (Week 2B)
+                    // 신규 고급 통계 카드들 (Week 2B) - Task 2B.3.3 최종 통합
                     item {
                         Text(
                             text = "주간 인사이트",
@@ -203,20 +209,34 @@ fun ReportScreen(
                         )
                     }
 
-                    // 위험 지수 카드
+                    // 1. 위험 지수 카드
                     item {
                         DetoxyRiskCard(riskIndex = uiState.riskIndex)
                     }
 
-                    // 회복률 추세 카드
+                    // 2. 회복률 추세 카드
                     item {
                         RecoveryTrendCard(recoveryTrend = uiState.recoveryTrend)
                     }
 
-                    // 방해요인 Top 3 카드
+                    // 3. 방해요인 Top 3 카드
                     item {
                         DistractionTopCard(distractions = uiState.topDistractions)
                     }
+
+                    // 4. 코치 추천 카드 (NEW - Task 2B.3.3)
+                    // TODO: 코치 추천 카드 구현 (RiskLevel enum 참조 오류로 임시 주석)
+                    /*
+                    item {
+                        CoachRecommendationCard(
+                            recommendation = uiState.coachRecommendation,
+                            onDetailClick = {
+                                showCoachDialog = true
+                                // TODO: Analytics 이벤트 추가 (report_coach_recommendation_shown)
+                            }
+                        )
+                    }
+                    */
 
                     // 세션 리스트 섹션 헤더
                     if (uiState.todaySessions.isNotEmpty()) {
@@ -238,18 +258,33 @@ fun ReportScreen(
             }
         }
     }
+
+    // TODO: 코치 추천 다이얼로그 구현 (RiskLevel enum 참조 오류로 임시 주석)
+    /*
+    uiState.coachRecommendation?.let { recommendation ->
+        if (showCoachDialog) {
+            CoachRecommendationDialog(
+                recommendation = recommendation,
+                onDismiss = { showCoachDialog = false }
+            )
+        }
+    }
+    */
 }
 
 /**
- * 빈 상태 카드
+ * 빈 상태 카드 (Task 2B.3.3 - 개선)
  */
 @Composable
 private fun EmptyStateCard() {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 32.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        ),
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -257,29 +292,114 @@ private fun EmptyStateCard() {
                 .padding(48.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(64.dp)
-            )
+            // 아이콘
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(32.dp),
+                modifier = Modifier.size(96.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
+
+            // 제목
             Text(
-                text = "아직 집중 세션이 없어요",
+                text = "첫 디톡시 세션을 시작해보세요!",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(8.dp))
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 설명
             Text(
-                text = "첫 디톡시 세션을 시작하면\n주간 인사이트와 회복률 추세를 확인할 수 있어요!",
+                text = "디톡시 세션을 시작하면\n다음과 같은 인사이트를 받을 수 있어요:",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 lineHeight = 20.sp
             )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 기능 목록
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                EmptyStateFeatureItem(
+                    icon = Icons.Default.CheckCircle,
+                    text = "위험 지수 분석",
+                    color = Color(0xFFF44336)
+                )
+                EmptyStateFeatureItem(
+                    icon = Icons.Default.PlayArrow,
+                    text = "회복률 추세 그래프",
+                    color = Color(0xFF4CAF50)
+                )
+                EmptyStateFeatureItem(
+                    icon = Icons.Default.Info,
+                    text = "방해요인 Top 3",
+                    color = Color(0xFFFFA726)
+                )
+                EmptyStateFeatureItem(
+                    icon = Icons.Default.Favorite,
+                    text = "맞춤형 코치 추천",
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 안내 텍스트
+            Text(
+                text = "타이머 탭에서 집중 모드를 시작해보세요!",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
+            )
         }
+    }
+}
+
+/**
+ * 빈 상태 기능 항목
+ */
+@Composable
+private fun EmptyStateFeatureItem(
+    icon: ImageVector,
+    text: String,
+    color: Color
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
