@@ -565,12 +565,14 @@ suspend fun getQuickExitStats(sessionId: String): QuickExitStats?
 ## 📌 커밋 정보
 
 **브랜치**: `feat/v0.5`  
-**커밋 ID**: (작성 예정)
+**커밋 ID**: `b98bb54` (2025-10-19)
+
+**커밋 메시지**: `feat(database): Task 2B.1 고급 데이터 모델 구현 (Room v3)`
 
 **커밋 내용**:
-- 생성: 7개 파일 (~541줄)
-- 수정: 2개 파일 (~66줄)
-- 합계: ~607줄
+- 생성: 8개 파일 (엔티티 3개 + DAO 3개 + 마이그레이션 1개 + 작업 문서 1개)
+- 수정: 3개 파일 (DetoxyDatabase, DatabaseModule, 체크리스트)
+- 합계: 1,258 insertions, 13 deletions
 
 **작업 완료일**: 2025-10-19  
 **총 소요 시간**: ~2시간
