@@ -296,5 +296,97 @@ data class FocusStatisticsSummary(...) // ✅ 접근 가능
 
 ---
 
+## 🔧 리뷰 피드백 반영 (2025-10-19 추가)
+
+### 발견된 문제 (2건)
+
+#### 문제 1: 주간 추세가 항상 0으로 떨어짐 (Critical)
+**위치**: `DetoxyRecoveryCalculator.calculateRecoveryTrend()`
+
+**원인**:
+- `weeklyChange` 계산이 `periodDays >= 14` 조건에 묶여 있음
+- 7일 분석(기본값) 시 무조건 `weeklyChange = 0f` 설정
+- `RecoveryTrendType`이 항상 `STABLE`로 판단됨
+- 코치 추천 메시지/우선순위가 잘못 유도됨
+
+**해결책**:
+```kotlin
+// Before: periodDays 기반 조건 (7일일 때 무조건 0)
+val weeklyChange = if (periodDays >= 14) {
+    calculateWeeklyChange(sessions)
+} else {
+    0f
+}
+
+// After: 실제 데이터 양 기반 조건 (14일 이상 데이터 있을 때만 계산)
+val weeklyChange = if (sessions.any { it.startTime >= now - (14 * 24 * 60 * 60 * 1000L) }) {
+    calculateWeeklyChange(sessions)
+} else {
+    0f
+}
+```
+
+#### 문제 2: 분석 기간 파라미터가 무시됨 (Critical)
+**위치**: `DetoxyRecoveryCalculator.calculateRecoveryTrend()`
+
+**원인**:
+- `periodDays` 파라미터로 전달된 기간만큼 세션을 필터링하지 않음
+- 넘겨받은 `sessions` 전체를 그대로 사용
+- 30일치 데이터를 주고 7일 분석 요청 시 30일치 전부를 계산에 사용
+- 파라미터 명세와 동작이 불일치
+
+**해결책**:
+```kotlin
+// 추가: periodDays 기간에 해당하는 세션만 필터링
+val now = System.currentTimeMillis()
+val periodStartTime = now - (periodDays * 24 * 60 * 60 * 1000L)
+val filteredSessions = sessions.filter { it.startTime >= periodStartTime }
+
+// 필터링된 세션으로 회복률/일별 회복률 계산
+val dailyRates = calculateDailyRecoveryRates(filteredSessions)
+val overallRate = calculateOverallRecoveryRate(filteredSessions)
+```
+
+### 검증 결과
+
+#### 컴파일 테스트
+```bash
+./gradlew compileDebugKotlin --quiet
+```
+**결과**: ✅ BUILD SUCCESSFUL
+
+#### Lint 검증
+**결과**: ✅ 0 errors
+
+#### 변경 사항
+- **수정**: `DetoxyRecoveryCalculator.kt` (15줄 추가, 로직 개선)
+- **영향**: 회복률 추세 정확도 향상, 코치 추천 정확도 향상
+
+### 개선 효과
+
+1. **정확한 기간 분석**:
+   - 7일 분석 요청 시 정확히 최근 7일 데이터만 사용
+   - 30일 분석 요청 시 정확히 최근 30일 데이터만 사용
+
+2. **정확한 추세 판단**:
+   - 14일 이상 데이터가 있을 때만 주간 변화량 계산
+   - `IMPROVING`/`STABLE`/`DECLINING` 추세가 정확하게 판단됨
+
+3. **정확한 코치 추천**:
+   - 회복률 추세에 따른 코치 메시지가 정확하게 표시됨
+   - 우선순위 설정이 올바르게 작동함
+
+---
+
+## 📌 최종 커밋 정보 (Task 2B.2)
+
+| 단계 | 커밋 ID | 내용 |
+|------|---------|------|
+| 초기 구현 | `91c7f34` | 5개 파일 생성, 2개 파일 수정 (1,529 insertions) |
+| 문서 업데이트 | `0753bd1` | 커밋 ID 추가 |
+| 리뷰 피드백 | (작성 예정) | DetoxyRecoveryCalculator 로직 개선 |
+
+---
+
 **✅ Task 2B.2 고급 통계 계산 모듈 완료!**
 

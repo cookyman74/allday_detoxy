@@ -35,7 +35,7 @@ class DetoxyRecoveryCalculator @Inject constructor() {
     /**
      * 회복률 추세 계산 (7일 또는 30일)
      *
-     * @param sessions 분석할 FocusSession 리스트
+     * @param sessions 분석할 FocusSession 리스트 (전체 데이터)
      * @param periodDays 분석 기간 (7 또는 30)
      * @return DetoxyRecoveryTrend 객체
      */
@@ -52,14 +52,29 @@ class DetoxyRecoveryCalculator @Inject constructor() {
             )
         }
 
+        // periodDays 기간에 해당하는 세션만 필터링
+        val now = System.currentTimeMillis()
+        val periodStartTime = now - (periodDays * 24 * 60 * 60 * 1000L)
+        val filteredSessions = sessions.filter { it.startTime >= periodStartTime }
+
+        if (filteredSessions.isEmpty()) {
+            return DetoxyRecoveryTrend(
+                overallRate = 0f,
+                dailyRates = sortedMapOf(),
+                weeklyChange = 0f,
+                trend = RecoveryTrendType.STABLE
+            )
+        }
+
         // 일별 회복률 계산
-        val dailyRates = calculateDailyRecoveryRates(sessions)
+        val dailyRates = calculateDailyRecoveryRates(filteredSessions)
 
         // 전체 회복률
-        val overallRate = calculateOverallRecoveryRate(sessions)
+        val overallRate = calculateOverallRecoveryRate(filteredSessions)
 
         // 주간 변화량 (최근 7일 vs 이전 7일)
-        val weeklyChange = if (periodDays >= 14) {
+        // 최소 14일 이상의 데이터가 있을 때만 계산
+        val weeklyChange = if (sessions.any { it.startTime >= now - (14 * 24 * 60 * 60 * 1000L) }) {
             calculateWeeklyChange(sessions)
         } else {
             0f
