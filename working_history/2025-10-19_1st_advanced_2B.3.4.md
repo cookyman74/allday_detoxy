@@ -234,12 +234,32 @@ kapt.kotlin.generated]'
 ```bash
 ./gradlew lint --quiet
 ```
-**결과**: ⚠️ 1 error, 105 warnings (기존 오류로 판단)
+**초기 결과**: ⚠️ 1 error, 105 warnings
 
-**확인 사항**:
+**오류 원인**: `LockOverlayService.kt:108` - MissingSuperCall
+- `onStartCommand()` 메서드에서 `super.onStartCommand()` 호출 누락
+
+**수정 사항**:
+```kotlin
+// Before
+override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    // ... 로직 ...
+    return START_STICKY
+}
+
+// After
+override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    // ... 로직 ...
+    // super 호출 (lint MissingSuperCall 해결)
+    super.onStartCommand(intent, flags, startId)
+    return START_STICKY
+}
+```
+
+**최종 결과**: ✅ **BUILD SUCCESSFUL**
 - 신규 작성한 파일 (`RiskLevel.kt`, `CoachRecommendationCard.kt`, `CoachRecommendationDialog.kt`)에는 Lint 오류 없음
 - `ReportScreen.kt`에도 Lint 오류 없음
-- Lint 오류는 다른 파일에서 발생한 기존 오류로 추정
+- `LockOverlayService.kt` MissingSuperCall 오류 해결
 
 ---
 
@@ -363,10 +383,13 @@ fun CoachRecommendationCard(recommendation: CoachRecommendation?) {
 
 ### 커밋 ID
 ```
-c9068c3
+c9068c3 - 메인 구현 (RiskLevel 분리, 카드/다이얼로그 구현, ReportScreen 통합)
+fec50fe - 작업 문서에 커밋 ID 추가
+d94aba1 - todolist 완료 표시
+4948454 - LockOverlayService lint MissingSuperCall 수정
 ```
 
-### 커밋 메시지
+### 커밋 메시지 (c9068c3)
 ```
 feat(report): Task 2B.3.4 코치 추천 카드 완성 (RiskLevel 문제 해결)
 
