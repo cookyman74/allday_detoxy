@@ -73,9 +73,11 @@ interface FocusInterruptionDao {
     /**
      * 오늘 날짜의 모든 차단 이벤트 조회
      *
+     * 'localtime' 변환을 추가하여 로컬 타임존(KST 등)에서 정확한 날짜 비교
+     *
      * @return 오늘의 차단 이벤트 리스트 (Flow)
      */
-    @Query("SELECT * FROM focus_interruptions WHERE DATE(timestamp/1000, 'unixepoch') = DATE('now') ORDER BY timestamp DESC")
+    @Query("SELECT * FROM focus_interruptions WHERE DATE(timestamp/1000, 'unixepoch', 'localtime') = DATE('now', 'localtime') ORDER BY timestamp DESC")
     fun getTodayInterruptions(): Flow<List<FocusInterruption>>
 
     /**

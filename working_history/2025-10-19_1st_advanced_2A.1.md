@@ -415,5 +415,98 @@ ADD COLUMN interruptedSeconds INTEGER NOT NULL DEFAULT 0
 
 ---
 
+## 🔧 리뷰 피드백 반영 (2025-10-19 추가)
+
+### 🐛 이슈: SQLite 타임존 이슈 (UTC vs KST)
+
+**문제**:
+- `getTodaySessions()` 및 `getTodayInterruptions()`에서 `DATE('now')` 사용
+- SQLite의 `'now'`는 **UTC 기준**
+- 한국(KST, UTC+9) 사용자 환경에서 자정 전후 데이터가 하루 전/후로 잘못 분류됨
+- 예: KST 2025-10-20 00:30 → UTC 2025-10-19 15:30 → "어제" 데이터로 분류됨
+
+**해결 방법**:
+- SQLite의 `'localtime'` 변환 추가
+- `DATE(timestamp/1000, 'unixepoch')` → `DATE(timestamp/1000, 'unixepoch', 'localtime')`
+- `DATE('now')` → `DATE('now', 'localtime')`
+
+---
+
+### ✅ 수정된 파일 (2개)
+
+#### 1. FocusSessionDao.kt (기존 파일 수정)
+```kotlin
+// Before
+@Query("SELECT * FROM focus_sessions WHERE DATE(startTime/1000, 'unixepoch') = DATE('now') ORDER BY startTime DESC")
+fun getTodaySessions(): Flow<List<FocusSession>>
+
+// After
+@Query("SELECT * FROM focus_sessions WHERE DATE(startTime/1000, 'unixepoch', 'localtime') = DATE('now', 'localtime') ORDER BY startTime DESC")
+fun getTodaySessions(): Flow<List<FocusSession>>
+```
+
+#### 2. FocusInterruptionDao.kt (신규 파일 수정)
+```kotlin
+// Before
+@Query("SELECT * FROM focus_interruptions WHERE DATE(timestamp/1000, 'unixepoch') = DATE('now') ORDER BY timestamp DESC")
+fun getTodayInterruptions(): Flow<List<FocusInterruption>>
+
+// After
+@Query("SELECT * FROM focus_interruptions WHERE DATE(timestamp/1000, 'unixepoch', 'localtime') = DATE('now', 'localtime') ORDER BY timestamp DESC")
+fun getTodayInterruptions(): Flow<List<FocusInterruption>>
+```
+
+---
+
+### 🧪 검증 결과
+
+**빌드 테스트**:
+```bash
+./gradlew compileDebugKotlin
+```
+**결과**: ✅ BUILD SUCCESSFUL (7s)
+
+**Lint 검증**: ✅ 0 errors (수정된 파일 2개)
+
+---
+
+### 📊 영향 범위
+
+| 메서드 | 파일 | 영향 |
+|--------|------|------|
+| `getTodaySessions()` | FocusSessionDao.kt | 리포트 화면의 "오늘의 세션" 통계 정확도 개선 |
+| `getTodayInterruptions()` | FocusInterruptionDao.kt | "오늘 차단 이벤트" 통계 정확도 개선 |
+
+---
+
+### 🎯 개선 효과
+
+#### Before (UTC 기준)
+- **KST 00:00~08:59**: 어제 날짜로 잘못 분류 ❌
+- **KST 09:00~23:59**: 오늘 날짜로 올바르게 분류 ✅
+
+#### After (KST 기준)
+- **KST 00:00~23:59**: 오늘 날짜로 올바르게 분류 ✅
+- **모든 타임존에서 로컬 시간 기준으로 정확히 작동** ✅
+
+---
+
+### 📝 주의사항
+
+**타임존 관련 쿼리 작성 시**:
+1. `DATE('now')` 대신 `DATE('now', 'localtime')` 사용
+2. Unix timestamp 변환 시 `'unixepoch', 'localtime'` 함께 사용
+3. 서버 API와 데이터 동기화 시 UTC↔Local 변환 주의
+
+**기존 데이터 영향**:
+- 쿼리만 수정되므로 기존 저장된 데이터는 영향 없음
+- 마이그레이션 불필요
+
+---
+
+**✅ 리뷰 피드백 반영 완료!**
+
+---
+
 **✅ Task 2A.1 데이터 모델 확장 완료!**
 

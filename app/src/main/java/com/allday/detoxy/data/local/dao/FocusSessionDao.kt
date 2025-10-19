@@ -36,11 +36,11 @@ interface FocusSessionDao {
      * 오늘 날짜의 모든 세션 조회
      *
      * Unix timestamp를 날짜로 변환하여 오늘과 비교합니다.
-     * DATE(startTime/1000, 'unixepoch')는 밀리초를 초로 변환 후 날짜 추출
+     * 'localtime' 변환을 추가하여 로컬 타임존(KST 등)에서 정확한 날짜 비교
      *
      * @return 오늘의 세션 리스트 (Flow)
      */
-    @Query("SELECT * FROM focus_sessions WHERE DATE(startTime/1000, 'unixepoch') = DATE('now') ORDER BY startTime DESC")
+    @Query("SELECT * FROM focus_sessions WHERE DATE(startTime/1000, 'unixepoch', 'localtime') = DATE('now', 'localtime') ORDER BY startTime DESC")
     fun getTodaySessions(): Flow<List<FocusSession>>
 
     /**
