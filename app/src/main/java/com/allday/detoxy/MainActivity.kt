@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -25,6 +26,7 @@ import com.allday.detoxy.presentation.ui.onboarding.WelcomeScreen
 import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
 import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
 import com.allday.detoxy.presentation.ui.report.ReportScreen
+import com.allday.detoxy.presentation.ui.settings.focus.DetoxyControlSettingsScreen
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.ui.timer.TimerScreen
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
@@ -114,8 +116,8 @@ fun MainScreen() {
  * 네비게이션이 포함된 메인 화면
  *
  * Week 3.3.1: 타이머와 리포트 화면 간 탭 네비게이션 제공
- * MVP 범위: 2개 탭만 구현 (타이머, 리포트)
- * 제외: 설정, 상점, 친구 탭은 1차 릴리스로 연기
+ * 1차 고도화 (Week 1): 설정 탭 추가
+ * 구성: 타이머, 리포트, 설정 (3개 탭)
  */
 @Composable
 fun MainScreenWithNavigation() {
@@ -147,6 +149,17 @@ fun MainScreenWithNavigation() {
                     },
                     label = { Text("리포트") }
                 )
+                NavigationBarItem(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null
+                        )
+                    },
+                    label = { Text("설정") }
+                )
             }
         }
     ) { innerPadding ->
@@ -158,6 +171,9 @@ fun MainScreenWithNavigation() {
             when (selectedTab) {
                 0 -> TimerScreen()
                 1 -> ReportScreen()
+                2 -> DetoxyControlSettingsScreen(
+                    onBack = { selectedTab = 0 }  // 뒤로 가기 시 타이머로
+                )
             }
         }
     }

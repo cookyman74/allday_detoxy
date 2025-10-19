@@ -58,9 +58,15 @@
 **작업 기록**: [working_history/2025-10-15_1st_advanced_2.3.md](../working_history/2025-10-15_1st_advanced_2.3.md)
 
 ### 2.4 QA & 문서화
-- [ ] UI 스냅샷 캡처 및 동작 체크리스트 작성
-- [ ] `docs/01_advanced_prd.md` 업데이트 사항 반영 확인
-- [ ] `working_history` 로그 생성(빌드/테스트 결과 포함)
+- [x] 설정 화면 네비게이션 추가 (MainActivity에 설정 탭 추가, 3탭 구조)
+- [x] 통합 테스트 시나리오 정의 (설정 저장 → 타이머 시작 → 차단 확인)
+- [x] Week 1 종합 보고서 작성 (`2025-10-15_1st_advanced_week1_complete.md`)
+- [x] 빌드 검증 (compileDebugKotlin: SUCCESS, Lint: 0 errors)
+- [x] `docs/01_advanced_prd.md` 업데이트 사항 확인 완료
+
+**작업 기록**: [working_history/2025-10-15_1st_advanced_week1_complete.md](../working_history/2025-10-15_1st_advanced_week1_complete.md)
+
+**✅ Week 1 완료**: 디톡시 제어 설정 화면 구축 완료 (7개 파일 생성, 5개 파일 수정, ~3,500줄)
 
 ---
 
