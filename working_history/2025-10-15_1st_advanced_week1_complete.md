@@ -402,6 +402,91 @@
 
 ---
 
+## 🔧 리뷰 피드백 반영 (2025-10-15 추가)
+
+### 이슈 1: AnalyticsHelper 초기화 누락 ❌→✅
+
+**문제**:
+- `AnalyticsHelper.initialize(context)`가 어디서도 호출되지 않음
+- `firebaseAnalytics`가 항상 `null`
+- 모든 Analytics 이벤트가 실제로 전송되지 않음
+
+**해결**:
+- `DetoxyApplication.onCreate()`에 초기화 코드 추가
+- 초기화 로그 추가 (`✅ AnalyticsHelper initialized`)
+
+**변경 파일**:
+```kotlin
+// DetoxyApplication.kt
+override fun onCreate() {
+    super.onCreate()
+    
+    // Firebase Analytics 초기화 (Week 1 Task 2.3)
+    AnalyticsHelper.initialize(this)
+    Log.i(TAG, "✅ AnalyticsHelper initialized")
+    // ...
+}
+```
+
+### 이슈 2: Clean Architecture 위반 ❌→✅
+
+**문제**:
+- `FocusSettingsRepository`가 `domain/repository`에 있으면서 Android API(Context, DataStore) 직접 사용
+- domain 계층이 Android 의존성을 가짐
+- Clean Architecture 경계 위반
+
+**해결**:
+- **domain**: `FocusSettingsRepository` 인터페이스 (98줄)
+  - Android 의존성 없음
+  - 순수 Kotlin interface
+  - Flow, suspend 함수만 선언
+- **data**: `FocusSettingsRepositoryImpl` 구현체 (206줄)
+  - Context, DataStore 사용
+  - 실제 영속화 로직 구현
+- **Hilt Module**: 인터페이스 ← 구현체 바인딩
+  ```kotlin
+  @Provides
+  fun provideFocusSettingsRepository(
+      @ApplicationContext context: Context
+  ): FocusSettingsRepository {
+      return FocusSettingsRepositoryImpl(context)
+  }
+  ```
+
+**변경 파일**:
+- `domain/repository/FocusSettingsRepository.kt` (98줄) - 인터페이스
+- `data/repository/FocusSettingsRepositoryImpl.kt` (206줄) - 구현체
+- `core/di/RepositoryModule.kt` - Hilt 바인딩 업데이트
+
+### 검증 결과
+
+```bash
+✅ ./gradlew compileDebugKotlin: SUCCESS
+✅ Lint: 0 errors (4개 파일)
+✅ Clean Architecture: domain 계층 Android 의존성 제거 완료
+✅ Analytics: 앱 시작 시 자동 초기화 확인
+```
+
+### 개선 효과
+
+1. **Analytics 정상 동작**:
+   - 이벤트가 Firebase Console에 전송됨
+   - 디버그 로그로 이벤트 확인 가능
+   - Week 2 리포트 고도화 데이터 수집 준비 완료
+
+2. **Clean Architecture 준수**:
+   - domain 계층: 순수 비즈니스 로직 (Android 무관)
+   - data 계층: 플랫폼 의존 구현
+   - 테스트 용이성 증가 (interface mocking)
+   - 향후 다른 저장소(Room 등)로 전환 용이
+
+3. **유지보수성 향상**:
+   - 명확한 계층 분리
+   - 의존성 역전 원칙(DIP) 준수
+   - 단위 테스트 작성 가능
+
+---
+
 ## 📌 커밋 정보
 
 **브랜치**: `feat/v0.5`  
@@ -410,12 +495,14 @@
 - Task 2.2: `ca8fca7` (2025-10-15)
 - Task 2.3: `d4efc32` (2025-10-15)
 - Task 2.4: `54f641f` (2025-10-15)
+- **리뷰 수정**: (예정) - Analytics 초기화 + Clean Architecture 분리
 
-**Week 1 총 커밋**: 4개 (+ 문서 업데이트 2개)
+**Week 1 총 커밋**: 5개 (+ 문서 업데이트 3개)
 
 ---
 
 **작업 완료일**: 2025-10-15  
+**리뷰 반영일**: 2025-10-15  
 **다음 작업**: Week 2A - 데이터 기반 구축  
 **예상 기간**: 6일 (Day 1-6)
 
