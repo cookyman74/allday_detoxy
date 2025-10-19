@@ -504,9 +504,119 @@ fun getTodayInterruptions(): Flow<List<FocusInterruption>>
 
 ---
 
-**✅ 리뷰 피드백 반영 완료!**
+**✅ 리뷰 피드백 1차 반영 완료!**
 
 **커밋**: `7f78d34` (2025-10-19) - fix(dao): SQLite 타임존 이슈 수정
+
+---
+
+## 🔧 리뷰 피드백 2차 반영 (2025-10-19 추가)
+
+### 🐛 이슈: AccessibilityService 코루틴 스코프 미정리 (메모리 누수)
+
+**문제**:
+- `FocusAccessibilityService`가 `serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)` 생성
+- 차단 이벤트 로깅에 사용되는 백그라운드 코루틴 스코프
+- `onDestroy()`에서 `serviceScope.cancel()`을 호출하지 않음
+- 서비스 종료 후에도 백그라운드 작업이 계속 실행될 수 있음 → **메모리 누수** 위험
+
+**영향**:
+- 서비스가 재시작될 때마다 새로운 스코프 생성
+- 이전 스코프가 정리되지 않으면 누적되어 메모리 소비 증가
+- 앱 종료 시에도 백그라운드 작업이 남을 수 있음
+
+---
+
+### ✅ 수정 완료
+
+#### FocusAccessibilityService.kt
+
+##### 1. import 추가
+```kotlin
+import kotlinx.coroutines.cancel  // 추가
+```
+
+##### 2. onDestroy() 수정
+```kotlin
+// Before
+override fun onDestroy() {
+    super.onDestroy()
+    Log.d(TAG, "AccessibilityService destroyed")
+}
+
+// After
+override fun onDestroy() {
+    super.onDestroy()
+    
+    // 코루틴 스코프 정리 (메모리 누수 방지)
+    serviceScope.cancel()
+    
+    // 현재 세션 ID 초기화
+    currentSessionId = null
+    
+    Log.d(TAG, "✅ AccessibilityService destroyed (serviceScope cancelled)")
+}
+```
+
+---
+
+### 🧪 검증 결과
+
+**빌드 테스트**:
+```bash
+./gradlew compileDebugKotlin --quiet
+```
+**결과**: ✅ BUILD SUCCESSFUL
+
+**Lint 검증**: ✅ 0 errors (수정된 파일 1개)
+
+---
+
+### 📊 영향 범위
+
+| 컴포넌트 | 변경 내용 | 효과 |
+|----------|-----------|------|
+| `FocusAccessibilityService` | `onDestroy()`에서 `serviceScope.cancel()` 추가 | 메모리 누수 방지 |
+| `currentSessionId` | `onDestroy()`에서 `null` 초기화 | 상태 정리 |
+
+---
+
+### 🎯 개선 효과
+
+#### Before
+- ❌ 서비스 종료 후에도 `serviceScope` 백그라운드 작업 계속 실행 가능
+- ❌ 서비스 재시작 시 이전 스코프가 누적되어 메모리 소비 증가
+- ❌ 앱 종료 시에도 코루틴이 남아 리소스 낭비
+
+#### After
+- ✅ 서비스 종료 시 모든 코루틴 작업 즉시 취소
+- ✅ 메모리 누수 방지
+- ✅ 깔끔한 리소스 정리 보장
+
+---
+
+### 📝 관련 컴포넌트
+
+**serviceScope 사용처**:
+```kotlin
+// FocusAccessibilityService.kt:171-179
+serviceScope.launch {
+    repository.logInterruption(
+        FocusInterruption(
+            sessionId = sessionId,
+            timestamp = System.currentTimeMillis(),
+            packageName = packageName,
+            category = category.name
+        )
+    )
+}
+```
+- 차단 이벤트 발생 시 DB에 비동기로 기록
+- `onDestroy()`에서 취소하지 않으면 서비스 종료 후에도 실행 가능
+
+---
+
+**✅ 리뷰 피드백 2차 반영 완료!**
 
 ---
 

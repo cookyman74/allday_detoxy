@@ -14,6 +14,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
@@ -221,6 +222,13 @@ class FocusAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "AccessibilityService destroyed")
+        
+        // 코루틴 스코프 정리 (메모리 누수 방지)
+        serviceScope.cancel()
+        
+        // 현재 세션 ID 초기화
+        currentSessionId = null
+        
+        Log.d(TAG, "✅ AccessibilityService destroyed (serviceScope cancelled)")
     }
 }
