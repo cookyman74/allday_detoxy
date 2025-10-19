@@ -384,7 +384,7 @@ val overallRate = calculateOverallRecoveryRate(filteredSessions)
 |------|---------|------|
 | 초기 구현 | `91c7f34` | 5개 파일 생성, 2개 파일 수정 (1,529 insertions) |
 | 문서 업데이트 | `0753bd1` | 커밋 ID 추가 |
-| 리뷰 피드백 | (작성 예정) | DetoxyRecoveryCalculator 로직 개선 |
+| 리뷰 피드백 | `b208c4b` | DetoxyRecoveryCalculator 로직 개선 (111 insertions) |
 
 ---
 
