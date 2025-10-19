@@ -324,5 +324,120 @@ val todaySessions: StateFlow<List<FocusSession>>
 
 ---
 
-**✅ Task 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동 완료!**
+## 🔧 리뷰 피드백 반영 (2025-10-19 추가)
+
+### 🚨 발견된 이슈 (2건)
+
+#### 1. Flow 수집 코루틴 중복 생성 (Critical)
+**문제점**: `refresh()` 호출 시마다 `loadReportData()` 내에서 `repository.getTodaySessions().collect { … }`와 `repository.getSettings().collect { … }`가 `viewModelScope.launch`로 실행되어, 기존 코루틴을 취소하지 않은 채 동일한 Flow를 여러 번 수집하게 되어 중복 업데이트 및 메모리 누수 위험이 있었습니다.
+
+**해결 방법**:
+```kotlin
+// Before: refresh() 호출 시마다 Flow 수집 재시작
+fun refresh() {
+    loadReportData()  // 매번 collect 재실행
+}
+
+// After: init에서만 Flow 수집, refresh는 고급 통계만 재계산
+init {
+    loadReportData()  // Flow 수집은 한 번만
+}
+
+fun refresh() {
+    loadAdvancedStatistics()  // 고급 통계만 재계산
+}
+```
+
+**영향 범위**:
+- `ReportViewModel.kt` - `refresh()` 메서드 수정
+- Flow 수집은 `init`에서 한 번만 실행되도록 보장
+- `refresh()`는 고급 통계만 재계산하여 중복 수집 방지
+
+---
+
+#### 2. Clean Architecture 위반 - ViewModel이 직접 DAO에 의존 (Critical)
+**문제점**: ReportViewModel이 `FocusInterruptionDao`를 직접 주입받아 `getInterruptionsInLastDays()`를 호출하여, presentation 레이어가 data 레이어 구현에 종속되고 Clean Architecture 경계가 무너졌습니다.
+
+**해결 방법**:
+```kotlin
+// Before: ViewModel이 DAO 직접 사용
+@HiltViewModel
+class ReportViewModel @Inject constructor(
+    private val repository: FocusRepository,
+    private val focusInterruptionDao: FocusInterruptionDao,  // ❌ data 레이어 의존
+    private val advancedStatistics: DetoxyAdvancedStatistics
+)
+
+// After: Repository를 통해 추상화
+@HiltViewModel
+class ReportViewModel @Inject constructor(
+    private val repository: FocusRepository,  // ✅ domain 레이어만 의존
+    private val advancedStatistics: DetoxyAdvancedStatistics
+)
+```
+
+**구현 단계**:
+
+1. **FocusRepository에 메서드 추가**:
+```kotlin
+// domain/repository/FocusRepository.kt
+suspend fun getInterruptionsInLastDays(days: Int): List<FocusInterruption>
+```
+
+2. **FocusRepositoryImpl에 구현 추가**:
+```kotlin
+// data/repository/FocusRepositoryImpl.kt
+override suspend fun getInterruptionsInLastDays(days: Int): List<FocusInterruption> {
+    return interruptionDao.getInterruptionsInLastDays(days)
+}
+```
+
+3. **ReportViewModel에서 사용**:
+```kotlin
+// Before
+val recentInterruptions = focusInterruptionDao.getInterruptionsInLastDays(7)
+
+// After
+val recentInterruptions = repository.getInterruptionsInLastDays(7)
+```
+
+**영향 범위**:
+- `FocusRepository.kt` - 인터페이스에 메서드 추가
+- `FocusRepositoryImpl.kt` - 구현 추가
+- `ReportViewModel.kt` - DAO 의존성 제거, Repository 사용
+
+---
+
+### ✅ 수정 검증
+
+#### 빌드 테스트
+```bash
+./gradlew compileDebugKotlin --quiet
+```
+**결과**: ✅ BUILD SUCCESSFUL
+
+#### Lint 검증
+**결과**: ✅ 0 errors (ReportViewModel)
+
+---
+
+### 📊 리뷰 반영 변경 통계
+
+| 파일 | 변경 내용 |
+|------|-----------|
+| `FocusRepository.kt` | `getInterruptionsInLastDays()` 메서드 추가 |
+| `FocusRepositoryImpl.kt` | `getInterruptionsInLastDays()` 구현 추가 |
+| `ReportViewModel.kt` | DAO 의존성 제거, Flow 수집 로직 개선, refresh() 최적화 |
+
+### 🎯 개선 효과
+
+1. **메모리 누수 방지**: Flow 수집이 init에서 한 번만 실행되어 중복 수집 방지
+2. **Clean Architecture 준수**: Presentation → Domain → Data 레이어 경계 유지
+3. **성능 최적화**: `refresh()` 호출 시 고급 통계만 재계산하여 불필요한 Flow 재구독 방지
+4. **테스트 용이성**: Repository 추상화로 단위 테스트 작성 용이
+
+---
+
+**✅ Task 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동 완료!**  
+**✅ 리뷰 피드백 반영 완료 (2025-10-19)**
 

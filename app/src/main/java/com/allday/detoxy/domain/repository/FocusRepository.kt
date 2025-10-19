@@ -106,6 +106,16 @@ interface FocusRepository {
      */
     suspend fun getPrimaryCategoryBySession(sessionId: String): String?
 
+    /**
+     * 최근 N일 동안의 차단 이벤트 조회
+     *
+     * @param days 조회할 일수 (예: 7, 30)
+     * @return 최근 N일의 차단 이벤트 리스트
+     *
+     * Week 2B: Task 2B.3.1 Review Fix
+     */
+    suspend fun getInterruptionsInLastDays(days: Int): List<FocusInterruption>
+
     // ==================== UserSettings 관련 ====================
 
     /**

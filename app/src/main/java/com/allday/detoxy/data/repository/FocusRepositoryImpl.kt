@@ -99,6 +99,10 @@ class FocusRepositoryImpl @Inject constructor(
         return interruptionDao.getPrimaryCategoryBySession(sessionId)
     }
 
+    override suspend fun getInterruptionsInLastDays(days: Int): List<FocusInterruption> {
+        return interruptionDao.getInterruptionsInLastDays(days)
+    }
+
     // ==================== UserSettings 관련 ====================
 
     override fun getSettings(): Flow<UserSettings?> {
