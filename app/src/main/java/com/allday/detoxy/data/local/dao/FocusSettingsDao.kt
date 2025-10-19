@@ -94,10 +94,13 @@ interface FocusSettingsDao {
 
     /**
      * 기본 설정으로 초기화 (표준 디톡시 프리셋)
+     *
+     * SNS, WEB, VIDEO: 차단 (1)
+     * MESSENGER, OTHER: 허용 (0)
      */
     @Query("""
         UPDATE focus_settings 
-        SET snsEnabled = 1, messengerEnabled = 0, webEnabled = 1, videoEnabled = 1, otherEnabled = 1, 
+        SET snsEnabled = 1, messengerEnabled = 0, webEnabled = 1, videoEnabled = 1, otherEnabled = 0, 
             lastUpdated = :timestamp 
         WHERE id = 1
     """)

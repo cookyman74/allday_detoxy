@@ -562,22 +562,106 @@ suspend fun getQuickExitStats(sessionId: String): QuickExitStats?
 
 ---
 
-## 📌 커밋 정보
+## 🔧 리뷰 피드백 반영 (2025-10-19 추가)
 
-**브랜치**: `feat/v0.5`  
-**커밋 ID**: `b98bb54` (2025-10-19)
+### 문제: FocusSettings 기본값 불일치 (Critical)
 
-**커밋 메시지**: `feat(database): Task 2B.1 고급 데이터 모델 구현 (Room v3)`
+#### 🔍 발견된 문제
+- **FocusSettings 엔티티**: `otherEnabled = true` (기본값)
+- **기존 DataStore/앱 로직**: `otherEnabled = false` (표준 프리셋)
+- **영향**: Room DB와 DataStore 간 상태 불일치 → 프리셋 감지 오류 가능
 
-**커밋 내용**:
-- 생성: 8개 파일 (엔티티 3개 + DAO 3개 + 마이그레이션 1개 + 작업 문서 1개)
-- 수정: 3개 파일 (DetoxyDatabase, DatabaseModule, 체크리스트)
-- 합계: 1,258 insertions, 13 deletions
+#### ✅ 조치 내용
+
+##### 1. FocusSettings.kt 수정
+```kotlin
+// 변경 전
+val otherEnabled: Boolean = true,
+
+// 변경 후
+val otherEnabled: Boolean = false,  // 기본 OFF (기타 앱은 차단하지 않음)
+```
+
+**추가된 주석**:
+```kotlin
+/**
+ * **기본값 (표준 디톡시 프리셋)**:
+ * - SNS, WEB, VIDEO: 차단 (true)
+ * - MESSENGER, OTHER: 허용 (false)
+ */
+```
+
+##### 2. Migration_2_3.kt 수정
+```kotlin
+// 변경 전
+VALUES (1, 1, 0, 1, 1, 1, ${System.currentTimeMillis()})
+
+// 변경 후
+VALUES (1, 1, 0, 1, 1, 0, ${System.currentTimeMillis()})
+//                     ^ otherEnabled: 1 → 0
+```
+
+**추가된 주석**:
+```kotlin
+// 4. 기본 설정 삽입 (Singleton) - 표준 디톡시 프리셋
+//    SNS, WEB, VIDEO: 차단 (1)
+//    MESSENGER, OTHER: 허용 (0)
+```
+
+##### 3. FocusSettingsDao.kt 수정
+```kotlin
+// resetToDefault() 메서드 수정
+
+// 변경 전
+SET snsEnabled = 1, messengerEnabled = 0, webEnabled = 1, videoEnabled = 1, otherEnabled = 1,
+
+// 변경 후
+SET snsEnabled = 1, messengerEnabled = 0, webEnabled = 1, videoEnabled = 1, otherEnabled = 0,
+//                                                                                         ^ 1 → 0
+```
+
+**추가된 주석**:
+```kotlin
+/**
+ * 기본 설정으로 초기화 (표준 디톡시 프리셋)
+ *
+ * SNS, WEB, VIDEO: 차단 (1)
+ * MESSENGER, OTHER: 허용 (0)
+ */
+```
+
+#### 🧪 검증 결과
+- ✅ Lint: 0 errors (3개 파일 수정)
+- ✅ compileDebugKotlin: BUILD SUCCESSFUL
+- ✅ DataStore 기본값과 일치 확인
+
+#### 📊 변경 통계
+- 수정: 3개 파일
+  - `FocusSettings.kt`: 주석 추가, 기본값 수정 (1줄)
+  - `Migration_2_3.kt`: 주석 추가, INSERT 값 수정 (1줄)
+  - `FocusSettingsDao.kt`: 주석 추가, UPDATE 값 수정 (1줄)
+
+#### 💡 기대 효과
+- Room DB와 DataStore 간 일관성 보장
+- 표준 프리셋 적용 시 카테고리 토글 오류 방지
+- 향후 두 소스 통합/병행 시 안정성 확보
+
+---
+
+## 📌 최종 커밋 정보 (Task 2B.1)
+
+| 커밋 ID | 날짜 | 메시지 |
+|---------|------|--------|
+| `b98bb54` | 2025-10-19 | feat(database): Task 2B.1 고급 데이터 모델 구현 (Room v3) |
+| `f9f2b70` | 2025-10-19 | docs(working_history): Task 2B.1 커밋 ID 추가 |
+| (작성 예정) | 2025-10-19 | fix(database): FocusSettings otherEnabled 기본값 수정 (DataStore 일치) |
+
+**브랜치**: `feat/v0.5`
 
 **작업 완료일**: 2025-10-19  
 **총 소요 시간**: ~2시간
 
 ---
 
-**✅ Task 2B.1 고급 데이터 모델 완료!**
+**✅ Task 2B.1 고급 데이터 모델 완료! (리뷰 피드백 반영 완료)**
 

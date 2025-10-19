@@ -13,12 +13,16 @@ import androidx.room.PrimaryKey
  *
  * **Singleton 패턴**: ID가 항상 1인 단일 레코드만 사용
  *
+ * **기본값 (표준 디톡시 프리셋)**:
+ * - SNS, WEB, VIDEO: 차단 (true)
+ * - MESSENGER, OTHER: 허용 (false)
+ *
  * @property id 고유 ID (항상 1, Singleton)
  * @property snsEnabled SNS 카테고리 차단 활성화 여부
- * @property messengerEnabled 메신저 카테고리 차단 활성화 여부 (기본 OFF)
+ * @property messengerEnabled 메신저 카테고리 차단 활성화 여부 (기본 OFF, 긴급 연락 용도)
  * @property webEnabled 웹 브라우저 카테고리 차단 활성화 여부
  * @property videoEnabled 영상/숏폼 카테고리 차단 활성화 여부
- * @property otherEnabled 기타 앱 카테고리 차단 활성화 여부
+ * @property otherEnabled 기타 앱 카테고리 차단 활성화 여부 (기본 OFF)
  * @property lastUpdated 마지막 업데이트 시각 (Unix timestamp, milliseconds)
  */
 @Entity(tableName = "focus_settings")
@@ -29,7 +33,7 @@ data class FocusSettings(
     val messengerEnabled: Boolean = false,  // 기본 OFF (메신저는 긴급 연락 용도)
     val webEnabled: Boolean = true,
     val videoEnabled: Boolean = true,
-    val otherEnabled: Boolean = true,
+    val otherEnabled: Boolean = false,  // 기본 OFF (기타 앱은 차단하지 않음)
     val lastUpdated: Long = System.currentTimeMillis()
 )
 

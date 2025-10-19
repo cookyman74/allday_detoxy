@@ -81,11 +81,13 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
             """.trimIndent()
         )
 
-        // 4. 기본 설정 삽입 (Singleton)
+        // 4. 기본 설정 삽입 (Singleton) - 표준 디톡시 프리셋
+        //    SNS, WEB, VIDEO: 차단 (1)
+        //    MESSENGER, OTHER: 허용 (0)
         database.execSQL(
             """
             INSERT OR IGNORE INTO focus_settings (id, snsEnabled, messengerEnabled, webEnabled, videoEnabled, otherEnabled, lastUpdated)
-            VALUES (1, 1, 0, 1, 1, 1, ${System.currentTimeMillis()})
+            VALUES (1, 1, 0, 1, 1, 0, ${System.currentTimeMillis()})
             """.trimIndent()
         )
 
