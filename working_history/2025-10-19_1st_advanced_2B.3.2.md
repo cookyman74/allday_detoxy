@@ -339,20 +339,22 @@ if (!uiState.hasData && uiState.todaySessions.isEmpty()) {
 
 ---
 
-## 📌 커밋 정보
+## 📌 최종 커밋 정보 (Task 2B.3.2)
 
-**브랜치**: `feat/v0.5`  
-**커밋 ID**: (작성 예정)
-
-**커밋 메시지**: `feat(report): Task 2B.3.2 일간/주간 카드 UI 구현`
+| 항목 | 내용 |
+|------|------|
+| **브랜치** | `feat/v0.5` |
+| **커밋 ID** | `a4adcc2` |
+| **커밋 메시지** | `feat(report): Task 2B.3.2 일간/주간 카드 UI 구현` |
+| **변경 통계** | 6 files changed, 1304 insertions(+), 229 deletions(-) |
+| **작업 완료일** | 2025-10-19 |
+| **총 소요 시간** | ~3시간 |
 
 **커밋 내용**:
-- 생성: 3개 파일 (~627줄)
-- 수정: 1개 파일 (~417줄)
-- 합계: ~1,044줄
-
-**작업 완료일**: 2025-10-19  
-**총 소요 시간**: ~3시간
+- 생성: 3개 파일 (DetoxyRiskCard, RecoveryTrendCard, DistractionTopCard)
+- 수정: 2개 파일 (ReportScreen, todolist)
+- 작업 문서: 2025-10-19_1st_advanced_2B.3.2.md
+- 합계: 1,304줄 추가, 229줄 삭제
 
 ---
 
