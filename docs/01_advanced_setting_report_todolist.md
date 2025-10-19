@@ -179,15 +179,15 @@
 - [x] 빈 데이터 상태 UI 처리: "아직 집중 세션이 없어요" 메시지 표시  
   ✅ EmptyStateCard 구현, hasData 플래그 기반 분기
 
-#### 2B.3.3 고급 카드 & 최종 통합 (Day 12)
+#### 2B.3.3 고급 카드 & 최종 통합 (Day 12) ✅
 **목표**: 분산 회피율, 코치 추천 UI 구현 및 전체 통합
 
-- [ ] **분산 회피율 카드** Composable 구현:
-  - `DistractionAvoidanceCard(giveUpAnalysis: GiveUpPointAnalysis)` 생성
-  - 5초 이내 이탈 비율 표시 → **[Wireframe §2](./01_advanced_wireframe_spec.md#2-리포트-고도화-화면)**
-  - 초반/중반/후반 포기 비율 도넛 차트
-- [ ] **허용 앱 체류 시간 카드** Composable 구현 (추후 UsageStats 연동 준비):
-  - `AllowedAppDwellCard()` 생성
+- [x] **분산 회피율 카드** Composable 구현:
+  - `DistractionAvoidanceCard(giveUpAnalysis: GiveUpPointAnalysis)` 생성 (308줄)
+  - 초반/중반/후반 포기 비율 도넛 차트 (Canvas 사용)
+  - 포기 패턴별 조언 (EARLY/MID/LATE)
+- [x] **허용 앱 체류 시간 카드** Composable 구현 (추후 UsageStats 연동 준비):
+  - `AllowedAppDwellCard()` 생성 (184줄)
   - 현재는 "데이터 수집 중" 상태 표시
   - UsageStats opt-in 유도 버튼 → **[usage_stats_opt_in](./01_advanced_analytics_schema.md#usage_stats_opt_in-신규)**
 - [x] **디톡시 코치 추천 카드** Composable 구현 (⚠️ RiskLevel enum 참조 오류로 TODO 처리):
