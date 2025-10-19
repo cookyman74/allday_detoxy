@@ -67,4 +67,33 @@ interface FocusSessionDao {
      */
     @Query("SELECT * FROM focus_sessions WHERE success = 1 ORDER BY startTime DESC")
     fun getSuccessfulSessions(): Flow<List<FocusSession>>
+
+    /**
+     * 최근 N일 동안의 세션 조회
+     *
+     * 'localtime' 변환을 사용하여 로컬 타임존 기준으로 날짜 계산
+     *
+     * @param days 조회할 일수 (예: 7, 30)
+     * @return 최근 N일의 세션 리스트
+     */
+    @Query("""
+        SELECT * FROM focus_sessions 
+        WHERE DATE(startTime/1000, 'unixepoch', 'localtime') >= DATE('now', 'localtime', '-' || :days || ' days')
+        ORDER BY startTime DESC
+    """)
+    suspend fun getSessionsInLastDays(days: Int): List<FocusSession>
+
+    /**
+     * 특정 날짜 범위의 세션 조회
+     *
+     * @param startTimestamp 시작 시간 (Unix timestamp, milliseconds)
+     * @param endTimestamp 종료 시간 (Unix timestamp, milliseconds)
+     * @return 범위 내 세션 리스트
+     */
+    @Query("""
+        SELECT * FROM focus_sessions 
+        WHERE startTime >= :startTimestamp AND startTime <= :endTimestamp
+        ORDER BY startTime DESC
+    """)
+    suspend fun getSessionsInRange(startTimestamp: Long, endTimestamp: Long): List<FocusSession>
 }

@@ -94,11 +94,12 @@
 - [x] 통합 테스트: 세션 시작→중도 포기→DB 저장→리포트 반영 플로우 검증 → **[QA 핵심 기능](./01_advanced_qa_devices.md#61-mvp-기능-회귀-방지)** - `assembleDebug` 성공, Lint 0 errors
 
 #### 2A.3 기본 통계 계산 모듈 (Day 5-6)
-- [ ] 총 집중 시간 계산 유틸 (성공+실패 세션 포함) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 집중률 계산 함수 (성공 세션 / 전체 세션)
-- [ ] 평균 집중 유지 시간 계산 (성공/실패 분리)
-- [ ] 포인트 누적 추세 계산 (7일/30일 기준)
-- [ ] 단위 테스트: 각 통계 함수 정확성 검증
+- [x] 총 집중 시간 계산 유틸 (성공+실패 세션 포함) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화), `calculateTotalFocusTime()` - 성공: durationMinutes*60, 실패: interruptedSeconds
+- [x] 집중률 계산 함수 (성공 세션 / 전체 세션) → `calculateFocusRate()` - (성공 세션 수 / 전체 세션 수) * 100
+- [x] 평균 집중 유지 시간 계산 (성공/실패 분리) → `calculateAverageFocusDuration()` - Pair<성공 평균, 실패 평균> (초 단위)
+- [x] 포인트 누적 추세 계산 (7일/30일 기준) → `calculateDailyPointsTrend()` - Map<날짜, 포인트>, 성공 세션만 포인트 획득
+- [x] FocusSessionDao에 `getSessionsInLastDays()`, `getSessionsInRange()` 쿼리 추가 → **작업 문서**: [2025-10-19_1st_advanced_2A.3.md](../working_history/2025-10-19_1st_advanced_2A.3.md)
+- [x] FocusStatisticsCalculator 유틸리티 생성 (@Singleton, 5개 함수, 163줄) → `calculateSummary()` 통합 통계 반환
 
 ---
 
