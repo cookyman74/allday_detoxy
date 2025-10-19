@@ -156,26 +156,28 @@
 - [x] 하위 호환성 유지: 기존 ReportScreen API 유지  
   ✅ 기존 `todaySessions`, `settings`, `isLoading` StateFlow 및 통계 메서드 유지 (Task 2B.3.2에서 제거 예정)
 
-#### 2B.3.2 일간/주간 카드 UI 구현 (Day 11)
-**목표**: 핵심 리포트 카드 UI 구현 (위험 지수, 회복률, 방해요인)
+#### 2B.3.2 일간/주간 카드 UI 구현 (Day 11) ✅
+**목표**: 핵심 리포트 카드 UI 구현 (위험 지수, 회복률, 방해요인)  
+**작업 문서**: [2025-10-19_1st_advanced_2B.3.2.md](../working_history/2025-10-19_1st_advanced_2B.3.2.md)
 
-- [ ] **위험 지수 카드** Composable 구현:
-  - `DetoxyRiskCard(riskIndex: DetoxyRiskIndex)` 생성
-  - 위험 단계별 색상 표시 (RECOVERY/WARNING/HIGH_RISK) → **[위험 지수 카드](./01_advanced_wireframe_spec.md#디톡시-위험-지수-카드)**
-  - 스코어(0-100) 프로그레스 바 + 텍스트 설명
-- [ ] **회복률 추세 카드** Composable 구현:
-  - `RecoveryTrendCard(recoveryTrend: DetoxyRecoveryTrend)` 생성
-  - 주간 변화량 표시 (↗️/→/↘️) → **[회복률 카드](./01_advanced_wireframe_spec.md#회복률-추세-카드)**
-  - 일별 회복률 간단한 라인 차트 (Compose Canvas)
-- [ ] **주간 인사이트 그래프 2종** Compose Canvas 구현:
-  - 회복률 추세 그래프 (7일) → **[주간 그래프](./01_advanced_wireframe_spec.md#주간-그래프-compose-canvas-기반)**
-  - 총 회복 시간 바 차트 (7일)
-- [ ] **방해요인 Top 3 카드** Composable 구현:
-  - `DistractionTopCard(distractions: List<DistractionItem>)` 생성
-  - 카테고리별 차단 횟수 + 비율(%) 표시 → **[방해요인 Top 3](./01_advanced_wireframe_spec.md#방해요인-top-3-카드)**
-  - Tooltip: 각 카테고리 설명 (Icon + 텍스트)
-- [ ] ReportScreen에 신규 카드 통합 (기존 일간/주간 섹션에 추가) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)
-- [ ] 빈 데이터 상태 UI 처리: "아직 집중 세션이 없어요" 메시지 표시
+- [x] **위험 지수 카드** Composable 구현:  
+  ✅ `DetoxyRiskCard(riskIndex: DetoxyRiskIndex)` 생성  
+  ✅ 위험 단계별 색상 표시 (RECOVERY/WARNING/HIGH_RISK) → **[위험 지수 카드](./01_advanced_wireframe_spec.md#디톡시-위험-지수-카드)**  
+  ✅ 스코어(0-100) 프로그레스 바 + 텍스트 설명 + 세부 지표 3가지
+- [x] **회복률 추세 카드** Composable 구현:  
+  ✅ `RecoveryTrendCard(recoveryTrend: DetoxyRecoveryTrend)` 생성  
+  ✅ 주간 변화량 표시 (↗️/→/↘️) → **[회복률 카드](./01_advanced_wireframe_spec.md#회복률-추세-카드)**  
+  ✅ 일별 회복률 간단한 라인 차트 (Compose Canvas)
+- [x] **주간 인사이트 그래프** Compose Canvas 구현:  
+  ✅ 회복률 추세 그래프 (7일) - RecoveryTrendCard 내장 → **[주간 그래프](./01_advanced_wireframe_spec.md#주간-그래프-compose-canvas-기반)**
+- [x] **방해요인 Top 3 카드** Composable 구현:  
+  ✅ `DistractionTopCard(distractions: List<DistractionItem>)` 생성  
+  ✅ 카테고리별 차단 횟수 + 비율(%) 표시 → **[방해요인 Top 3](./01_advanced_wireframe_spec.md#방해요인-top-3-카드)**  
+  ✅ 순위별 색상 구분 및 프로그레스 바
+- [x] ReportScreen에 신규 카드 통합 (기존 일간/주간 섹션에 추가) → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화)  
+  ✅ 새로운 UiState 사용, 주간 인사이트 섹션 추가, 3개 신규 카드 배치
+- [x] 빈 데이터 상태 UI 처리: "아직 집중 세션이 없어요" 메시지 표시  
+  ✅ EmptyStateCard 구현, hasData 플래그 기반 분기
 
 #### 2B.3.3 고급 카드 & 최종 통합 (Day 12)
 **목표**: 분산 회피율, 코치 추천 UI 구현 및 전체 통합
