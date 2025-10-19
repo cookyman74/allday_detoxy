@@ -132,6 +132,8 @@ class LockOverlayService : LifecycleService() {
         // 포그라운드 서비스 시작
         startForeground(NOTIFICATION_ID, createNotification())
 
+        // super 호출 (lint MissingSuperCall 해결)
+        super.onStartCommand(intent, flags, startId)
         return START_STICKY
     }
 
