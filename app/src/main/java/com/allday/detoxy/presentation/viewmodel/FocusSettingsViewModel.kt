@@ -1,19 +1,16 @@
 package com.allday.detoxy.presentation.viewmodel
 
 import android.app.Application
-import android.content.Context
 import android.provider.Settings
 import android.util.Log
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringSetPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.DndManager
+import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.core.utils.AppCategory
 import com.allday.detoxy.core.utils.AppCategoryMapper
 import com.allday.detoxy.core.utils.PermissionUtils
+import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -33,23 +30,13 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class FocusSettingsViewModel @Inject constructor(
-    application: Application
+    application: Application,
+    private val settingsRepository: FocusSettingsRepository
 ) : AndroidViewModel(application) {
 
     companion object {
         private const val TAG = "FocusSettingsViewModel"
-        private const val PREFS_NAME = "focus_settings"
-
-        // DataStore Keys
-        private val KEY_ENABLED_CATEGORIES = stringSetPreferencesKey("enabled_categories")
-        private val KEY_OTHER_APPS_ENABLED = booleanPreferencesKey("other_apps_enabled")
-        private val KEY_MESSENGER_HAS_BEEN_ENABLED = booleanPreferencesKey("messenger_has_been_enabled")
-        private val KEY_ROUTINE_ENABLED = booleanPreferencesKey("routine_enabled")
     }
-
-    // DataStore 인스턴스
-    private val Context.dataStore by preferencesDataStore(name = PREFS_NAME)
-    private val dataStore = application.dataStore
 
     // DND Manager
     private val dndManager = DndManager(application)
@@ -64,38 +51,32 @@ class FocusSettingsViewModel @Inject constructor(
     }
 
     /**
-     * DataStore에서 설정 로드
+     * Repository에서 설정 로드
      */
     private fun loadSettings() {
         viewModelScope.launch {
-            dataStore.data.collect { preferences ->
-                val categories = preferences[KEY_ENABLED_CATEGORIES]?.mapNotNull { name ->
-                    try {
-                        AppCategory.valueOf(name)
-                    } catch (e: IllegalArgumentException) {
-                        Log.w(TAG, "Unknown category: $name")
-                        null
-                    }
-                }?.toSet() ?: getDefaultEnabledCategories()
-
-                val otherAppsEnabled = preferences[KEY_OTHER_APPS_ENABLED] ?: false
-                val messengerHasBeenEnabled = preferences[KEY_MESSENGER_HAS_BEEN_ENABLED] ?: false
-                val routineEnabled = preferences[KEY_ROUTINE_ENABLED] ?: false
-
-                // 프리셋 감지
-                val detectedPreset = AppCategoryMapper.detectPreset(categories, otherAppsEnabled)
-
-                _uiState.update { state ->
-                    state.copy(
-                        enabledCategories = categories,
-                        otherAppsEnabled = otherAppsEnabled,
-                        messengerHasBeenEnabled = messengerHasBeenEnabled,
-                        routineEnabled = routineEnabled,
-                        selectedPreset = detectedPreset
-                    )
+            // 각 설정을 Flow로 수집
+            launch {
+                settingsRepository.enabledCategoriesFlow.collect { categories ->
+                    val detectedPreset = AppCategoryMapper.detectPreset(categories, _uiState.value.otherAppsEnabled)
+                    _uiState.update { it.copy(enabledCategories = categories, selectedPreset = detectedPreset) }
                 }
-
-                Log.d(TAG, "Settings loaded: ${categories.size} categories, preset: ${detectedPreset?.displayName}")
+            }
+            launch {
+                settingsRepository.otherAppsEnabledFlow.collect { otherApps ->
+                    val detectedPreset = AppCategoryMapper.detectPreset(_uiState.value.enabledCategories, otherApps)
+                    _uiState.update { it.copy(otherAppsEnabled = otherApps, selectedPreset = detectedPreset) }
+                }
+            }
+            launch {
+                settingsRepository.messengerHasBeenEnabledFlow.collect { messengerHasBeenEnabled ->
+                    _uiState.update { it.copy(messengerHasBeenEnabled = messengerHasBeenEnabled) }
+                }
+            }
+            launch {
+                settingsRepository.routineEnabledFlow.collect { routineEnabled ->
+                    _uiState.update { it.copy(routineEnabled = routineEnabled) }
+                }
             }
         }
     }
@@ -223,13 +204,11 @@ class FocusSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val state = _uiState.value
 
-            dataStore.edit { preferences ->
-                // 카테고리 저장 (enum name으로)
-                preferences[KEY_ENABLED_CATEGORIES] = state.enabledCategories.map { it.name }.toSet()
-                preferences[KEY_OTHER_APPS_ENABLED] = state.otherAppsEnabled
-                preferences[KEY_MESSENGER_HAS_BEEN_ENABLED] = state.messengerHasBeenEnabled
-                preferences[KEY_ROUTINE_ENABLED] = state.routineEnabled
-            }
+            // Repository에 저장
+            settingsRepository.saveEnabledCategories(state.enabledCategories)
+            settingsRepository.saveOtherAppsEnabled(state.otherAppsEnabled)
+            settingsRepository.saveMessengerHasBeenEnabled(state.messengerHasBeenEnabled)
+            settingsRepository.saveRoutineEnabled(state.routineEnabled)
 
             // AccessibilityService에 설정 전달
             FocusAccessibilityService.updateBlockSettings(
@@ -237,20 +216,23 @@ class FocusSettingsViewModel @Inject constructor(
                 state.otherAppsEnabled
             )
 
-            Log.i(TAG, "Settings saved: ${state.enabledCategories.size} categories, other=${ state.otherAppsEnabled}")
+            // Analytics 이벤트 로깅 (detoxy_settings_saved)
+            val presetName = when (state.selectedPreset) {
+                AppCategoryMapper.DetoxyPreset.COMPLETE_BLOCK -> "complete_block"
+                AppCategoryMapper.DetoxyPreset.STANDARD_DETOXY -> "standard"
+                AppCategoryMapper.DetoxyPreset.RELAXED -> "relaxed"
+                null -> "custom"
+            }
+            AnalyticsHelper.logDetoxySettingsSaved(
+                preset = presetName,
+                enabledCategories = state.enabledCategories,
+                otherAppsEnabled = state.otherAppsEnabled
+            )
+
+            Log.i(TAG, "Settings saved: ${state.enabledCategories.size} categories, other=${state.otherAppsEnabled}")
         }
     }
 
-    /**
-     * 기본 활성화 카테고리 (표준 디톡시)
-     */
-    private fun getDefaultEnabledCategories(): Set<AppCategory> {
-        return setOf(
-            AppCategory.SNS,
-            AppCategory.WEB,
-            AppCategory.VIDEO_SHORTS
-        )
-    }
 }
 
 /**

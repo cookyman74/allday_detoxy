@@ -12,6 +12,7 @@ import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.domain.model.FocusTimer
 import com.allday.detoxy.domain.repository.FocusRepository
+import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.util.Log
@@ -37,6 +38,7 @@ import javax.inject.Inject
 class TimerViewModel @Inject constructor(
     private val application: Application,
     private val repository: FocusRepository,
+    private val settingsRepository: FocusSettingsRepository,
     private val gamificationManager: GamificationManager
 ) : ViewModel() {
 
@@ -138,6 +140,11 @@ class TimerViewModel @Inject constructor(
                     success = false
                 )
             )
+
+            // 1.5. 디톡시 제어 설정 로드 및 AccessibilityService에 전달 (1차 고도화)
+            val (categories, otherApps) = settingsRepository.getCurrentSettings()
+            FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+            Log.i(TAG, "✅ Block settings loaded: ${categories.size} categories, otherApps=$otherApps")
         }
 
         // 2. AccessibilityService 활성화 및 타이머 정보 전달
@@ -146,7 +153,7 @@ class TimerViewModel @Inject constructor(
         FocusAccessibilityService.remainingSeconds = totalSec
         FocusAccessibilityService.totalSeconds = totalSec
 
-        // 2. DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
+        // 3. DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             dndManager.enableDnd()
         }

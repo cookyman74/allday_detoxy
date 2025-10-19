@@ -115,6 +115,8 @@ The app coordinates **four core services** that must stay synchronized:
 - `AppCategoryMapper`: Package mapping & blocking logic
 - `MonitoringPolicy`: Event logging & Analytics integration
 - `FocusAccessibilityService`: Real-time app detection & blocking
+- `DetoxyControlSettingsScreen`: Settings UI with presets & category toggles
+- `FocusSettingsViewModel`: State management with DataStore persistence
 
 ### Database Schema (Room v3)
 
@@ -140,17 +142,18 @@ The app requires three critical permissions that users must manually grant:
 
 ## Current Development Focus (Week 1 of v0.5)
 
-### Completed (2025-10-13)
-- ✅ AppCategory enum & 40-app mapping
-- ✅ Dynamic blocking in FocusAccessibilityService
+### Completed (2025-10-15)
+- ✅ Task 2.1: Data & Domain layer (AppCategory, AppCategoryMapper, MonitoringPolicy)
+- ✅ Task 2.2: UI/UX implementation (DetoxyControlSettingsScreen, FocusSettingsViewModel)
+- ✅ Dynamic blocking in FocusAccessibilityService (40+ apps)
 - ✅ DndManager permission state enhancements
-- ✅ MonitoringPolicy for event tracking
+- ✅ DataStore preferences integration
 
 ### In Progress (Week 1 Remaining)
-- [ ] DetoxyControlSettingsScreen UI (presets, category toggles)
-- [ ] FocusSettingsRepository (Room v3 or DataStore)
-- [ ] ViewModel state management with StateFlow
-- [ ] Analytics integration with MonitoringPolicy events
+- [ ] Task 2.3: State persistence & service synchronization
+- [ ] FocusAccessibilityService real-time sync with settings
+- [ ] Timer start settings application logic
+- [ ] Immediate settings reflection mechanism
 
 ### Upcoming (Week 2)
 - [ ] Room migrations v1→v2→v3
@@ -169,9 +172,10 @@ The app requires three critical permissions that users must manually grant:
 - **@Binds** for interface-implementation binding
 - **@Singleton** scope for database and repositories
 
-### Service Communication (Current)
+### Service Communication
 - **Static flags** for MVP (e.g., `FocusAccessibilityService.isTimerRunning`)
 - **Intent-based** actions for overlay service
+- **DataStore** for settings persistence (v0.5)
 - **TODO**: Migrate to StateFlow for proper reactive updates
 
 ### Analytics & Privacy
@@ -229,6 +233,13 @@ working_history/
 
 ## Common Development Tasks
 
+### Working on Enhancement Tasks
+1. Review task requirements in `docs/01_advanced_setting_report_todolist.md`
+2. Check previous work in `working_history/` folder
+3. Update todolist with completion marks after implementation
+4. Create working history document with format: `YYYY-MM-DD_1st_advanced_X.X.md`
+5. Commit with Korean message and record commit ID
+
 ### Adding a New Blocked App
 1. Add package name to `AppCategoryMapper.categoryMap`
 2. Verify with `./gradlew compileDebugKotlin`
@@ -273,11 +284,13 @@ working_history/
 ## Tech Stack Reference
 
 - **Kotlin**: 1.9.0
-- **Compose BOM**: Latest stable
-- **Hilt**: Latest stable
-- **Room**: Latest stable with KSP
-- **Coroutines**: 1.7.x
+- **Compose BOM**: 2024.04.01
+- **Hilt**: 2.48
+- **Room**: 2.6.1
+- **Coroutines**: 1.7.3
+- **DataStore**: 1.0.0
+- **Lifecycle**: 2.6.2
 - **Min SDK**: 26 (Android 8.0)
 - **Target SDK**: 34 (Android 14)
 - **Java**: 17
-- **Gradle**: 8.7
+- **Gradle**: 8.6.0

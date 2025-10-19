@@ -1,10 +1,14 @@
 package com.allday.detoxy.core.di
 
+import android.content.Context
 import com.allday.detoxy.data.repository.FocusRepositoryImpl
 import com.allday.detoxy.domain.repository.FocusRepository
+import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -34,4 +38,19 @@ abstract class RepositoryModule {
     abstract fun bindFocusRepository(
         impl: FocusRepositoryImpl
     ): FocusRepository
+
+    companion object {
+        /**
+         * FocusSettingsRepository 제공
+         *
+         * DataStore 기반 디톡시 제어 설정 Repository
+         */
+        @Provides
+        @Singleton
+        fun provideFocusSettingsRepository(
+            @ApplicationContext context: Context
+        ): FocusSettingsRepository {
+            return FocusSettingsRepository(context)
+        }
+    }
 }

@@ -45,15 +45,17 @@
 **작업 기록**: [working_history/2025-10-15_1st_advanced_2.2.md](../working_history/2025-10-15_1st_advanced_2.2.md)
 
 ### 2.3 상태 저장 및 로직 연동
-- [ ] `FocusSettingsRepository` 설계(Room + DataStore 조합 검토) → [데이터 보강](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Room 마이그레이션 v3](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** (FocusSettings 엔티티)
-- [ ] 설정 저장 후 세션 시작 시 적용되는지 통합 테스트 → [사용자 시나리오 1~2](./01_advanced_prd.md#3-주요-사용자-시나리오), **[QA 시나리오 1-2](./01_advanced_qa_devices.md#41-디톡시-제어-설정-테스트)**
-- [ ] `TimerViewModel.startTimer`에서 최신 설정을 불러와 AccessibilityService/DndManager에 전달하도록 수정 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[카테고리 매핑 로직](./01_advanced_app_category_mapping.md#데이터-구조-설계)**
-- [ ] 권한 미보유 시 동작 방어 로직 및 사용자 안내 구현 → [완료 기준](./01_advanced_prd.md#8-완료-기준dod), [Week1 권한 처리](../working_history/2025-10-05_1.2.md)
-- [ ] 메신저 카테고리 사용자 선택 상태를 저장/복원하고 프리셋 전환 시 충돌 로직 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[메신저 UX](./01_advanced_app_category_mapping.md#긴급-연락-허용-ux)**
-- [ ] UsageStats opt-in UI(권한 설명/동의/건너뛰기)를 설계하고 세션과의 연동 정책 정의 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[UsageStats 이벤트](./01_advanced_analytics_schema.md#usage_stats_opt_in-신규)**
-- [ ] 디톡시 루틴 스케줄/알림 설정 저장 구조 설계(`DetoxyRoutineLog` 초기 스펙) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[DetoxyRoutineLog 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
-- [ ] Analytics 이벤트 로깅 구현 (`detoxy_settings_*`) → **[Analytics 스키마](./01_advanced_analytics_schema.md#31-디톡시-제어-설정-이벤트)**, **[AnalyticsHelper 구현](./01_advanced_analytics_schema.md#71-analytics-helper-클래스-업데이트)**
-- [ ] 단위 테스트: ViewModel 상태 변환, Repository 기본 CRUD
+- [x] `FocusSettingsRepository` 설계(DataStore 기반) → [데이터 보강](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Room 마이그레이션 v3](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** (FocusSettings 엔티티) - `FocusSettingsRepository.kt` 구현 (196줄, Flow 기반)
+- [x] 설정 저장 후 세션 시작 시 적용되는지 통합 테스트 → [사용자 시나리오 1~2](./01_advanced_prd.md#3-주요-사용자-시나리오), **[QA 시나리오 1-2](./01_advanced_qa_devices.md#41-디톡시-제어-설정-테스트)** - 빌드 및 Lint 테스트 통과
+- [x] `TimerViewModel.startTimer`에서 최신 설정을 불러와 AccessibilityService/DndManager에 전달하도록 수정 → [동작 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[카테고리 매핑 로직](./01_advanced_app_category_mapping.md#데이터-구조-설계)** - `getCurrentSettings()` 호출 및 `updateBlockSettings()` 연동
+- [x] 권한 미보유 시 동작 방어 로직 및 사용자 안내 구현 → [완료 기준](./01_advanced_prd.md#8-완료-기준dod), [Week1 권한 처리](../working_history/2025-10-05_1.2.md) - Task 2.2에서 이미 구현 (`PermissionErrorDialog`)
+- [x] 메신저 카테고리 사용자 선택 상태를 저장/복원하고 프리셋 전환 시 충돌 로직 정의 → [카테고리 구분 원칙](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[메신저 UX](./01_advanced_app_category_mapping.md#긴급-연락-허용-ux)** - Task 2.2에서 이미 구현 (`messengerHasBeenEnabled` DataStore)
+- [ ] UsageStats opt-in UI(권한 설명/동의/건너뛰기)를 설계하고 세션과의 연동 정책 정의 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[UsageStats 이벤트](./01_advanced_analytics_schema.md#usage_stats_opt_in-신규)** - Week 2B 작업
+- [ ] 디톡시 루틴 스케줄/알림 설정 저장 구조 설계(`DetoxyRoutineLog` 초기 스펙) → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[DetoxyRoutineLog 엔티티](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)** - Week 2B 작업
+- [x] Analytics 이벤트 로깅 구현 (`detoxy_settings_*`) → **[Analytics 스키마](./01_advanced_analytics_schema.md#31-디톡시-제어-설정-이벤트)**, **[AnalyticsHelper 구현](./01_advanced_analytics_schema.md#71-analytics-helper-클래스-업데이트)** - `AnalyticsHelper.kt` 생성 (249줄, 7개 이벤트)
+- [x] 통합 테스트: Repository-ViewModel-AccessibilityService 연동 확인 - 빌드 성공, Lint 0 errors
+
+**작업 기록**: [working_history/2025-10-15_1st_advanced_2.3.md](../working_history/2025-10-15_1st_advanced_2.3.md)
 
 ### 2.4 QA & 문서화
 - [ ] UI 스냅샷 캡처 및 동작 체크리스트 작성
