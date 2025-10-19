@@ -548,13 +548,14 @@ val overallRate: Float,  // 전체 회복률 (%)
 | 항목 | 내용 |
 |------|------|
 | **브랜치** | `feat/v0.5` |
-| **커밋 ID** | (다음 커밋에서 추가) |
+| **커밋 ID** | `a2bad40` |
 | **커밋 메시지** | `fix(report): Task 2B.3.2 퍼센트 값 100배 과다 표시 수정` |
+| **변경 통계** | 3 files changed, 207 insertions(+), 6 deletions(-) |
 
 **변경 파일**:
 - `DetoxyRiskCard.kt` - 실패율, 포기 시점, 차단 빈도 표시 수정
 - `RecoveryTrendCard.kt` - 전체 회복률, 주간 변화량 표시 수정
-- `2025-10-19_1st_advanced_2B.3.2.md` - 리뷰 피드백 섹션 추가
+- `2025-10-19_1st_advanced_2B.3.2.md` - 리뷰 피드백 섹션 추가 (207줄)
 
 ---
 
