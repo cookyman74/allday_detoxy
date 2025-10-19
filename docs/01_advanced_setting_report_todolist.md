@@ -81,11 +81,11 @@
 ### Week 2A: 데이터 기반 구축 (Day 1-6)
 
 #### 2A.1 데이터 모델 확장 (Day 1-3)
-- [ ] Room 마이그레이션 v1→v2 작성 및 단위 테스트 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[마이그레이션 v1→v2](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)** (SQL, 테스트 전략)
-- [ ] `FocusSession`에 `interruptedSeconds`, `primaryDistractionCategory`, `giveUpReason` 필드 추가 → **[FocusSession 스키마](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)**
-- [ ] `FocusInterruption` 엔티티/DAO/Repository 설계 및 구현 (세션 중 차단 이벤트 로그) → **[FocusInterruption 엔티티](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)**
-- [ ] 기존 데이터 백필 로직 (기존 세션 `interruptedSeconds = 0`) 적용 → **[마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)**
-- [ ] 마이그레이션 통합 테스트: DB 버전 업그레이드 정상 동작 확인 → **[QA 시나리오 3-4](./01_advanced_qa_devices.md#42-room-마이그레이션-테스트)**
+- [x] Room 마이그레이션 v1→v2 작성 및 단위 테스트 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[마이그레이션 v1→v2](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)** (SQL, 테스트 전략) - `Migration_1_2.kt` (65줄)
+- [x] `FocusSession`에 `interruptedSeconds`, `primaryDistractionCategory`, `giveUpReason` 필드 추가 → **[FocusSession 스키마](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)** - 3개 필드 추가
+- [x] `FocusInterruption` 엔티티/DAO/Repository 설계 및 구현 (세션 중 차단 이벤트 로그) → **[FocusInterruption 엔티티](./01_advanced_room_migration_strategy.md#phase-1-v1--v2-week-2a)** - `FocusInterruption.kt` (48줄), `FocusInterruptionDao.kt` (99줄, 9개 함수)
+- [x] 기존 데이터 백필 로직 (기존 세션 `interruptedSeconds = 0`) 적용 → **[마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)** - `DEFAULT 0` 설정으로 자동 백필
+- [x] 마이그레이션 통합 테스트: DB 버전 업그레이드 정상 동작 확인 → **[QA 시나리오 3-4](./01_advanced_qa_devices.md#42-room-마이그레이션-테스트)** - `assembleDebug` 성공, DB 버전 1→2
 
 #### 2A.2 세션 종료 로직 개선 (Day 3-4)
 - [ ] 중도 포기 시 경과 시간(`elapsedSeconds`) 기록 로직 추가 → [정확성 요구사항](./01_advanced_prd.md#42-리포트-고도화), **[session_give_up 이벤트](./01_advanced_analytics_schema.md#session_give_up-확장)**

@@ -3,8 +3,10 @@ package com.allday.detoxy.core.di
 import android.content.Context
 import androidx.room.Room
 import com.allday.detoxy.data.local.DetoxyDatabase
+import com.allday.detoxy.data.local.dao.FocusInterruptionDao
 import com.allday.detoxy.data.local.dao.FocusSessionDao
 import com.allday.detoxy.data.local.dao.UserSettingsDao
+import com.allday.detoxy.data.local.migrations.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +19,9 @@ import javax.inject.Singleton
  *
  * DetoxyDatabase와 DAO들을 Hilt를 통해 의존성 주입합니다.
  * 싱글톤으로 제공되어 앱 전체에서 하나의 데이터베이스 인스턴스만 사용합니다.
+ *
+ * ## 마이그레이션
+ * - v1 → v2: FocusSession 확장 + FocusInterruption 추가 (MIGRATION_1_2)
  *
  * @InstallIn(SingletonComponent::class)로 앱 전체 생명주기 동안 싱글톤 유지
  */
@@ -39,7 +44,9 @@ object DatabaseModule {
             context,
             DetoxyDatabase::class.java,
             "detoxy_database"
-        ).build()
+        )
+            .addMigrations(MIGRATION_1_2)
+            .build()
     }
 
     /**
@@ -62,5 +69,16 @@ object DatabaseModule {
     @Provides
     fun provideUserSettingsDao(database: DetoxyDatabase): UserSettingsDao {
         return database.settingsDao()
+    }
+
+    /**
+     * FocusInterruptionDao 제공
+     *
+     * @param database DetoxyDatabase 인스턴스
+     * @return FocusInterruptionDao
+     */
+    @Provides
+    fun provideFocusInterruptionDao(database: DetoxyDatabase): FocusInterruptionDao {
+        return database.interruptionDao()
     }
 }

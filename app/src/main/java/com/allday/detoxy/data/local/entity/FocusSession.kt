@@ -15,6 +15,9 @@ import java.util.UUID
  * @property endTime 세션 종료 시간 (Unix timestamp, milliseconds) - null이면 진행 중
  * @property durationMinutes 목표 시간 (분 단위)
  * @property success 성공 여부 (true: 완료, false: 포기)
+ * @property interruptedSeconds 중도 포기 시 경과 시간 (초 단위, v2+)
+ * @property primaryDistractionCategory 주요 방해요인 카테고리 (v2+)
+ * @property giveUpReason 포기 사유 (v2+)
  */
 @Entity(tableName = "focus_sessions")
 data class FocusSession(
@@ -27,5 +30,12 @@ data class FocusSession(
 
     val durationMinutes: Int,
 
-    val success: Boolean = false
+    val success: Boolean = false,
+
+    // v2 추가 필드: 중도 포기 및 방해요인 분석
+    val interruptedSeconds: Int = 0,
+
+    val primaryDistractionCategory: String? = null,
+
+    val giveUpReason: String? = null
 )
