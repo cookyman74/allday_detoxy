@@ -139,19 +139,22 @@
 - [x] 단위 테스트: 고급 통계 함수 검증  
   ✅ 빌드 성공 (5개 파일 생성, 1개 파일 수정, ~1,153줄)
 
-#### 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동 (Day 10)
-**목표**: 신규 고급 통계 계산기를 ReportViewModel에 통합하고 데이터 흐름 구성
+#### 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동 (Day 10) ✅
+**목표**: 신규 고급 통계 계산기를 ReportViewModel에 통합하고 데이터 흐름 구성  
+**작업 문서**: [2025-10-19_1st_advanced_2B.3.1.md](../working_history/2025-10-19_1st_advanced_2B.3.1.md)
 
-- [ ] ReportViewModel에 `DetoxyAdvancedStatistics` 의존성 주입 (Hilt) → [2B.2 작업 결과](../working_history/2025-10-19_1st_advanced_2B.2.md)
-- [ ] 기존 `ReportUiState`에 신규 통계 필드 추가:
-  - `riskIndex: DetoxyRiskIndex?`
-  - `recoveryTrend: DetoxyRecoveryTrend?`
-  - `topDistractions: List<DistractionItem>`
-  - `coachRecommendation: CoachRecommendation?`
-- [ ] `loadReportData()` 메서드 확장: 7일/30일 세션 데이터 로드 및 고급 통계 계산 → **[DetoxyAdvancedStatistics.calculateComprehensiveInsights()](../working_history/2025-10-19_1st_advanced_2B.2.md#5-detoxyadvancedstatistics-종합-통계-관리자)**
-- [ ] 빈 상태 처리 로직 구현: 세션 데이터 없을 때 기본값 표시 → **[빈 상태 처리](./01_advanced_wireframe_spec.md#3-빈-상태-empty-state)**
-- [ ] 데이터 로딩 상태 관리 (`Loading`, `Success`, `Error`) → [기존 ReportViewModel 패턴](../working_history/2025-10-11_3.3.md)
-- [ ] 단위 테스트: ReportViewModel 신규 통계 로드 검증
+- [x] ReportViewModel에 `DetoxyAdvancedStatistics` 의존성 주입 (Hilt) → [2B.2 작업 결과](../working_history/2025-10-19_1st_advanced_2B.2.md)  
+  ✅ Hilt를 통한 의존성 주입 완료
+- [x] `ReportUiState` 생성 및 신규 통계 필드 추가:  
+  ✅ `riskIndex`, `recoveryTrend`, `topDistractions`, `resistanceAnalysis`, `giveUpAnalysis`, `coachRecommendation`, `hasData`
+- [x] `loadReportData()` 메서드 확장: 7일 세션 데이터 로드 및 고급 통계 계산 → **[DetoxyAdvancedStatistics.calculateComprehensiveInsights()](../working_history/2025-10-19_1st_advanced_2B.2.md#5-detoxyadvancedstatistics-종합-통계-관리자)**  
+  ✅ `loadAdvancedStatistics()` 구현, `getSessionsInRange()` 및 `getInterruptionsInLastDays()` 추가
+- [x] 빈 상태 처리 로직 구현: 세션 데이터 없을 때 기본값 표시 → **[빈 상태 처리](./01_advanced_wireframe_spec.md#3-빈-상태-empty-state)**  
+  ✅ `hasData` 플래그 기반 빈 상태 처리
+- [x] 데이터 로딩 상태 관리 (`Loading`, `Success`, `Error`) → [기존 ReportViewModel 패턴](../working_history/2025-10-11_3.3.md)  
+  ✅ `isLoading`, `error` 필드를 통한 상태 관리
+- [x] 하위 호환성 유지: 기존 ReportScreen API 유지  
+  ✅ 기존 `todaySessions`, `settings`, `isLoading` StateFlow 및 통계 메서드 유지 (Task 2B.3.2에서 제거 예정)
 
 #### 2B.3.2 일간/주간 카드 UI 구현 (Day 11)
 **목표**: 핵심 리포트 카드 UI 구현 (위험 지수, 회복률, 방해요인)

@@ -2,86 +2,168 @@ package com.allday.detoxy.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.allday.detoxy.data.local.entity.FocusSession
-import com.allday.detoxy.data.local.entity.UserSettings
+import com.allday.detoxy.data.local.dao.FocusInterruptionDao
+import com.allday.detoxy.domain.manager.DetoxyAdvancedStatistics
 import com.allday.detoxy.domain.repository.FocusRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * 리포트 화면 ViewModel
+ *
+ * Week 2B: Task 2B.3.1 - 고급 통계 통합
+ */
 @HiltViewModel
 class ReportViewModel @Inject constructor(
-    private val repository: FocusRepository
+    private val repository: FocusRepository,
+    private val focusInterruptionDao: FocusInterruptionDao,
+    private val advancedStatistics: DetoxyAdvancedStatistics
 ) : ViewModel() {
 
-    // 오늘 세션 목록
-    private val _todaySessions = MutableStateFlow<List<FocusSession>>(emptyList())
-    val todaySessions: StateFlow<List<FocusSession>> = _todaySessions.asStateFlow()
+    private val _uiState = MutableStateFlow(ReportUiState())
+    val uiState: StateFlow<ReportUiState> = _uiState.asStateFlow()
 
-    // 사용자 설정 (포인트, 스트릭)
-    private val _settings = MutableStateFlow(
-        UserSettings(
-            id = 1,
-            totalPoints = 0,
-            currentStreak = 0,
-            lastSuccessDate = null
-        )
-    )
-    val settings: StateFlow<UserSettings> = _settings.asStateFlow()
-
-    // 로딩 상태
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    // 하위 호환성을 위한 기존 API (Task 2B.3.2에서 제거 예정)
+    val todaySessions: StateFlow<List<com.allday.detoxy.data.local.entity.FocusSession>>
+        get() = uiState.map { it.todaySessions }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, emptyList())
+    
+    val settings: StateFlow<com.allday.detoxy.data.local.entity.UserSettings>
+        get() = uiState.map { it.settings }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, com.allday.detoxy.data.local.entity.UserSettings(1, 0, 0, null))
+    
+    val isLoading: StateFlow<Boolean>
+        get() = uiState.map { it.isLoading }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
 
     init {
-        loadData()
+        loadReportData()
     }
 
-    private fun loadData() {
-        _isLoading.value = true
+    /**
+     * 리포트 데이터 로드 (기본 + 고급 통계)
+     */
+    private fun loadReportData() {
+        _uiState.update { it.copy(isLoading = true, error = null) }
 
-        // 오늘 세션 로드 (Flow를 계속 관찰)
+        // 1. 오늘 세션 로드 (Flow 관찰)
         viewModelScope.launch {
-            repository.getTodaySessions().collect { sessions ->
-                _todaySessions.value = sessions
-                // 첫 데이터 로드 완료
-                if (_isLoading.value) {
-                    _isLoading.value = false
+            try {
+                repository.getTodaySessions().collect { todaySessions ->
+                    _uiState.update { it.copy(todaySessions = todaySessions) }
+                    
+                    // 첫 데이터 로드 완료
+                    if (_uiState.value.isLoading) {
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = "세션 데이터 로드 실패: ${e.message}"
+                    )
                 }
             }
         }
 
-        // 사용자 설정 로드 (Flow를 계속 관찰)
+        // 2. 사용자 설정 로드 (Flow 관찰)
         viewModelScope.launch {
-            repository.getSettings().collect { userSettings ->
-                userSettings?.let {
-                    _settings.value = it
+            try {
+                repository.getSettings().collect { userSettings ->
+                    userSettings?.let { settings ->
+                        _uiState.update { it.copy(settings = settings) }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(error = "설정 데이터 로드 실패: ${e.message}") 
+                }
+            }
+        }
+
+        // 3. 고급 통계 로드 (최근 7일)
+        loadAdvancedStatistics()
+    }
+
+    /**
+     * 고급 통계 계산 및 로드 (최근 7일 기준)
+     *
+     * Week 2B: Task 2B.3.1
+     */
+    private fun loadAdvancedStatistics() {
+        viewModelScope.launch {
+            try {
+                // 최근 7일 세션 데이터 로드
+                val now = System.currentTimeMillis()
+                val sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000L)
+                val recentSessions = repository.getSessionsInRange(sevenDaysAgo, now)
+                
+                // 최근 7일 차단 이벤트 로드
+                val recentInterruptions = focusInterruptionDao.getInterruptionsInLastDays(7)
+                
+                // 데이터가 충분한지 확인
+                val hasData = recentSessions.isNotEmpty()
+                
+                if (hasData) {
+                    // 종합 인사이트 계산
+                    val insights = advancedStatistics.calculateComprehensiveInsights(
+                        sessions = recentSessions,
+                        interruptions = recentInterruptions
+                    )
+                    
+                    // UI 상태 업데이트
+                    _uiState.update {
+                        it.copy(
+                            hasData = true,
+                            riskIndex = insights.riskIndex,
+                            recoveryTrend = insights.recoveryTrend,
+                            topDistractions = insights.topDistractions,
+                            resistanceAnalysis = insights.resistanceAnalysis,
+                            giveUpAnalysis = insights.giveUpAnalysis,
+                            coachRecommendation = insights.coachRecommendation
+                        )
+                    }
+                } else {
+                    // 데이터 없음 (빈 상태)
+                    _uiState.update { 
+                        it.copy(
+                            hasData = false,
+                            riskIndex = null,
+                            recoveryTrend = null,
+                            topDistractions = emptyList(),
+                            resistanceAnalysis = null,
+                            giveUpAnalysis = null,
+                            coachRecommendation = null
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(
+                        hasData = false,
+                        error = "고급 통계 로드 실패: ${e.message}"
+                    )
                 }
             }
         }
     }
 
-    // 통계 계산 함수들
-    fun getSuccessSessionCount(): Int {
-        return _todaySessions.value.count { it.success }
+    /**
+     * 리포트 새로고침
+     */
+    fun refresh() {
+        loadReportData()
     }
 
-    fun getTotalFocusMinutes(): Int {
-        return _todaySessions.value
-            .filter { it.success }
-            .sumOf { it.durationMinutes }
-    }
-
-    fun getFailedSessionCount(): Int {
-        return _todaySessions.value.count { !it.success }
-    }
-
-    fun getSuccessRate(): Float {
-        val total = _todaySessions.value.size
-        if (total == 0) return 0f
-        return (getSuccessSessionCount().toFloat() / total) * 100
-    }
+    // 하위 호환성을 위한 기존 메서드들 (Task 2B.3.2에서 제거 예정)
+    fun getSuccessSessionCount(): Int = _uiState.value.getSuccessSessionCount()
+    fun getTotalFocusMinutes(): Int = _uiState.value.getTotalFocusMinutes()
+    fun getFailedSessionCount(): Int = _uiState.value.getFailedSessionCount()
+    fun getSuccessRate(): Float = _uiState.value.getSuccessRate()
 }

@@ -81,6 +81,10 @@ class FocusRepositoryImpl @Inject constructor(
         return sessionDao.getAllSessions()
     }
 
+    override suspend fun getSessionsInRange(startTime: Long, endTime: Long): List<FocusSession> {
+        return sessionDao.getSessionsInRange(startTime, endTime)
+    }
+
     // ==================== FocusInterruption 관련 ====================
 
     override suspend fun logInterruption(interruption: FocusInterruption) {

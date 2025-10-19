@@ -96,5 +96,22 @@ interface FocusInterruptionDao {
      */
     @Query("SELECT * FROM focus_interruptions WHERE category = :category ORDER BY timestamp DESC")
     fun getInterruptionsByCategory(category: String): Flow<List<FocusInterruption>>
+
+    /**
+     * 최근 N일 동안의 차단 이벤트 조회
+     *
+     * 'localtime' 변환을 사용하여 로컬 타임존 기준으로 날짜 계산
+     *
+     * @param days 조회할 일수 (예: 7, 30)
+     * @return 최근 N일의 차단 이벤트 리스트
+     *
+     * Week 2B: Task 2B.3.1
+     */
+    @Query("""
+        SELECT * FROM focus_interruptions 
+        WHERE DATE(timestamp/1000, 'unixepoch', 'localtime') >= DATE('now', 'localtime', '-' || :days || ' days')
+        ORDER BY timestamp DESC
+    """)
+    suspend fun getInterruptionsInLastDays(days: Int): List<FocusInterruption>
 }
 

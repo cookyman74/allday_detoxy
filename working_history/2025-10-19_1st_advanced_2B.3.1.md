@@ -1,0 +1,327 @@
+# 2025-10-19: Week 2B - 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동
+
+## 📋 작업 개요
+
+**작업 범위**: [01_advanced_setting_report_todolist.md](../docs/01_advanced_setting_report_todolist.md) § 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동 (Day 10)  
+**작업 기간**: 2025-10-19  
+**담당자**: AI Assistant  
+**상태**: ✅ 완료
+
+---
+
+## 🎯 목표
+
+신규 고급 통계 계산기를 ReportViewModel에 통합하고 데이터 흐름 구성:
+1. **ReportUiState** 생성 및 신규 통계 필드 추가
+2. **DetoxyAdvancedStatistics** 의존성 주입
+3. **loadReportData()** 메서드 확장 (7일 데이터 로드)
+4. **빈 상태 처리** 로직 구현
+5. **하위 호환성** 유지 (기존 ReportScreen과 호환)
+
+---
+
+## ✅ 완료된 작업
+
+### 1. ReportUiState 생성
+
+#### 📁 생성된 파일
+- **`presentation/viewmodel/ReportUiState.kt`** (60줄)
+
+#### ✨ 주요 기능
+**통합 UI 상태 관리**:
+- 기본 데이터 (todaySessions, settings, isLoading, error)
+- 신규 고급 통계 필드:
+  - `riskIndex: DetoxyRiskIndex?`
+  - `recoveryTrend: DetoxyRecoveryTrend?`
+  - `topDistractions: List<DistractionItem>`
+  - `resistanceAnalysis: ResistanceTimeAnalysis?`
+  - `giveUpAnalysis: GiveUpPointAnalysis?`
+  - `coachRecommendation: CoachRecommendation?`
+- 빈 상태 플래그 (`hasData: Boolean`)
+- 기본 통계 계산 메서드 (`getSuccessSessionCount`, `getTotalFocusMinutes`, etc.)
+
+```kotlin
+data class ReportUiState(
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val todaySessions: List<FocusSession> = emptyList(),
+    val settings: UserSettings = UserSettings(1, 0, 0, null),
+    
+    // 신규 고급 통계 (Week 2B)
+    val riskIndex: DetoxyRiskIndex? = null,
+    val recoveryTrend: DetoxyRecoveryTrend? = null,
+    val topDistractions: List<DistractionItem> = emptyList(),
+    val resistanceAnalysis: ResistanceTimeAnalysis? = null,
+    val giveUpAnalysis: GiveUpPointAnalysis? = null,
+    val coachRecommendation: CoachRecommendation? = null,
+    
+    val hasData: Boolean = false
+)
+```
+
+---
+
+### 2. ReportViewModel 리팩토링
+
+#### 📁 수정된 파일
+- **`presentation/viewmodel/ReportViewModel.kt`** (170줄)
+
+#### ✨ 주요 변경사항
+
+**1) DetoxyAdvancedStatistics 의존성 주입**:
+```kotlin
+@HiltViewModel
+class ReportViewModel @Inject constructor(
+    private val repository: FocusRepository,
+    private val focusInterruptionDao: FocusInterruptionDao,
+    private val advancedStatistics: DetoxyAdvancedStatistics  // 신규 추가
+) : ViewModel()
+```
+
+**2) 통합 UiState 적용**:
+- 기존: 개별 StateFlow (`todaySessions`, `settings`, `isLoading`)
+- 변경: 단일 `ReportUiState` StateFlow
+
+**3) loadAdvancedStatistics() 구현**:
+```kotlin
+private fun loadAdvancedStatistics() {
+    // 최근 7일 세션 데이터 로드
+    val recentSessions = repository.getSessionsInRange(sevenDaysAgo, now)
+    
+    // 최근 7일 차단 이벤트 로드
+    val recentInterruptions = focusInterruptionDao.getInterruptionsInLastDays(7)
+    
+    // 종합 인사이트 계산
+    val insights = advancedStatistics.calculateComprehensiveInsights(
+        sessions = recentSessions,
+        interruptions = recentInterruptions
+    )
+    
+    // UI 상태 업데이트
+    _uiState.update { 
+        it.copy(
+            hasData = true,
+            riskIndex = insights.riskIndex,
+            recoveryTrend = insights.recoveryTrend,
+            topDistractions = insights.topDistractions,
+            resistanceAnalysis = insights.resistanceAnalysis,
+            giveUpAnalysis = insights.giveUpAnalysis,
+            coachRecommendation = insights.coachRecommendation
+        )
+    }
+}
+```
+
+**4) 빈 상태 처리**:
+```kotlin
+if (hasData) {
+    // 통계 계산 및 업데이트
+} else {
+    // 빈 상태 설정
+    _uiState.update { 
+        it.copy(
+            hasData = false,
+            riskIndex = null,
+            recoveryTrend = null,
+            // ... 모든 필드 null 처리
+        )
+    }
+}
+```
+
+**5) 하위 호환성 유지** (Task 2B.3.2에서 제거 예정):
+```kotlin
+// 기존 API 유지
+val todaySessions: StateFlow<List<FocusSession>>
+val settings: StateFlow<UserSettings>
+val isLoading: StateFlow<Boolean>
+
+fun getSuccessSessionCount(): Int
+fun getTotalFocusMinutes(): Int
+fun getSuccessRate(): Float
+```
+
+---
+
+### 3. FocusRepository 확장
+
+#### 📁 수정된 파일
+- **`domain/repository/FocusRepository.kt`**
+- **`data/repository/FocusRepositoryImpl.kt`**
+
+#### ✨ 추가된 메서드
+```kotlin
+/**
+ * 기간별 세션 조회
+ *
+ * @param startTime 시작 시간 (밀리초)
+ * @param endTime 종료 시간 (밀리초)
+ * @return 기간 내 세션 리스트
+ */
+suspend fun getSessionsInRange(startTime: Long, endTime: Long): List<FocusSession>
+```
+
+**구현**:
+```kotlin
+override suspend fun getSessionsInRange(startTime: Long, endTime: Long): List<FocusSession> {
+    return sessionDao.getSessionsInRange(startTime, endTime)
+}
+```
+
+---
+
+### 4. FocusInterruptionDao 확장
+
+#### 📁 수정된 파일
+- **`data/local/dao/FocusInterruptionDao.kt`**
+
+#### ✨ 추가된 메서드
+```kotlin
+/**
+ * 최근 N일 동안의 차단 이벤트 조회
+ *
+ * @param days 조회할 일수 (예: 7, 30)
+ * @return 최근 N일의 차단 이벤트 리스트
+ */
+@Query("""
+    SELECT * FROM focus_interruptions 
+    WHERE DATE(timestamp/1000, 'unixepoch', 'localtime') >= DATE('now', 'localtime', '-' || :days || ' days')
+    ORDER BY timestamp DESC
+""")
+suspend fun getInterruptionsInLastDays(days: Int): List<FocusInterruption>
+```
+
+---
+
+## 🔍 빌드 검증
+
+### 컴파일 테스트
+```bash
+./gradlew compileDebugKotlin --quiet
+```
+**결과**: ✅ BUILD SUCCESSFUL
+
+### Lint 검증
+**결과**: ✅ 0 errors (presentation/viewmodel 패키지)
+
+---
+
+## 📊 변경 통계
+
+### 생성된 파일 (1개)
+| 파일 | 줄 수 | 설명 |
+|------|-------|------|
+| `ReportUiState.kt` | 60 | 통합 UI 상태 관리 |
+
+### 수정된 파일 (4개)
+| 파일 | 변경 내용 |
+|------|-----------|
+| `ReportViewModel.kt` | DetoxyAdvancedStatistics 의존성 주입, 고급 통계 로딩, 하위 호환성 유지 |
+| `FocusRepository.kt` | getSessionsInRange() 메서드 추가 |
+| `FocusRepositoryImpl.kt` | getSessionsInRange() 메서드 구현 |
+| `FocusInterruptionDao.kt` | getInterruptionsInLastDays() 메서드 추가 |
+
+### 총 코드 라인 수
+- **신규 작성**: ~60줄 (1개 파일)
+- **수정**: ~130줄 (4개 파일)
+- **합계**: ~190줄
+
+---
+
+## 🎯 완료된 체크리스트
+
+✅ ReportViewModel에 `DetoxyAdvancedStatistics` 의존성 주입 (Hilt)  
+✅ 기존 `ReportUiState`에 신규 통계 필드 추가 (6개 필드)  
+✅ `loadReportData()` 메서드 확장: 7일 세션 데이터 로드 및 고급 통계 계산  
+✅ 빈 상태 처리 로직 구현: 세션 데이터 없을 때 기본값 표시  
+✅ 데이터 로딩 상태 관리 (`Loading`, `Success`, `Error`)  
+✅ 하위 호환성 유지: 기존 ReportScreen API 유지
+
+---
+
+## 🔧 기술적 하이라이트
+
+### 1. 통합 UiState 패턴
+```kotlin
+private val _uiState = MutableStateFlow(ReportUiState())
+val uiState: StateFlow<ReportUiState> = _uiState.asStateFlow()
+```
+- 단일 진실 공급원 (Single Source of Truth)
+- 상태 업데이트 추적 용이
+- Compose UI와 자연스럽게 연동
+
+### 2. 고급 통계 계산 플로우
+```
+1. Repository에서 최근 7일 세션 조회
+2. DAO에서 최근 7일 차단 이벤트 조회
+3. DetoxyAdvancedStatistics.calculateComprehensiveInsights() 호출
+4. UI 상태 업데이트 (riskIndex, recoveryTrend, etc.)
+```
+
+### 3. 빈 상태 처리
+```kotlin
+val hasData = recentSessions.isNotEmpty()
+
+if (hasData) {
+    // 통계 계산 및 표시
+} else {
+    // "아직 집중 세션이 없어요" 상태
+}
+```
+
+### 4. 하위 호환성 전략
+```kotlin
+// 기존 API → 새로운 UiState 매핑
+val todaySessions: StateFlow<List<FocusSession>>
+    get() = uiState.map { it.todaySessions }.stateIn(...)
+```
+- Task 2B.3.2에서 ReportScreen UI 업데이트 시 제거 예정
+- 단계적 마이그레이션 가능
+
+---
+
+## 🧪 향후 작업 (Week 2B)
+
+### Task 2B.3.2: 일간/주간 카드 UI 구현 (Day 11)
+- [ ] **위험 지수 카드** Composable 구현
+- [ ] **회복률 추세 카드** Composable 구현
+- [ ] **주간 인사이트 그래프** 2종 (Canvas)
+- [ ] **방해요인 Top 3 카드** 구현
+- [ ] ReportScreen에 신규 카드 통합
+- [ ] 기존 하위 호환성 API 제거
+
+### Task 2B.3.3: 고급 카드 & 최종 통합 (Day 12)
+- [ ] 분산 회피율 카드
+- [ ] 허용 앱 체류 시간 카드
+- [ ] 디톡시 코치 추천 카드/다이얼로그
+- [ ] Analytics 이벤트 연동
+
+---
+
+## 📌 참조 문서
+
+- **PRD**: [01_advanced_prd.md](../docs/01_advanced_prd.md) § 4.2 리포트 고도화
+- **이전 작업**: [2025-10-19_1st_advanced_2B.2.md](./2025-10-19_1st_advanced_2B.2.md) (고급 통계 계산 모듈)
+- **Todolist**: [01_advanced_setting_report_todolist.md](../docs/01_advanced_setting_report_todolist.md) § 2B.3.1
+
+---
+
+## 📌 커밋 정보
+
+**브랜치**: `feat/v0.5`  
+**커밋 ID**: (작성 예정)
+
+**커밋 메시지**: `feat(report): Task 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동`
+
+**커밋 내용**:
+- 생성: 1개 파일 (~60줄)
+- 수정: 4개 파일 (~130줄)
+- 합계: ~190줄 추가
+
+**작업 완료일**: 2025-10-19  
+**총 소요 시간**: ~2시간
+
+---
+
+**✅ Task 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동 완료!**
+

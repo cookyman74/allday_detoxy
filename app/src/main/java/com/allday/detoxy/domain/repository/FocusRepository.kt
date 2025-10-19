@@ -70,6 +70,17 @@ interface FocusRepository {
      */
     fun getAllSessions(): Flow<List<FocusSession>>
 
+    /**
+     * 기간별 세션 조회
+     *
+     * @param startTime 시작 시간 (밀리초)
+     * @param endTime 종료 시간 (밀리초)
+     * @return 기간 내 세션 리스트
+     *
+     * Week 2B: Task 2B.3.1
+     */
+    suspend fun getSessionsInRange(startTime: Long, endTime: Long): List<FocusSession>
+
     // ==================== FocusInterruption 관련 ====================
 
     /**
