@@ -29,8 +29,8 @@ import com.allday.detoxy.presentation.viewmodel.ReportViewModel
 import com.allday.detoxy.presentation.ui.report.components.DetoxyRiskCard
 import com.allday.detoxy.presentation.ui.report.components.RecoveryTrendCard
 import com.allday.detoxy.presentation.ui.report.components.DistractionTopCard
-// import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationCard
-// import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationDialog
+import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationCard
+import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -38,6 +38,7 @@ import java.util.*
  * 리포트 화면
  *
  * Week 2B: Task 2B.3.3 - 최종 통합 및 Analytics 연동
+ * Week 2B: Task 2B.3.4 - 코치 추천 카드 활성화
  */
 @Composable
 fun ReportScreen(
@@ -224,9 +225,7 @@ fun ReportScreen(
                         DistractionTopCard(distractions = uiState.topDistractions)
                     }
 
-                    // 4. 코치 추천 카드 (NEW - Task 2B.3.3)
-                    // TODO: 코치 추천 카드 구현 (RiskLevel enum 참조 오류로 임시 주석)
-                    /*
+                    // 4. 코치 추천 카드 (Task 2B.3.4 - RiskLevel 분리 후 활성화)
                     item {
                         CoachRecommendationCard(
                             recommendation = uiState.coachRecommendation,
@@ -236,7 +235,6 @@ fun ReportScreen(
                             }
                         )
                     }
-                    */
 
                     // 세션 리스트 섹션 헤더
                     if (uiState.todaySessions.isNotEmpty()) {
@@ -259,8 +257,7 @@ fun ReportScreen(
         }
     }
 
-    // TODO: 코치 추천 다이얼로그 구현 (RiskLevel enum 참조 오류로 임시 주석)
-    /*
+    // 코치 추천 다이얼로그 (Task 2B.3.4 - RiskLevel 분리 후 활성화)
     uiState.coachRecommendation?.let { recommendation ->
         if (showCoachDialog) {
             CoachRecommendationDialog(
@@ -269,7 +266,6 @@ fun ReportScreen(
             )
         }
     }
-    */
 }
 
 /**

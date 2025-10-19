@@ -172,24 +172,6 @@ data class DetoxyRiskIndex(
     val interruptionFrequency: Float    // 차단 이벤트 빈도 점수
 )
 
-/**
- * 위험 단계
- */
-enum class RiskLevel {
-    RECOVERY,   // 회복: 0-33
-    WARNING,    // 주의: 34-66
-    HIGH_RISK;  // 고위험: 67-100
-
-    fun toDisplayString(): String = when (this) {
-        RECOVERY -> "회복 중"
-        WARNING -> "주의 필요"
-        HIGH_RISK -> "고위험"
-    }
-
-    fun toAnalyticsString(): String = when (this) {
-        RECOVERY -> "recovery"
-        WARNING -> "warning"
-        HIGH_RISK -> "high_risk"
-    }
-}
+// RiskLevel enum은 별도 파일로 분리됨 (RiskLevel.kt)
+// Week 2B: Task 2B.3.4
 
