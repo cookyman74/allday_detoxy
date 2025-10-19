@@ -654,9 +654,13 @@ SET snsEnabled = 1, messengerEnabled = 0, webEnabled = 1, videoEnabled = 1, othe
 |---------|------|--------|
 | `b98bb54` | 2025-10-19 | feat(database): Task 2B.1 고급 데이터 모델 구현 (Room v3) |
 | `f9f2b70` | 2025-10-19 | docs(working_history): Task 2B.1 커밋 ID 추가 |
-| (작성 예정) | 2025-10-19 | fix(database): FocusSettings otherEnabled 기본값 수정 (DataStore 일치) |
+| `349e4d2` | 2025-10-19 | fix(database): FocusSettings otherEnabled 기본값 수정 (DataStore 일치) |
 
 **브랜치**: `feat/v0.5`
+
+**총 변경 사항**:
+- 초기 구현: 11 files, 1,258 insertions(+), 13 deletions(-)
+- 리뷰 피드백 반영: 4 files, 108 insertions(+), 15 deletions(-)
 
 **작업 완료일**: 2025-10-19  
 **총 소요 시간**: ~2시간
