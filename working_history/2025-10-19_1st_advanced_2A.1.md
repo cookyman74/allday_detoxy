@@ -506,6 +506,8 @@ fun getTodayInterruptions(): Flow<List<FocusInterruption>>
 
 **✅ 리뷰 피드백 반영 완료!**
 
+**커밋**: `7f78d34` (2025-10-19) - fix(dao): SQLite 타임존 이슈 수정
+
 ---
 
 **✅ Task 2A.1 데이터 모델 확장 완료!**
