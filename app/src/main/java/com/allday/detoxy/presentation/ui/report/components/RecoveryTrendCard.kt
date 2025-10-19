@@ -165,8 +165,9 @@ private fun DailyRecoveryLineChart(
         val height = size.height
         val padding = 40f
 
-        // 최대값 계산 (0.0 ~ 1.0 범위이지만, 여유를 위해 1.1로)
-        val maxValue = 1.1f
+        // 최대값 계산 (dailyRates는 0~100 범위)
+        val dataMaxValue = sortedEntries.maxOfOrNull { it.value } ?: 100f
+        val maxValue = (dataMaxValue * 1.1f).coerceAtLeast(100f)  // 여유 10% + 최소 100
         val minValue = 0f
 
         // 데이터 포인트 수

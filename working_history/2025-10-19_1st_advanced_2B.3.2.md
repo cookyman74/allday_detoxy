@@ -559,6 +559,133 @@ val overallRate: Float,  // 전체 회복률 (%)
 
 ---
 
+---
+
+## 🔧 추가 리뷰 피드백 반영 (2025-10-19 추가)
+
+### 🚨 발견된 추가 문제 (Major)
+
+#### 3. 회복률 라인 차트 범위 오류 (Major)
+
+**문제점**: `DailyRecoveryLineChart`가 `maxValue = 1.1f`로 하드코딩되어 0-1 범위를 가정하지만, 실제 `dailyRates` 값은 0-100 범위입니다. 이로 인해:
+- 정규화 계산 시 `normalizedValue = (entry.value - 0) / (1.1 - 0)`가 100배 이상 커짐
+- y 좌표가 음수가 되거나 차트 영역을 벗어남
+- 차트가 왜곡되어 표시됨
+
+**영향 범위**: `RecoveryTrendCard.kt` 라인 168-171
+
+---
+
+### ✅ 수정 내용
+
+#### 3. 라인 차트 범위 수정
+
+**Before** (❌ 잘못된 범위):
+```kotlin
+Canvas(modifier = modifier) {
+    val width = size.width
+    val height = size.height
+    val padding = 40f
+
+    // 최대값 계산 (0.0 ~ 1.0 범위이지만, 여유를 위해 1.1로)
+    val maxValue = 1.1f
+    val minValue = 0f
+```
+
+**After** (✅ 올바른 범위):
+```kotlin
+Canvas(modifier = modifier) {
+    val width = size.width
+    val height = size.height
+    val padding = 40f
+
+    // 최대값 계산 (dailyRates는 0~100 범위)
+    val dataMaxValue = sortedEntries.maxOfOrNull { it.value } ?: 100f
+    val maxValue = (dataMaxValue * 1.1f).coerceAtLeast(100f)  // 여유 10% + 최소 100
+    val minValue = 0f
+```
+
+**변경 위치**: 라인 168-171
+
+**개선 효과**:
+1. **동적 범위 계산**: 실제 데이터의 최대값 기반 범위 설정
+2. **정확한 정규화**: `(value - 0) / (maxValue - 0)` 계산이 올바른 범위(0-100)에서 수행
+3. **차트 왜곡 방지**: y 좌표가 올바른 범위 내에서 계산됨
+4. **여유 공간 확보**: 최대값의 110%로 상단 여백 확보
+
+---
+
+### 📊 정규화 계산 비교
+
+#### Before (❌ 잘못된 계산)
+```
+데이터: 75% (75.0)
+정규화: (75.0 - 0) / (1.1 - 0) = 68.18
+y 좌표: padding + chartHeight * (1 - 68.18) = 음수! ← 차트 영역 벗어남
+```
+
+#### After (✅ 올바른 계산)
+```
+데이터: 75% (75.0)
+dataMaxValue: 82.0 (예시)
+maxValue: 82.0 * 1.1 = 90.2
+정규화: (75.0 - 0) / (90.2 - 0) = 0.83
+y 좌표: padding + chartHeight * (1 - 0.83) = 올바른 위치 ✅
+```
+
+---
+
+### ✅ 추가 수정 검증
+
+#### 빌드 테스트
+```bash
+./gradlew compileDebugKotlin --quiet
+```
+**결과**: ✅ BUILD SUCCESSFUL
+
+#### Lint 검증
+**결과**: ✅ 0 errors (RecoveryTrendCard)
+
+---
+
+### 📊 전체 수정 통계 (리뷰 피드백 1 + 2)
+
+| 파일 | 수정 라인 | 변경 내용 |
+|------|----------|-----------|
+| `DetoxyRiskCard.kt` | 127-138 | `* 100` 제거 (이미 완료) |
+| `RecoveryTrendCard.kt` | 78, 101 | `* 100` 제거 (이미 완료) |
+| `RecoveryTrendCard.kt` | 168-171 | 차트 범위 수정 (0-1 → 0-100 동적) ✅ 신규 |
+
+---
+
+### 🎯 최종 개선 효과
+
+#### 리뷰 1 (퍼센트 100배 과다 표시)
+- ✅ 실패율, 포기 시점, 차단 빈도 정확한 % 표시
+- ✅ 전체 회복률, 주간 변화량 정확한 % 표시
+
+#### 리뷰 2 (라인 차트 범위 오류)
+- ✅ 동적 범위 계산으로 정확한 차트 표시
+- ✅ 데이터 왜곡 방지
+- ✅ 여유 공간 확보로 가독성 향상
+
+---
+
+### 📌 추가 리뷰 피드백 반영 커밋 정보
+
+| 항목 | 내용 |
+|------|------|
+| **브랜치** | `feat/v0.5` |
+| **커밋 ID** | (다음 커밋에서 추가) |
+| **커밋 메시지** | `fix(report): Task 2B.3.2 라인 차트 범위 오류 수정` |
+
+**변경 파일**:
+- `RecoveryTrendCard.kt` - 라인 차트 maxValue 동적 계산 (라인 168-171)
+- `2025-10-19_1st_advanced_2B.3.2.md` - 추가 리뷰 피드백 섹션
+
+---
+
 **✅ Task 2B.3.2 일간/주간 카드 UI 구현 완료!**  
-**✅ 리뷰 피드백 반영 완료 (2025-10-19) - 퍼센트 100배 과다 표시 수정**
+**✅ 리뷰 피드백 1 반영 완료 (2025-10-19) - 퍼센트 100배 과다 표시 수정**  
+**✅ 리뷰 피드백 2 반영 완료 (2025-10-19) - 라인 차트 범위 오류 수정**
 
