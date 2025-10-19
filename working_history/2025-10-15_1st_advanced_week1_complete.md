@@ -495,9 +495,16 @@ override fun onCreate() {
 - Task 2.2: `ca8fca7` (2025-10-15)
 - Task 2.3: `d4efc32` (2025-10-15)
 - Task 2.4: `54f641f` (2025-10-15)
-- **리뷰 수정**: (예정) - Analytics 초기화 + Clean Architecture 분리
+- **리뷰 수정**: `0c3b843` (2025-10-15) - Analytics 초기화 + Clean Architecture 분리
 
 **Week 1 총 커밋**: 5개 (+ 문서 업데이트 3개)
+
+### 리뷰 수정 상세
+- AnalyticsHelper 초기화 추가 → Firebase 이벤트 전송 가능
+- FocusSettingsRepository Clean Architecture 분리
+  - domain: 인터페이스 (98줄, Android 의존성 제거)
+  - data: 구현체 (206줄, DataStore 구현)
+- 테스트 및 빌드 검증 완료
 
 ---
 
