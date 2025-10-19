@@ -363,7 +363,7 @@ fun CoachRecommendationCard(recommendation: CoachRecommendation?) {
 
 ### 커밋 ID
 ```
-[추후 기록]
+c9068c3
 ```
 
 ### 커밋 메시지
