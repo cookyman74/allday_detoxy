@@ -322,14 +322,14 @@ item {
 | 항목 | 내용 |
 |------|------|
 | **브랜치** | `feat/v0.5` |
-| **커밋 ID** | (다음 커밋에서 추가) |
+| **커밋 ID** | `f11f59a` |
 | **커밋 메시지** | `feat(report): Task 2B.3.3 리포트 최종 통합 및 빈 상태 UI 개선` |
-| **변경 통계** | (다음 커밋에서 추가) |
+| **변경 통계** | 3 files changed, 512 insertions(+), 30 deletions(-) |
 
 **변경 파일**:
 - `ReportScreen.kt` - 최종 레이아웃 조정, 빈 상태 UI 개선 (557줄)
 - `01_advanced_setting_report_todolist.md` - Task 2B.3.3 완료 표시 (⚠️ 포함)
-- `2025-10-19_1st_advanced_2B.3.3.md` - 작업 내역 문서
+- `2025-10-19_1st_advanced_2B.3.3.md` - 작업 내역 문서 (512줄)
 
 ---
 
