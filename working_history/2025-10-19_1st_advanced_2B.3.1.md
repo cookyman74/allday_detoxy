@@ -438,6 +438,23 @@ val recentInterruptions = repository.getInterruptionsInLastDays(7)
 
 ---
 
+### 📌 리뷰 피드백 반영 커밋 정보
+
+| 항목 | 내용 |
+|------|------|
+| **브랜치** | `feat/v0.5` |
+| **커밋 ID** | `3cde3fe` |
+| **커밋 메시지** | `fix(report): Task 2B.3.1 리뷰 피드백 반영 - Clean Architecture 준수 및 Flow 수집 최적화` |
+| **변경 통계** | 4 files changed, 144 insertions(+), 11 deletions(-) |
+
+**변경 파일**:
+- `FocusRepository.kt` - `getInterruptionsInLastDays()` 추가
+- `FocusRepositoryImpl.kt` - 구현 추가
+- `ReportViewModel.kt` - DAO 의존성 제거, Flow 수집 최적화
+- `2025-10-19_1st_advanced_2B.3.1.md` - 리뷰 피드백 섹션 추가
+
+---
+
 **✅ Task 2B.3.1 ReportViewModel 리팩토링 & 데이터 연동 완료!**  
-**✅ 리뷰 피드백 반영 완료 (2025-10-19)**
+**✅ 리뷰 피드백 반영 완료 (2025-10-19) - 커밋 ID: 3cde3fe**
 
