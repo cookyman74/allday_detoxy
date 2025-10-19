@@ -31,6 +31,8 @@ import com.allday.detoxy.presentation.ui.report.components.RecoveryTrendCard
 import com.allday.detoxy.presentation.ui.report.components.DistractionTopCard
 import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationCard
 import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationDialog
+import com.allday.detoxy.presentation.ui.report.components.DistractionAvoidanceCard
+import com.allday.detoxy.presentation.ui.report.components.AllowedAppDwellCard
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,6 +41,7 @@ import java.util.*
  *
  * Week 2B: Task 2B.3.3 - 최종 통합 및 Analytics 연동
  * Week 2B: Task 2B.3.4 - 코치 추천 카드 활성화
+ * Week 2B: Task 2B.3.3 추가 - 포기 지점 분석 & 허용 앱 체류 시간 카드
  */
 @Composable
 fun ReportScreen(
@@ -232,6 +235,21 @@ fun ReportScreen(
                             onDetailClick = {
                                 showCoachDialog = true
                                 // TODO: Analytics 이벤트 추가 (report_coach_recommendation_shown)
+                            }
+                        )
+                    }
+
+                    // 5. 포기 지점 분석 카드 (Task 2B.3.3 - 추가 구현)
+                    item {
+                        DistractionAvoidanceCard(giveUpAnalysis = uiState.giveUpAnalysis)
+                    }
+
+                    // 6. 허용 앱 체류 시간 카드 (Task 2B.3.3 - 추가 구현, UsageStats 준비)
+                    item {
+                        AllowedAppDwellCard(
+                            isUsageStatsEnabled = false, // TODO: UsageStats 권한 상태 연동
+                            onEnableUsageStats = {
+                                // TODO: UsageStats 권한 요청 구현
                             }
                         )
                     }
