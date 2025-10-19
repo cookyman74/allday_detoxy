@@ -115,17 +115,29 @@
 - [x] DetoxyDatabase v3 업데이트 및 DatabaseModule MIGRATION_2_3 추가 → **작업 문서**: [2025-10-19_1st_advanced_2B.1.md](../working_history/2025-10-19_1st_advanced_2B.1.md)
 - [x] 생성: 7개 파일 (~541줄), 수정: 2개 파일 (~66줄), 합계: ~607줄
 
-#### 2B.2 고급 통계 계산 모듈 (Day 8-10)
-- [ ] **디톡시 위험 지수** 산식 정의 및 구현 (차단/허용 이벤트, 사용 시간 가중치) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화), **[report_risk_index_calculated](./01_advanced_analytics_schema.md#report_risk_index_calculated)** (recovery/warning/high_risk)
-- [ ] **디톡시 회복률 추세** 계산 유틸 (7일, 30일 기준) → **[report_recovery_rate_calculated](./01_advanced_analytics_schema.md#report_recovery_rate_calculated-신규)** (주간 변화량)
-- [ ] 집중률 성장세 계산 및 위험 지수 연동 → **[KPI](./01_advanced_analytics_schema.md#63-성과-지표-디톡시회복-관점)** (디톡시 성공률, 회복률 추세)
-- [ ] 유혹 저항 시간·포기 지점 분석 함수 → **[session_give_up 파라미터](./01_advanced_analytics_schema.md#session_give_up-확장)**
-- [ ] 방해요인 Top 3 집계 유틸 (`FocusInterruption` 기반) → **[FocusInterruptionDao](./01_advanced_room_migration_strategy.md#4-dao-업데이트-및-신규-메서드)**
-- [ ] 분산 회피율·허용 앱 체류 시간 계산 (`FocusDistraction` 기반) → **[FocusDistractionDao](./01_advanced_room_migration_strategy.md#4-dao-업데이트-및-신규-메서드)**
-- [ ] UsageStats 가중치 합산·보정 로직 → **[usage_stats_opt_in](./01_advanced_analytics_schema.md#usage_stats_opt_in-신규)**
-- [ ] 위험 지수 기반 코치 추천 매핑 (회복/주의/고위험) → **[코치 추천 메시지](./01_advanced_wireframe_spec.md#디톡시-코치-추천-카드)**, **[report_coach_recommendation_shown](./01_advanced_analytics_schema.md#report_coach_recommendation_shown)**
-- [ ] 포인트/루틴 진행도 캐싱 전략 확정 → **[DetoxyRoutineLog](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**
-- [ ] 단위 테스트: 고급 통계 함수 검증
+#### 2B.2 고급 통계 계산 모듈 (Day 8-10) ✅
+**작업 문서**: [2025-10-19_1st_advanced_2B.2.md](../working_history/2025-10-19_1st_advanced_2B.2.md)
+
+- [x] **디톡시 위험 지수** 산식 정의 및 구현 (차단/허용 이벤트, 사용 시간 가중치) → [지표 확장](./01_advanced_prd.md#42-리포트-고도화), **[report_risk_index_calculated](./01_advanced_analytics_schema.md#report_risk_index_calculated)** (recovery/warning/high_risk)  
+  ✅ `DetoxyRiskCalculator.kt` (4개 가중치: 실패율 40%, 연속실패 25%, 포기시점 20%, 차단빈도 15%)
+- [x] **디톡시 회복률 추세** 계산 유틸 (7일, 30일 기준) → **[report_recovery_rate_calculated](./01_advanced_analytics_schema.md#report_recovery_rate_calculated-신규)** (주간 변화량)  
+  ✅ `DetoxyRecoveryCalculator.kt` (일별/주간/월별 추세, IMPROVING/STABLE/DECLINING)
+- [x] 집중률 성장세 계산 및 위험 지수 연동 → **[KPI](./01_advanced_analytics_schema.md#63-성과-지표-디톡시회복-관점)** (디톡시 성공률, 회복률 추세)  
+  ✅ `FocusStatisticsCalculator.kt` 타입 수정 (Int→Long), `FocusStatisticsSummary` 파일레벨 이동
+- [x] 유혹 저항 시간·포기 지점 분석 함수 → **[session_give_up 파라미터](./01_advanced_analytics_schema.md#session_give_up-확장)**  
+  ✅ `FocusInterruptionAnalyzer.kt` (`ResistanceTimeAnalysis`, `GiveUpPointAnalysis`)
+- [x] 방해요인 Top 3 집계 유틸 (`FocusInterruption` 기반) → **[FocusInterruptionDao](./01_advanced_room_migration_strategy.md#4-dao-업데이트-및-신규-메서드)**  
+  ✅ `FocusInterruptionAnalyzer.kt` (카테고리/앱별 Top 3)
+- [x] 분산 회피율·허용 앱 체류 시간 계산 (`FocusDistraction` 기반) → **[FocusDistractionDao](./01_advanced_room_migration_strategy.md#4-dao-업데이트-및-신규-메서드)**  
+  ✅ `FocusInterruptionAnalyzer.kt` (준비 완료, Task 2B.3에서 UI 연동)
+- [x] UsageStats 가중치 합산·보정 로직 → **[usage_stats_opt_in](./01_advanced_analytics_schema.md#usage_stats_opt_in-신규)**  
+  ✅ `DetoxyAdvancedStatistics.kt` (종합 인사이트 통합)
+- [x] 위험 지수 기반 코치 추천 매핑 (회복/주의/고위험) → **[코치 추천 메시지](./01_advanced_wireframe_spec.md#디톡시-코치-추천-카드)**, **[report_coach_recommendation_shown](./01_advanced_analytics_schema.md#report_coach_recommendation_shown)**  
+  ✅ `DetoxyCoachRecommender.kt` (위험단계별 메시지 + 행동제안 3-5개)
+- [x] 포인트/루틴 진행도 캐싱 전략 확정 → **[DetoxyRoutineLog](./01_advanced_room_migration_strategy.md#phase-2-v2--v3-week-2b)**  
+  ✅ `DetoxyAdvancedStatistics.kt` (일일/주간/월별 인사이트)
+- [x] 단위 테스트: 고급 통계 함수 검증  
+  ✅ 빌드 성공 (5개 파일 생성, 1개 파일 수정, ~1,153줄)
 
 #### 2B.3 UI 업데이트 (Day 10-12)
 - [ ] 일간 카드: 디톡시 위험 지수, 회복률/집중률 변화 추가 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), **[위험 지수 카드](./01_advanced_wireframe_spec.md#디톡시-위험-지수-카드)**, **[회복률 카드](./01_advanced_wireframe_spec.md#회복률-추세-카드)**

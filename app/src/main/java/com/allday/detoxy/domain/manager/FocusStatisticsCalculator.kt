@@ -29,14 +29,14 @@ class FocusStatisticsCalculator @Inject constructor() {
      * @param sessions 세션 리스트
      * @return 총 집중 시간 (초)
      */
-    fun calculateTotalFocusTime(sessions: List<FocusSession>): Int {
+    fun calculateTotalFocusTime(sessions: List<FocusSession>): Long {
         return sessions.sumOf { session ->
             if (session.success) {
                 // 성공 세션: 전체 시간
-                session.durationMinutes * 60
+                session.durationMinutes * 60L
             } else {
                 // 실패 세션: 실제 경과 시간
-                session.interruptedSeconds
+                session.interruptedSeconds.toLong()
             }
         }
     }
@@ -64,20 +64,20 @@ class FocusStatisticsCalculator @Inject constructor() {
      * @param sessions 세션 리스트
      * @return Pair<성공 세션 평균, 실패 세션 평균> (초 단위, 세션이 없으면 0)
      */
-    fun calculateAverageFocusDuration(sessions: List<FocusSession>): Pair<Int, Int> {
+    fun calculateAverageFocusDuration(sessions: List<FocusSession>): Pair<Long, Long> {
         val successSessions = sessions.filter { it.success }
         val failedSessions = sessions.filter { !it.success }
 
         val avgSuccess = if (successSessions.isNotEmpty()) {
-            successSessions.sumOf { it.durationMinutes * 60 } / successSessions.size
+            successSessions.sumOf { it.durationMinutes * 60L } / successSessions.size
         } else {
-            0
+            0L
         }
 
         val avgFailed = if (failedSessions.isNotEmpty()) {
-            failedSessions.sumOf { it.interruptedSeconds } / failedSessions.size
+            failedSessions.sumOf { it.interruptedSeconds.toLong() } / failedSessions.size
         } else {
-            0
+            0L
         }
 
         return Pair(avgSuccess, avgFailed)
@@ -111,20 +111,6 @@ class FocusStatisticsCalculator @Inject constructor() {
     }
 
     /**
-     * 통계 요약 데이터 클래스
-     */
-    data class FocusStatisticsSummary(
-        val totalFocusTimeSeconds: Int,       // 총 집중 시간 (초)
-        val focusRatePercent: Float,          // 집중률 (%)
-        val avgSuccessDurationSeconds: Int,   // 평균 성공 세션 시간 (초)
-        val avgFailedDurationSeconds: Int,    // 평균 실패 세션 시간 (초)
-        val totalSessionsCount: Int,          // 전체 세션 수
-        val successSessionsCount: Int,        // 성공 세션 수
-        val failedSessionsCount: Int,         // 실패 세션 수
-        val dailyPointsTrend: Map<String, Int> // 일별 포인트 추세
-    )
-
-    /**
      * 통합 통계 계산
      *
      * 모든 기본 통계를 한 번에 계산하여 반환
@@ -147,4 +133,18 @@ class FocusStatisticsCalculator @Inject constructor() {
         )
     }
 }
+
+/**
+ * 통계 요약 데이터 클래스
+ */
+data class FocusStatisticsSummary(
+    val totalFocusTimeSeconds: Long,      // 총 집중 시간 (초)
+    val focusRatePercent: Float,          // 집중률 (%)
+    val avgSuccessDurationSeconds: Long,  // 평균 성공 세션 시간 (초)
+    val avgFailedDurationSeconds: Long,   // 평균 실패 세션 시간 (초)
+    val totalSessionsCount: Int,          // 전체 세션 수
+    val successSessionsCount: Int,        // 성공 세션 수
+    val failedSessionsCount: Int,         // 실패 세션 수
+    val dailyPointsTrend: Map<String, Int> // 일별 포인트 추세
+)
 
