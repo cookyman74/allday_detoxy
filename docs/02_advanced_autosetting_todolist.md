@@ -82,7 +82,7 @@
   ```
   - **참조**: [1차 고도화 마이그레이션 전략](./01_advanced_room_migration_strategy.md) - Room 마이그레이션 패턴
 
-- [ ] **LocationBasedAutoRun** 엔티티 생성
+- [ ] **LocationBasedAutoRun** 엔티티 생성 (확장) 🆕
   ```kotlin
   @Entity(tableName = "location_based_auto_run")
   data class LocationBasedAutoRun(
@@ -96,10 +96,13 @@
       val presetType: String,
       val triggerType: String, // ENTER, PERIODIC
       val periodicIntervalMinutes: Int? = null,
+      val dwellTimeMinutes: Int = 0, // 🆕 체류 시간 (0/1/3/5분) - PRD §4.4.5
+      val requiresUserConfirmation: Boolean = false, // 🆕 도착 후 확인 필요 - PRD §4.4.5
       val isEnabled: Boolean = true,
       val createdAt: Long = System.currentTimeMillis()
   )
   ```
+  - **참조**: [PRD §4.4.5 위치 기반 신뢰도 강화](./02_advanced_autosetting_prd.md#445-위치-기반-신뢰도-강화)
 
 - [ ] **CustomTimerPreset** 엔티티 생성
   ```kotlin
@@ -345,6 +348,13 @@
 ### 3.1 시간대 설정 UI (Day 9-10)
 
 #### 3.1.1 TimeBasedAutoRunScreen 레이아웃
+- [ ] **템플릿 선택 버튼** 🆕 → [PRD §4.3.0](./02_advanced_autosetting_prd.md#430-추천-프리셋-및-루틴-템플릿)
+  - 화면 상단에 "템플릿으로 시작하기" 버튼
+  - Empty State일 때 눈에 띄게 표시
+  - 클릭 시 `TemplateSelectionDialog` 표시
+  - 템플릿: 업무 집중, 공부 집중, 저녁 디톡시, 주말 집중
+  - 선택 → 미리보기 → 적용하기 플로우
+
 - [ ] **메인 화면 Compose** → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면), **[Wireframe 스펙](./02_advanced_wireframe_spec.md)** (작성 예정)
   ```kotlin
   @Composable
@@ -355,14 +365,22 @@
       
       Column {
           // 헤더: "시간 기반 자동 실행"
+          // 템플릿 선택 버튼 (상단) 🆕
           // 시간대 리스트 (LazyColumn)
           // + 시간대 추가 버튼
           // 글로벌 옵션 섹션
+          // 배터리 영향 안내 카드 (하단) 🆕
       }
   }
   ```
   - **참조**: [DetoxyControlSettingsScreen](../app/src/main/java/com/allday/detoxy/presentation/ui/settings/focus/DetoxyControlSettingsScreen.kt) - 설정 화면 레이아웃 패턴
   - **참조**: [1차 고도화 UI 작업](../working_history/2025-10-15_1st_advanced_2.2.md)
+
+- [ ] **배터리 영향 안내 카드** 🆕 → [PRD §6.3.1](./02_advanced_autosetting_prd.md#631-배터리데이터-사용-안내)
+  - 화면 하단에 카드 표시
+  - "시간 기반 자동 실행: 배터리 영향 최소 (< 1%/일)"
+  - 접을 수 있는 카드 (expand/collapse)
+  - 최적화 팁 표시 (확장 시)
 
 - [ ] **TimeBasedAutoRunCard** 컴포넌트 → **[Wireframe 컴포넌트 스펙](./02_advanced_wireframe_spec.md#시간대-카드)** (작성 예정)
   - 시간 표시 (10:00 AM)
@@ -540,6 +558,7 @@
           // 위치 권한 안내 카드 (권한 없을 때)
           // 등록된 위치 리스트
           // + 위치 추가 버튼
+          // 배터리 영향 안내 카드 (하단) 🆕
       }
   }
   ```
@@ -551,13 +570,25 @@
   - 트리거 타입 (도착 시 시작 / 주기적)
   - 활성화 토글
   - 편집/삭제 버튼
+  - **최근 GPS 정확도 표시** 🆕 (AutoRunLog에서 가져옴)
+  - **위치별 성공률 표시** 🆕 → [PRD §4.4.5](./02_advanced_autosetting_prd.md#445-위치-기반-신뢰도-강화)
 
 - [ ] **LocationPermissionCard** 컴포넌트
   - 위치 권한 필요성 설명
   - "권한 설정하기" 버튼
   - 현재 권한 상태 표시
 
-#### 4.1.2 AddLocationAutoRunDialog
+- [ ] **배터리 영향 안내 카드** 🆕 → [PRD §6.3.1](./02_advanced_autosetting_prd.md#631-배터리데이터-사용-안내)
+  - 화면 하단에 카드 표시
+  - "위치 기반 자동 실행: 배터리 소모 예상 3~5%/일"
+  - "현재 설정으로 예상 배터리 소모: 약 4%/일" (등록된 위치 수에 따라 계산)
+  - 최적화 팁 표시 (확장 시):
+    - "위치 기반 자동 실행을 2개 이하로 유지하세요"
+    - "반경을 너무 작게 설정하지 마세요 (100m 이상 권장)"
+    - "사용하지 않는 위치는 비활성화하세요"
+  - 접을 수 있는 카드 (expand/collapse)
+
+#### 4.1.2 AddLocationAutoRunDialog 확장 🆕
 - [ ] **위치 검색 단계**
   - 주소 입력 TextField
   - Google Places API (또는 Geocoder) 연동
@@ -574,6 +605,14 @@
   - 타이머 시간 선택
   - 차단 프리셋 선택
   - 트리거 타입 선택 (도착 시 / 주기적)
+  - **체류 시간 설정** 🆕 → [PRD §4.4.5](./02_advanced_autosetting_prd.md#445-위치-기반-신뢰도-강화)
+    - "도착 후 N분 대기" 옵션 (0분/1분/3분/5분)
+    - 설명: "위치에 도착한 후 N분 체류 확인 시 자동 실행"
+    - 기본값: 0분 (즉시 실행)
+  - **도착 후 확인** 🆕 → [PRD §4.4.5](./02_advanced_autosetting_prd.md#445-위치-기반-신뢰도-강화)
+    - 토글: "도착 시 알림으로 확인" (기본: OFF)
+    - 설명: "알림을 탭하면 타이머가 시작됩니다 (자동 시작 OFF)"
+    - 위치 정확도가 낮을 때 유용함을 안내
   - "저장" 버튼
 
 #### 4.1.3 LocationBasedAutoRunViewModel
@@ -984,20 +1023,39 @@
 
 ### 6.1 자동 실행 대시보드 (Day 24-25)
 
-#### 6.1.1 AutoRunDashboardScreen
-- [ ] **통계 카드**
-  - 이번 주 자동 실행 횟수
-  - 자동 실행 성공률
-  - 다음 예정된 자동 실행 시간 (가장 가까운 것)
+#### 6.1.1 AutoRunDashboardScreen 확장 🆕
+- [ ] **자동 실행 제어 카드** (섹션 1) → [PRD §4.4.1](./02_advanced_autosetting_prd.md#441-자동-실행-대시보드)
+  - 전체 활성화/비활성화 토글 (마스터 스위치)
+  - 일시중지 옵션 UI:
+    - "오늘 하루 중지" 버튼
+    - "N시간 동안 중지" 드롭다운 (1h/3h/6h)
+    - "다음 자동 실행까지 중지" 버튼
+  - 현재 상태 표시 (활성화/일시중지/비활성화)
+  - **참조**: [기존 설정 화면 토글 패턴](../app/src/main/java/com/allday/detoxy/presentation/ui/settings/focus/DetoxyControlSettingsScreen.kt)
 
-- [ ] **빠른 접근 버튼**
+- [ ] **다음 예정 자동 실행 카드** (섹션 2) 🆕
+  - 가장 가까운 자동 실행 계산 로직
+  - 예정 시간/위치 표시 (예: "오후 2:00 (1시간 30분 후)")
+  - 타이머 시간 + 차단 프리셋 표시
+  - "이 회차 건너뛰기" 버튼
+  - 시간 기반/위치 기반 아이콘 구분
+
+- [ ] **통계 카드** (섹션 3) 확장
+  - 이번 주 자동 실행 횟수 (시간/위치 분리 표시)
+  - 자동 실행 성공률
+  - **자동 실행으로 얻은 총 집중 시간** 🆕 → AutoRunLog와 FocusSession 연계
+
+- [ ] **빠른 접근 버튼** (섹션 4)
   - "시간 기반 설정" → TimeBasedAutoRunScreen
   - "위치 기반 설정" → LocationBasedAutoRunScreen
+  - **"권한 현황 확인"** 🆕 → PermissionStatusScreen
 
-- [ ] **최근 자동 실행 이력** (최근 5개)
+- [ ] **최근 자동 실행 이력** (섹션 5, 최근 10개로 확장)
   - AutoRunLog에서 가져오기
   - 시간, 위치 정보 표시
   - 결과 (시작됨/건너뜀/실패) 아이콘
+  - **실패 사유 또는 건너뜀 이유 표시** 🆕
+  - **GPS 정확도 표시** (위치 기반) 🆕
 
 #### 6.1.2 AutoRunHistoryScreen
 - [ ] **이력 리스트**
@@ -1005,16 +1063,70 @@
   - 트리거 타입 (시간/위치) 아이콘
   - 트리거 정보 (시간대 라벨, 위치 라벨)
   - 결과 및 실패 사유
+  - **GPS 정확도 표시** (위치 기반) 🆕
+  - **체류 시간 표시** (위치 기반) 🆕
+  - **사용자 피드백** (있을 경우) 🆕
 
 - [ ] **필터링 및 검색**
   - 트리거 타입 필터 (전체/시간/위치)
   - 결과 필터 (전체/시작됨/건너뜀/실패)
   - 날짜 범위 선택
 
-- [ ] **통계 요약**
+- [ ] **통계 요약 및 분석** 🆕
   - 총 자동 실행 횟수
   - 성공률
   - 주간 트렌드 그래프
+  - **위치별 성공률 분석** 🆕 → [PRD §5.2.2](./02_advanced_autosetting_prd.md#522-자동-실행-추세-분석)
+  - **개선 제안 표시** 🆕:
+    - "화요일 오후 성공률이 낮습니다. 시간 조정을 고려하세요"
+    - "회사 위치 GPS 정확도가 낮습니다. 반경을 200m로 늘려보세요"
+
+#### 6.1.3 예외 상황 처리 로직 🆕
+- [ ] **일시중지 기능** → [PRD §4.4.4](./02_advanced_autosetting_prd.md#444-예외-상황-처리)
+  - UserSettings에 `autoRunPauseUntil` 필드 저장
+  - 일시중지 기간 계산 로직 (오늘 하루/N시간/다음까지)
+  - AlarmManager/Geofence 일시중지 처리
+  - 일시중지 해제 시 자동 재활성화
+
+- [ ] **특정 시간대 일시중지** 🆕
+  - "야간 시간 (22:00~07:00) 자동 실행 중지" 설정 UI
+  - 사용자 지정 시간대 설정 (최대 3개)
+  - 시간대 중복 체크 및 경고
+  - 일시중지 시간대에 자동 실행 건너뛰기 로직
+
+- [ ] **저전력 모드 감지** 🆕 → [PRD §4.4.4](./02_advanced_autosetting_prd.md#444-예외-상황-처리)
+  - `PowerManager.isPowerSaveMode()` 감지
+  - 저전력 모드 시 위치 기반 자동 실행 일시중지
+  - 사용자 알림 표시
+  - 저전력 모드 해제 시 재활성화 (사용자 설정에 따라)
+
+#### 6.1.4 권한 현황 페이지 🆕
+- [ ] **PermissionStatusScreen** → [PRD §4.4.6](./02_advanced_autosetting_prd.md#446-권한-현황-페이지)
+  - 정확 알람 권한 상태 카드
+  - 백그라운드 위치 권한 상태 카드
+  - 배터리 최적화 제외 상태 카드
+  - 기존 권한 (DND, 접근성, 오버레이) 통합 표시
+  - 각 권한별 영향 설명 및 설정 버튼
+  - 권한 비활성화 시 대체 기능 제안
+
+- [ ] **권한 상태 모니터링**
+  - 앱 포그라운드 진입 시 권한 재확인
+  - 권한 변경 감지 및 사용자 알림
+  - 권한 상태 변화에 따른 기능 자동 전환
+
+#### 6.1.5 리포트 통합 (자동 실행 성과) 🆕
+- [ ] **자동 실행 효과 카드** → [PRD §5.2.1](./02_advanced_autosetting_prd.md#521-자동-실행-성과-집계)
+  - AutoRunLog와 FocusSession 연계 쿼리
+  - 이번 주 자동 실행 세션 수 계산
+  - 자동 실행으로 얻은 총 집중 시간 계산
+  - 수동 시작 vs 자동 실행 비교 통계
+  - 칭찬 메시지 생성 로직
+  - **참조**: [기존 리포트 카드 패턴](../app/src/main/java/com/allday/detoxy/presentation/ui/report/components/)
+
+- [ ] **ReportScreen에 카드 통합**
+  - "자동 실행 효과" 카드 추가
+  - 자동 실행 설정자에게만 표시
+  - 데이터 없을 때 Empty State 처리
 
 **작업 기록**: `working_history/2025-10-28_2nd_advanced_6.1.md`
 
