@@ -1,6 +1,10 @@
 package com.allday.detoxy.presentation.viewmodel
 
 import android.app.Application
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,10 +14,10 @@ import com.allday.detoxy.data.local.entity.UserSettings
 import com.allday.detoxy.domain.manager.GamificationManager
 import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.domain.model.FocusState
-import com.allday.detoxy.domain.model.FocusTimer
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
+import com.allday.detoxy.service.timer.FocusTimerService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,12 +31,15 @@ import javax.inject.Inject
 /**
  * 타이머 화면 ViewModel
  *
- * FocusTimer를 관리하고 UI 상태를 제공합니다.
+ * FocusTimerService를 관리하고 UI 상태를 제공합니다.
  * AccessibilityService, DndManager와 연동하여
  * 앱 차단, 방해금지 모드 기능을 제어합니다.
  *
  * Week 3: FocusRepository와 GamificationManager를 통해
  * 세션 저장 및 포인트/스트릭 업데이트 기능을 제공합니다.
+ * 
+ * 버그 수정 (2025-10-20): Foreground Service로 타이머 관리하여
+ * 화면 슬립 모드에서도 타이머가 정상 작동하도록 개선
  */
 @HiltViewModel
 class TimerViewModel @Inject constructor(
@@ -42,20 +49,17 @@ class TimerViewModel @Inject constructor(
     private val gamificationManager: GamificationManager
 ) : ViewModel() {
 
-    // FocusTimer 인스턴스
-    private val focusTimer = FocusTimer(viewModelScope)
-
     // DndManager 인스턴스
     private val dndManager = DndManager(application)
 
-    // 타이머 상태
-    val timerState: StateFlow<FocusState> = focusTimer.state
+    // 타이머 상태 (FocusTimerService에서 가져옴)
+    val timerState: StateFlow<FocusState> = FocusTimerService.state
 
-    // 남은 시간 (초)
-    val remainingSeconds: StateFlow<Int> = focusTimer.remainingSeconds
+    // 남은 시간 (초) (FocusTimerService에서 가져옴)
+    val remainingSeconds: StateFlow<Int> = FocusTimerService.remainingSeconds
 
-    // 전체 시간 (초)
-    val totalSeconds: StateFlow<Int> = focusTimer.totalSeconds
+    // 전체 시간 (초) (FocusTimerService에서 가져옴)
+    val totalSeconds: StateFlow<Int> = FocusTimerService.totalSeconds
 
     // 프리셋 타이머 시간 (분 단위)
     val presetDurations = listOf(25, 45, 60)
@@ -66,6 +70,19 @@ class TimerViewModel @Inject constructor(
     // 권한 에러 이벤트
     private val _permissionError = MutableStateFlow<PermissionError?>(null)
     val permissionError: StateFlow<PermissionError?> = _permissionError.asStateFlow()
+
+    // 타이머 완료 브로드캐스트 리시버
+    private val timerFinishedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.let {
+                if (it.action == FocusTimerService.ACTION_TIMER_FINISHED) {
+                    val success = it.getBooleanExtra(FocusTimerService.EXTRA_SUCCESS, false)
+                    Log.d(TAG, "Timer finished broadcast received: success=$success")
+                    onTimerFinish(success)
+                }
+            }
+        }
+    }
 
     companion object {
         private const val TAG = "TimerViewModel"
@@ -94,6 +111,15 @@ class TimerViewModel @Inject constructor(
                 )
             }
         }
+
+        // 타이머 완료 브로드캐스트 리시버 등록
+        val filter = IntentFilter(FocusTimerService.ACTION_TIMER_FINISHED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            application.registerReceiver(timerFinishedReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            application.registerReceiver(timerFinishedReceiver, filter)
+        }
+        Log.d(TAG, "Timer finished receiver registered")
 
         // 타이머 남은 시간을 AccessibilityService에 실시간 동기화
         // (크롬 실행 시 정확한 남은 시간을 LockOverlayScreen에 전달하기 위함)
@@ -159,10 +185,9 @@ class TimerViewModel @Inject constructor(
             dndManager.enableDnd()
         }
 
-        // 3. 타이머 시작
-        focusTimer.start(durationMinutes) { success ->
-            onTimerFinish(success)
-        }
+        // 4. FocusTimerService 시작 (Foreground Service)
+        FocusTimerService.startTimer(application, durationMinutes, sessionId)
+        Log.d(TAG, "✅ FocusTimerService started")
     }
 
     /**
@@ -204,8 +229,9 @@ class TimerViewModel @Inject constructor(
             dndManager.disableDnd()
         }
 
-        // 3. 타이머 포기
-        focusTimer.giveUp()
+        // 3. FocusTimerService 포기
+        FocusTimerService.giveUpTimer(application)
+        Log.d(TAG, "✅ FocusTimerService give up called")
     }
 
     /**
@@ -224,8 +250,9 @@ class TimerViewModel @Inject constructor(
             dndManager.disableDnd()
         }
 
-        // 3. 타이머 리셋
-        focusTimer.reset()
+        // 3. FocusTimerService 중지
+        FocusTimerService.stopTimer(application)
+        Log.d(TAG, "✅ FocusTimerService stopped")
     }
 
     /**
@@ -285,15 +312,32 @@ class TimerViewModel @Inject constructor(
     /**
      * 진행률 계산
      */
-    fun getProgress(): Float = focusTimer.getProgress()
+    fun getProgress(): Float {
+        if (totalSeconds.value == 0) return 0f
+        val elapsed = totalSeconds.value - remainingSeconds.value
+        return elapsed.toFloat() / totalSeconds.value.toFloat()
+    }
 
     /**
      * 포맷된 시간 반환 (MM:SS)
      */
-    fun getFormattedTime(): String = focusTimer.getFormattedTime()
+    fun getFormattedTime(): String {
+        val minutes = remainingSeconds.value / 60
+        val seconds = remainingSeconds.value % 60
+        return String.format("%02d:%02d", minutes, seconds)
+    }
 
     override fun onCleared() {
         super.onCleared()
+        
+        // BroadcastReceiver 해제
+        try {
+            application.unregisterReceiver(timerFinishedReceiver)
+            Log.d(TAG, "Timer finished receiver unregistered")
+        } catch (e: IllegalArgumentException) {
+            Log.w(TAG, "Receiver already unregistered: ${e.message}")
+        }
+        
         // ViewModel 종료 시 타이머도 중지
         if (timerState.value == FocusState.RUNNING) {
             resetTimer()

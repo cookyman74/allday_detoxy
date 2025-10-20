@@ -46,6 +46,16 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- FocusTimerService for timer management (Foreground Service) -->
+        <service
+            android:name=".service.timer.FocusTimerService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Focus timer countdown service" />
+        </service>
+
         <!-- LockOverlayService for screen lock -->
         <service
             android:name=".service.overlay.LockOverlayService"
