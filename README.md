@@ -23,6 +23,9 @@ Allday Detoxy는 사용자의 스마트폰 과다 사용을 방지하고 집중 
 - **Overlay Service**: 전체 화면 잠금 UI
 - **NotificationManager**: 방해금지 모드(DND) 제어
 - **Foreground Service**: 백그라운드 차단 서비스
+- **AlarmManager**: 정확한 시간 기반 자동 실행 (v0.6)
+- **Geofencing API**: 위치 기반 자동 실행 (v0.6)
+- **WorkManager**: AlarmManager fallback (v0.6)
 
 ## 🏗 프로젝트 아키텍처
 
@@ -72,7 +75,7 @@ app/
    - 총 집중 시간
    - 현재 스트릭 및 총 포인트
 
-### 1차 고도화 기능 (완료) 🆕
+### 1차 고도화 기능 (v0.5 완료)
 7. **디톡시 제어 설정**
    - 카테고리별 앱 차단 설정 (SNS, 메신저, 동영상, 웹, 기타)
    - 3가지 프리셋 (완전 차단, 표준 디톡시, 완화)
@@ -83,6 +86,31 @@ app/
    - **회복률 추세**: 일별 회복률 그래프 및 주간 변화량
    - **방해요인 Top 3**: 카테고리별 차단 횟수 및 비율
    - **디톡시 코치 추천**: 위험 단계별 맞춤 행동 제안
+
+### 2차 고도화 기능 (v0.6 개발 중) 🚧
+9. **시간 기반 자동 실행**
+   - 특정 시간에 타이머 자동 시작 (최대 10개 시간대)
+   - 요일별 반복 설정 (월~일 선택 가능)
+   - 사전 알림 및 자동 시작 딜레이 옵션
+   - 정확 알람 권한 지원 (Android 12+)
+
+10. **위치 기반 자동 실행**
+    - 특정 장소 도착 시 타이머 자동 시작 (최대 5개 위치)
+    - Geofencing API 기반 위치 감지
+    - 반경 설정 (50m~500m) 및 GPS 정확도 표시
+    - 백그라운드 위치 권한 관리
+
+11. **커스텀 타이머 UI**
+    - 도넛 그래프 기반 직관적 시간 조정 (5~180분)
+    - 드래그/탭 제스처로 시간 설정
+    - 커스텀 프리셋 저장 및 관리 (최대 10개)
+    - 기본 루틴 템플릿 제공 (업무/공부/저녁/주말)
+
+12. **자동 실행 대시보드**
+    - 다음 예정 자동 실행 표시
+    - 이번 주 자동 실행 통계 (성공률, 총 집중 시간)
+    - 일시중지 및 건너뛰기 제어
+    - 최근 자동 실행 이력 (성공/실패 사유)
 
 ## 🚀 빌드 및 실행
 
@@ -119,6 +147,7 @@ app/
 
 앱 실행 후 다음 권한을 수동으로 설정해야 합니다:
 
+#### 기본 권한 (MVP)
 1. **접근성 서비스 권한**
    - 설정 → 접근성 → Allday Detoxy 활성화
 
@@ -127,6 +156,20 @@ app/
 
 3. **방해금지 모드 액세스 권한**
    - 설정 → 알림 → 방해 금지 모드 액세스 → Allday Detoxy 허용
+
+#### 2차 고도화 추가 권한 (선택)
+4. **정확한 알람 권한** (Android 12+ 필수)
+   - 시간 기반 자동 실행 기능 사용 시
+   - 설정 → 앱 → Allday Detoxy → 알람 및 리마인더 허용
+
+5. **위치 권한** (백그라운드)
+   - 위치 기반 자동 실행 기능 사용 시
+   - 설정 → 앱 → Allday Detoxy → 권한 → 위치 → "항상 허용"
+   - **참고**: 위치 정보는 기기에만 저장되며 서버로 전송되지 않습니다
+
+6. **배터리 최적화 제외** (권장)
+   - 자동 실행 안정성 향상
+   - 설정 → 앱 → 특수 앱 액세스 → 배터리 최적화 → Allday Detoxy 제외
 
 ## 📊 MVP 성공 지표
 
@@ -137,18 +180,28 @@ app/
 
 ## 📝 참조 문서
 
-### MVP 문서
+### MVP 문서 (v0.4)
 - [PRD 문서](./docs/prd.md) - 제품 요구사항 정의서
 - [MVP 개발 계획](./docs/00_mvp_allday_detoxy_todolist.md) - 4주 개발 일정
 - [기술 설계 문서](./docs/00_android_allday_detoxy_plan.md) - 상세 기술 설계
 - [개발환경 설정](./docs/00_kotlin_environment_todolist.md) - macOS 환경 구성
 
-### 1차 고도화 문서 🆕
+### 1차 고도화 문서 (v0.5 완료)
 - [1차 고도화 PRD](./docs/01_advanced_prd.md) - 디톡시 제어 설정 & 리포트 고도화
 - [1차 고도화 작업 계획](./docs/01_advanced_setting_report_todolist.md) - 3주 개발 일정
 - [Wireframe 스펙](./docs/01_advanced_wireframe_spec.md) - UI/UX 상세 설계
 - [Analytics 스키마](./docs/01_advanced_analytics_schema.md) - 이벤트 로깅 스펙
 - [Room 마이그레이션 전략](./docs/01_advanced_room_migration_strategy.md) - DB v1→v2→v3
+- [릴리스 노트](./docs/RELEASE_NOTES_v0.5.md) - v0.5 배포 내역
+- [산출물 체크리스트](./docs/DELIVERABLES_v0.5.md) - 1차 고도화 완료 문서
+
+### 2차 고도화 문서 (v0.6 개발 중) 🚧
+- [2차 고도화 PRD](./docs/02_advanced_autosetting_prd.md) - 자동 실행 & 커스텀 타이머
+- [2차 고도화 작업 계획](./docs/02_advanced_autosetting_todolist.md) - 6주 개발 일정
+- [Wireframe 스펙](./docs/02_advanced_wireframe_spec.md) - UI/UX 상세 설계 (작성 예정)
+- [Analytics 스키마](./docs/02_advanced_analytics_schema.md) - 이벤트 로깅 스펙 (작성 예정)
+- [Room 마이그레이션 전략](./docs/02_advanced_room_migration_strategy.md) - DB v3→v4 (작성 예정)
+- [QA 시나리오](./docs/02_advanced_qa_devices.md) - 테스트 계획 (작성 예정)
 
 ## 📄 라이선스
 
