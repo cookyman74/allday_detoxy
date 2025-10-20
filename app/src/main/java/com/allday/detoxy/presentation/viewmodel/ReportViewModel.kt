@@ -48,6 +48,7 @@ class ReportViewModel @Inject constructor(
      * 리포트 데이터 로드 (기본 + 고급 통계)
      *
      * Review Fix: Flow 수집은 init에서 한 번만 실행되도록 개선
+     * Bug Fix (2025-10-20): 세션 데이터 변경 시 자동으로 고급 통계 재계산
      */
     private fun loadReportData() {
         _uiState.update { it.copy(isLoading = true, error = null) }
@@ -62,6 +63,9 @@ class ReportViewModel @Inject constructor(
                     if (_uiState.value.isLoading) {
                         _uiState.update { it.copy(isLoading = false) }
                     }
+                    
+                    // Bug Fix: 세션 데이터 변경 시 자동으로 고급 통계 재계산
+                    loadAdvancedStatistics()
                 }
             } catch (e: Exception) {
                 _uiState.update { 
@@ -87,9 +91,6 @@ class ReportViewModel @Inject constructor(
                 }
             }
         }
-
-        // 3. 고급 통계 로드 (최근 7일)
-        loadAdvancedStatistics()
     }
 
     /**
