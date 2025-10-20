@@ -41,12 +41,18 @@ data class ReportUiState(
 ) {
     /**
      * 기본 통계 계산
+     * 
+     * Bug Fix (2025-10-20): 실제 집중 시간을 계산하도록 수정
      */
     fun getSuccessSessionCount(): Int = todaySessions.count { it.success }
     
     fun getTotalFocusMinutes(): Int = todaySessions
-        .filter { it.success }
-        .sumOf { it.durationMinutes }
+        .filter { it.endTime != null }  // 종료된 세션만
+        .sumOf { 
+            // 실제 집중 시간 = (종료 시간 - 시작 시간) / 1000ms / 60s
+            val actualMinutes = ((it.endTime!! - it.startTime) / 1000 / 60).toInt()
+            actualMinutes
+        }
     
     fun getFailedSessionCount(): Int = todaySessions.count { !it.success }
     
