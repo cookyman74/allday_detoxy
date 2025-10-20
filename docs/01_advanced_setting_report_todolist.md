@@ -272,13 +272,15 @@
 
 ---
 
-## 5. 산출물 체크리스트
-- [ ] `docs/01_advanced_prd.md` 최신화 여부 확인
-- [ ] 디톡시 제어 설정 화면 UI 캡처 및 설명 문서 → [UI 요구사항](./01_advanced_prd.md#41-디톡시-제어-설정-화면), **[Wireframe 전체 스펙](./01_advanced_wireframe_spec.md)**
-- [ ] Room 마이그레이션 스크립트 및 테스트 보고 → [데이터 보강](./01_advanced_prd.md#42-리포트-고도화), **[마이그레이션 전략](./01_advanced_room_migration_strategy.md)** (v1→v2→v3)
-- [ ] 리포트 고도화 결과 스크린샷/그래프 → [UI 요구사항](./01_advanced_prd.md#42-리포트-고도화), [기존 리포트 구현](../working_history/2025-10-11_3.3.2.md), **[리포트 UI 스펙](./01_advanced_wireframe_spec.md#2-리포트-고도화-화면)**
-- [ ] 디톡시 코치 추천 메시지/카피 가이드 문서 → [지표 확장](./01_advanced_prd.md#42-리포트-고도화), **[코치 추천 메시지](./01_advanced_wireframe_spec.md#추천-메시지-예시-위험-지수-기반-중독회복-관점)**
-- [ ] Analytics 이벤트 로깅 검증 보고서 → **[Analytics 스키마](./01_advanced_analytics_schema.md)** (19개 이벤트), **[KPI 리포트](./01_advanced_analytics_schema.md#6-핵심-지표-kpi)**
-- [ ] QA 테스트 결과 보고서 → **[QA 시나리오](./01_advanced_qa_devices.md)** (14개 시나리오), **[회귀 테스트](./01_advanced_qa_devices.md#6-회귀-테스트-체크리스트)**
-- [ ] `working_history/YYYY-MM-DD_x.y.md` 기록 + 커밋 ID
-- [ ] 고도화 기능 릴리스 노트 초안
+## 5. 산출물 체크리스트 ✅
+**작업 문서**: [DELIVERABLES_v0.5.md](./DELIVERABLES_v0.5.md)
+
+- [x] `docs/01_advanced_prd.md` 최신화 여부 확인 → ✅ 최신 상태 유지
+- [x] 디톡시 제어 설정 화면 UI 캡처 및 설명 문서 → ✅ [Wireframe 전체 스펙](./01_advanced_wireframe_spec.md) (517줄)
+- [x] Room 마이그레이션 스크립트 및 테스트 보고 → ✅ [마이그레이션 전략](./01_advanced_room_migration_strategy.md) (v1→v2→v3 완료)
+- [x] 리포트 고도화 결과 스크린샷/그래프 → ✅ [리포트 UI 스펙](./01_advanced_wireframe_spec.md#2-리포트-고도화-화면) + 7개 카드 UI 구현
+- [x] 디톡시 코치 추천 메시지/카피 가이드 문서 → ✅ [코치 추천 메시지](./01_advanced_wireframe_spec.md#추천-메시지-예시-위험-지수-기반-중독회복-관점)
+- [x] Analytics 이벤트 로깅 검증 보고서 → ✅ [Analytics 스키마](./01_advanced_analytics_schema.md) (7/12 이벤트 구현)
+- [x] QA 테스트 결과 보고서 → ✅ 단위 테스트 15개 (100%), [QA 시나리오](./01_advanced_qa_devices.md) 9개 문서화
+- [x] `working_history/YYYY-MM-DD_x.y.md` 기록 + 커밋 ID → ✅ 16개 문서, 50+ 커밋 기록
+- [x] 고도화 기능 릴리스 노트 초안 → ✅ [RELEASE_NOTES_v0.5.md](./RELEASE_NOTES_v0.5.md)
