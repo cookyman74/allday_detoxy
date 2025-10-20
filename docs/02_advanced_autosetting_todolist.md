@@ -65,7 +65,7 @@
 ### 2.1 Room 마이그레이션 v3→v4 (Day 4-5)
 
 #### 2.1.1 신규 엔티티 정의
-- [ ] **TimeBasedAutoRun** 엔티티 생성
+- [ ] **TimeBasedAutoRun** 엔티티 생성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략 문서](./02_advanced_room_migration_strategy.md)** (작성 예정)
   ```kotlin
   @Entity(tableName = "time_based_auto_run")
   data class TimeBasedAutoRun(
@@ -80,6 +80,7 @@
       val createdAt: Long = System.currentTimeMillis()
   )
   ```
+  - **참조**: [1차 고도화 마이그레이션 전략](./01_advanced_room_migration_strategy.md) - Room 마이그레이션 패턴
 
 - [ ] **LocationBasedAutoRun** 엔티티 생성
   ```kotlin
@@ -129,11 +130,12 @@
   ```
 
 #### 2.1.2 DAO 인터페이스 작성
-- [ ] **TimeBasedAutoRunDao** 생성 (10개 메서드)
+- [ ] **TimeBasedAutoRunDao** 생성 (10개 메서드) → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4)
   - insert, update, delete
   - getAll, getById, getEnabled
   - getByHourAndMinute, toggleEnabled
   - getEnabledForDay(dayOfWeek)
+  - **참조**: [FocusSessionDao 패턴](../app/src/main/java/com/allday/detoxy/data/local/dao/FocusSessionDao.kt) - 기존 DAO 구현 패턴
 - [ ] **LocationBasedAutoRunDao** 생성 (10개 메서드)
   - insert, update, delete
   - getAll, getById, getEnabled
@@ -148,7 +150,7 @@
   - getStatistics (성공률, 총 횟수)
 
 #### 2.1.3 마이그레이션 스크립트
-- [ ] **Migration_3_4.kt** 작성
+- [ ] **Migration_3_4.kt** 작성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략](./02_advanced_room_migration_strategy.md)** (작성 예정)
   ```kotlin
   val MIGRATION_3_4 = object : Migration(3, 4) {
       override fun migrate(database: SupportSQLiteDatabase) {
@@ -173,20 +175,24 @@
       }
   }
   ```
+  - **참조**: [Migration_2_3.kt](../app/src/main/java/com/allday/detoxy/data/local/migration/Migration_2_3.kt) - 이전 마이그레이션 패턴
+  - **참조**: [1차 고도화 마이그레이션 작업](../working_history/2025-10-19_1st_advanced_2B.1.md)
 
-- [ ] DetoxyDatabase v4 업데이트
-- [ ] DatabaseModule에 MIGRATION_3_4 추가
+- [ ] DetoxyDatabase v4 업데이트 → [DetoxyDatabase.kt](../app/src/main/java/com/allday/detoxy/data/local/DetoxyDatabase.kt)
+- [ ] DatabaseModule에 MIGRATION_3_4 추가 → [DatabaseModule.kt](../app/src/main/java/com/allday/detoxy/core/di/DatabaseModule.kt)
 
 #### 2.1.4 마이그레이션 테스트
-- [ ] 단위 테스트 작성 (MigrationTest)
+- [ ] 단위 테스트 작성 (MigrationTest) → **[마이그레이션 테스트 전략](./02_advanced_room_migration_strategy.md#테스트-전략)** (작성 예정)
+  - **참조**: [1차 고도화 마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)
 - [ ] 빌드 검증: `./gradlew compileDebugKotlin`
+  - **참조**: [빌드 및 테스트 명령어](./00_mvp_allday_detoxy_todolist.md#빌드-및-테스트-명령어)
 
 **작업 기록**: `working_history/2025-10-21_2nd_advanced_2.1.md`
 
 ### 2.2 AlarmManager 래퍼 클래스 (Day 6)
 
 #### 2.2.1 AutoRunAlarmManager 클래스
-- [ ] **클래스 설계**
+- [ ] **클래스 설계** → [PRD §4.1](./02_advanced_autosetting_prd.md#41-시간-기반-자동-실행)
   ```kotlin
   @Singleton
   class AutoRunAlarmManager @Inject constructor(
@@ -199,13 +205,15 @@
       private fun createPendingIntent(autoRunId: String): PendingIntent
   }
   ```
+  - **참조**: [Android AlarmManager 문서](https://developer.android.com/training/scheduling/alarms)
+  - **참조**: [기존 TimerViewModel 패턴](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt)
 
-- [ ] **AlarmManager 설정**
+- [ ] **AlarmManager 설정** → [PRD §4.1.3](./02_advanced_autosetting_prd.md#413-자동-시작-로직)
   - `setExactAndAllowWhileIdle()` 사용 (Android 6.0+)
   - PendingIntent.FLAG_IMMUTABLE (Android 12+)
   - 요일별 알람 계산 로직
 
-- [ ] **Broadcast Receiver 생성**
+- [ ] **Broadcast Receiver 생성** → [PRD §4.1.2](./02_advanced_autosetting_prd.md#412-자동-실행-알림)
   ```kotlin
   class AutoRunAlarmReceiver : BroadcastReceiver() {
       override fun onReceive(context: Context, intent: Intent) {
@@ -215,8 +223,9 @@
       }
   }
   ```
+  - **참조**: [Android BroadcastReceiver 문서](https://developer.android.com/guide/components/broadcasts)
 
-- [ ] AndroidManifest에 Receiver 등록
+- [ ] AndroidManifest에 Receiver 등록 → [AndroidManifest.xml](../app/src/main/AndroidManifest.xml)
 
 #### 2.2.2 WorkManager 백업 로직
 - [ ] **WorkManager 구현** (AlarmManager 실패 시 대체)
@@ -236,7 +245,7 @@
 ### 2.3 Geofencing 래퍼 클래스 (Day 7-8)
 
 #### 2.3.1 AutoRunGeofenceManager 클래스
-- [ ] **클래스 설계**
+- [ ] **클래스 설계** → [PRD §4.2](./02_advanced_autosetting_prd.md#42-위치-기반-자동-실행)
   ```kotlin
   @Singleton
   class AutoRunGeofenceManager @Inject constructor(
@@ -250,8 +259,10 @@
       private fun createGeofencingRequest(geofences: List<Geofence>): GeofencingRequest
   }
   ```
+  - **참조**: [Android Geofencing API 문서](https://developer.android.com/training/location/geofencing)
+  - **참조**: [Google Play Services Location API](https://developers.google.com/android/reference/com/google/android/gms/location/package-summary)
 
-- [ ] **Geofence 설정**
+- [ ] **Geofence 설정** → [PRD §4.2.2](./02_advanced_autosetting_prd.md#422-geofencing-구현)
   - ENTER 트리거 (dwell time 없음)
   - Expiration: NEVER_EXPIRE
   - Loitering delay: 0ms
@@ -270,17 +281,20 @@
   ```
 
 #### 2.3.2 위치 권한 관리
-- [ ] **PermissionUtils 확장**
+- [ ] **PermissionUtils 확장** → [PRD §4.2.3](./02_advanced_autosetting_prd.md#423-위치-권한-관리)
   - `hasLocationPermission()`: ACCESS_FINE_LOCATION 확인
   - `hasBackgroundLocationPermission()`: Android 10+ 확인
   - `openLocationSettings()`: 설정 화면 이동
   - `shouldShowLocationRationale()`: 권한 거부 시 설명 표시 여부
+  - **참조**: [기존 PermissionUtils](../app/src/main/java/com/allday/detoxy/core/utils/PermissionUtils.kt) - 접근성, DND 권한 패턴
+  - **참조**: [권한 요청 작업 기록](../working_history/2025-10-05_1.2.md)
 
-- [ ] **위치 권한 요청 플로우**
+- [ ] **위치 권한 요청 플로우** → [PRD §4.2.3](./02_advanced_autosetting_prd.md#423-위치-권한-관리)
   1. ACCESS_FINE_LOCATION 요청
   2. 승인 후 백그라운드 위치 필요성 설명
   3. ACCESS_BACKGROUND_LOCATION 요청
   4. 설정 화면으로 이동 ("항상 허용" 선택)
+  - **참조**: [Android 위치 권한 가이드](https://developer.android.com/training/location/permissions)
 
 **작업 기록**: `working_history/2025-10-21_2nd_advanced_2.3.md`
 
@@ -291,7 +305,7 @@
 ### 3.1 시간대 설정 UI (Day 9-10)
 
 #### 3.1.1 TimeBasedAutoRunScreen 레이아웃
-- [ ] **메인 화면 Compose**
+- [ ] **메인 화면 Compose** → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면), **[Wireframe 스펙](./02_advanced_wireframe_spec.md)** (작성 예정)
   ```kotlin
   @Composable
   fun TimeBasedAutoRunScreen(
@@ -307,24 +321,28 @@
       }
   }
   ```
+  - **참조**: [DetoxyControlSettingsScreen](../app/src/main/java/com/allday/detoxy/presentation/ui/settings/focus/DetoxyControlSettingsScreen.kt) - 설정 화면 레이아웃 패턴
+  - **참조**: [1차 고도화 UI 작업](../working_history/2025-10-15_1st_advanced_2.2.md)
 
-- [ ] **TimeBasedAutoRunCard** 컴포넌트
+- [ ] **TimeBasedAutoRunCard** 컴포넌트 → **[Wireframe 컴포넌트 스펙](./02_advanced_wireframe_spec.md#시간대-카드)** (작성 예정)
   - 시간 표시 (10:00 AM)
   - 타이머 시간 + 차단 프리셋
   - 요일 표시 (월, 화, 수, 목, 금)
   - 활성화 토글
   - 편집/삭제 아이콘 버튼
+  - **참조**: [기존 카드 컴포넌트 패턴](../app/src/main/java/com/allday/detoxy/presentation/ui/report/components/)
 
-- [ ] **AddTimeBasedAutoRunDialog** 다이얼로그
+- [ ] **AddTimeBasedAutoRunDialog** 다이얼로그 → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면)
   - TimePicker (24시간 형식)
   - 타이머 시간 선택 (프리셋 또는 입력)
   - 차단 프리셋 선택 (완전 차단/표준/완화)
   - 요일 선택 (다중 선택, 체크박스)
   - 라벨 입력 (TextField, 선택)
   - "저장" 버튼
+  - **참조**: [MessengerCategoryDialog](../app/src/main/java/com/allday/detoxy/presentation/ui/settings/focus/MessengerCategoryDialog.kt) - 다이얼로그 패턴
 
 #### 3.1.2 TimeBasedAutoRunViewModel
-- [ ] **StateFlow 정의**
+- [ ] **StateFlow 정의** → [PRD §4.1](./02_advanced_autosetting_prd.md#41-시간-기반-자동-실행)
   ```kotlin
   @HiltViewModel
   class TimeBasedAutoRunViewModel @Inject constructor(
@@ -340,6 +358,8 @@
       fun toggleAutoRun(autoRunId: String, isEnabled: Boolean)
   }
   ```
+  - **참조**: [ReportViewModel 패턴](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/ReportViewModel.kt) - ViewModel 구조
+  - **참조**: [TimerViewModel](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt) - StateFlow 관리 패턴
 
 - [ ] **Repository 구현**
   ```kotlin
@@ -352,13 +372,15 @@
       suspend fun delete(autoRunId: String)
   }
   ```
+  - **참조**: [FocusRepository 패턴](../app/src/main/java/com/allday/detoxy/data/repository/FocusRepository.kt)
 
 #### 3.1.3 글로벌 옵션 UI
-- [ ] **GlobalOptionsSection** 컴포넌트
+- [ ] **GlobalOptionsSection** 컴포넌트 → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-글로벌-옵션)
   - 주말 제외 토글
   - 자동 시작 딜레이 선택 (0분, 5분, 10분)
   - 사전 알림 시간 선택 (0분, 5분, 10분, 15분)
   - DataStore에 저장
+  - **참조**: [FocusSettingsRepository](../app/src/main/java/com/allday/detoxy/data/repository/FocusSettingsRepository.kt) - DataStore 패턴
 
 **작업 기록**: `working_history/2025-10-22_2nd_advanced_3.1.md`
 
@@ -408,7 +430,7 @@
 ### 3.3 자동 실행 알림 및 액션 (Day 12-13)
 
 #### 3.3.1 AutoRunNotificationManager 클래스
-- [ ] **알림 생성**
+- [ ] **알림 생성** → [PRD §4.1.2](./02_advanced_autosetting_prd.md#412-자동-실행-알림)
   ```kotlin
   class AutoRunNotificationManager @Inject constructor(
       private val context: Context,
@@ -419,8 +441,10 @@
       fun dismissNotification(autoRunId: String)
   }
   ```
+  - **참조**: [Android Notification 문서](https://developer.android.com/develop/ui/views/notifications)
+  - **참조**: [기존 ForegroundService 알림 패턴](../app/src/main/java/com/allday/detoxy/service/overlay/LockOverlayService.kt)
 
-- [ ] **알림 채널 생성** (AndroidManifest 업데이트)
+- [ ] **알림 채널 생성** (AndroidManifest 업데이트) → [PRD §8.1](./02_advanced_autosetting_prd.md#81-자동-실행-대시보드)
   - Channel ID: "auto_run_notifications"
   - 중요도: HIGH
   - 소리, 진동 활성화
@@ -690,7 +714,7 @@
   ```
 
 #### 5.1.2 DonutTimerPicker Composable
-- [ ] **Canvas 그리기**
+- [ ] **Canvas 그리기** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui), **[Wireframe 스펙](./02_advanced_wireframe_spec.md#커스텀-타이머)** (작성 예정)
   ```kotlin
   @Composable
   fun DonutTimerPicker(
@@ -763,20 +787,22 @@
   ```
 
 #### 5.1.3 터치 인터랙션
-- [ ] **드래그 제스처 처리**
+- [ ] **드래그 제스처 처리** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui)
   - `detectDragGestures`로 드래그 감지
   - 터치 위치 → 각도 계산
   - 각도 → 시간(분) 변환
   - 5분 단위로 스냅 (roundToNearestStep)
+  - **참조**: [Compose Gesture 문서](https://developer.android.com/jetpack/compose/touch-input)
 
 - [ ] **탭 제스처 처리**
   - `detectTapGestures`로 탭 감지
   - 탭 위치 → 각도 계산
   - 즉시 해당 시간으로 설정
 
-- [ ] **햅틱 피드백**
+- [ ] **햅틱 피드백** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui)
   - 5분 단위 변경 시 미세한 진동
   - `HapticFeedbackType.TextHandleMove` 사용
+  - **참조**: [Android HapticFeedback 문서](https://developer.android.com/reference/android/view/HapticFeedbackConstants)
 
 **작업 기록**: `working_history/2025-10-26_2nd_advanced_5.1.md`
 
@@ -893,15 +919,17 @@
 ### 5.3 기존 타이머 화면 리팩토링 (Day 23)
 
 #### 5.3.1 TimerScreen 통합
-- [ ] CustomTimerScreen을 TimerScreen으로 통합
+- [ ] CustomTimerScreen을 TimerScreen으로 통합 → [PRD §4.3.3](./02_advanced_autosetting_prd.md#433-빠른-시작)
   - 기존 타이머 UI 제거
   - 도넛 그래프를 메인 UI로 사용
   - 프리셋 버튼 하단 배치
+  - **참조**: [기존 TimerScreen](../app/src/main/java/com/allday/detoxy/presentation/ui/timer/TimerScreen.kt) - 현재 타이머 UI
 
 - [ ] TimerViewModel 확장
   - CustomTimerPreset 로딩
   - 프리셋 선택 시 시간 자동 설정
   - 사용 횟수 자동 증가
+  - **참조**: [기존 TimerViewModel](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt)
 
 #### 5.3.2 하위 호환성 유지
 - [ ] 기존 프리셋 데이터 마이그레이션
@@ -953,7 +981,7 @@
 ### 6.2 Analytics 이벤트 로깅 (Day 26)
 
 #### 6.2.1 AnalyticsHelper 확장
-- [ ] **21개 신규 이벤트 구현**
+- [ ] **21개 신규 이벤트 구현** → [PRD §5.2](./02_advanced_autosetting_prd.md#52-이벤트-로깅), **[Analytics 스키마](./02_advanced_analytics_schema.md)** (작성 예정)
   ```kotlin
   object AnalyticsHelper {
       // 설정 이벤트
@@ -975,6 +1003,8 @@
       fun logAutoRunFailed(failureReason: String)
   }
   ```
+  - **참조**: [기존 AnalyticsHelper](../app/src/main/java/com/allday/detoxy/core/utils/AnalyticsHelper.kt) - 1차 고도화 이벤트 구현 패턴
+  - **참조**: [1차 고도화 Analytics 스키마](./01_advanced_analytics_schema.md)
 
 #### 6.2.2 이벤트 로깅 위치
 - [ ] TimeBasedAutoRunViewModel → 설정 이벤트
@@ -1031,18 +1061,20 @@
 ### 6.4 회귀 테스트 (Day 28)
 
 #### 6.4.1 기존 기능 확인
-- [ ] 타이머 기능 (수동 시작)
-- [ ] 앱 차단 기능
-- [ ] 오버레이 잠금 화면
-- [ ] DND 제어
-- [ ] 리포트 화면 (1차 고도화 기능 포함)
-- [ ] 디톡시 제어 설정
+- [ ] 타이머 기능 (수동 시작) → [MVP Week 1-3](./00_mvp_allday_detoxy_todolist.md#week-1-핵심-차단-기능)
+- [ ] 앱 차단 기능 → [AccessibilityService 작업](../working_history/2025-10-05_1.2.md)
+- [ ] 오버레이 잠금 화면 → [LockOverlayService 작업](../working_history/2025-10-06_2.1.md)
+- [ ] DND 제어 → [DND 작업](../working_history/2025-10-06_2.2.md)
+- [ ] 리포트 화면 (1차 고도화 기능 포함) → [1차 고도화 Week 2B](./01_advanced_setting_report_todolist.md#week-2b-고급-통계-및-ui)
+- [ ] 디톡시 제어 설정 → [1차 고도화 Week 1](./01_advanced_setting_report_todolist.md#2-집중모드-설정-화면-구축-week-1)
 
 #### 6.4.2 빌드 검증
 - [ ] `./gradlew compileDebugKotlin` (SUCCESS)
-- [ ] `./gradlew assembleDebug` (APK Size < 15MB)
+- [ ] `./gradlew assembleDebug` (APK Size < 15MB) → 목표: 1차 대비 4MB 증가 이내
+  - **참조**: [1차 고도화 APK 크기](../working_history/2025-10-20_1st_advanced_4.0.md) - 11MB
 - [ ] `./gradlew test` (모든 테스트 통과)
 - [ ] `./gradlew lint` (0 errors)
+  - **참조**: [Repository 규칙](../README.md#빌드-및-실행) - 빌드 명령어 가이드
 
 **작업 기록**: `working_history/2025-10-29_2nd_advanced_6.4.md`
 
@@ -1143,30 +1175,34 @@
 ### 7.4 문서화 및 릴리스 노트 (Day 33)
 
 #### 7.4.1 문서 업데이트
-- [ ] `README.md` 업데이트
+- [ ] `README.md` 업데이트 → [README.md](../README.md)
   - 2차 고도화 기능 추가
   - 위치 권한 안내 추가
   - 스크린샷 업데이트
+  - **참조**: [1차 고도화 README 업데이트](../working_history/2025-10-20_1st_advanced_4.0.md) - 문서 업데이트 패턴
 
-- [ ] `02_advanced_wireframe_spec.md` 최종 검토
-- [ ] `02_advanced_room_migration_strategy.md` 최종 검토
-- [ ] `02_advanced_analytics_schema.md` 최종 검토
-- [ ] `02_advanced_qa_devices.md` 최종 검토
+- [ ] `02_advanced_wireframe_spec.md` 최종 검토 → [Wireframe 스펙](./02_advanced_wireframe_spec.md)
+- [ ] `02_advanced_room_migration_strategy.md` 최종 검토 → [마이그레이션 전략](./02_advanced_room_migration_strategy.md)
+- [ ] `02_advanced_analytics_schema.md` 최종 검토 → [Analytics 스키마](./02_advanced_analytics_schema.md)
+- [ ] `02_advanced_qa_devices.md` 최종 검토 → [QA 시나리오](./02_advanced_qa_devices.md)
 
 #### 7.4.2 릴리스 노트 작성
-- [ ] `RELEASE_NOTES_v0.6.md` 생성
+- [ ] `RELEASE_NOTES_v0.6.md` 생성 → [docs/RELEASE_NOTES_v0.6.md](./RELEASE_NOTES_v0.6.md)
   - 새로운 기능 (자동 실행, 커스텀 타이머)
   - 개선 사항
   - 버그 수정
   - 알려진 이슈
-  - 다음 계획
+  - 다음 계획 (3차 고도화 힌트)
+  - **참조**: [v0.5 릴리스 노트](./RELEASE_NOTES_v0.5.md) - 릴리스 노트 포맷
 
 #### 7.4.3 프라이버시 정책 업데이트
-- [ ] 위치 정보 수집 관련 내용 추가
+- [ ] 위치 정보 수집 관련 내용 추가 → [PRD §7](./02_advanced_autosetting_prd.md#7-위험-요소-및-대응)
   - 수집 목적: 위치 기반 자동 실행
   - 수집 방법: Geofencing API
   - 보관 기간: 영구 (사용자 삭제 시 즉시 삭제)
   - 제3자 제공: 없음
+  - **참조**: [GDPR 준수 가이드](https://developer.android.com/privacy-and-security/privacy-policy)
+  - **참조**: [개인정보보호법](https://www.pipc.go.kr/) - 위치정보 수집 관련 법령
 
 **작업 기록**: `working_history/2025-10-31_2nd_advanced_7.4.md`
 
