@@ -45,14 +45,15 @@ app/
     └── overlay/   # 오버레이 잠금 서비스
 ```
 
-## 📋 주요 기능 (MVP)
+## 📋 주요 기능
 
+### MVP 기능 (완료)
 1. **타이머 기반 집중 모드**
    - 프리셋 타이머 (25분, 45분, 60분)
    - 타이머 실행 중 특정 앱 차단
 
 2. **앱 차단 기능**
-   - Instagram, TikTok, YouTube, Facebook 차단
+   - Instagram, TikTok, YouTube, Facebook 등 주요 앱 차단
    - AccessibilityService를 통한 실시간 감지
 
 3. **전체 화면 잠금**
@@ -70,6 +71,18 @@ app/
    - 오늘 성공한 세션 수
    - 총 집중 시간
    - 현재 스트릭 및 총 포인트
+
+### 1차 고도화 기능 (완료) 🆕
+7. **디톡시 제어 설정**
+   - 카테고리별 앱 차단 설정 (SNS, 메신저, 동영상, 웹, 기타)
+   - 3가지 프리셋 (완전 차단, 표준 디톡시, 완화)
+   - 메신저 긴급 연락 허용 옵션
+
+8. **리포트 고도화**
+   - **디톡시 위험 지수** (0-100): 회복/주의/고위험 3단계
+   - **회복률 추세**: 일별 회복률 그래프 및 주간 변화량
+   - **방해요인 Top 3**: 카테고리별 차단 횟수 및 비율
+   - **디톡시 코치 추천**: 위험 단계별 맞춤 행동 제안
 
 ## 🚀 빌드 및 실행
 
@@ -124,10 +137,18 @@ app/
 
 ## 📝 참조 문서
 
+### MVP 문서
 - [PRD 문서](./docs/prd.md) - 제품 요구사항 정의서
 - [MVP 개발 계획](./docs/00_mvp_allday_detoxy_todolist.md) - 4주 개발 일정
 - [기술 설계 문서](./docs/00_android_allday_detoxy_plan.md) - 상세 기술 설계
 - [개발환경 설정](./docs/00_kotlin_environment_todolist.md) - macOS 환경 구성
+
+### 1차 고도화 문서 🆕
+- [1차 고도화 PRD](./docs/01_advanced_prd.md) - 디톡시 제어 설정 & 리포트 고도화
+- [1차 고도화 작업 계획](./docs/01_advanced_setting_report_todolist.md) - 3주 개발 일정
+- [Wireframe 스펙](./docs/01_advanced_wireframe_spec.md) - UI/UX 상세 설계
+- [Analytics 스키마](./docs/01_advanced_analytics_schema.md) - 이벤트 로깅 스펙
+- [Room 마이그레이션 전략](./docs/01_advanced_room_migration_strategy.md) - DB v1→v2→v3
 
 ## 📄 라이선스
 
