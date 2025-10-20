@@ -199,6 +199,7 @@
       private val context: Context,
       private val alarmManager: AlarmManager
   ) {
+      fun canScheduleExactAlarms(): Boolean  // ✅ Android 12+ 권한 체크
       fun scheduleTimeBasedAutoRun(autoRun: TimeBasedAutoRun)
       fun cancelTimeBasedAutoRun(autoRunId: String)
       fun rescheduleAll(autoRuns: List<TimeBasedAutoRun>)
@@ -208,8 +209,15 @@
   - **참조**: [Android AlarmManager 문서](https://developer.android.com/training/scheduling/alarms)
   - **참조**: [기존 TimerViewModel 패턴](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt)
 
+- [ ] **정확 알람 권한 체크 (Android 12+)** → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-정확-알람-권한-관리-android-12)
+  - `AlarmManager.canScheduleExactAlarms()` 체크 메서드 구현
+  - 권한 없을 경우 `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` Intent 준비
+  - 권한 상태를 StateFlow로 노출
+  - **참조**: [Exact Alarm Permission](https://developer.android.com/about/versions/12/behavior-changes-12#exact-alarm-permission)
+
 - [ ] **AlarmManager 설정** → [PRD §4.1.3](./02_advanced_autosetting_prd.md#413-자동-시작-로직)
-  - `setExactAndAllowWhileIdle()` 사용 (Android 6.0+)
+  - `setExactAndAllowWhileIdle()` 사용 (권한 있을 때)
+  - `setAndAllowWhileIdle()` 사용 (권한 없을 때, ±15분 오차)
   - PendingIntent.FLAG_IMMUTABLE (Android 12+)
   - 요일별 알람 계산 로직
 
@@ -228,17 +236,35 @@
 - [ ] AndroidManifest에 Receiver 등록 → [AndroidManifest.xml](../app/src/main/AndroidManifest.xml)
 
 #### 2.2.2 WorkManager 백업 로직
-- [ ] **WorkManager 구현** (AlarmManager 실패 시 대체)
+- [ ] **WorkManager 구현** (AlarmManager 실패 시 대체) → [PRD §4.1.3](./02_advanced_autosetting_prd.md#413-자동-시작-로직)
   ```kotlin
   class AutoRunWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
       override fun doWork(): Result {
           // 자동 실행 트리거
+          // AlarmManager 권한 없을 때 또는 설정 실패 시 사용
       }
   }
   ```
+  - **참조**: [WorkManager 문서](https://developer.android.com/topic/libraries/architecture/workmanager)
 
-- [ ] OneTimeWorkRequest 스케줄링
-- [ ] AlarmManager 우선, WorkManager 백업 전략
+- [ ] OneTimeWorkRequest 스케줄링 (정확도: ±15분)
+- [ ] **전략 결정 로직**:
+  - Android 12+ && `canScheduleExactAlarms() == false` → WorkManager
+  - Android 11 이하 또는 권한 있음 → AlarmManager
+  - 설정 화면에 현재 사용 중인 스케줄러 표시
+- [ ] **정확도 안내 UI**:
+  - WorkManager 사용 시 경고 배너: "정확한 시간 실행을 위해 권한을 설정해주세요"
+  - 오차 범위 표시: "±15분 오차 발생 가능"
+
+#### 2.2.3 정확 알람 권한 UI
+- [ ] **권한 요청 다이얼로그** → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-정확-알람-권한-관리-android-12)
+  - 설명 텍스트: "정확한 시간에 집중 모드를 시작하려면..."
+  - "설정으로 이동" 버튼
+  - "나중에" 버튼 (WorkManager fallback)
+- [ ] **권한 상태 카드** (TimeBasedAutoRunScreen)
+  - 권한 없을 때 경고 카드 표시
+  - "권한 설정하기" 버튼
+  - 현재 스케줄러 표시 (정확 알람 / 근사 알람)
 
 **작업 기록**: `working_history/2025-10-21_2nd_advanced_2.2.md`
 
@@ -252,6 +278,8 @@
       private val context: Context,
       private val geofencingClient: GeofencingClient
   ) {
+      suspend fun isPlayServicesAvailable(): Boolean  // ✅ Play Services 체크
+      suspend fun isLocationEnabled(): Boolean         // ✅ 위치 서비스 ON/OFF 체크
       suspend fun addGeofence(autoRun: LocationBasedAutoRun): Result<Unit>
       suspend fun removeGeofence(autoRunId: String): Result<Unit>
       suspend fun removeAllGeofences(): Result<Unit>
@@ -262,11 +290,23 @@
   - **참조**: [Android Geofencing API 문서](https://developer.android.com/training/location/geofencing)
   - **참조**: [Google Play Services Location API](https://developers.google.com/android/reference/com/google/android/gms/location/package-summary)
 
+- [ ] **Google Play Services 체크** → [PRD §4.2.6](./02_advanced_autosetting_prd.md#426-지오펜싱-예외-처리)
+  - `GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable()` 호출
+  - 미탑재/구버전 시 사용자 안내 다이얼로그
+  - Play Services 없을 경우 위치 기반 기능 완전 비활성화
+  - **참조**: [GoogleApiAvailability 문서](https://developers.google.com/android/guides/setup#ensure_devices_have_the_google_play_services_apk)
+
+- [ ] **위치 서비스 상태 체크**
+  - `LocationManager.isLocationEnabled()` 확인
+  - 위치 OFF 시 "위치 서비스 켜기" 안내 및 설정 이동
+  - 위치 OFF 상태에서 Geofence 등록 실패 처리
+
 - [ ] **Geofence 설정** → [PRD §4.2.2](./02_advanced_autosetting_prd.md#422-geofencing-구현)
   - ENTER 트리거 (dwell time 없음)
   - Expiration: NEVER_EXPIRE
   - Loitering delay: 0ms
   - Transition types: GEOFENCE_TRANSITION_ENTER
+  - 실패 시 상세 에러 메시지 (권한, Play Services, 위치 서비스, 최대 개수 등)
 
 - [ ] **BroadcastReceiver 생성**
   ```kotlin
@@ -1170,6 +1210,42 @@
 - [ ] 기존 MVP 기능 (타이머, 차단, 리포트)
 - [ ] 1차 고도화 기능 (디톡시 제어, 리포트 고도화)
 
+#### 7.3.5 OEM 호환성 테스트 (추가) 🆕
+- [ ] **Samsung (One UI)** → [PRD §6.5](./02_advanced_autosetting_prd.md#65-플랫폼-의존성-및-호환성)
+  - Doze 모드에서 AlarmManager 동작 확인
+  - 배터리 최적화 제외 설정 안내 UI 테스트
+  - 백그라운드 실행 제한 확인
+  
+- [ ] **Xiaomi (MIUI)**
+  - "자동 시작" 권한 요청 플로우 테스트
+  - 배터리 절약 모드에서 자동 실행 동작 확인
+  - 실패 시 사용자 안내 및 가이드 제공
+  
+- [ ] **Huawei (EMUI / HarmonyOS)**
+  - Google Play Services 미탑재 감지
+  - 위치 기반 기능 비활성화 및 안내 표시
+  - HMS 대체 기능 제공 여부 결정 (향후)
+  
+- [ ] **OnePlus (OxygenOS)**
+  - 백그라운드 앱 제약 확인
+  - AlarmManager/Geofence 트리거 정확도 테스트
+
+#### 7.3.6 권한 및 정책 테스트 (추가) 🆕
+- [ ] **정확 알람 권한 (Android 12+)**
+  - 권한 거부 시 WorkManager fallback 동작 확인
+  - 권한 설정 가이드 UI 테스트
+  - 설정 화면 권한 상태 표시 확인
+  
+- [ ] **백그라운드 위치 권한**
+  - "항상 허용" → "앱 사용 중" 변경 시 동작 확인
+  - 권한 완전 거부 시 Geofence 해제 및 안내
+  - 권한 재요청 플로우 테스트
+  
+- [ ] **Play Services 의존성**
+  - Play Services 미탑재 기기 시뮬레이션
+  - 위치 서비스 OFF 상태 테스트
+  - 실패 안내 및 대체 기능 제공 확인
+
 **작업 기록**: `working_history/2025-10-31_2nd_advanced_7.3.md`
 
 ### 7.4 문서화 및 릴리스 노트 (Day 33)
@@ -1203,6 +1279,33 @@
   - 제3자 제공: 없음
   - **참조**: [GDPR 준수 가이드](https://developer.android.com/privacy-and-security/privacy-policy)
   - **참조**: [개인정보보호법](https://www.pipc.go.kr/) - 위치정보 수집 관련 법령
+
+#### 7.4.4 Play Store 정책 준수 문서 (필수) 🆕
+- [ ] **데이터 보안 섹션 작성** → [PRD §4.2.5](./02_advanced_autosetting_prd.md#425-google-play-store-정책-준수)
+  - Google Play Console → "앱 콘텐츠" → "데이터 보안"
+  - 위치 데이터 수집 선언:
+    - 수집 여부: 예
+    - 공유 여부: 아니오
+    - 암호화 여부: 예
+    - 사용자 삭제 요청: 가능
+  - 백그라운드 위치 사용 목적 상세 설명
+  
+- [ ] **Location Permission Declaration 작성**
+  - 백그라운드 위치 권한 사용 정당성 문서화
+  - 기능 설명: "사용자가 등록한 특정 장소 (회사, 학교) 도착 시 자동으로 집중 모드 시작"
+  - 대체 기능 명시: "시간 기반 자동 실행으로 대체 가능"
+  
+- [ ] **기능 시연 비디오 제작** (1-2분)
+  - 위치 등록 과정
+  - 지오펜스 진입 시 자동 실행 동작
+  - 사용자 동의 및 설정 화면
+  - 위치 데이터 로컬 저장 증명
+  
+- [ ] **심사 대응 준비 문서**
+  - Q&A 예상 질문 및 답변 준비
+  - 백그라운드 위치 필수성 설명
+  - 데이터 처리 방식 증명 자료
+  - Plan B: 위치 기능 제외 버전 준비 (필요 시)
 
 **작업 기록**: `working_history/2025-10-31_2nd_advanced_7.4.md`
 
