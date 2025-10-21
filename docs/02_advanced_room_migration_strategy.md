@@ -263,7 +263,11 @@ data class AutoRunLog(
     val result: String,                 // STARTED, SKIPPED, FAILED
     val failureReason: String? = null,  // 실패 사유 (PERMISSION_DENIED, TIMER_RUNNING, ...)
     @ColumnInfo(index = true)           // FK 인덱스 자동 생성
-    val sessionId: String? = null       // 생성된 FocusSession.id (result == STARTED일 때)
+    val sessionId: String? = null,      // 생성된 FocusSession.id (result == STARTED일 때)
+    // 🆕 위치 기반 자동 실행 상세 정보 (triggerType == LOCATION일 때)
+    val gpsAccuracyMeters: Float? = null,  // GPS 정확도 (미터)
+    val dwellSeconds: Int? = null,         // 실제 체류 시간 (초)
+    val metaJson: String? = null           // 추가 메타데이터 (JSON 형식)
 )
 ```
 
@@ -277,6 +281,9 @@ CREATE TABLE IF NOT EXISTS auto_run_log (
     result TEXT NOT NULL,
     failureReason TEXT,
     sessionId TEXT,
+    gpsAccuracyMeters REAL,
+    dwellSeconds INTEGER,
+    metaJson TEXT,
     FOREIGN KEY (sessionId) REFERENCES focus_sessions(id) ON DELETE SET NULL
 );
 
@@ -295,6 +302,15 @@ ON auto_run_log(triggerTime DESC);
   - `TIMER_ALREADY_RUNNING`: 이미 타이머 실행 중
   - `LOCATION_DISABLED`: 위치 서비스 OFF
   - `USER_PAUSED`: 사용자가 일시중지
+- **위치 기반 상세 정보** 🆕 (triggerType == LOCATION일 때):
+  - `gpsAccuracyMeters`: GeofencingEvent에서 가져온 GPS 정확도 (예: 15.5m)
+    - UI에서 "높음(< 20m)", "보통(20~50m)", "낮음(> 50m)" 표시에 활용
+    - 위치별 성공률 분석 시 정확도가 낮은 경우 필터링
+  - `dwellSeconds`: 실제 체류 시간 (지오펜스 진입부터 트리거까지 경과 시간)
+    - `LocationBasedAutoRun.dwellTimeMinutes`와 비교하여 정확도 검증
+  - `metaJson`: 추가 메타데이터 (예: 배터리 수준, 네트워크 상태 등)
+    - 향후 확장성을 위한 유연한 필드
+    - 예시: `{"battery": 85, "network": "WIFI", "playServicesVersion": "21.0.0"}`
 - 90일 이상 된 로그 자동 삭제 (정기 정리)
 - **참조 무결성** 🆕:
   - `sessionId`: FocusSession FK (ON DELETE SET NULL)
@@ -305,6 +321,7 @@ ON auto_run_log(triggerTime DESC);
 
 **데이터 예시**:
 ```json
+// 시간 기반 자동 실행 로그
 {
   "id": "uuid-4",
   "triggerType": "TIME",
@@ -312,7 +329,24 @@ ON auto_run_log(triggerTime DESC);
   "triggerTime": 1697868000000,
   "result": "STARTED",
   "failureReason": null,
-  "sessionId": "session-uuid-1"
+  "sessionId": "session-uuid-1",
+  "gpsAccuracyMeters": null,
+  "dwellSeconds": null,
+  "metaJson": null
+}
+
+// 위치 기반 자동 실행 로그 (GPS 상세 정보 포함)
+{
+  "id": "uuid-5",
+  "triggerType": "LOCATION",
+  "triggerSourceId": "uuid-2",
+  "triggerTime": 1697868600000,
+  "result": "STARTED",
+  "failureReason": null,
+  "sessionId": "session-uuid-2",
+  "gpsAccuracyMeters": 18.5,
+  "dwellSeconds": 65,
+  "metaJson": "{\"battery\":85,\"network\":\"WIFI\"}"
 }
 ```
 
@@ -345,14 +379,26 @@ ADD COLUMN autoRunMasterEnabled INTEGER NOT NULL DEFAULT 1;
   - `null`: 일시중지 없음
   - `timestamp`: 해당 시간까지 모든 자동 실행 일시중지
   - 시간 경과 후 자동으로 `null`로 리셋 (AlarmManager로 구현)
+  - **지원 범위 (2차 고도화)**:
+    - ✅ "오늘 하루 중지" (자정까지)
+    - ✅ "N시간 동안 중지" (1h/3h/6h)
+    - ✅ "다음 자동 실행까지 중지" (가장 가까운 예정 시간까지)
+  - **3차 고도화로 연기** ⚠️:
+    - ❌ "특정 시간대 반복 중지" (예: 매일 22:00~07:00)
+    - 이는 `AutoRunPauseWindow` 별도 테이블이 필요하므로 2차에서는 미지원
 - `autoRunMasterEnabled`:
   - `false`: 모든 자동 실행 비활성화 (개별 설정은 유지)
   - `true`: 개별 설정에 따라 자동 실행
 
 **PRD 연계** 🆕:
 - **§4.4.1 자동 실행 대시보드** (PRD): 마스터 토글 UI
-- **§4.4.4 예외 상황 처리** (PRD): 일시중지 기능
+- **§4.4.4 예외 상황 처리** (PRD): 일시중지 기능 (단순 일시중지만 2차 지원)
 - **§5.1.2 Wireframe**: AutoRunDashboardScreen의 "자동 실행 제어 카드"에서 사용
+
+**설계 결정** 🔄:
+- 리뷰어 지적에 따라 2차 범위를 축소하여 단순 일시중지(`autoRunPauseUntil`)만 구현
+- 반복 시간대 일시중지는 별도 테이블 설계가 필요하므로 3차 고도화로 연기
+- PRD §4.4.4 및 Wireframe §6.1.3의 "특정 시간대 일시중지" 기능은 3차로 명시
 
 ---
 

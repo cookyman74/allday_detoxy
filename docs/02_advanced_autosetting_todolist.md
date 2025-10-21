@@ -128,9 +128,19 @@
   )
   ```
 
-- [ ] **AutoRunLog** 엔티티 생성
+- [ ] **AutoRunLog** 엔티티 생성 (GPS 상세 정보 포함) 🔄
   ```kotlin
-  @Entity(tableName = "auto_run_log")
+  @Entity(
+      tableName = "auto_run_log",
+      foreignKeys = [
+          ForeignKey(
+              entity = FocusSession::class,
+              parentColumns = ["id"],
+              childColumns = ["sessionId"],
+              onDelete = ForeignKey.SET_NULL
+          )
+      ]
+  )
   data class AutoRunLog(
       @PrimaryKey val id: String = UUID.randomUUID().toString(),
       val triggerType: String, // TIME, LOCATION
@@ -138,9 +148,15 @@
       val triggerTime: Long,
       val result: String, // STARTED, SKIPPED, FAILED
       val failureReason: String? = null,
-      val sessionId: String? = null
+      @ColumnInfo(index = true)
+      val sessionId: String? = null,
+      // 🆕 위치 기반 상세 정보 (triggerType == LOCATION일 때)
+      val gpsAccuracyMeters: Float? = null,  // GPS 정확도 (미터)
+      val dwellSeconds: Int? = null,         // 실제 체류 시간 (초)
+      val metaJson: String? = null           // 추가 메타데이터 (JSON)
   )
   ```
+  - **참조**: [마이그레이션 전략 §2.4](./02_advanced_room_migration_strategy.md#24-autorunlog-자동-실행-이력) - GPS 정확도 로깅
 
 #### 2.1.2 DAO 인터페이스 작성
 - [ ] **TimeBasedAutoRunDao** 생성 (10개 메서드) → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4)
@@ -1106,23 +1122,31 @@
     - "회사 위치 GPS 정확도가 낮습니다. 반경을 200m로 늘려보세요"
 
 #### 6.1.3 예외 상황 처리 로직 🆕
-- [ ] **일시중지 기능** → [PRD §4.4.4](./02_advanced_autosetting_prd.md#444-예외-상황-처리)
-  - UserSettings에 `autoRunPauseUntil` 필드 저장
-  - 일시중지 기간 계산 로직 (오늘 하루/N시간/다음까지)
+
+**2차 고도화 범위 (v0.6)** ✅:
+- [ ] **단순 일시중지 기능** → [PRD §4.4.4](./02_advanced_autosetting_prd.md#444-예외-상황-처리)
+  - UserSettings에 `autoRunPauseUntil` 필드 저장 (단일 timestamp)
+  - 일시중지 기간 계산 로직:
+    - "오늘 하루 중지" (자정까지)
+    - "N시간 동안 중지" (1h/3h/6h)
+    - "다음 자동 실행까지 중지"
   - AlarmManager/Geofence 일시중지 처리
   - 일시중지 해제 시 자동 재활성화
 
-- [ ] **특정 시간대 일시중지** 🆕
-  - "야간 시간 (22:00~07:00) 자동 실행 중지" 설정 UI
-  - 사용자 지정 시간대 설정 (최대 3개)
-  - 시간대 중복 체크 및 경고
-  - 일시중지 시간대에 자동 실행 건너뛰기 로직
-
-- [ ] **저전력 모드 감지** 🆕 → [PRD §4.4.4](./02_advanced_autosetting_prd.md#444-예외-상황-처리)
+- [ ] **저전력 모드 감지** → [PRD §4.4.4](./02_advanced_autosetting_prd.md#444-예외-상황-처리)
   - `PowerManager.isPowerSaveMode()` 감지
   - 저전력 모드 시 위치 기반 자동 실행 일시중지
   - 사용자 알림 표시
   - 저전력 모드 해제 시 재활성화 (사용자 설정에 따라)
+
+**3차 고도화로 연기** ⚠️:
+- [ ] ~~**특정 시간대 반복 일시중지**~~ (3차로 연기)
+  - ~~"야간 시간 (22:00~07:00) 자동 실행 중지" 설정 UI~~
+  - ~~사용자 지정 시간대 설정 (최대 3개)~~
+  - ~~시간대 중복 체크 및 경고~~
+  - ~~일시중지 시간대에 자동 실행 건너뛰기 로직~~
+  - **연기 이유**: `AutoRunPauseWindow` 별도 테이블 필요, 복잡도 증가
+  - **참조**: [마이그레이션 전략 §3.1](./02_advanced_room_migration_strategy.md#31-usersettings-필드-추가)
 
 #### 6.1.4 권한 현황 페이지 🆕
 - [ ] **PermissionStatusScreen** → [PRD §4.4.6](./02_advanced_autosetting_prd.md#446-권한-현황-페이지)

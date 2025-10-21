@@ -227,6 +227,13 @@ AnalyticsHelper.logTimeBasedAutoRunCreated(
 | `duration_minutes` | number | 타이머 시간 | `45` |
 | `is_auto_start` | boolean | 자동 시작 여부 | `true` |
 | `delay_seconds` | number | 지연 시간 (초) | `300` |
+| `gps_accuracy_meters` | number | 🆕 GPS 정확도 (미터, LOCATION만) | `18.5` |
+| `dwell_seconds` | number | 🆕 체류 시간 (초, LOCATION만) | `65` |
+
+**비고**:
+- `gps_accuracy_meters`, `dwell_seconds`: `trigger_type == "LOCATION"`일 때만 로깅
+- UI에서 "GPS 정확도: 높음/보통/낮음" 표시 시 활용
+- 위치별 성공률 분석에 활용
 
 ---
 
@@ -251,6 +258,12 @@ AnalyticsHelper.logTimeBasedAutoRunCreated(
 |-----------|------|------|---------|
 | `trigger_type` | string | 트리거 타입 | `"LOCATION"` |
 | `failure_reason` | string | 실패 사유 | `"PERMISSION_DENIED"`, `"LOCATION_DISABLED"`, `"GEOFENCE_ERROR"` |
+| `gps_accuracy_meters` | number | 🆕 GPS 정확도 (미터, LOCATION만) | `85.0` |
+
+**비고**:
+- `gps_accuracy_meters`: `trigger_type == "LOCATION"`일 때만 로깅
+- GPS 정확도가 낮을 때 실패하는 패턴 분석에 활용
+- 위치 설정 개선 제안 (반경 확대) 근거로 활용
 
 ---
 
