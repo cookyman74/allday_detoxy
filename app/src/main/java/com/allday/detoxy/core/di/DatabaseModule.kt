@@ -3,14 +3,19 @@ package com.allday.detoxy.core.di
 import android.content.Context
 import androidx.room.Room
 import com.allday.detoxy.data.local.DetoxyDatabase
+import com.allday.detoxy.data.local.dao.AutoRunLogDao
+import com.allday.detoxy.data.local.dao.CustomTimerPresetDao
 import com.allday.detoxy.data.local.dao.DetoxyRoutineLogDao
 import com.allday.detoxy.data.local.dao.FocusDistractionDao
 import com.allday.detoxy.data.local.dao.FocusInterruptionDao
 import com.allday.detoxy.data.local.dao.FocusSessionDao
 import com.allday.detoxy.data.local.dao.FocusSettingsDao
+import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
+import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.UserSettingsDao
 import com.allday.detoxy.data.local.migrations.MIGRATION_1_2
 import com.allday.detoxy.data.local.migrations.MIGRATION_2_3
+import com.allday.detoxy.data.local.migrations.MIGRATION_3_4
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,6 +32,7 @@ import javax.inject.Singleton
  * ## 마이그레이션
  * - v1 → v2 (Week 2A): FocusSession 확장 + FocusInterruption 추가 (MIGRATION_1_2)
  * - v2 → v3 (Week 2B): FocusDistraction, DetoxyRoutineLog, FocusSettings 추가 (MIGRATION_2_3)
+ * - v3 → v4 (2차 고도화): TimeBasedAutoRun, LocationBasedAutoRun, CustomTimerPreset, AutoRunLog 추가 + UserSettings 확장 (MIGRATION_3_4)
  *
  * @InstallIn(SingletonComponent::class)로 앱 전체 생명주기 동안 싱글톤 유지
  */
@@ -50,7 +56,7 @@ object DatabaseModule {
             DetoxyDatabase::class.java,
             "detoxy_database"
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
 
@@ -118,5 +124,49 @@ object DatabaseModule {
     @Provides
     fun provideFocusSettingsDao(database: DetoxyDatabase): FocusSettingsDao {
         return database.focusSettingsDao()
+    }
+
+    /**
+     * TimeBasedAutoRunDao 제공 (v4+)
+     *
+     * @param database DetoxyDatabase 인스턴스
+     * @return TimeBasedAutoRunDao
+     */
+    @Provides
+    fun provideTimeBasedAutoRunDao(database: DetoxyDatabase): TimeBasedAutoRunDao {
+        return database.timeBasedAutoRunDao()
+    }
+
+    /**
+     * LocationBasedAutoRunDao 제공 (v4+)
+     *
+     * @param database DetoxyDatabase 인스턴스
+     * @return LocationBasedAutoRunDao
+     */
+    @Provides
+    fun provideLocationBasedAutoRunDao(database: DetoxyDatabase): LocationBasedAutoRunDao {
+        return database.locationBasedAutoRunDao()
+    }
+
+    /**
+     * CustomTimerPresetDao 제공 (v4+)
+     *
+     * @param database DetoxyDatabase 인스턴스
+     * @return CustomTimerPresetDao
+     */
+    @Provides
+    fun provideCustomTimerPresetDao(database: DetoxyDatabase): CustomTimerPresetDao {
+        return database.customTimerPresetDao()
+    }
+
+    /**
+     * AutoRunLogDao 제공 (v4+)
+     *
+     * @param database DetoxyDatabase 인스턴스
+     * @return AutoRunLogDao
+     */
+    @Provides
+    fun provideAutoRunLogDao(database: DetoxyDatabase): AutoRunLogDao {
+        return database.autoRunLogDao()
     }
 }

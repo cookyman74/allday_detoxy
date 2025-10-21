@@ -77,7 +77,7 @@
 ### 2.1 Room 마이그레이션 v3→v4 (Day 4-5)
 
 #### 2.1.1 신규 엔티티 정의
-- [ ] **TimeBasedAutoRun** 엔티티 생성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략 문서](./02_advanced_room_migration_strategy.md)** ✅
+- [x] **TimeBasedAutoRun** 엔티티 생성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략 문서](./02_advanced_room_migration_strategy.md)** ✅
   ```kotlin
   @Entity(tableName = "time_based_auto_run")
   data class TimeBasedAutoRun(
@@ -94,7 +94,7 @@
   ```
   - **참조**: [1차 고도화 마이그레이션 전략](./01_advanced_room_migration_strategy.md) - Room 마이그레이션 패턴
 
-- [ ] **LocationBasedAutoRun** 엔티티 생성 (확장) 🆕
+- [x] **LocationBasedAutoRun** 엔티티 생성 (확장) 🆕
   ```kotlin
   @Entity(tableName = "location_based_auto_run")
   data class LocationBasedAutoRun(
@@ -117,7 +117,7 @@
   - **참조**: [PRD §4.4.5 위치 기반 신뢰도 강화](./02_advanced_autosetting_prd.md#445-위치-기반-신뢰도-강화)
   - **참조**: [마이그레이션 전략 §2.2 LocationBasedAutoRun](./02_advanced_room_migration_strategy.md#22-locationbasedautorun)
 
-- [ ] **CustomTimerPreset** 엔티티 생성
+- [x] **CustomTimerPreset** 엔티티 생성
   ```kotlin
   @Entity(tableName = "custom_timer_preset")
   data class CustomTimerPreset(
@@ -131,7 +131,7 @@
   )
   ```
 
-- [ ] **AutoRunLog** 엔티티 생성 (GPS 상세 정보 포함) 🔄
+- [x] **AutoRunLog** 엔티티 생성 (GPS 상세 정보 포함) 🔄
   ```kotlin
   @Entity(
       tableName = "auto_run_log",
@@ -162,27 +162,27 @@
   - **참조**: [마이그레이션 전략 §2.4](./02_advanced_room_migration_strategy.md#24-autorunlog-자동-실행-이력) - GPS 정확도 로깅
 
 #### 2.1.2 DAO 인터페이스 작성
-- [ ] **TimeBasedAutoRunDao** 생성 (10개 메서드) → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4)
+- [x] **TimeBasedAutoRunDao** 생성 (12개 메서드) → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4)
   - insert, update, delete
   - getAll, getById, getEnabled
   - getByHourAndMinute, toggleEnabled
   - getEnabledForDay(dayOfWeek)
   - **참조**: [FocusSessionDao 패턴](../app/src/main/java/com/allday/detoxy/data/local/dao/FocusSessionDao.kt) - 기존 DAO 구현 패턴
-- [ ] **LocationBasedAutoRunDao** 생성 (10개 메서드)
+- [x] **LocationBasedAutoRunDao** 생성 (10개 메서드)
   - insert, update, delete
   - getAll, getById, getEnabled
   - toggleEnabled, incrementUsage
-- [ ] **CustomTimerPresetDao** 생성 (12개 메서드)
+- [x] **CustomTimerPresetDao** 생성 (12개 메서드)
   - insert, update, delete
   - getAll, getById, getByDisplayOrder
   - updateDisplayOrder, incrementUsageCount
-- [ ] **AutoRunLogDao** 생성 (8개 메서드)
+- [x] **AutoRunLogDao** 생성 (17개 메서드)
   - insert, getAll, getByTriggerType
   - getRecentLogs(limit), getLogsInRange
   - getStatistics (성공률, 총 횟수)
 
 #### 2.1.3 마이그레이션 스크립트
-- [ ] **Migration_3_4.kt** 작성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략](./02_advanced_room_migration_strategy.md)** ✅
+- [x] **Migration_3_4.kt** 작성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략](./02_advanced_room_migration_strategy.md)** ✅
   ```kotlin
   val MIGRATION_3_4 = object : Migration(3, 4) {
       override fun migrate(database: SupportSQLiteDatabase) {
@@ -210,16 +210,16 @@
   - **참조**: [Migration_2_3.kt](../app/src/main/java/com/allday/detoxy/data/local/migration/Migration_2_3.kt) - 이전 마이그레이션 패턴
   - **참조**: [1차 고도화 마이그레이션 작업](../working_history/2025-10-19_1st_advanced_2B.1.md)
 
-- [ ] DetoxyDatabase v4 업데이트 → [DetoxyDatabase.kt](../app/src/main/java/com/allday/detoxy/data/local/DetoxyDatabase.kt)
-- [ ] DatabaseModule에 MIGRATION_3_4 추가 → [DatabaseModule.kt](../app/src/main/java/com/allday/detoxy/core/di/DatabaseModule.kt)
+- [x] DetoxyDatabase v4 업데이트 → [DetoxyDatabase.kt](../app/src/main/java/com/allday/detoxy/data/local/DetoxyDatabase.kt)
+- [x] DatabaseModule에 MIGRATION_3_4 추가 → [DatabaseModule.kt](../app/src/main/java/com/allday/detoxy/core/di/DatabaseModule.kt)
 
 #### 2.1.4 마이그레이션 테스트
 - [ ] 단위 테스트 작성 (MigrationTest) → **[마이그레이션 테스트 전략](./02_advanced_room_migration_strategy.md#6-테스트-전략)** ✅
   - **참조**: [1차 고도화 마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)
-- [ ] 빌드 검증: `./gradlew compileDebugKotlin`
+- [x] 빌드 검증: `./gradlew compileDebugKotlin` ✅ SUCCESS
   - **참조**: [빌드 및 테스트 명령어](./00_mvp_allday_detoxy_todolist.md#빌드-및-테스트-명령어)
 
-**작업 기록**: `working_history/2025-10-21_2nd_advanced_2.1.md`
+**작업 기록**: `working_history/2025-10-22_2nd_advanced_2.1.md` ✅
 
 ### 2.2 AlarmManager 래퍼 클래스 (Day 6)
 
