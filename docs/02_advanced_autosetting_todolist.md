@@ -74,7 +74,7 @@
 ### 2.1 Room 마이그레이션 v3→v4 (Day 4-5)
 
 #### 2.1.1 신규 엔티티 정의
-- [ ] **TimeBasedAutoRun** 엔티티 생성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략 문서](./02_advanced_room_migration_strategy.md)** (작성 예정)
+- [ ] **TimeBasedAutoRun** 엔티티 생성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략 문서](./02_advanced_room_migration_strategy.md)** ✅
   ```kotlin
   @Entity(tableName = "time_based_auto_run")
   data class TimeBasedAutoRun(
@@ -97,7 +97,7 @@
   data class LocationBasedAutoRun(
       @PrimaryKey val id: String = UUID.randomUUID().toString(),
       val label: String,
-      val address: String,
+      val address: String?, // 🔄 nullable로 변경 - 좌표만 있는 경우 허용
       val latitude: Double,
       val longitude: Double,
       val radiusMeters: Int, // 50, 100, 200, 500
@@ -112,6 +112,7 @@
   )
   ```
   - **참조**: [PRD §4.4.5 위치 기반 신뢰도 강화](./02_advanced_autosetting_prd.md#445-위치-기반-신뢰도-강화)
+  - **참조**: [마이그레이션 전략 §2.2 LocationBasedAutoRun](./02_advanced_room_migration_strategy.md#22-locationbasedautorun)
 
 - [ ] **CustomTimerPreset** 엔티티 생성
   ```kotlin
@@ -162,7 +163,7 @@
   - getStatistics (성공률, 총 횟수)
 
 #### 2.1.3 마이그레이션 스크립트
-- [ ] **Migration_3_4.kt** 작성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략](./02_advanced_room_migration_strategy.md)** (작성 예정)
+- [ ] **Migration_3_4.kt** 작성 → [PRD §5.1](./02_advanced_autosetting_prd.md#51-로컬-db-room-v3v4), **[마이그레이션 전략](./02_advanced_room_migration_strategy.md)** ✅
   ```kotlin
   val MIGRATION_3_4 = object : Migration(3, 4) {
       override fun migrate(database: SupportSQLiteDatabase) {
@@ -194,7 +195,7 @@
 - [ ] DatabaseModule에 MIGRATION_3_4 추가 → [DatabaseModule.kt](../app/src/main/java/com/allday/detoxy/core/di/DatabaseModule.kt)
 
 #### 2.1.4 마이그레이션 테스트
-- [ ] 단위 테스트 작성 (MigrationTest) → **[마이그레이션 테스트 전략](./02_advanced_room_migration_strategy.md#테스트-전략)** (작성 예정)
+- [ ] 단위 테스트 작성 (MigrationTest) → **[마이그레이션 테스트 전략](./02_advanced_room_migration_strategy.md#6-테스트-전략)** ✅
   - **참조**: [1차 고도화 마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)
 - [ ] 빌드 검증: `./gradlew compileDebugKotlin`
   - **참조**: [빌드 및 테스트 명령어](./00_mvp_allday_detoxy_todolist.md#빌드-및-테스트-명령어)
@@ -357,14 +358,21 @@
 ### 3.1 시간대 설정 UI (Day 9-10)
 
 #### 3.1.1 TimeBasedAutoRunScreen 레이아웃
+- [ ] **정확 알람 권한 경고 배너** 🆕 → [Wireframe §2.1](./02_advanced_wireframe_spec.md#21-메인-화면-timebasedautorunscreen)
+  - 정확 알람 권한 없을 때 화면 상단에 경고 배너 표시
+  - "정확한 실행을 위해 권한을 허용하세요" 메시지
+  - "권한 설정하기" 버튼
+  - WorkManager fallback 사용 중임을 안내
+
 - [ ] **템플릿 선택 버튼** 🆕 → [PRD §4.3.0](./02_advanced_autosetting_prd.md#430-추천-프리셋-및-루틴-템플릿)
   - 화면 상단에 "템플릿으로 시작하기" 버튼
   - Empty State일 때 눈에 띄게 표시
   - 클릭 시 `TemplateSelectionDialog` 표시
   - 템플릿: 업무 집중, 공부 집중, 저녁 디톡시, 주말 집중
   - 선택 → 미리보기 → 적용하기 플로우
+  - **최대 10개 제한 초과 시 안내 다이얼로그** 🔄 → [Wireframe §2.4](./02_advanced_wireframe_spec.md#24-templateselectiondialog-확장)
 
-- [ ] **메인 화면 Compose** → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면), **[Wireframe 스펙](./02_advanced_wireframe_spec.md)** (작성 예정)
+- [ ] **메인 화면 Compose** → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면), **[Wireframe 스펙](./02_advanced_wireframe_spec.md)** ✅
   ```kotlin
   @Composable
   fun TimeBasedAutoRunScreen(
@@ -391,7 +399,7 @@
   - 접을 수 있는 카드 (expand/collapse)
   - 최적화 팁 표시 (확장 시)
 
-- [ ] **TimeBasedAutoRunCard** 컴포넌트 → **[Wireframe 컴포넌트 스펙](./02_advanced_wireframe_spec.md#시간대-카드)** (작성 예정)
+- [ ] **TimeBasedAutoRunCard** 컴포넌트 → **[Wireframe 컴포넌트 스펙](./02_advanced_wireframe_spec.md#22-시간대-카드-timebasedautoruncard)** ✅
   - 시간 표시 (10:00 AM)
   - 타이머 시간 + 차단 프리셋
   - 요일 표시 (월, 화, 수, 목, 금)
@@ -554,6 +562,11 @@
 ### 4.1 위치 설정 UI (Day 14-15)
 
 #### 4.1.1 LocationBasedAutoRunScreen 레이아웃
+- [ ] **오류 상태 UI 추가** 🔄 → [Wireframe §3.1](./02_advanced_wireframe_spec.md#31-메인-화면-locationbasedautorunscreen)
+  - **Play Services 미지원 상태**: "이 기기에서는 위치 기반 자동 실행을 사용할 수 없습니다" 메시지 + 시간 기반 대안 제안
+  - **위치 권한 거부 상태**: "위치 권한이 필요합니다" 메시지 + "권한 설정하기" 버튼
+  - **위치 서비스 OFF 상태**: "위치 서비스를 켜주세요" 메시지 + 설정 이동 버튼
+
 - [ ] **메인 화면 Compose**
   ```kotlin
   @Composable
@@ -562,8 +575,10 @@
   ) {
       val locations by viewModel.locations.collectAsState()
       val permissionState by viewModel.permissionState.collectAsState()
+      val playServicesAvailable by viewModel.playServicesAvailable.collectAsState()
       
       Column {
+          // Play Services 미지원 경고 카드 (미지원 시) 🔄
           // 위치 권한 안내 카드 (권한 없을 때)
           // 등록된 위치 리스트
           // + 위치 추가 버튼
@@ -587,10 +602,10 @@
   - "권한 설정하기" 버튼
   - 현재 권한 상태 표시
 
-- [ ] **배터리 영향 안내 카드** 🆕 → [PRD §6.3.1](./02_advanced_autosetting_prd.md#631-배터리데이터-사용-안내)
+- [ ] **배터리 영향 안내 카드** 🆕 → [PRD §6.3.1](./02_advanced_autosetting_prd.md#631-배터리데이터-사용-안내), [Wireframe §3.1](./02_advanced_wireframe_spec.md#31-메인-화면-locationbasedautorunscreen)
   - 화면 하단에 카드 표시
-  - "위치 기반 자동 실행: 배터리 소모 예상 3~5%/일"
-  - "현재 설정으로 예상 배터리 소모: 약 4%/일" (등록된 위치 수에 따라 계산)
+  - "위치 기반 자동 실행: 배터리 영향 최소 수준" 🔄 (구체적 수치는 실측 후 업데이트)
+  - "현재 설정으로 예상 배터리 소모" (등록된 위치 수에 따라 일반적 안내)
   - 최적화 팁 표시 (확장 시):
     - "위치 기반 자동 실행을 2개 이하로 유지하세요"
     - "반경을 너무 작게 설정하지 마세요 (100m 이상 권장)"
@@ -802,7 +817,7 @@
   ```
 
 #### 5.1.2 DonutTimerPicker Composable
-- [ ] **Canvas 그리기** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui), **[Wireframe 스펙](./02_advanced_wireframe_spec.md#커스텀-타이머)** (작성 예정)
+- [ ] **Canvas 그리기** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui), **[Wireframe 스펙](./02_advanced_wireframe_spec.md#5-커스텀-타이머-ui)** ✅
   ```kotlin
   @Composable
   fun DonutTimerPicker(
@@ -1142,7 +1157,7 @@
 ### 6.2 Analytics 이벤트 로깅 (Day 26)
 
 #### 6.2.1 AnalyticsHelper 확장
-- [ ] **21개 신규 이벤트 구현** → [PRD §5.2](./02_advanced_autosetting_prd.md#52-이벤트-로깅), **[Analytics 스키마](./02_advanced_analytics_schema.md)** (작성 예정)
+- [ ] **21개 신규 이벤트 구현** → [PRD §5.2](./02_advanced_autosetting_prd.md#52-이벤트-로깅), **[Analytics 스키마](./02_advanced_analytics_schema.md)** ✅
   ```kotlin
   object AnalyticsHelper {
       // 설정 이벤트
@@ -1152,7 +1167,7 @@
       
       // 커스텀 타이머 이벤트
       fun logCustomTimerAdjusted(durationMinutes: Int, method: String) // DRAG/TAP
-      fun logCustomPresetCreated(name: String, durationMinutes: Int)
+      fun logCustomPresetCreated(nameLength: Int, durationMinutes: Int) // 🔄 name→nameLength (개인정보 보호)
       fun logCustomPresetUsed(presetId: String, durationMinutes: Int)
       
       // 자동 실행 이벤트
@@ -1162,10 +1177,14 @@
       fun logAutoRunStarted(triggerType: String, durationMinutes: Int)
       fun logAutoRunSkipped(reason: String)
       fun logAutoRunFailed(failureReason: String)
+      
+      // 권한 이벤트 (확장) 🔄
+      fun logPermissionExactAlarmRequested(granted: Boolean, wentToSettings: Boolean) // wentToSettings 파라미터 추가
   }
   ```
   - **참조**: [기존 AnalyticsHelper](../app/src/main/java/com/allday/detoxy/core/utils/AnalyticsHelper.kt) - 1차 고도화 이벤트 구현 패턴
   - **참조**: [1차 고도화 Analytics 스키마](./01_advanced_analytics_schema.md)
+  - **참조**: [개인정보 보호 강화](./02_advanced_analytics_schema.md#12-custom_preset_created) - 이름 대신 길이만 로깅
 
 #### 6.2.2 이벤트 로깅 위치
 - [ ] TimeBasedAutoRunViewModel → 설정 이벤트
@@ -1331,6 +1350,17 @@
 - [ ] 기존 MVP 기능 (타이머, 차단, 리포트)
 - [ ] 1차 고도화 기능 (디톡시 제어, 리포트 고도화)
 
+#### 7.3.4.1 DST/심야 시간 테스트 추가 🆕
+- [ ] **DST(일광 절약 시간) 전환 테스트** → [QA 시나리오 §2.4](./02_advanced_qa_devices.md#24-정확-알람-권한-off-테스트)
+  - 시간대 변경 시 알람 재계산 확인
+  - DST 전환 전후 알람 트리거 정확도 확인
+  - 해외 사용자 시나리오 대응
+
+- [ ] **심야(0시 부근) 알람 테스트**
+  - 23:55, 00:00, 00:05 알람 정확도 확인
+  - 날짜 전환 시 요일 계산 정확도 확인
+  - 다음 알람 스케줄링 정확도 확인
+
 #### 7.3.5 OEM 호환성 테스트 (추가) 🆕
 - [ ] **Samsung (One UI)** → [PRD §6.5](./02_advanced_autosetting_prd.md#65-플랫폼-의존성-및-호환성)
   - Doze 모드에서 AlarmManager 동작 확인
@@ -1482,10 +1512,10 @@
 ## 9. 산출물 체크리스트
 
 - [ ] `docs/02_advanced_autosetting_prd.md` 최신화 → ✅ 완료
-- [ ] `docs/02_advanced_wireframe_spec.md` UI 상세 스펙 (자동 실행 설정, 커스텀 타이머 화면)
-- [ ] `docs/02_advanced_room_migration_strategy.md` v3→v4 마이그레이션 전략 (4개 엔티티, SQL, 테스트)
-- [ ] `docs/02_advanced_analytics_schema.md` 이벤트 21개 정의 및 파라미터
-- [ ] `docs/02_advanced_qa_devices.md` QA 시나리오 23개 (시간/위치/커스텀 타이머)
+- [x] `docs/02_advanced_wireframe_spec.md` UI 상세 스펙 (자동 실행 설정, 커스텀 타이머 화면) ✅
+- [x] `docs/02_advanced_room_migration_strategy.md` v3→v4 마이그레이션 전략 (4개 엔티티, SQL, 테스트) ✅
+- [x] `docs/02_advanced_analytics_schema.md` 이벤트 21개 정의 및 파라미터 ✅
+- [x] `docs/02_advanced_qa_devices.md` QA 시나리오 23개 (시간/위치/커스텀 타이머) ✅
 - [ ] `docs/RELEASE_NOTES_v0.6.md` 릴리스 노트 초안
 - [ ] `docs/DELIVERABLES_v0.6.md` 산출물 종합 문서
 - [ ] `working_history/2025-10-21_*_2nd_advanced_*.md` 작업 기록 (16개 예상)
