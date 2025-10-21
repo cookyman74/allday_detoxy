@@ -19,9 +19,11 @@
 - **명명 규칙**: `snake_case` (Firebase 권장)
 - **개인정보 보호**:
   - ❌ 위치 좌표 수집 금지 (주소도 수집 안 함)
-  - ❌ 위치 라벨만 "location_label_hash" (SHA-256 해시)
+  - ❌ 위치 라벨만 "location_label_hash" (HMAC-SHA256 + 고정 솔트) 🆕
+  - ❌ 프리셋 이름 수집 금지 (길이만 기록) 🆕
   - ✅ 패키지명, 카테고리, 통계 데이터만 수집
 - **데이터 보존**: Firebase Analytics 14개월 (자동)
+- **파라미터 제한**: Firebase 이벤트당 최대 25개 파라미터 제한 준수 🆕
 
 ### 1.3 이벤트 분류
 
@@ -116,7 +118,7 @@ AnalyticsHelper.logTimeBasedAutoRunCreated(
 **파라미터**:
 | 파라미터명 | 타입 | 설명 | 예시 값 |
 |-----------|------|------|---------|
-| `location_label_hash` | string | 위치 라벨 해시 (SHA-256) | `"a1b2c3..."` |
+| `location_label_hash` | string | 위치 라벨 해시 (HMAC-SHA256) 🆕 | `"a1b2c3..."` |
 | `radius_meters` | number | 반경 (m) | `100` |
 | `duration_minutes` | number | 타이머 시간 | `45` |
 | `preset_type` | string | 차단 프리셋 | `"STANDARD"` |
@@ -124,7 +126,13 @@ AnalyticsHelper.logTimeBasedAutoRunCreated(
 | `dwell_time_minutes` | number | 체류 시간 (분) | `1` |
 | `requires_confirmation` | boolean | 도착 후 확인 필요 | `false` |
 
-**참고**: `location_label_hash`는 "회사", "도서관" 등 라벨만 해시 처리. 실제 주소/좌표는 수집 안 함.
+**참고**:
+- `location_label_hash`는 "회사", "도서관" 등 라벨만 해시 처리
+- **해시 알고리즘** 🆕: HMAC-SHA256 + 앱 고유 솔트 사용
+  - 단순 SHA-256은 짧은 문자열 역추적 가능 (Rainbow Table)
+  - HMAC을 사용하여 솔트 없이는 역추적 불가능
+  - 솔트는 앱 빌드 시 난수 생성 후 BuildConfig에 저장
+- 실제 주소/좌표는 절대 수집하지 않음
 
 ---
 
@@ -268,10 +276,15 @@ AnalyticsHelper.logTimeBasedAutoRunCreated(
 **파라미터**:
 | 파라미터명 | 타입 | 설명 | 예시 값 |
 |-----------|------|------|---------|
-| `name` | string | 프리셋 이름 | `"오후 집중"` |
+| `name_length` | number | 프리셋 이름 길이 (개인정보 보호) 🆕 | `4` |
 | `duration_minutes` | number | 시간 | `37` |
 | `has_preset_type` | boolean | 차단 프리셋 연결 여부 | `true` |
 | `total_custom_count` | number | 총 커스텀 프리셋 수 | `5` |
+
+**개인정보 보호** 🆕:
+- 프리셋 이름(name)은 수집하지 않음 (사용자 개인 정보 포함 가능)
+- 대신 `name_length`로 이름 길이만 기록
+- 통계 분석: "평균 프리셋 이름 길이 5.2자" 등으로 활용
 
 ---
 
@@ -297,6 +310,7 @@ AnalyticsHelper.logTimeBasedAutoRunCreated(
 |-----------|------|------|---------|
 | `changed_fields` | string | 변경된 필드 | `"name,duration"` |
 | `new_duration_minutes` | number | 새 시간 | `40` |
+| `new_name_length` | number | 새 이름 길이 (name 변경 시) 🆕 | `6` |
 
 ---
 
@@ -324,6 +338,12 @@ AnalyticsHelper.logTimeBasedAutoRunCreated(
 | `source` | string | 요청 경로 | `"time_based_settings"`, `"permission_status_screen"` |
 | `is_granted` | boolean | 승인 여부 | `true` |
 | `fallback_to_workmanager` | boolean | WorkManager fallback 여부 | `false` |
+| `went_to_settings` | boolean | 설정 화면 이동 여부 🆕 | `true` |
+
+**이벤트 분석 개선** 🆕:
+- `went_to_settings=true` & `is_granted=false`: 설정 이동했으나 허용 안 함 (유도 실패)
+- `went_to_settings=false` & `is_granted=false`: 다이얼로그에서 거부
+- 이를 통해 권한 요청 UX 개선 포인트 발견 가능
 
 ---
 
@@ -586,6 +606,31 @@ fun logTimeBasedAutoRunCreated(
         templateType?.let { param("template_type", it) }
     }
 }
+
+// 위치 라벨 해시 함수 예시 🆕
+private fun hashLocationLabel(label: String): String {
+    val salt = BuildConfig.ANALYTICS_SALT // 앱 빌드 시 생성된 고유 솔트
+    val mac = Mac.getInstance("HmacSHA256")
+    val secretKey = SecretKeySpec(salt.toByteArray(), "HmacSHA256")
+    mac.init(secretKey)
+    val hash = mac.doFinal(label.toByteArray())
+    return hash.joinToString("") { "%02x".format(it) }
+}
+```
+
+**솔트 생성 및 관리** 🆕:
+```gradle
+// build.gradle.kts
+android {
+    defaultConfig {
+        // 빌드 시 난수 생성 (한 번만)
+        buildConfigField("String", "ANALYTICS_SALT", "\"${generateRandomSalt()}\"")
+    }
+}
+
+fun generateRandomSalt(): String {
+    return UUID.randomUUID().toString()
+}
 ```
 
 ---
@@ -664,6 +709,34 @@ WHERE
 - [ ] 커스텀 타이머 → 조정/프리셋 이벤트 로깅
 - [ ] 권한 요청 → 승인/거부 이벤트 로깅
 - [ ] 개인정보 누락 최종 확인
+
+---
+
+## 11. 파라미터 관리 전략 🆕
+
+### 11.1 Firebase 제한 사항
+- **이벤트당 최대 파라미터**: 25개
+- **파라미터명 최대 길이**: 40자
+- **파라미터 값 최대 길이**: 100자
+
+### 11.2 현재 사용량 모니터링
+- 현재 최대 파라미터 수: 8개 (location_based_auto_run_created)
+- 여유 공간: 17개
+
+### 11.3 확장 시 전략
+**우선순위 기반 파라미터 축소**:
+1. **필수** (항상 유지): trigger_type, duration_minutes, result
+2. **중요** (가능한 유지): preset_type, enabled_days_count, is_granted
+3. **부가** (필요 시 제거): is_from_template, template_type
+
+**대안**:
+- 여러 boolean을 bitmask로 통합
+- 드물게 사용되는 파라미터는 별도 이벤트로 분리
+
+### 11.4 모니터링 및 리뷰
+- 분기별 파라미터 사용량 리뷰
+- BigQuery 쿼리 빈도 분석 → 사용되지 않는 파라미터 제거
+- 문서화: "파라미터 추가 시 §11 검토 필수" 명시
 
 ---
 

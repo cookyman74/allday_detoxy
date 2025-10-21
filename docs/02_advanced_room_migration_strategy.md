@@ -115,7 +115,7 @@ ON time_based_auto_run(isEnabled);
 data class LocationBasedAutoRun(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val label: String,                    // 위치 라벨 (예: "회사", "도서관")
-    val address: String,                  // 주소
+    val address: String? = null,          // 주소 (검색 실패 시 null 허용) 🆕
     val latitude: Double,                 // 위도
     val longitude: Double,                // 경도
     val radiusMeters: Int,                // 반경 (50, 100, 200, 500)
@@ -135,7 +135,7 @@ data class LocationBasedAutoRun(
 CREATE TABLE IF NOT EXISTS location_based_auto_run (
     id TEXT PRIMARY KEY NOT NULL,
     label TEXT NOT NULL,
-    address TEXT NOT NULL,
+    address TEXT,
     latitude REAL NOT NULL,
     longitude REAL NOT NULL,
     radiusMeters INTEGER NOT NULL,
@@ -160,6 +160,10 @@ ON location_based_auto_run(isEnabled);
 - `triggerType == "PERIODIC"`: 진입 후 주기적 트리거
 - `dwellTimeMinutes > 0`: N분 체류 확인 후 트리거 (GPS 정확도 향상)
 - `requiresUserConfirmation == true`: 알림만 표시, 수동 시작
+- **`address` nullable 처리** 🆕: 
+  - Google Places API 검색 실패 시 주소 없이 저장 가능
+  - UI에서는 "주소 없음" 또는 좌표로 표시
+  - 좌표만으로 Geofence 등록 가능
 
 **데이터 예시**:
 ```json
@@ -240,14 +244,25 @@ ON custom_timer_preset(displayOrder);
 
 **스키마**:
 ```kotlin
-@Entity(tableName = "auto_run_log")
+@Entity(
+    tableName = "auto_run_log",
+    foreignKeys = [
+        ForeignKey(
+            entity = FocusSession::class,
+            parentColumns = ["id"],
+            childColumns = ["sessionId"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ]
+)
 data class AutoRunLog(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val triggerType: String,            // TIME, LOCATION
-    val triggerSourceId: String,        // TimeBasedAutoRun.id 또는 LocationBasedAutoRun.id
+    val triggerSourceId: String,        // TimeBasedAutoRun.id 또는 LocationBasedAutoRun.id (soft reference)
     val triggerTime: Long,              // 트리거 발생 시간
     val result: String,                 // STARTED, SKIPPED, FAILED
     val failureReason: String? = null,  // 실패 사유 (PERMISSION_DENIED, TIMER_RUNNING, ...)
+    @ColumnInfo(index = true)           // FK 인덱스 자동 생성
     val sessionId: String? = null       // 생성된 FocusSession.id (result == STARTED일 때)
 )
 ```
@@ -281,6 +296,12 @@ ON auto_run_log(triggerTime DESC);
   - `LOCATION_DISABLED`: 위치 서비스 OFF
   - `USER_PAUSED`: 사용자가 일시중지
 - 90일 이상 된 로그 자동 삭제 (정기 정리)
+- **참조 무결성** 🆕:
+  - `sessionId`: FocusSession FK (ON DELETE SET NULL)
+  - `triggerSourceId`: Soft reference (FK 없음)
+    - 원본 TimeBasedAutoRun/LocationBasedAutoRun 삭제 시에도 로그는 유지
+    - 통계 분석을 위해 과거 데이터 보존
+    - UI에서 원본 조회 실패 시 "삭제된 설정" 표시
 
 **데이터 예시**:
 ```json
@@ -305,8 +326,8 @@ ON auto_run_log(triggerTime DESC);
 ```kotlin
 data class UserSettings(
     // ... 기존 필드 ...
-    val autoRunPauseUntil: Long? = null,        // 자동 실행 일시중지 종료 시간 (timestamp)
-    val autoRunMasterEnabled: Boolean = true    // 자동 실행 마스터 토글
+    val autoRunPauseUntil: Long? = null,        // 자동 실행 일시중지 종료 시간 (timestamp) 🆕
+    val autoRunMasterEnabled: Boolean = true    // 자동 실행 마스터 토글 🆕
 )
 ```
 
@@ -327,6 +348,11 @@ ADD COLUMN autoRunMasterEnabled INTEGER NOT NULL DEFAULT 1;
 - `autoRunMasterEnabled`:
   - `false`: 모든 자동 실행 비활성화 (개별 설정은 유지)
   - `true`: 개별 설정에 따라 자동 실행
+
+**PRD 연계** 🆕:
+- **§4.4.1 자동 실행 대시보드** (PRD): 마스터 토글 UI
+- **§4.4.4 예외 상황 처리** (PRD): 일시중지 기능
+- **§5.1.2 Wireframe**: AutoRunDashboardScreen의 "자동 실행 제어 카드"에서 사용
 
 ---
 
@@ -374,7 +400,7 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
             CREATE TABLE IF NOT EXISTS location_based_auto_run (
                 id TEXT PRIMARY KEY NOT NULL,
                 label TEXT NOT NULL,
-                address TEXT NOT NULL,
+                address TEXT,
                 latitude REAL NOT NULL,
                 longitude REAL NOT NULL,
                 radiusMeters INTEGER NOT NULL,
@@ -440,6 +466,11 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         database.execSQL("""
             CREATE INDEX IF NOT EXISTS idx_auto_run_log_time 
             ON auto_run_log(triggerTime DESC)
+        """)
+        
+        database.execSQL("""
+            CREATE INDEX IF NOT EXISTS idx_auto_run_log_type_time 
+            ON auto_run_log(triggerType, triggerTime DESC)
         """)
         
         // 5. UserSettings 필드 추가
@@ -812,6 +843,12 @@ fun insertAndRetrieve_timeBasedAutoRun() = runTest {
 | `location_based_auto_run` | `(isEnabled)` | 활성화된 항목만 필터링 |
 | `custom_timer_preset` | `(displayOrder)` | 화면 표시 순서 정렬 |
 | `auto_run_log` | `(triggerTime DESC)` | 최근 이력 조회 최적화 |
+| `auto_run_log` | `(triggerType, triggerTime DESC)` 🆕 | 타입별 이력 조회 (대시보드) |
+| `auto_run_log` | `(sessionId)` 🆕 | FK 인덱스 (자동 생성) |
+
+**인덱스 추가 근거** 🆕:
+- `(triggerType, triggerTime DESC)`: 대시보드에서 "시간 기반" 또는 "위치 기반" 이력만 조회 시 성능 향상
+- `(sessionId)`: FocusSession 삭제 시 참조 무결성 확인 성능 향상
 
 ### 7.2 데이터 정리 정책
 
