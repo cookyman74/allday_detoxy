@@ -223,6 +223,18 @@
 
 ### 2.2 AlarmManager 래퍼 클래스 (Day 6)
 
+**🔍 기술 조사 결과 요약** → [작업 기록](../working_history/2025-10-21_2nd_advanced_1.2.md#2-alarmmanager-vs-workmanager-비교-및-선택)
+- **선택**: AlarmManager (Primary) + WorkManager (Fallback)
+- **이유**: 정확도 우선 (±2분 vs ±15분), 사용자 경험 중시
+- **전략**:
+  - Android 12+ 정확 알람 권한 있음 → `setExactAndAllowWhileIdle()`
+  - 권한 없음 또는 Android 11 이하 제약 → WorkManager
+  - Doze 모드 대응: `setExactAndAllowWhileIdle()` (절전 모드에서도 실행)
+- **주의사항**:
+  - PendingIntent.FLAG_IMMUTABLE 필수 (Android 12+)
+  - 재부팅 시 RECEIVE_BOOT_COMPLETED로 재등록
+  - 배터리 최적화 제외 권한 안내 필요
+
 #### 2.2.1 AutoRunAlarmManager 클래스
 - [ ] **클래스 설계** → [PRD §4.1](./02_advanced_autosetting_prd.md#41-시간-기반-자동-실행)
   ```kotlin
@@ -301,6 +313,21 @@
 **작업 기록**: `working_history/2025-10-21_2nd_advanced_2.2.md`
 
 ### 2.3 Geofencing 래퍼 클래스 (Day 7-8)
+
+**🔍 기술 조사 결과 요약** → [작업 기록](../working_history/2025-10-21_2nd_advanced_1.2.md#3-geofencing-api-학습)
+- **최대 등록**: 5개 (시스템 제한 100개, 배터리 효율 고려하여 제한)
+- **트리거**: ENTER (진입 시), 반경 50~500m
+- **GPS 정확도 로깅**: `gpsAccuracyMeters`, `dwellSeconds` AutoRunLog에 저장
+  - 높음(< 20m), 보통(20~50m), 낮음(> 50m) UI 표시
+  - 위치별 성공률 분석 및 개선 제안 자동화
+- **배터리 효율**: `PRIORITY_BALANCED_POWER_ACCURACY` (일일 3~5% 예상)
+- **Play Services 의존성**: 
+  - 필수, 미탑재 시 (Huawei) "위치 기반 기능 사용 불가" 안내
+  - `GoogleApiAvailability.isGooglePlayServicesAvailable()` 체크
+- **주의사항**:
+  - 위치 정확도에 따라 트리거 신뢰도 달라짐
+  - `dwellTimeMinutes` 옵션으로 오차 보정 (1/3/5분 체류 후 트리거)
+  - 사용자가 비활성화한 위치는 즉시 Geofence 해제
 
 #### 2.3.1 AutoRunGeofenceManager 클래스
 - [ ] **클래스 설계** → [PRD §4.2](./02_advanced_autosetting_prd.md#42-위치-기반-자동-실행)
@@ -744,6 +771,20 @@
 
 ### 4.3 위치 권한 플로우 (Day 18)
 
+**🔍 기술 조사 결과 요약** → [작업 기록](../working_history/2025-10-21_2nd_advanced_1.2.md#4-위치-권한-플로우)
+- **2단계 권한 요청** (Android 11+ 정책 준수):
+  1. **단계 1**: `ACCESS_FINE_LOCATION` 요청
+  2. **설명 다이얼로그**: "항상 허용" 필요성 설명 (백그라운드 위치)
+  3. **단계 2**: `ACCESS_BACKGROUND_LOCATION` 요청
+- **권한 변경 감지**: 
+  - 앱 포그라운드 진입 시 권한 재확인
+  - 권한 해제 시 Geofence 자동 해제 및 사용자 알림
+- **Play Store 정책 준수**:
+  - 백그라운드 위치 사용 정당성: "등록한 장소 도착 시 자동 실행"
+  - 위치 데이터 로컬 저장만, 서버 전송 없음
+  - Data Safety Form 작성 필수
+- **대체 기능**: 시간 기반 자동 실행 제안
+
 #### 4.3.1 위치 권한 요청
 - [ ] **정확한 위치 권한 요청**
   ```kotlin
@@ -797,6 +838,29 @@
 ## 5. 커스텀 타이머 UI (Week 4, Day 19-23)
 
 ### 5.1 도넛 그래프 UI 구현 (Day 19-20)
+
+**🔍 기술 조사 결과 요약** → [작업 기록](../working_history/2025-10-21_2nd_advanced_1.2.md#5-compose-canvas-학습)
+- **Canvas 그리기**:
+  - 배경 원: `drawCircle()` with Stroke
+  - 진행 호: `drawArc()` with StrokeCap.Round
+  - 시간 눈금: 5, 15, 30, 60, 90, 120, 180분 표시
+  - 드래그 핸들: 외부 원(흰색) + 내부 원(녹색)
+- **각도 ↔ 시간 변환**:
+  - `minutesToAngle()`: 0분 = 0°, 180분 = 360°
+  - `angleToMinutes()`: 터치 위치 → 각도 → 시간(분)
+  - 5분 단위 스냅: `roundToNearestStep(5)`
+- **터치 인터랙션**:
+  - 드래그: `detectDragGestures()` + `calculateAngle()`
+  - 탭: `detectTapGestures()` (즉시 해당 시간 설정)
+  - 햅틱 피드백: `HapticFeedbackConstants.CLOCK_TICK` (값 변경 시)
+- **애니메이션**:
+  - `animateFloatAsState()` with `spring()`
+  - `dampingRatio`: MediumBouncy (약간 튕김)
+  - `stiffness`: Low (천천히)
+- **성능 최적화**:
+  - `remember`: 재구성 시 값 유지
+  - `derivedStateOf`: 의존성 변경 시만 재계산
+  - 목표: 60fps 유지 (16ms/프레임)
 
 #### 5.1.1 CustomTimerScreen 레이아웃
 - [ ] **메인 화면 Compose**
