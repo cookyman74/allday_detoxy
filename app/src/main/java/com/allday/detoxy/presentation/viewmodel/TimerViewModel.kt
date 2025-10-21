@@ -1,10 +1,6 @@
 package com.allday.detoxy.presentation.viewmodel
 
 import android.app.Application
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -72,18 +68,8 @@ class TimerViewModel @Inject constructor(
     private val _permissionError = MutableStateFlow<PermissionError?>(null)
     val permissionError: StateFlow<PermissionError?> = _permissionError.asStateFlow()
 
-    // 타이머 완료 브로드캐스트 리시버
-    private val timerFinishedReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.let {
-                if (it.action == FocusTimerService.ACTION_TIMER_FINISHED) {
-                    val success = it.getBooleanExtra(FocusTimerService.EXTRA_SUCCESS, false)
-                    Log.d(TAG, "Timer finished broadcast received: success=$success")
-                    onTimerFinish(success)
-                }
-            }
-        }
-    }
+    // 타이머 완료 추적을 위한 이전 상태
+    private var previousTimerState: FocusState = FocusState.IDLE
 
     companion object {
         private const val TAG = "TimerViewModel"
@@ -113,14 +99,25 @@ class TimerViewModel @Inject constructor(
             }
         }
 
-        // 타이머 완료 브로드캐스트 리시버 등록
-        val filter = IntentFilter(FocusTimerService.ACTION_TIMER_FINISHED)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            application.registerReceiver(timerFinishedReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            application.registerReceiver(timerFinishedReceiver, filter)
+        // 타이머 상태 관찰 (브로드캐스트 대신 StateFlow 사용)
+        viewModelScope.launch {
+            timerState.collect { currentState ->
+                Log.d(TAG, "🔔 Timer state changed: $previousTimerState → $currentState")
+                
+                // RUNNING → FINISHED: 정상 완료
+                if (previousTimerState == FocusState.RUNNING && currentState == FocusState.FINISHED) {
+                    Log.d(TAG, "✅ Timer finished successfully (detected via StateFlow)")
+                    onTimerFinish(success = true)
+                }
+                // RUNNING → FAILED: 포기
+                else if (previousTimerState == FocusState.RUNNING && currentState == FocusState.FAILED) {
+                    Log.d(TAG, "❌ Timer failed (detected via StateFlow)")
+                    onTimerFinish(success = false)
+                }
+                
+                previousTimerState = currentState
+            }
         }
-        Log.d(TAG, "Timer finished receiver registered")
 
         // 타이머 남은 시간을 AccessibilityService에 실시간 동기화
         // (크롬 실행 시 정확한 남은 시간을 LockOverlayScreen에 전달하기 위함)
@@ -129,6 +126,8 @@ class TimerViewModel @Inject constructor(
                 FocusAccessibilityService.remainingSeconds = seconds
             }
         }
+        
+        Log.d(TAG, "✅ TimerViewModel initialized with StateFlow observation")
     }
 
     /**
@@ -355,17 +354,11 @@ class TimerViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         
-        // BroadcastReceiver 해제
-        try {
-            application.unregisterReceiver(timerFinishedReceiver)
-            Log.d(TAG, "Timer finished receiver unregistered")
-        } catch (e: IllegalArgumentException) {
-            Log.w(TAG, "Receiver already unregistered: ${e.message}")
-        }
-        
         // ViewModel 종료 시 타이머도 중지
         if (timerState.value == FocusState.RUNNING) {
             resetTimer()
         }
+        
+        Log.d(TAG, "✅ TimerViewModel cleared")
     }
 }
