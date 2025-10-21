@@ -17,6 +17,7 @@ import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
+import com.allday.detoxy.service.overlay.LockOverlayService
 import com.allday.detoxy.service.timer.FocusTimerService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.util.Log
@@ -200,7 +201,10 @@ class TimerViewModel @Inject constructor(
         
         Log.d(TAG, "🛑 Timer give up - elapsed: ${elapsedSeconds}s")
 
-        // 0. 세션 종료 처리 (Week 3 → v2 확장)
+        // 0-1. LockOverlayService 명시적 종료
+        LockOverlayService.hideOverlay(application)
+
+        // 0-2. 세션 종료 처리 (Week 3 → v2 확장)
         currentSessionId?.let { sessionId ->
             viewModelScope.launch {
                 // 경과 시간과 포기 사유를 포함하여 세션 종료
@@ -218,7 +222,7 @@ class TimerViewModel @Inject constructor(
             }
         }
 
-        // 1. AccessibilityService 비활성화
+        // 1. AccessibilityService 비활성화 및 모든 상태 초기화
         FocusAccessibilityService.isTimerRunning = false
         FocusAccessibilityService.remainingSeconds = 0
         FocusAccessibilityService.totalSeconds = 0
@@ -231,28 +235,33 @@ class TimerViewModel @Inject constructor(
 
         // 3. FocusTimerService 포기
         FocusTimerService.giveUpTimer(application)
-        Log.d(TAG, "✅ FocusTimerService give up called")
+        Log.d(TAG, "✅ FocusTimerService give up called and all services cleaned up")
     }
 
     /**
      * 타이머 리셋
      */
     fun resetTimer() {
-        // 0. 세션 ID 초기화 (Week 3)
+        // 0. LockOverlayService 명시적 종료
+        LockOverlayService.hideOverlay(application)
+        
+        // 1. 세션 ID 초기화 (Week 3)
         currentSessionId = null
 
-        // 1. AccessibilityService 비활성화
+        // 2. AccessibilityService 비활성화 및 모든 상태 초기화
         FocusAccessibilityService.isTimerRunning = false
+        FocusAccessibilityService.remainingSeconds = 0
+        FocusAccessibilityService.totalSeconds = 0
         FocusAccessibilityService.currentSessionId = null
 
-        // 2. DND 모드 비활성화
+        // 3. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             dndManager.disableDnd()
         }
 
-        // 3. FocusTimerService 중지
+        // 4. FocusTimerService 중지
         FocusTimerService.stopTimer(application)
-        Log.d(TAG, "✅ FocusTimerService stopped")
+        Log.d(TAG, "✅ FocusTimerService stopped and all services cleaned up")
     }
 
     /**
@@ -261,13 +270,23 @@ class TimerViewModel @Inject constructor(
      * @param success 성공 여부
      */
     private fun onTimerFinish(success: Boolean) {
-        // 1. AccessibilityService 비활성화
+        Log.d(TAG, "⏰ Timer finished callback: success=$success")
+        
+        // 1. LockOverlayService 명시적 종료 (오버레이 깜빡임 방지)
+        LockOverlayService.hideOverlay(application)
+        Log.d(TAG, "✅ LockOverlayService hideOverlay called")
+        
+        // 2. AccessibilityService 비활성화 및 모든 상태 초기화
         FocusAccessibilityService.isTimerRunning = false
+        FocusAccessibilityService.remainingSeconds = 0
+        FocusAccessibilityService.totalSeconds = 0
         FocusAccessibilityService.currentSessionId = null
+        Log.d(TAG, "✅ AccessibilityService state cleared")
 
-        // 2. DND 모드 비활성화
+        // 3. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             dndManager.disableDnd()
+            Log.d(TAG, "✅ DND mode disabled")
         }
 
         // 4. 세션 종료 및 포인트/스트릭 업데이트 (Week 3)
@@ -279,6 +298,7 @@ class TimerViewModel @Inject constructor(
                     success = success,
                     endTime = System.currentTimeMillis()
                 )
+                Log.d(TAG, "✅ Session ended: sessionId=$sessionId, success=$success")
 
                 // 성공 시 포인트 지급 및 스트릭 업데이트
                 if (success) {
@@ -289,17 +309,22 @@ class TimerViewModel @Inject constructor(
                         session?.let { focusSession ->
                             val points = gamificationManager.calculatePoints(focusSession.durationMinutes)
                             repository.addPoints(points)
+                            Log.d(TAG, "✅ Points added: $points")
 
                             // 스트릭 업데이트
                             val updatedSettings = gamificationManager.updateStreak(it, success)
                             repository.updateStreak(updatedSettings.currentStreak, updatedSettings.lastSuccessDate ?: "")
+                            Log.d(TAG, "✅ Streak updated: ${updatedSettings.currentStreak}")
                         }
                     }
+                } else {
+                    Log.d(TAG, "⚠️ Session failed, no points or streak update")
                 }
 
                 currentSessionId = null
+                Log.d(TAG, "✅ Timer finish processing completed")
             }
-        }
+        } ?: Log.w(TAG, "⚠️ currentSessionId is null, cannot end session")
     }
 
     /**

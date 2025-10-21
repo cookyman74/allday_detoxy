@@ -172,7 +172,8 @@ class FocusTimerService : Service() {
                     // 타이머 완료 브로드캐스트 (ViewModel이 세션 종료 처리)
                     sendTimerFinishedBroadcast(success = true)
                     
-                    // Service 종료
+                    // 브로드캐스트가 전달될 시간을 주기 위해 지연 후 Service 종료
+                    delay(500)
                     stopSelf()
                 }
             } catch (e: CancellationException) {
@@ -205,8 +206,11 @@ class FocusTimerService : Service() {
         _remainingSeconds.value = 0
         _currentSessionId.value = null
 
-        // Service 종료
-        stopSelf()
+        // 브로드캐스트가 전달될 시간을 주기 위해 지연 후 Service 종료
+        serviceScope?.launch {
+            delay(500)
+            stopSelf()
+        }
     }
 
     /**
