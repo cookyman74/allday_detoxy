@@ -20,24 +20,33 @@
 
 ### 1.1 문서 작성 및 기술 조사
 - [x] PRD 리뷰 및 기능 범위 확정 → [02_advanced_autosetting_prd.md](./02_advanced_autosetting_prd.md)
-- [ ] 화면 와이어프레임 작성 → `02_advanced_wireframe_spec.md`
-  - 자동 실행 대시보드
-  - 시간 기반 설정 화면 (리스트, 추가 다이얼로그)
-  - 위치 기반 설정 화면 (검색, 지도, 추가)
-  - 커스텀 타이머 화면 (도넛 그래프)
-  - 자동 실행 이력 화면
-- [ ] Room 마이그레이션 전략 수립 → `02_advanced_room_migration_strategy.md`
-  - v3→v4 마이그레이션 SQL
+- [x] 화면 와이어프레임 작성 → [02_advanced_wireframe_spec.md](./02_advanced_wireframe_spec.md) ✅
+  - 자동 실행 대시보드 (7개 화면, 상세 레이아웃)
+  - 시간 기반 설정 화면 (리스트, 추가 다이얼로그, 템플릿 선택)
+  - 위치 기반 설정 화면 (검색, 지도, 추가, 진입 조건)
+  - 커스텀 타이머 화면 (도넛 그래프, 인터랙션 스펙)
+  - 자동 실행 이력 화면 (필터, 통계, 개선 제안)
+  - 권한 현황 페이지, 월간 달력 성과 뷰
+  - 애니메이션, 접근성, 다크 모드, 성능 최적화
+- [x] Room 마이그레이션 전략 수립 → [02_advanced_room_migration_strategy.md](./02_advanced_room_migration_strategy.md) ✅
+  - v3→v4 마이그레이션 SQL (4개 테이블, 3개 인덱스, 기본 데이터 삽입)
   - 4개 신규 엔티티 스키마 (TimeBasedAutoRun, LocationBasedAutoRun, CustomTimerPreset, AutoRunLog)
-  - 백필 및 테스트 전략
-- [ ] Analytics 스키마 설계 → `02_advanced_analytics_schema.md`
-  - 21개 신규 이벤트 정의
+  - UserSettings 필드 추가 (2개)
+  - DAO 인터페이스 스펙 (4개, 40개 메서드)
+  - 마이그레이션 테스트 전략, 롤백 전략, 백업/복원
+- [x] Analytics 스키마 설계 → [02_advanced_analytics_schema.md](./02_advanced_analytics_schema.md) ✅
+  - 21개 신규 이벤트 정의 (자동 실행 14개, 커스텀 타이머 5개, 권한 2개)
   - 자동 실행, 커스텀 타이머 관련 파라미터
-- [ ] QA 시나리오 작성 → `02_advanced_qa_devices.md`
+  - KPI 및 지표 (전환율, 성공률, 사용률, 권한 승인율)
+  - AnalyticsHelper 클래스 확장 (21개 메서드)
+  - 개인정보 보호 준수 (GDPR, 한국 개인정보보호법, Play Store 정책)
+- [x] QA 시나리오 작성 → [02_advanced_qa_devices.md](./02_advanced_qa_devices.md) ✅
   - 시간 기반 자동 실행 테스트 (10개 시나리오)
   - 위치 기반 자동 실행 테스트 (8개 시나리오)
   - 커스텀 타이머 UI 테스트 (5개 시나리오)
-  - 회귀 테스트 체크리스트
+  - 회귀 테스트 체크리스트 (5개)
+  - OEM 호환성 테스트 (Samsung, Xiaomi, Huawei, OnePlus)
+  - 권한 및 정책 테스트, 성능 테스트
 
 ### 1.2 기술 스택 조사
 - [ ] AlarmManager vs WorkManager 비교 및 선택
