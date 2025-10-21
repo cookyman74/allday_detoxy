@@ -49,23 +49,26 @@
   - 권한 및 정책 테스트, 성능 테스트
 
 ### 1.2 기술 스택 조사
-- [ ] AlarmManager vs WorkManager 비교 및 선택
+- [x] AlarmManager vs WorkManager 비교 및 선택
   - 정확한 시간 트리거: AlarmManager.setExactAndAllowWhileIdle() 사용
   - 배터리 최적화 대응 전략
-- [ ] Geofencing API 학습
+  - **결정**: AlarmManager (Primary) + WorkManager (Fallback)
+- [x] Geofencing API 학습
   - Android Geofencing API 문서 리뷰
   - 최대 등록 개수 제한 (100개 → 5개로 제한)
   - 배터리 효율성 (BALANCED_POWER_ACCURACY)
-- [ ] 위치 권한 플로우
+  - GPS 정확도 로깅 전략 수립
+- [x] 위치 권한 플로우
   - ACCESS_FINE_LOCATION (필수)
   - ACCESS_BACKGROUND_LOCATION (Android 10+ 필수)
-  - 권한 요청 베스트 프랙티스
-- [ ] Compose Canvas 학습
+  - 권한 요청 베스트 프랙티스 (2단계 요청, Android 11+)
+- [x] Compose Canvas 학습
   - 도넛 그래프 그리기
   - 터치 이벤트 처리 (드래그, 탭)
   - 애니메이션 (Animatable)
+  - 60fps 성능 최적화 전략
 
-**작업 기록**: `working_history/2025-10-21_2nd_advanced_0.1.md`
+**작업 기록**: `working_history/2025-10-21_2nd_advanced_1.2.md`
 
 ---
 
