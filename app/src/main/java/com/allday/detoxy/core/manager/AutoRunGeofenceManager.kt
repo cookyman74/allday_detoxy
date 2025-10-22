@@ -172,20 +172,17 @@ class AutoRunGeofenceManager @Inject constructor(
                 )
             }
             
-            // 현재 등록된 Geofence 수 체크 (재등록 시 자기 자신 제외)
-            val isAlreadyEnabled = locationBasedAutoRunDao.isEnabled(autoRun.id) == true
-            val currentCount = locationBasedAutoRunDao.getEnabledCount()
+            // 현재 등록된 Geofence 수 체크 (자기 자신 제외)
+            // 신규 등록: DB에 이미 저장되었지만 Geofence는 아직 미등록 → otherCount로 정확히 판단
+            // 재등록: 이미 Geofence가 등록되어 있음 → otherCount로 정확히 판단
+            val otherEnabledCount = locationBasedAutoRunDao.getEnabledCountExcept(autoRun.id)
             
-            // 재등록(이미 활성화된 경우)이 아니고, 신규 등록인데 최대 개수 도달한 경우에만 제한
-            if (!isAlreadyEnabled && currentCount >= MAX_GEOFENCES) {
-                Log.w(TAG, "⚠️ Max geofences limit reached: $currentCount/$MAX_GEOFENCES (ID: ${autoRun.id} is new)")
+            // 자기 자신을 제외한 활성화된 개수가 MAX_GEOFENCES 이상이면 제한
+            if (otherEnabledCount >= MAX_GEOFENCES) {
+                Log.w(TAG, "⚠️ Max geofences limit reached: Others=$otherEnabledCount, MAX=$MAX_GEOFENCES")
                 return Result.failure(
                     GeofenceException("최대 ${MAX_GEOFENCES}개까지만 등록할 수 있습니다. 기존 위치를 삭제한 후 다시 시도해주세요.")
                 )
-            }
-            
-            if (isAlreadyEnabled) {
-                Log.d(TAG, "🔄 Re-registering existing geofence (ID: ${autoRun.id})")
             }
             
             // Geofence 생성
@@ -196,8 +193,8 @@ class AutoRunGeofenceManager @Inject constructor(
             // Geofence 등록
             geofencingClient.addGeofences(geofencingRequest, pendingIntent).await()
             
-            // 등록 후 실제 카운트 (재등록이면 변화 없음, 신규면 +1)
-            val finalCount = if (isAlreadyEnabled) currentCount else currentCount + 1
+            // 등록 후 최종 개수 (자기 자신 포함)
+            val finalCount = otherEnabledCount + 1
             Log.i(TAG, "✅ Geofence added successfully for ${autoRun.label} (ID: ${autoRun.id}, Count: $finalCount/$MAX_GEOFENCES)")
             Result.success(Unit)
             

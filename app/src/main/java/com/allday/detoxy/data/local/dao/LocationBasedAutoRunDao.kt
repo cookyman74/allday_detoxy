@@ -121,5 +121,17 @@ interface LocationBasedAutoRunDao {
      */
     @Query("SELECT isEnabled FROM location_based_auto_run WHERE id = :id")
     suspend fun isEnabled(id: String): Boolean?
+    
+    /**
+     * 특정 ID를 제외한 활성화된 자동 실행 개수 조회
+     *
+     * MAX_GEOFENCES 체크 시 자기 자신을 제외한 개수를 확인하기 위해 사용합니다.
+     * 신규 등록과 재등록을 구분 없이 올바르게 처리할 수 있습니다.
+     *
+     * @param excludeId 제외할 자동 실행 ID
+     * @return 해당 ID를 제외한 활성화된 개수
+     */
+    @Query("SELECT COUNT(*) FROM location_based_auto_run WHERE isEnabled = 1 AND id != :excludeId")
+    suspend fun getEnabledCountExcept(excludeId: String): Int
 }
 
