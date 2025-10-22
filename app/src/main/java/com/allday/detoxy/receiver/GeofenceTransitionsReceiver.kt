@@ -49,23 +49,45 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         // Geofence 트랜지션 타입 확인
         val geofenceTransition = geofencingEvent.geofenceTransition
         
-        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-            Log.i(TAG, "📍 Geofence ENTER detected")
-            
-            // 트리거된 Geofence 리스트 가져오기
-            val triggeringGeofences = geofencingEvent.triggeringGeofences
-            
-            if (triggeringGeofences.isNullOrEmpty()) {
-                Log.w(TAG, "⚠️ No triggering geofences found")
-                return
+        // ENTER 또는 DWELL 이벤트 처리
+        when (geofenceTransition) {
+            Geofence.GEOFENCE_TRANSITION_ENTER -> {
+                Log.i(TAG, "📍 Geofence ENTER detected (즉시 진입)")
+                handleGeofenceTrigger(context, intent, geofencingEvent, "ENTER")
             }
-            
-            // GPS 정확도 추출 (AutoRunLog에 기록용)
-            val gpsAccuracyMeters = geofencingEvent.triggeringLocation?.accuracy
-            Log.i(TAG, "📡 GPS Accuracy: ${gpsAccuracyMeters ?: "Unknown"}m")
-            
-            // 각 Geofence 처리
-            triggeringGeofences.forEach { geofence ->
+            Geofence.GEOFENCE_TRANSITION_DWELL -> {
+                Log.i(TAG, "⏱️ Geofence DWELL detected (체류 시간 도달)")
+                handleGeofenceTrigger(context, intent, geofencingEvent, "DWELL")
+            }
+            else -> {
+                Log.w(TAG, "⚠️ Unexpected geofence transition: $geofenceTransition")
+            }
+        }
+    }
+    
+    /**
+     * Geofence 트리거 처리 (ENTER 또는 DWELL)
+     */
+    private fun handleGeofenceTrigger(
+        context: Context,
+        intent: Intent,
+        geofencingEvent: GeofencingEvent,
+        transitionType: String
+    ) {
+        // 트리거된 Geofence 리스트 가져오기
+        val triggeringGeofences = geofencingEvent.triggeringGeofences
+        
+        if (triggeringGeofences.isNullOrEmpty()) {
+            Log.w(TAG, "⚠️ No triggering geofences found")
+            return
+        }
+        
+        // GPS 정확도 추출 (AutoRunLog에 기록용)
+        val gpsAccuracyMeters = geofencingEvent.triggeringLocation?.accuracy
+        Log.i(TAG, "📡 GPS Accuracy: ${gpsAccuracyMeters ?: "Unknown"}m")
+        
+        // 각 Geofence 처리
+        triggeringGeofences.forEach { geofence ->
                 val locationId = geofence.requestId
                 
                 // Intent에서 위치 기반 자동 실행 정보 추출
@@ -76,7 +98,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 val dwellTimeMinutes = intent.getIntExtra(AutoRunGeofenceManager.EXTRA_DWELL_TIME_MINUTES, 0)
                 
                 Log.i(TAG, """
-                    📍 Geofence triggered:
+                    📍 Geofence triggered ($transitionType):
                     - ID: $locationId
                     - Label: $locationLabel
                     - Duration: ${durationMinutes}min
@@ -84,6 +106,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     - Requires Confirmation: $requiresConfirmation
                     - Dwell Time: ${dwellTimeMinutes}min
                     - GPS Accuracy: ${gpsAccuracyMeters ?: "Unknown"}m
+                    - Transition Type: $transitionType
                 """.trimIndent())
                 
                 // TODO: Week 3 작업 - AutoRunNotificationManager 연동
@@ -114,9 +137,6 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 // }
                 
                 Log.i(TAG, "✅ Location-based auto-run triggered for $locationLabel")
-            }
-        } else {
-            Log.w(TAG, "⚠️ Unexpected geofence transition: $geofenceTransition")
         }
     }
     

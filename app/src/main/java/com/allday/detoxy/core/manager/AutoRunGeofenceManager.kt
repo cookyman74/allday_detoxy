@@ -140,6 +140,9 @@ class AutoRunGeofenceManager @Inject constructor(
     /**
      * Geofence 등록
      *
+     * ⚠️ 주의: MAX_GEOFENCES 체크는 현재 미구현 상태
+     * TODO: Week 3 - LocationBasedAutoRunRepository 의존성 추가하여 등록된 Geofence 수 체크
+     *
      * @param autoRun 위치 기반 자동 실행 설정
      * @return Result<Unit> 성공 시 Success, 실패 시 Failure with Exception
      */
@@ -169,6 +172,14 @@ class AutoRunGeofenceManager @Inject constructor(
                     GeofenceException("백그라운드 위치 권한이 없습니다. 앱 설정에서 '항상 허용'을 선택해주세요.")
                 )
             }
+            
+            // TODO: Week 3 - 현재 등록된 Geofence 수 체크
+            // 현재는 Repository 의존성이 없어 체크 불가
+            // if (currentGeofenceCount >= MAX_GEOFENCES) {
+            //     return Result.failure(
+            //         GeofenceException("최대 ${MAX_GEOFENCES}개까지만 등록할 수 있습니다. 기존 위치를 삭제한 후 다시 시도해주세요.")
+            //     )
+            // }
             
             // Geofence 생성
             val geofence = createGeofence(autoRun)
@@ -210,28 +221,46 @@ class AutoRunGeofenceManager @Inject constructor(
     /**
      * 모든 Geofence 해제
      *
+     * ⚠️ 주의: 현재 구현은 동작하지 않음
+     * 문제: 등록 시 각 autoRun ID의 hashCode를 requestCode로 사용했으므로,
+     *       새로운 PendingIntent(requestCode=0)로는 기존 등록분과 매칭되지 않음
+     * 
+     * TODO: Week 3 - LocationBasedAutoRunRepository 의존성 추가
+     *       DB에서 활성화된 모든 LocationBasedAutoRun ID를 조회하여
+     *       removeGeofences(List<String> requestIds) 호출
+     *
      * @return Result<Unit> 성공 시 Success, 실패 시 Failure with Exception
      */
     suspend fun removeAllGeofences(): Result<Unit> {
-        return try {
-            val pendingIntent = createPendingIntent(null)
-            geofencingClient.removeGeofences(pendingIntent).await()
-            Log.i(TAG, "✅ All geofences removed successfully")
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to remove all geofences: ${e.message}")
-            Result.failure(GeofenceException("모든 Geofence 해제 실패: ${e.message}"))
-        }
+        Log.w(TAG, "⚠️ removeAllGeofences() is not implemented yet. Use removeGeofence(id) for each geofence.")
+        return Result.failure(
+            GeofenceException("전체 Geofence 해제는 아직 구현되지 않았습니다. 개별 해제를 사용해주세요.")
+        )
+        
+        // 잘못된 구현 (작동하지 않음):
+        // return try {
+        //     val pendingIntent = createPendingIntent(null) // ❌ requestCode=0, 기존 등록분과 불일치
+        //     geofencingClient.removeGeofences(pendingIntent).await()
+        //     Log.i(TAG, "✅ All geofences removed successfully")
+        //     Result.success(Unit)
+        // } catch (e: Exception) {
+        //     Log.e(TAG, "❌ Failed to remove all geofences: ${e.message}")
+        //     Result.failure(GeofenceException("모든 Geofence 해제 실패: ${e.message}"))
+        // }
     }
     
     /**
      * Geofence 생성
      *
+     * dwellTimeMinutes에 따라 트랜지션 타입 자동 설정:
+     * - dwellTimeMinutes == 0: ENTER만 사용 (즉시 트리거)
+     * - dwellTimeMinutes > 0: ENTER + DWELL 사용 (체류 시간 후 트리거)
+     *
      * @param autoRun 위치 기반 자동 실행 설정
      * @return Geofence
      */
     private fun createGeofence(autoRun: LocationBasedAutoRun): Geofence {
-        return Geofence.Builder()
+        val builder = Geofence.Builder()
             .setRequestId(autoRun.id)
             .setCircularRegion(
                 autoRun.latitude,
@@ -239,9 +268,22 @@ class AutoRunGeofenceManager @Inject constructor(
                 autoRun.radiusMeters.toFloat()
             )
             .setExpirationDuration(Geofence.NEVER_EXPIRE)
-            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-            .setLoiteringDelay(autoRun.dwellTimeMinutes * 60 * 1000) // 분 → 밀리초
-            .build()
+        
+        // 체류 시간에 따라 트랜지션 타입 설정
+        if (autoRun.dwellTimeMinutes > 0) {
+            // 체류 시간이 있으면 DWELL 사용 (loiteringDelay 필요)
+            builder.setTransitionTypes(
+                Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_DWELL
+            )
+            builder.setLoiteringDelay(autoRun.dwellTimeMinutes * 60 * 1000) // 분 → 밀리초
+            Log.d(TAG, "Geofence created with DWELL (${autoRun.dwellTimeMinutes}분 체류)")
+        } else {
+            // 체류 시간이 0이면 ENTER만 사용 (즉시 트리거)
+            builder.setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+            Log.d(TAG, "Geofence created with ENTER only (즉시 트리거)")
+        }
+        
+        return builder.build()
     }
     
     /**
