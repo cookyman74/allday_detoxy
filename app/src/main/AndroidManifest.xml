@@ -8,6 +8,12 @@
     <!-- 포그라운드 서비스 권한 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    
+    <!-- 정확 알람 권한 (Android 12+, 시간 기반 자동 실행) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    
+    <!-- 부팅 완료 감지 (알람 재등록) -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".DetoxyApplication"
@@ -65,6 +71,28 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Lock screen overlay for focus timer" />
         </service>
+
+        <!-- AutoRunAlarmReceiver for time-based auto-run -->
+        <receiver
+            android:name=".receiver.AutoRunAlarmReceiver"
+            android:exported="false"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.allday.detoxy.ACTION_AUTO_RUN_ALARM" />
+            </intent-filter>
+        </receiver>
+
+        <!-- BootCompletedReceiver for alarm re-registration (TODO: implement later) -->
+        <!-- 
+        <receiver
+            android:name=".receiver.BootCompletedReceiver"
+            android:exported="false"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        -->
     </application>
 
 </manifest>

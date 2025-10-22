@@ -251,48 +251,36 @@
   - 배터리 최적화 제외 권한 안내 필요
 
 #### 2.2.1 AutoRunAlarmManager 클래스
-- [ ] **클래스 설계** → [PRD §4.1](./02_advanced_autosetting_prd.md#41-시간-기반-자동-실행)
-  ```kotlin
-  @Singleton
-  class AutoRunAlarmManager @Inject constructor(
-      private val context: Context,
-      private val alarmManager: AlarmManager
-  ) {
-      fun canScheduleExactAlarms(): Boolean  // ✅ Android 12+ 권한 체크
-      fun scheduleTimeBasedAutoRun(autoRun: TimeBasedAutoRun)
-      fun cancelTimeBasedAutoRun(autoRunId: String)
-      fun rescheduleAll(autoRuns: List<TimeBasedAutoRun>)
-      private fun createPendingIntent(autoRunId: String): PendingIntent
-  }
-  ```
+- [x] **클래스 설계** → [PRD §4.1](./02_advanced_autosetting_prd.md#41-시간-기반-자동-실행) ✅
+  - **파일**: [AutoRunAlarmManager.kt](../app/src/main/java/com/allday/detoxy/core/manager/AutoRunAlarmManager.kt) (신규, ~350줄)
+  - **메서드**: `canScheduleExactAlarms()`, `scheduleTimeBasedAutoRun()`, `cancelTimeBasedAutoRun()`, `rescheduleAll()`, `calculateNextTriggerTime()`
+  - **StateFlow**: `canScheduleExactAlarms` (정확 알람 권한 상태)
   - **참조**: [Android AlarmManager 문서](https://developer.android.com/training/scheduling/alarms)
   - **참조**: [기존 TimerViewModel 패턴](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt)
 
-- [ ] **정확 알람 권한 체크 (Android 12+)** → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-정확-알람-권한-관리-android-12)
+- [x] **정확 알람 권한 체크 (Android 12+)** → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-정확-알람-권한-관리-android-12) ✅
   - `AlarmManager.canScheduleExactAlarms()` 체크 메서드 구현
-  - 권한 없을 경우 `ACTION_REQUEST_SCHEDULE_EXACT_ALARM` Intent 준비
-  - 권한 상태를 StateFlow로 노출
+  - 권한 상태를 StateFlow로 노출 (`_canScheduleExactAlarms`)
+  - 권한 없을 시 `setAndAllowWhileIdle()` fallback (±15분 오차)
   - **참조**: [Exact Alarm Permission](https://developer.android.com/about/versions/12/behavior-changes-12#exact-alarm-permission)
 
-- [ ] **AlarmManager 설정** → [PRD §4.1.3](./02_advanced_autosetting_prd.md#413-자동-시작-로직)
+- [x] **AlarmManager 설정** → [PRD §4.1.3](./02_advanced_autosetting_prd.md#413-자동-시작-로직) ✅
   - `setExactAndAllowWhileIdle()` 사용 (권한 있을 때)
-  - `setAndAllowWhileIdle()` 사용 (권한 없을 때, ±15분 오차)
-  - PendingIntent.FLAG_IMMUTABLE (Android 12+)
-  - 요일별 알람 계산 로직
+  - `setAndAllowWhileIdle()` 사용 (권한 없을 때)
+  - PendingIntent.FLAG_IMMUTABLE (Android 12+ 필수)
+  - 요일별 알람 계산 로직 (`calculateNextTriggerTime()`, `parseEnabledDays()`)
 
-- [ ] **Broadcast Receiver 생성** → [PRD §4.1.2](./02_advanced_autosetting_prd.md#412-자동-실행-알림)
-  ```kotlin
-  class AutoRunAlarmReceiver : BroadcastReceiver() {
-      override fun onReceive(context: Context, intent: Intent) {
-          val autoRunId = intent.getStringExtra("autoRunId")
-          // 알림 표시 로직
-          // AutoRunNotificationManager 호출
-      }
-  }
-  ```
+- [x] **Broadcast Receiver 생성** → [PRD §4.1.2](./02_advanced_autosetting_prd.md#412-자동-실행-알림) ✅
+  - **파일**: [AutoRunAlarmReceiver.kt](../app/src/main/java/com/allday/detoxy/receiver/AutoRunAlarmReceiver.kt) (신규, ~60줄)
+  - Intent에서 autoRun 정보 추출 (ID, duration, preset, label)
+  - TODO: AutoRunNotificationManager 연동 (Week 2 작업)
+  - TODO: AutoRunLog 기록 (Week 2 작업)
   - **참조**: [Android BroadcastReceiver 문서](https://developer.android.com/guide/components/broadcasts)
 
-- [ ] AndroidManifest에 Receiver 등록 → [AndroidManifest.xml](../app/src/main/AndroidManifest.xml)
+- [x] AndroidManifest에 Receiver 등록 → [AndroidManifest.xml](../app/src/main/AndroidManifest.xml) ✅
+  - `<receiver>` 태그 추가 (`AutoRunAlarmReceiver`)
+  - `SCHEDULE_EXACT_ALARM` 권한 추가 (Android 12+)
+  - `RECEIVE_BOOT_COMPLETED` 권한 추가 (재부팅 시 알람 재등록)
 
 #### 2.2.2 WorkManager 백업 로직
 - [ ] **WorkManager 구현** (AlarmManager 실패 시 대체) → [PRD §4.1.3](./02_advanced_autosetting_prd.md#413-자동-시작-로직)
