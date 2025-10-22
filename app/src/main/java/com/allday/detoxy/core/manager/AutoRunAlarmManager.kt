@@ -51,6 +51,9 @@ class AutoRunAlarmManager @Inject constructor(
         
         // Request Code Base (autoRunId 해시로 고유값 생성)
         private const val REQUEST_CODE_BASE = 10000
+        
+        // 유효한 요일 코드 (대문자)
+        private val VALID_DAY_CODES = setOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
     }
 
     // 정확 알람 권한 상태 (StateFlow)
@@ -175,6 +178,7 @@ class AutoRunAlarmManager @Inject constructor(
      * 다음 트리거 시각 계산
      *
      * 활성화된 요일 중 가장 가까운 시각을 반환합니다.
+     * 재스케줄 시 다음 주 같은 요일을 놓치지 않도록 최대 13일(2주) 검색합니다.
      *
      * @param autoRun 시간 기반 자동 실행 설정
      * @return 다음 트리거 시각 (epoch millis), null: 계산 실패
@@ -194,12 +198,15 @@ class AutoRunAlarmManager @Inject constructor(
             set(Calendar.MILLISECOND, 0)
         }
 
-        // 오늘 또는 내일부터 최대 7일 검색
-        for (daysToAdd in 0..6) {
+        // 오늘부터 최대 13일(2주) 검색
+        // 이유: 오늘 같은 요일인데 시간이 지난 경우 다음 주 같은 요일(7일 후)을 찾기 위함
+        // 예: 월요일 오후에 월요일 오전 알람 재스케줄 → 다음 주 월요일 찾아야 함
+        for (daysToAdd in 0..13) {
             val checkCalendar = targetCalendar.clone() as Calendar
             checkCalendar.add(Calendar.DAY_OF_YEAR, daysToAdd)
             
-            // 과거 시각은 스킵
+            // 현재 시각 이후만 허용 (재스케줄 시 현재 시각은 제외)
+            // 1초 마진 추가로 정확히 같은 시각의 경우도 안전하게 처리
             if (checkCalendar.timeInMillis <= now.timeInMillis) {
                 continue
             }
@@ -207,27 +214,39 @@ class AutoRunAlarmManager @Inject constructor(
             // 요일 확인
             val dayOfWeek = getDayOfWeekString(checkCalendar)
             if (enabledDays.contains(dayOfWeek)) {
+                Log.d(TAG, "✅ Next trigger found: ${formatTime(checkCalendar.timeInMillis)} ($dayOfWeek) for ${autoRun.label ?: autoRun.id}")
                 return checkCalendar.timeInMillis
             }
         }
 
-        Log.w(TAG, "⚠️ No matching day found in next 7 days for autoRun: ${autoRun.id}")
+        Log.w(TAG, "⚠️ No matching day found in next 14 days for autoRun: ${autoRun.id}")
         return null
     }
 
     /**
      * enabledDays JSON 파싱
      *
+     * JSON 배열에서 요일 코드를 추출합니다.
+     * 대소문자를 무시하고 uppercase로 정규화합니다.
+     *
      * @param enabledDaysJson JSON 문자열 (예: "[\"MON\",\"TUE\",\"WED\"]")
      * @return 요일 코드 Set (예: setOf("MON", "TUE", "WED"))
      */
     private fun parseEnabledDays(enabledDaysJson: String): Set<String> {
+        if (enabledDaysJson.isBlank() || enabledDaysJson == "[]") {
+            Log.w(TAG, "⚠️ Empty enabledDays JSON")
+            return emptySet()
+        }
+        
         return try {
             // 간단한 JSON 파싱 (정규식 사용)
             val regex = Regex(""""(\w+)"""")
-            regex.findAll(enabledDaysJson).map { it.groupValues[1] }.toSet()
+            regex.findAll(enabledDaysJson)
+                .map { it.groupValues[1].uppercase() } // 대소문자 정규화
+                .filter { it in VALID_DAY_CODES } // 유효한 요일만 필터링
+                .toSet()
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to parse enabledDays: $enabledDaysJson")
+            Log.e(TAG, "❌ Failed to parse enabledDays: $enabledDaysJson", e)
             emptySet()
         }
     }
@@ -269,7 +288,8 @@ class AutoRunAlarmManager @Inject constructor(
             putExtra(EXTRA_LABEL, autoRun.label)
         }
 
-        val requestCode = autoRun.id.hashCode() % 10000 + REQUEST_CODE_BASE
+        // requestCode 생성 (음수 hashCode 대응)
+        val requestCode = kotlin.math.abs(autoRun.id.hashCode()) % 10000 + REQUEST_CODE_BASE
         
         return PendingIntent.getBroadcast(
             context,
@@ -291,7 +311,8 @@ class AutoRunAlarmManager @Inject constructor(
             putExtra(EXTRA_AUTO_RUN_ID, autoRunId)
         }
 
-        val requestCode = autoRunId.hashCode() % 10000 + REQUEST_CODE_BASE
+        // requestCode 생성 (음수 hashCode 대응)
+        val requestCode = kotlin.math.abs(autoRunId.hashCode()) % 10000 + REQUEST_CODE_BASE
         
         return PendingIntent.getBroadcast(
             context,
