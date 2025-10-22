@@ -338,54 +338,53 @@
   - 사용자가 비활성화한 위치는 즉시 Geofence 해제
 
 #### 2.3.1 AutoRunGeofenceManager 클래스
-- [ ] **클래스 설계** → [PRD §4.2](./02_advanced_autosetting_prd.md#42-위치-기반-자동-실행)
-  ```kotlin
-  @Singleton
-  class AutoRunGeofenceManager @Inject constructor(
-      private val context: Context,
-      private val geofencingClient: GeofencingClient
-  ) {
-      suspend fun isPlayServicesAvailable(): Boolean  // ✅ Play Services 체크
-      suspend fun isLocationEnabled(): Boolean         // ✅ 위치 서비스 ON/OFF 체크
-      suspend fun addGeofence(autoRun: LocationBasedAutoRun): Result<Unit>
-      suspend fun removeGeofence(autoRunId: String): Result<Unit>
-      suspend fun removeAllGeofences(): Result<Unit>
-      private fun createGeofence(autoRun: LocationBasedAutoRun): Geofence
-      private fun createGeofencingRequest(geofences: List<Geofence>): GeofencingRequest
-  }
-  ```
+- [x] **클래스 설계** → [PRD §4.2](./02_advanced_autosetting_prd.md#42-위치-기반-자동-실행) ✅
+  - **파일**: [AutoRunGeofenceManager.kt](../app/src/main/java/com/allday/detoxy/core/manager/AutoRunGeofenceManager.kt) (신규, ~350줄)
+  - **메서드**: `isPlayServicesAvailable()`, `isLocationEnabled()`, `hasLocationPermission()`, `hasBackgroundLocationPermission()`, `addGeofence()`, `removeGeofence()`, `removeAllGeofences()`
   - **참조**: [Android Geofencing API 문서](https://developer.android.com/training/location/geofencing)
   - **참조**: [Google Play Services Location API](https://developers.google.com/android/reference/com/google/android/gms/location/package-summary)
 
-- [ ] **Google Play Services 체크** → [PRD §4.2.6](./02_advanced_autosetting_prd.md#426-지오펜싱-예외-처리)
-  - `GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable()` 호출
-  - 미탑재/구버전 시 사용자 안내 다이얼로그
-  - Play Services 없을 경우 위치 기반 기능 완전 비활성화
+- [x] **Google Play Services 체크** → [PRD §4.2.6](./02_advanced_autosetting_prd.md#426-지오펜싱-예외-처리) ✅
+  - `GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable()` 구현
+  - 미탑재/구버전 감지 → GeofenceException 반환
+  - Play Services 없을 경우 위치 기반 기능 완전 비활성화 처리
   - **참조**: [GoogleApiAvailability 문서](https://developers.google.com/android/guides/setup#ensure_devices_have_the_google_play_services_apk)
 
-- [ ] **위치 서비스 상태 체크**
-  - `LocationManager.isLocationEnabled()` 확인
-  - 위치 OFF 시 "위치 서비스 켜기" 안내 및 설정 이동
-  - 위치 OFF 상태에서 Geofence 등록 실패 처리
+- [x] **위치 서비스 상태 체크** ✅
+  - `LocationManager.isLocationEnabled()` 구현 (Android P+ / P 미만 분기)
+  - 위치 OFF 시 GeofenceException 반환
+  - UI에서 "위치 서비스 켜기" 안내 예정 (Week 3)
 
-- [ ] **Geofence 설정** → [PRD §4.2.2](./02_advanced_autosetting_prd.md#422-geofencing-구현)
-  - ENTER 트리거 (dwell time 없음)
-  - Expiration: NEVER_EXPIRE
-  - Loitering delay: 0ms
-  - Transition types: GEOFENCE_TRANSITION_ENTER
-  - 실패 시 상세 에러 메시지 (권한, Play Services, 위치 서비스, 최대 개수 등)
+- [x] **Geofence 설정** → [PRD §4.2.2](./02_advanced_autosetting_prd.md#422-geofencing-구현) ✅
+  - ENTER 트리거 (`GEOFENCE_TRANSITION_ENTER`)
+  - Expiration: `NEVER_EXPIRE`
+  - Loitering delay: `dwellTimeMinutes * 60 * 1000` (체류 시간, 밀리초)
+  - 최대 5개 제한 (`MAX_GEOFENCES = 5`)
+  - 실패 시 상세 에러 메시지 (권한, Play Services, 위치 서비스)
 
-- [ ] **BroadcastReceiver 생성**
-  ```kotlin
-  class GeofenceTransitionsReceiver : BroadcastReceiver() {
-      override fun onReceive(context: Context, intent: Intent) {
-          val geofencingEvent = GeofencingEvent.fromIntent(intent)
-          if (geofencingEvent.geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
-              // 위치 기반 자동 실행 트리거
-          }
-      }
-  }
-  ```
+- [x] **BroadcastReceiver 생성** ✅
+  - **파일**: [GeofenceTransitionsReceiver.kt](../app/src/main/java/com/allday/detoxy/receiver/GeofenceTransitionsReceiver.kt) (신규, ~140줄)
+  - ENTER 이벤트 감지
+  - GPS 정확도 추출 (`triggeringLocation.accuracy`)
+  - 위치 기반 자동 실행 정보 추출
+  - TODO: AutoRunNotificationManager 연동 (Week 3)
+  - TODO: AutoRunLog 기록 (Week 3)
+  
+- [x] **Hilt 의존성 주입** ✅
+  - **파일**: [GeofenceModule.kt](../app/src/main/java/com/allday/detoxy/core/di/GeofenceModule.kt) (신규, ~35줄)
+  - `GeofencingClient` 제공 (Singleton)
+  
+- [x] **의존성 추가** ✅
+  - gradle/libs.versions.toml: `playServicesLocation = "21.0.1"`
+  - app/build.gradle.kts: `implementation(libs.play.services.location)`
+  
+- [x] **AndroidManifest 업데이트** ✅
+  - 위치 권한 추가 (`ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`)
+  - GeofenceTransitionsReceiver 등록
+  
+- [x] **빌드 검증** ✅
+  - compileDebugKotlin: ✅ SUCCESS (43s)
+  - assembleDebug: ✅ SUCCESS (1m 48s)
 
 #### 2.3.2 위치 권한 관리
 - [ ] **PermissionUtils 확장** → [PRD §4.2.3](./02_advanced_autosetting_prd.md#423-위치-권한-관리)
@@ -403,7 +402,7 @@
   4. 설정 화면으로 이동 ("항상 허용" 선택)
   - **참조**: [Android 위치 권한 가이드](https://developer.android.com/training/location/permissions)
 
-**작업 기록**: `working_history/2025-10-21_2nd_advanced_2.3.md`
+**작업 기록**: `working_history/2025-10-22_2nd_advanced_2.3.md` ✅
 
 ---
 

@@ -14,6 +14,12 @@
     
     <!-- 부팅 완료 감지 (알람 재등록) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    
+    <!-- 위치 권한 (위치 기반 자동 실행) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- 백그라운드 위치 권한 (Android 10+) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application
         android:name=".DetoxyApplication"
@@ -80,6 +86,16 @@
             android:enabled="true">
             <intent-filter>
                 <action android:name="com.allday.detoxy.ACTION_AUTO_RUN_ALARM" />
+            </intent-filter>
+        </receiver>
+
+        <!-- GeofenceTransitionsReceiver for location-based auto-run -->
+        <receiver
+            android:name=".receiver.GeofenceTransitionsReceiver"
+            android:exported="false"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.allday.detoxy.ACTION_GEOFENCE_TRANSITION" />
             </intent-filter>
         </receiver>
 
