@@ -100,5 +100,15 @@ interface LocationBasedAutoRunDao {
      */
     @Query("SELECT COUNT(*) FROM location_based_auto_run WHERE isEnabled = 1")
     suspend fun getEnabledCount(): Int
+    
+    /**
+     * 활성화된 모든 위치 기반 자동 실행 ID 조회 (suspend 함수)
+     *
+     * removeAllGeofences() 등에서 사용
+     *
+     * @return 활성화된 자동 실행 ID 리스트
+     */
+    @Query("SELECT id FROM location_based_auto_run WHERE isEnabled = 1")
+    suspend fun getAllEnabledIds(): List<String>
 }
 
