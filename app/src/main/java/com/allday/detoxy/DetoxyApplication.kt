@@ -19,7 +19,9 @@ import javax.inject.Inject
  * - Analytics: AnalyticsHelper.initialize()로 명시적 초기화
  *
  * WorkManager 설정:
- * - HiltWorkerFactory를 통한 의존성 주입 지원
+ * - Configuration.Provider 구현으로 HiltWorkerFactory 제공
+ * - WorkManager는 자동 초기화되며 이 설정을 사용함
+ * - @HiltWorker 어노테이션을 통한 Worker 의존성 주입 지원
  */
 @HiltAndroidApp
 class DetoxyApplication : Application(), Configuration.Provider {
@@ -43,14 +45,17 @@ class DetoxyApplication : Application(), Configuration.Provider {
         // FirebaseCrashlytics.getInstance().setCustomKey("key", "value")
         // FirebaseCrashlytics.getInstance().log("App started")
         
-        // WorkManager는 getWorkManagerConfiguration()으로 초기화됨
-        Log.i(TAG, "✅ WorkManager with HiltWorkerFactory configured")
+        // WorkManager는 자동으로 초기화되며 workManagerConfiguration을 사용함
+        Log.i(TAG, "✅ WorkManager with HiltWorkerFactory will be initialized automatically")
     }
     
     /**
      * WorkManager Configuration 제공
      *
-     * Hilt를 통한 Worker 의존성 주입을 위해 HiltWorkerFactory 사용
+     * WorkManager가 자동 초기화될 때 이 설정을 사용합니다.
+     * HiltWorkerFactory를 통해 Worker에서 Hilt 의존성 주입이 가능합니다.
+     *
+     * @return WorkManager Configuration with HiltWorkerFactory
      */
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
