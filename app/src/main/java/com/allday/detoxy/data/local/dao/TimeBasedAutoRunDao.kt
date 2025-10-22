@@ -77,6 +77,23 @@ interface TimeBasedAutoRunDao {
     fun getEnabled(): Flow<List<TimeBasedAutoRun>>
 
     /**
+     * 특정 요일에 활성화된 자동 실행 조회 (효율적인 스케줄링)
+     *
+     * enabledDays JSON에 특정 요일이 포함되어 있고 활성화된 자동 실행을 조회합니다.
+     * 예: "MON"이 포함된 경우, ["MON","WED"] 또는 ["MON"] 등이 매칭됩니다.
+     *
+     * @param dayOfWeek 요일 코드 (예: "MON", "TUE", "WED", ...)
+     * @return 해당 요일에 활성화된 자동 실행 리스트 (Flow)
+     */
+    @Query("""
+        SELECT * FROM time_based_auto_run 
+        WHERE isEnabled = 1 
+        AND enabledDays LIKE '%' || :dayOfWeek || '%'
+        ORDER BY hour ASC, minute ASC
+    """)
+    fun getEnabledForDay(dayOfWeek: String): Flow<List<TimeBasedAutoRun>>
+
+    /**
      * 특정 시간대의 자동 실행 조회
      *
      * @param hour 시간 (0-23)

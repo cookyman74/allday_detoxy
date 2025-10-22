@@ -6,8 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Allday Detoxy** is a smartphone habit correction coach app for Android. It helps users overcome digital addiction by blocking distracting apps during focus timer sessions, using a gamification system with points and streaks.
 
-**Current Phase**: 1st Enhancement (v0.5) - Focus Mode Settings & Advanced Reporting
+**Current Phase**: 2nd Enhancement (v0.6/v0.8) - Automatic Timer Execution
 **Architecture**: Clean Architecture (domain, data, presentation) + MVVM + Jetpack Compose
+**Development Branch**: `feat/v0.8` (targeting `develop` branch for PRs)
 
 ## Build & Development Commands
 
@@ -55,11 +56,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 app/src/main/java/com/allday/detoxy/
 ├── domain/          # Business logic (no Android dependencies)
 │   ├── model/       # FocusTimer, FocusState
-│   ├── manager/     # GamificationManager (points/streak calculations)
+│   ├── manager/     # GamificationManager, Risk/Recovery calculators
 │   └── repository/  # Repository interfaces
 │
 ├── data/            # Data management
-│   ├── local/       # Room database (entities, DAOs)
+│   ├── local/       # Room database v4 (entities, DAOs)
 │   └── repository/  # Repository implementations
 │
 ├── presentation/    # UI layer
@@ -68,7 +69,8 @@ app/src/main/java/com/allday/detoxy/
 │
 ├── service/         # Android system services
 │   ├── accessibility/  # App blocking via AccessibilityService
-│   └── overlay/        # Full-screen lock overlay
+│   ├── overlay/        # Full-screen lock overlay
+│   └── timer/          # FocusTimerService for background execution
 │
 └── core/            # Shared utilities
     ├── di/          # Hilt dependency injection
@@ -78,21 +80,23 @@ app/src/main/java/com/allday/detoxy/
 
 ### Critical Service Integration
 
-The app coordinates **four core services** that must stay synchronized:
+The app coordinates **five core services** that must stay synchronized:
 
 1. **FocusTimer** (domain/model): Coroutine-based countdown timer with StateFlow
 2. **FocusAccessibilityService**: Detects and blocks distracting apps (40+ apps in 5 categories)
 3. **LockOverlayService**: Shows full-screen overlay when blocked app is accessed
 4. **DndManager**: Controls Do Not Disturb mode during focus sessions
+5. **FocusTimerService**: Background service for timer lifecycle management (v0.6+)
 
 **Timer Lifecycle Coordination**:
 ```kotlin
 // Start sequence (TimerViewModel.startTimer)
 1. Create FocusSession in database
-2. FocusAccessibilityService.isTimerRunning = true
-3. LockOverlayService.showOverlay(context, seconds)
-4. dndManager.enableDnd()
-5. focusTimer.start(duration)
+2. Start FocusTimerService (foreground service)
+3. FocusAccessibilityService.isTimerRunning = true
+4. LockOverlayService.showOverlay(context, seconds)
+5. dndManager.enableDnd()
+6. focusTimer.start(duration)
 
 // Cleanup sequence (giveUp/reset/onFinish)
 1. FocusAccessibilityService.isTimerRunning = false
@@ -101,9 +105,10 @@ The app coordinates **four core services** that must stay synchronized:
 4. focusTimer.stop()
 5. Update FocusSession with results
 6. Calculate points/streak if successful
+7. Stop FocusTimerService
 ```
 
-### App Blocking System (v0.5 Enhancement)
+### App Blocking System
 
 **Dynamic Category-Based Blocking**:
 - 5 categories: SNS, MESSENGER, WEB, VIDEO_SHORTS, OTHER
@@ -118,7 +123,7 @@ The app coordinates **four core services** that must stay synchronized:
 - `DetoxyControlSettingsScreen`: Settings UI with presets & category toggles
 - `FocusSettingsViewModel`: State management with DataStore persistence
 
-### Database Schema (Room v3)
+### Database Schema (Room v4)
 
 **Core Entities**:
 - `FocusSession`: Timer sessions with success/failure tracking
@@ -127,78 +132,78 @@ The app coordinates **four core services** that must stay synchronized:
 - `FocusDistraction`: All app access events (v3+)
 - `FocusSettings`: Category blocking preferences (v3+)
 - `DetoxyRoutineLog`: Scheduled routine execution logs (v3+)
+- `TimeBasedAutoRun`: Time-based auto execution settings (v4+)
+- `LocationBasedAutoRun`: Location-based auto execution settings (v4+)
+- `AutoRunLog`: Auto execution history (v4+)
+- `CustomTimerPreset`: User's custom timer presets (v4+)
 
-**Migration Strategy**: v1→v2→v3 (see `docs/01_advanced_room_migration_strategy.md`)
+**Migration Strategy**: v1→v2→v3→v4 (see `data/local/migrations/`)
 
 ### Permission Management
 
-The app requires three critical permissions that users must manually grant:
+The app requires critical permissions that users must manually grant:
 
+**Required Permissions**:
 1. **Accessibility Service**: Settings → Accessibility → Allday Detoxy
 2. **Display over other apps**: Settings → Apps → Special access
 3. **Do Not Disturb**: Settings → Notifications → DND access
 
+**Optional Permissions (v0.6+)**:
+4. **Exact Alarm**: Android 12+ for time-based auto execution
+5. **Location (Background)**: For location-based auto execution
+6. **Battery Optimization Exemption**: For reliable background execution
+
 **Permission Utils**: `core/utils/PermissionUtils.kt` provides unified checking/navigation
 
-## Current Development Focus (Week 1 of v0.5)
+## Current Development Focus (v0.6/v0.8)
 
-### Completed (2025-10-15)
-- ✅ Task 2.1: Data & Domain layer (AppCategory, AppCategoryMapper, MonitoringPolicy)
-- ✅ Task 2.2: UI/UX implementation (DetoxyControlSettingsScreen, FocusSettingsViewModel)
-- ✅ Dynamic blocking in FocusAccessibilityService (40+ apps)
-- ✅ DndManager permission state enhancements
-- ✅ DataStore preferences integration
+### Active Development Areas
+- Time-based automatic timer execution (AlarmManager)
+- Location-based automatic execution (Geofencing)
+- Custom timer UI with drag gestures
+- Auto-run dashboard and statistics
+- Room database migration v3→v4
 
-### In Progress (Week 1 Remaining)
-- [ ] Task 2.3: State persistence & service synchronization
-- [ ] FocusAccessibilityService real-time sync with settings
-- [ ] Timer start settings application logic
-- [ ] Immediate settings reflection mechanism
+### Key Technical Decisions
 
-### Upcoming (Week 2)
-- [ ] Room migrations v1→v2→v3
-- [ ] Advanced reporting metrics (risk index, recovery rate)
-- [ ] Weekly insights graphs with Compose Canvas
-
-## Key Technical Decisions
-
-### State Management
+#### State Management
 - **StateFlow** for reactive UI updates (not LiveData)
 - **Single source of truth** in domain layer
 - **Unidirectional data flow** in ViewModels
 
-### Dependency Injection
+#### Dependency Injection
 - **Hilt** for all DI needs (@HiltAndroidApp, @HiltViewModel)
 - **@Binds** for interface-implementation binding
 - **@Singleton** scope for database and repositories
 
-### Service Communication
-- **Static flags** for MVP (e.g., `FocusAccessibilityService.isTimerRunning`)
+#### Service Communication
+- **FocusTimerService** manages timer lifecycle
 - **Intent-based** actions for overlay service
-- **DataStore** for settings persistence (v0.5)
-- **TODO**: Migrate to StateFlow for proper reactive updates
+- **DataStore** for settings persistence
+- **Static flags** for MVP (migrating to StateFlow)
 
-### Analytics & Privacy
-- **Package names**: Local DB only (privacy protection)
-- **Analytics**: Category-level data only
-- **Event batching**: Immediate for interruptions, batched for allowed apps
+#### Analytics & Privacy
+- **Firebase Analytics**: Category-level events only
+- **Firebase Crashlytics**: Crash reporting
+- **Package names**: Never sent to analytics (privacy)
+- **Event batching**: Immediate for interruptions, batched for distractions
 
 ## Testing Strategy
 
 ### Unit Tests
 - ViewModels: State transitions, timer logic
 - Repositories: CRUD operations, data mapping
-- Domain managers: Points/streak calculations
+- Domain managers: Points/streak/risk calculations
 
 ### Integration Tests
-- Room migrations: v1→v2→v3 data preservation
+- Room migrations: v1→v2→v3→v4 data preservation
 - Service coordination: Timer lifecycle flow
-- Analytics events: Parameter mapping
+- Permission flows: Grant/deny scenarios
 
 ### UI Tests
 - Compose screens: User interactions
-- Permission dialogs: Grant/deny flows
-- Timer states: Visual feedback
+- Custom timer gestures: Drag/tap behavior
+- Auto-run dashboard: State updates
 
 ## Performance Targets
 
@@ -207,26 +212,27 @@ The app requires three critical permissions that users must manually grant:
 - **Timer update frequency**: 1Hz (every second)
 - **APK size**: < 15MB
 - **Memory usage**: < 100MB runtime
+- **Battery impact**: < 2% per hour during timer
 
 ## Documentation Structure
 
 ```
 docs/
-├── 01_advanced_prd.md              # Product requirements v0.5
-├── 01_advanced_setting_report_todolist.md  # 3-week task breakdown
-├── 01_advanced_wireframe_spec.md   # UI specifications
-├── 01_advanced_app_category_mapping.md  # 40-app categorization
-├── 01_advanced_room_migration_strategy.md  # Database migrations
-├── 01_advanced_analytics_schema.md  # Event tracking specs
-└── 01_advanced_qa_devices.md       # Test scenarios
+├── 02_advanced_autosetting_prd.md          # Current PRD (v0.6)
+├── 02_advanced_autosetting_todolist.md     # 6-week task breakdown
+├── 01_advanced_*.md                        # v0.5 documentation (completed)
+└── 00_*.md                                 # MVP documentation
 
 working_history/
-└── YYYY-MM-DD_task.md  # Daily implementation logs with commit IDs
+└── YYYY-MM-DD_2nd_advanced_X.X.md         # Implementation logs with commit IDs
+
+AGENTS.md                                    # Repository guidelines and conventions
 ```
 
 ## Git Workflow
 
-- **Branch**: `feat/v0.5` (current enhancement)
+- **Current Branch**: `feat/v0.8` (2nd enhancement)
+- **Target Branch**: `develop` (for PRs)
 - **Commit format**: Korean messages with task references
 - **Co-author**: Add Claude Code attribution when applicable
 - **Work logs**: Create `working_history/` entry for each task completion
@@ -234,35 +240,38 @@ working_history/
 ## Common Development Tasks
 
 ### Working on Enhancement Tasks
-1. Review task requirements in `docs/01_advanced_setting_report_todolist.md`
-2. Check previous work in `working_history/` folder
-3. Update todolist with completion marks after implementation
-4. Create working history document with format: `YYYY-MM-DD_1st_advanced_X.X.md`
-5. Commit with Korean message and record commit ID
+1. Review current task in `docs/02_advanced_autosetting_todolist.md`
+2. Check git status and recent commits for context
+3. Implement the task following Clean Architecture principles
+4. Update todolist with completion marks (✅)
+5. Create working history: `YYYY-MM-DD_2nd_advanced_X.X.md`
+6. Commit with Korean message and record commit ID
 
 ### Adding a New Blocked App
 1. Add package name to `AppCategoryMapper.categoryMap`
-2. Verify with `./gradlew compileDebugKotlin`
-3. Test with real device (Accessibility Service required)
+2. Assign appropriate category (SNS, MESSENGER, etc.)
+3. Verify with `./gradlew compileDebugKotlin`
+4. Test with real device (Accessibility Service required)
 
 ### Modifying Room Schema
 1. Increment database version in `DetoxyDatabase`
-2. Write migration in `DatabaseModule`
-3. Test with `./gradlew connectedAndroidTest`
-4. Document in migration strategy
+2. Create migration in `data/local/migrations/Migration_X_Y.kt`
+3. Update `DatabaseModule` to include migration
+4. Test with `./gradlew connectedAndroidTest`
+5. Document migration strategy
 
 ### Adding Analytics Event
 1. Define event in `MonitoringPolicy`
 2. Create parameter data class with `toAnalyticsParams()`
-3. Log event in appropriate service/viewmodel
+3. Log event via `AnalyticsHelper` in appropriate service/viewmodel
 4. Verify in Firebase console debug view
 
 ### Creating New Compose Screen
-1. Create screen composable in `presentation/ui/`
+1. Create screen composable in `presentation/ui/feature/`
 2. Add preview with `@Preview` annotation
 3. Create ViewModel with `@HiltViewModel`
 4. Add navigation in `MainActivity`
-5. Test on multiple screen sizes
+5. Test on multiple screen sizes (phone/tablet)
 
 ## Debugging Tips
 
@@ -270,16 +279,25 @@ working_history/
 - Check permission in Settings → Accessibility
 - Verify `accessibility_service_config.xml` configuration
 - Monitor logcat: `adb logcat | grep FocusAccessibilityService`
+- Ensure service is bound and `isTimerRunning` flag is set
 
 ### Overlay Not Showing
 - Verify "Display over other apps" permission
-- Check foreground service notification
-- Ensure MainActivity is in foreground when starting
+- Check foreground service notification exists
+- Ensure `TYPE_APPLICATION_OVERLAY` is used
+- Confirm MainActivity context is available
 
 ### Timer Sync Issues
-- Check all 4 components are coordinated (Timer, Accessibility, Overlay, DND)
+- Check all 5 components are coordinated (Timer, TimerService, Accessibility, Overlay, DND)
 - Verify cleanup on all exit paths (complete, giveUp, reset)
 - Monitor StateFlow emissions in ViewModel
+- Check FocusTimerService lifecycle (onCreate, onStartCommand, onDestroy)
+
+### Database Migration Failures
+- Test migrations with `MigrationTestHelper`
+- Verify column types match between versions
+- Check for NOT NULL constraints on new columns
+- Use fallback to destructive migration for development only
 
 ## Tech Stack Reference
 
@@ -290,6 +308,7 @@ working_history/
 - **Coroutines**: 1.7.3
 - **DataStore**: 1.0.0
 - **Lifecycle**: 2.6.2
+- **Firebase BOM**: Latest
 - **Min SDK**: 26 (Android 8.0)
 - **Target SDK**: 34 (Android 14)
 - **Java**: 17

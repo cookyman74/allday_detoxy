@@ -69,4 +69,40 @@ interface UserSettingsDao {
      */
     @Query("UPDATE user_settings SET currentStreak = 0 WHERE id = 1")
     suspend fun resetStreak()
+
+    // ========== v4: autoRun 마스터 토글 ==========
+
+    /**
+     * 자동 실행 마스터 스위치 설정
+     *
+     * @param enabled true면 모든 자동 실행 활성화, false면 전체 비활성화
+     */
+    @Query("UPDATE user_settings SET autoRunMasterEnabled = :enabled WHERE id = 1")
+    suspend fun setAutoRunMasterEnabled(enabled: Boolean)
+
+    /**
+     * 자동 실행 마스터 스위치 조회
+     *
+     * @return 마스터 스위치 상태 (null이면 아직 설정되지 않음)
+     */
+    @Query("SELECT autoRunMasterEnabled FROM user_settings WHERE id = 1")
+    suspend fun getAutoRunMasterEnabled(): Boolean?
+
+    // ========== v4: autoRun 일시중지 ==========
+
+    /**
+     * 자동 실행 일시중지 시각 설정
+     *
+     * @param timestamp null이면 일시중지 해제, 값이 있으면 해당 시각까지 일시중지
+     */
+    @Query("UPDATE user_settings SET autoRunPauseUntil = :timestamp WHERE id = 1")
+    suspend fun setAutoRunPauseUntil(timestamp: Long?)
+
+    /**
+     * 자동 실행 일시중지 시각 조회
+     *
+     * @return 일시중지 해제 시각 (null이면 일시중지되지 않음)
+     */
+    @Query("SELECT autoRunPauseUntil FROM user_settings WHERE id = 1")
+    suspend fun getAutoRunPauseUntil(): Long?
 }

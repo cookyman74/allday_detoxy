@@ -159,6 +159,18 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         database.execSQL(
             "ALTER TABLE user_settings ADD COLUMN autoRunPauseUntil INTEGER"
         )
+
+        // 10. 기본 커스텀 타이머 프리셋 추가 (25/45/60분)
+        val now = System.currentTimeMillis()
+        database.execSQL(
+            """
+            INSERT OR IGNORE INTO custom_timer_preset (id, name, durationMinutes, presetType, usageCount, displayOrder, createdAt)
+            VALUES 
+              ('preset_default_25', '25분', 25, NULL, 0, 0, $now),
+              ('preset_default_45', '45분', 45, NULL, 0, 1, $now),
+              ('preset_default_60', '60분', 60, NULL, 0, 2, $now)
+            """.trimIndent()
+        )
     }
 }
 
