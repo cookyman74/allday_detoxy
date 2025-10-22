@@ -283,37 +283,42 @@
   - `RECEIVE_BOOT_COMPLETED` 권한 추가 (재부팅 시 알람 재등록)
 
 #### 2.2.2 WorkManager 백업 로직
-- [ ] **WorkManager 구현** (AlarmManager 실패 시 대체) → [PRD §4.1.3](./02_advanced_autosetting_prd.md#413-자동-시작-로직)
-  ```kotlin
-  class AutoRunWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
-      override fun doWork(): Result {
-          // 자동 실행 트리거
-          // AlarmManager 권한 없을 때 또는 설정 실패 시 사용
-      }
-  }
-  ```
+- [x] **WorkManager 구현** (AlarmManager 실패 시 대체) → [PRD §4.1.3](./02_advanced_autosetting_prd.md#413-자동-시작-로직) ✅
+  - **파일**: [AutoRunWorker.kt](../app/src/main/java/com/allday/detoxy/worker/AutoRunWorker.kt) (신규, ~110줄)
+  - @HiltWorker로 Hilt 의존성 주입 지원
+  - AlarmManager와 동일한 Intent를 BroadcastReceiver로 전달하여 로직 재사용
   - **참조**: [WorkManager 문서](https://developer.android.com/topic/libraries/architecture/workmanager)
 
-- [ ] OneTimeWorkRequest 스케줄링 (정확도: ±15분)
-- [ ] **전략 결정 로직**:
-  - Android 12+ && `canScheduleExactAlarms() == false` → WorkManager
-  - Android 11 이하 또는 권한 있음 → AlarmManager
-  - 설정 화면에 현재 사용 중인 스케줄러 표시
-- [ ] **정확도 안내 UI**:
-  - WorkManager 사용 시 경고 배너: "정확한 시간 실행을 위해 권한을 설정해주세요"
-  - 오차 범위 표시: "±15분 오차 발생 가능"
+- [x] OneTimeWorkRequest 스케줄링 (정확도: ±15분) ✅
+- [x] **전략 결정 로직**: ✅
+  - Android 12+ && `canScheduleExactAlarms() == false` → WorkManager fallback
+  - Android 11 이하 또는 권한 있음 → AlarmManager 사용
+  - AutoRunAlarmManager에서 자동 fallback 처리
+- [x] **WorkManager 통합**: ✅
+  - `scheduleWithWorkManager()` 메서드 구현
+  - `cancelTimeBasedAutoRun()`에서 WorkManager도 함께 취소
+  - DetoxyApplication에 HiltWorkerFactory 설정
+  - AlarmModule에 WorkManager 의존성 주입 추가
+  - AndroidManifest에 WorkManager 자동 초기화 비활성화 설정
 
 #### 2.2.3 정확 알람 권한 UI
-- [ ] **권한 요청 다이얼로그** → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-정확-알람-권한-관리-android-12)
-  - 설명 텍스트: "정확한 시간에 집중 모드를 시작하려면..."
-  - "설정으로 이동" 버튼
+- [x] **권한 유틸리티 구현** → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-정확-알람-권한-관리-android-12) ✅
+  - **파일**: [ExactAlarmPermissionUtil.kt](../app/src/main/java/com/allday/detoxy/core/utils/ExactAlarmPermissionUtil.kt) (신규, ~120줄)
+  - `canScheduleExactAlarms()`: 권한 체크
+  - `createSettingsIntent()`: 설정 화면 이동 Intent
+  - `getSchedulerType()`: 현재 스케줄러 타입 반환 ("정확 알람" / "근사 알람")
+  - 권한 설명 텍스트 및 경고 배너 문구 제공
+- [ ] **권한 요청 다이얼로그** (Week 2 UI 작업에서 구현 예정)
+  - ExactAlarmPermissionUtil.PERMISSION_EXPLANATION 사용
+  - "설정으로 이동" 버튼 → ExactAlarmPermissionUtil.createSettingsIntent()
   - "나중에" 버튼 (WorkManager fallback)
-- [ ] **권한 상태 카드** (TimeBasedAutoRunScreen)
+- [ ] **권한 상태 카드** (TimeBasedAutoRunScreen, Week 2 작업)
   - 권한 없을 때 경고 카드 표시
+  - ExactAlarmPermissionUtil.PERMISSION_WARNING_SHORT 사용
   - "권한 설정하기" 버튼
-  - 현재 스케줄러 표시 (정확 알람 / 근사 알람)
+  - 현재 스케줄러 표시 (ExactAlarmPermissionUtil.getSchedulerType())
 
-**작업 기록**: `working_history/2025-10-21_2nd_advanced_2.2.md`
+**작업 기록**: `working_history/2025-10-22_2nd_advanced_2.2.md`
 
 ### 2.3 Geofencing 래퍼 클래스 (Day 7-8)
 

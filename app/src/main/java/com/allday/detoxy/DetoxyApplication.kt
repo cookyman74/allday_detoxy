@@ -2,8 +2,11 @@ package com.allday.detoxy
 
 import android.app.Application
 import android.util.Log
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import com.allday.detoxy.core.utils.AnalyticsHelper
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 /**
  * Hilt 의존성 주입을 위한 Application 클래스
@@ -14,9 +17,15 @@ import dagger.hilt.android.HiltAndroidApp
  * Firebase 서비스 초기화:
  * - Crashlytics: google-services 플러그인에 의해 자동 초기화
  * - Analytics: AnalyticsHelper.initialize()로 명시적 초기화
+ *
+ * WorkManager 설정:
+ * - HiltWorkerFactory를 통한 의존성 주입 지원
  */
 @HiltAndroidApp
-class DetoxyApplication : Application() {
+class DetoxyApplication : Application(), Configuration.Provider {
+    
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
     
     companion object {
         private const val TAG = "DetoxyApplication"
@@ -34,6 +43,17 @@ class DetoxyApplication : Application() {
         // FirebaseCrashlytics.getInstance().setCustomKey("key", "value")
         // FirebaseCrashlytics.getInstance().log("App started")
         
-        // TODO: Timber 로그 초기화 (추후 추가)
+        // WorkManager는 getWorkManagerConfiguration()으로 초기화됨
+        Log.i(TAG, "✅ WorkManager with HiltWorkerFactory configured")
     }
+    
+    /**
+     * WorkManager Configuration 제공
+     *
+     * Hilt를 통한 Worker 의존성 주입을 위해 HiltWorkerFactory 사용
+     */
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 }

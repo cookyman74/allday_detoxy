@@ -70,6 +70,7 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
     kapt(libs.hilt.compiler)
 
     // Room
@@ -79,6 +80,9 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Lifecycle ViewModel Compose
     implementation(libs.androidx.lifecycle.viewmodel.compose)

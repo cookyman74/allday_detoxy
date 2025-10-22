@@ -6,13 +6,18 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.receiver.AutoRunAlarmReceiver
+import com.allday.detoxy.worker.AutoRunWorker
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.Calendar
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -21,20 +26,24 @@ import javax.inject.Singleton
  *
  * 시간 기반 자동 실행을 위한 알람 스케줄링을 관리합니다.
  * Android 12+ 정확 알람 권한 체크 및 PendingIntent 관리를 포함합니다.
+ * 권한 없을 시 WorkManager로 자동 Fallback 처리합니다.
  *
  * ## 주요 기능
- * - **정확 알람 스케줄링**: setExactAndAllowWhileIdle() 사용
+ * - **정확 알람 스케줄링**: setExactAndAllowWhileIdle() 사용 (±2분)
+ * - **WorkManager Fallback**: 권한 없을 시 자동 전환 (±15분)
  * - **권한 체크**: Android 12+ SCHEDULE_EXACT_ALARM 권한 확인
  * - **Doze 모드 대응**: AllowWhileIdle 플래그로 절전 모드에서도 실행
  * - **요일별 스케줄링**: 다음 발생 시각 계산
  *
  * @param context Application Context
  * @param alarmManager AlarmManager 시스템 서비스
+ * @param workManager WorkManager 인스턴스
  */
 @Singleton
 class AutoRunAlarmManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val alarmManager: AlarmManager
+    private val alarmManager: AlarmManager,
+    private val workManager: WorkManager
 ) {
 
     companion object {
@@ -89,9 +98,10 @@ class AutoRunAlarmManager @Inject constructor(
      * - 활성화된 요일만 고려
      * - Doze 모드에서도 동작 (setExactAndAllowWhileIdle)
      * - PendingIntent.FLAG_IMMUTABLE 사용 (Android 12+ 필수)
+     * - AlarmManager 실패 시 WorkManager로 자동 Fallback
      *
      * @param autoRun 스케줄링할 시간 기반 자동 실행 설정
-     * @return true: 성공, false: 실패 (권한 없음 등)
+     * @return true: 성공, false: 실패
      */
     fun scheduleTimeBasedAutoRun(autoRun: TimeBasedAutoRun): Boolean {
         if (!autoRun.isEnabled) {
@@ -106,10 +116,27 @@ class AutoRunAlarmManager @Inject constructor(
             return false
         }
 
+        // AlarmManager로 스케줄링 시도
+        val alarmSuccess = tryScheduleWithAlarmManager(autoRun, nextTriggerTime)
+        
+        if (!alarmSuccess) {
+            // AlarmManager 실패 시 WorkManager로 Fallback
+            Log.w(TAG, "⚠️ AlarmManager failed, falling back to WorkManager for ${autoRun.id}")
+            return scheduleWithWorkManager(autoRun, nextTriggerTime)
+        }
+        
+        return true
+    }
+    
+    /**
+     * AlarmManager로 알람 스케줄링 시도
+     *
+     * @return true: 성공, false: 실패 (WorkManager fallback 필요)
+     */
+    private fun tryScheduleWithAlarmManager(autoRun: TimeBasedAutoRun, nextTriggerTime: Long): Boolean {
         // PendingIntent 생성
         val pendingIntent = createPendingIntent(autoRun)
         
-        // 알람 스케줄링
         return try {
             if (canScheduleExactAlarms()) {
                 // 정확 알람 사용 (±2분 정확도)
@@ -119,16 +146,12 @@ class AutoRunAlarmManager @Inject constructor(
                     pendingIntent
                 )
                 Log.i(TAG, "✅ Exact alarm scheduled for ${autoRun.label ?: autoRun.id} at ${formatTime(nextTriggerTime)}")
+                true
             } else {
-                // 정확 알람 권한 없음 → 일반 알람 (±15분 정확도)
-                alarmManager.setAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    nextTriggerTime,
-                    pendingIntent
-                )
-                Log.w(TAG, "⚠️ Inexact alarm scheduled (no permission) for ${autoRun.label ?: autoRun.id} at ${formatTime(nextTriggerTime)}")
+                // 정확 알람 권한 없음 → WorkManager로 fallback
+                Log.w(TAG, "⚠️ No exact alarm permission, will use WorkManager fallback")
+                false
             }
-            true
         } catch (e: SecurityException) {
             Log.e(TAG, "❌ SecurityException while scheduling alarm: ${e.message}")
             false
@@ -137,17 +160,81 @@ class AutoRunAlarmManager @Inject constructor(
             false
         }
     }
+    
+    /**
+     * WorkManager로 알람 스케줄링 (Fallback)
+     *
+     * AlarmManager 실패 시 대체 수단으로 사용됩니다.
+     * 정확도: ±15분 (AlarmManager의 ±2분 대비 떨어짐)
+     *
+     * @param autoRun 스케줄링할 자동 실행 설정
+     * @param nextTriggerTime 다음 트리거 시각 (epoch millis)
+     * @return true: 성공, false: 실패
+     */
+    private fun scheduleWithWorkManager(autoRun: TimeBasedAutoRun, nextTriggerTime: Long): Boolean {
+        return try {
+            // 현재 시각부터 트리거 시각까지의 지연 시간 계산
+            val now = System.currentTimeMillis()
+            val delayMillis = (nextTriggerTime - now).coerceAtLeast(0)
+            
+            // WorkRequest Input Data 구성
+            val inputData = Data.Builder()
+                .putString(AutoRunWorker.KEY_AUTO_RUN_ID, autoRun.id)
+                .putInt(AutoRunWorker.KEY_DURATION_MINUTES, autoRun.durationMinutes)
+                .putString(AutoRunWorker.KEY_PRESET_TYPE, autoRun.presetType)
+                .putString(AutoRunWorker.KEY_LABEL, autoRun.label)
+                .build()
+            
+            // OneTimeWorkRequest 생성
+            val workRequest = OneTimeWorkRequestBuilder<AutoRunWorker>()
+                .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
+                .setInputData(inputData)
+                .build()
+            
+            // WorkManager에 enqueue (고유 이름으로 중복 방지)
+            val workName = "${AutoRunWorker.WORK_NAME_PREFIX}${autoRun.id}"
+            workManager.enqueueUniqueWork(
+                workName,
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                workRequest
+            )
+            
+            Log.i(TAG, "✅ WorkManager scheduled for ${autoRun.label ?: autoRun.id} at ${formatTime(nextTriggerTime)} (±15분 오차)")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to schedule with WorkManager: ${e.message}", e)
+            false
+        }
+    }
 
     /**
      * 시간 기반 자동 실행 알람 취소
      *
+     * AlarmManager와 WorkManager 모두에서 취소 시도합니다.
+     *
      * @param autoRunId 취소할 자동 실행 ID
      */
     fun cancelTimeBasedAutoRun(autoRunId: String) {
-        val pendingIntent = createPendingIntentById(autoRunId)
-        alarmManager.cancel(pendingIntent)
-        pendingIntent.cancel()
-        Log.i(TAG, "🗑️ Alarm canceled for autoRunId: $autoRunId")
+        // AlarmManager 취소
+        try {
+            val pendingIntent = createPendingIntentById(autoRunId)
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
+            Log.d(TAG, "🗑️ AlarmManager canceled for autoRunId: $autoRunId")
+        } catch (e: Exception) {
+            Log.w(TAG, "⚠️ Failed to cancel AlarmManager: ${e.message}")
+        }
+        
+        // WorkManager 취소 (혹시 WorkManager로 스케줄링되어 있을 수 있으므로)
+        try {
+            val workName = "${AutoRunWorker.WORK_NAME_PREFIX}$autoRunId"
+            workManager.cancelUniqueWork(workName)
+            Log.d(TAG, "🗑️ WorkManager canceled for autoRunId: $autoRunId")
+        } catch (e: Exception) {
+            Log.w(TAG, "⚠️ Failed to cancel WorkManager: ${e.message}")
+        }
+        
+        Log.i(TAG, "✅ AutoRun canceled: $autoRunId")
     }
 
     /**
