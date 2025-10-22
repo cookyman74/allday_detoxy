@@ -131,6 +131,9 @@ class AutoRunAlarmManager @Inject constructor(
     /**
      * AlarmManager로 알람 스케줄링 시도
      *
+     * 성공 시 이전에 스케줄링된 WorkManager 작업이 있다면 취소합니다.
+     * (권한 복구 시 중복 트리거 방지)
+     *
      * @return true: 성공, false: 실패 (WorkManager fallback 필요)
      */
     private fun tryScheduleWithAlarmManager(autoRun: TimeBasedAutoRun, nextTriggerTime: Long): Boolean {
@@ -145,6 +148,18 @@ class AutoRunAlarmManager @Inject constructor(
                     nextTriggerTime,
                     pendingIntent
                 )
+                
+                // 중요: 이전에 WorkManager로 스케줄링된 작업이 있다면 취소
+                // (권한 없을 때 WorkManager로 스케줄링 → 권한 복구 시 AlarmManager로 전환)
+                // 취소하지 않으면 AlarmManager + WorkManager 둘 다 트리거되어 중복 실행됨
+                try {
+                    val workName = "${AutoRunWorker.WORK_NAME_PREFIX}${autoRun.id}"
+                    workManager.cancelUniqueWork(workName)
+                    Log.d(TAG, "🗑️ Cancelled previous WorkManager task (if any) for ${autoRun.id}")
+                } catch (e: Exception) {
+                    Log.w(TAG, "⚠️ Failed to cancel WorkManager task: ${e.message}")
+                }
+                
                 Log.i(TAG, "✅ Exact alarm scheduled for ${autoRun.label ?: autoRun.id} at ${formatTime(nextTriggerTime)}")
                 true
             } else {
