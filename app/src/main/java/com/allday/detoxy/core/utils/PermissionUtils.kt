@@ -1,6 +1,7 @@
 package com.allday.detoxy.core.utils
 
 import android.Manifest
+import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
@@ -9,6 +10,7 @@ import android.os.Build
 import android.provider.Settings
 import android.text.TextUtils
 import android.util.Log
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 /**
@@ -286,6 +288,57 @@ object PermissionUtils {
             context.startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to open app location settings", e)
+        }
+    }
+    
+    /**
+     * 정확한 위치 권한 설명(Rationale)을 보여줘야 하는지 확인
+     *
+     * 사용자가 이전에 권한을 거부한 경우, 권한 요청 전에 추가 설명을 보여줘야 하는지 판단합니다.
+     * 이 메서드가 true를 반환하면 권한 요청 다이얼로그를 띄우기 전에 사용자에게 
+     * 왜 이 권한이 필요한지 설명해야 합니다.
+     *
+     * @param activity Activity 컨텍스트 (Fragment인 경우 requireActivity() 사용)
+     * @return true: 설명을 보여줘야 함, false: 바로 권한 요청 가능
+     */
+    fun shouldShowLocationRationale(activity: Activity): Boolean {
+        return ActivityCompat.shouldShowRequestPermissionRationale(
+            activity,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )
+    }
+    
+    /**
+     * 대략적 위치 권한 설명(Rationale)을 보여줘야 하는지 확인
+     *
+     * @param activity Activity 컨텍스트
+     * @return true: 설명을 보여줘야 함, false: 바로 권한 요청 가능
+     */
+    fun shouldShowCoarseLocationRationale(activity: Activity): Boolean {
+        return ActivityCompat.shouldShowRequestPermissionRationale(
+            activity,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+    }
+    
+    /**
+     * 백그라운드 위치 권한 설명(Rationale)을 보여줘야 하는지 확인
+     *
+     * Android 10 (API 29) 이상에서만 의미가 있습니다.
+     * Android 10 미만에서는 항상 false를 반환합니다.
+     *
+     * @param activity Activity 컨텍스트
+     * @return true: 설명을 보여줘야 함, false: 바로 권한 요청 가능 또는 Android 10 미만
+     */
+    fun shouldShowBackgroundLocationRationale(activity: Activity): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                activity,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )
+        } else {
+            // Android 10 미만에서는 백그라운드 위치 권한이 별도로 없음
+            false
         }
     }
 }
