@@ -202,8 +202,19 @@
           // CustomTimerPreset 테이블 생성
           // AutoRunLog 테이블 생성
           
-          // UserSettings 필드 추가
-          database.execSQL("ALTER TABLE user_settings ADD COLUMN autoRunWeekendExcluded INTEGER NOT NULL DEFAULT 0")
+          // UserSettings 필드 추가 (자동 실행 제어)
+          database.execSQL("ALTER TABLE user_settings ADD COLUMN autoRunMasterEnabled INTEGER NOT NULL DEFAULT 1")
+          database.execSQL("ALTER TABLE user_settings ADD COLUMN autoRunPauseUntil INTEGER")
+          
+          // 기본 커스텀 타이머 프리셋 삽입 (25/45/60분)
+          val now = System.currentTimeMillis()
+          database.execSQL("""
+              INSERT OR IGNORE INTO custom_timer_preset (id, name, durationMinutes, presetType, usageCount, displayOrder, createdAt)
+              VALUES 
+                ('preset_default_25', '25분', 25, NULL, 0, 0, $now),
+                ('preset_default_45', '45분', 45, NULL, 0, 1, $now),
+                ('preset_default_60', '60분', 60, NULL, 0, 2, $now)
+          """)
       }
   }
   ```
@@ -214,9 +225,13 @@
 - [x] DatabaseModule에 MIGRATION_3_4 추가 → [DatabaseModule.kt](../app/src/main/java/com/allday/detoxy/core/di/DatabaseModule.kt)
 
 #### 2.1.4 마이그레이션 테스트
-- [ ] 단위 테스트 작성 (MigrationTest) → **[마이그레이션 테스트 전략](./02_advanced_room_migration_strategy.md#6-테스트-전략)** ✅
+- [x] 단위 테스트 작성 (MigrationTest_3_4) → **[마이그레이션 테스트 전략](./02_advanced_room_migration_strategy.md#6-테스트-전략)** ✅
+  - **파일**: [MigrationTest_3_4.kt](../app/src/androidTest/java/com/allday/detoxy/data/local/migrations/MigrationTest_3_4.kt) ✅ 신규 작성
+  - **테스트**: 4개 테이블 생성, 기본 프리셋 3개 삽입, UserSettings 필드 추가 검증
+  - **실행**: `./gradlew connectedAndroidTest --tests "*MigrationTest_3_4*"` ⚠️ 실제 단말 실행 필요
   - **참조**: [1차 고도화 마이그레이션 테스트](./01_advanced_room_migration_strategy.md#6-테스트-전략)
 - [x] 빌드 검증: `./gradlew compileDebugKotlin` ✅ SUCCESS
+- [x] 전체 빌드 검증: `./gradlew assembleDebug` ✅ SUCCESS (0 errors)
   - **참조**: [빌드 및 테스트 명령어](./00_mvp_allday_detoxy_todolist.md#빌드-및-테스트-명령어)
 
 **작업 기록**: `working_history/2025-10-22_2nd_advanced_2.1.md` ✅
