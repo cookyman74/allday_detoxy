@@ -387,15 +387,19 @@
   - assembleDebug: ✅ SUCCESS (1m 48s)
 
 #### 2.3.2 위치 권한 관리
-- [ ] **PermissionUtils 확장** → [PRD §4.2.3](./02_advanced_autosetting_prd.md#423-위치-권한-관리)
+- [x] **PermissionUtils 확장** → [PRD §4.2.3](./02_advanced_autosetting_prd.md#423-위치-권한-관리) ✅
   - `hasLocationPermission()`: ACCESS_FINE_LOCATION 확인
   - `hasBackgroundLocationPermission()`: Android 10+ 확인
-  - `openLocationSettings()`: 설정 화면 이동
-  - `shouldShowLocationRationale()`: 권한 거부 시 설명 표시 여부
+  - `hasFullLocationPermission()`: 전체 위치 권한 확인
+  - `getLocationPermissionStatus()`: 권한 상태 문자열 반환 (UI용)
+  - `isLocationServiceEnabled()`: 위치 서비스 활성화 여부 확인
+  - `openLocationSettings()`: 위치 설정 화면 이동
+  - `openAppLocationSettings()`: 앱 위치 권한 설정 화면 이동
+  - 위치 권한 설명 텍스트 (`LOCATION_PERMISSION_EXPLANATION`, `BACKGROUND_LOCATION_RATIONALE`)
   - **참조**: [기존 PermissionUtils](../app/src/main/java/com/allday/detoxy/core/utils/PermissionUtils.kt) - 접근성, DND 권한 패턴
   - **참조**: [권한 요청 작업 기록](../working_history/2025-10-05_1.2.md)
 
-- [ ] **위치 권한 요청 플로우** → [PRD §4.2.3](./02_advanced_autosetting_prd.md#423-위치-권한-관리)
+- [ ] **위치 권한 요청 플로우** (Week 3, Day 18) → [PRD §4.2.3](./02_advanced_autosetting_prd.md#423-위치-권한-관리)
   1. ACCESS_FINE_LOCATION 요청
   2. 승인 후 백그라운드 위치 필요성 설명
   3. ACCESS_BACKGROUND_LOCATION 요청
