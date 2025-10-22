@@ -415,21 +415,24 @@
 ### 3.1 시간대 설정 UI (Day 9-10)
 
 #### 3.1.1 TimeBasedAutoRunScreen 레이아웃
-- [ ] **정확 알람 권한 경고 배너** 🆕 → [Wireframe §2.1](./02_advanced_wireframe_spec.md#21-메인-화면-timebasedautorunscreen)
+- [x] **정확 알람 권한 경고 배너** 🆕 → [Wireframe §2.1](./02_advanced_wireframe_spec.md#21-메인-화면-timebasedautorunscreen) ✅
   - 정확 알람 권한 없을 때 화면 상단에 경고 배너 표시
   - "정확한 실행을 위해 권한을 허용하세요" 메시지
   - "권한 설정하기" 버튼
   - WorkManager fallback 사용 중임을 안내
+  - **구현**: [ExactAlarmPermissionWarningBanner.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/ExactAlarmPermissionWarningBanner.kt) (70줄)
 
-- [ ] **템플릿 선택 버튼** 🆕 → [PRD §4.3.0](./02_advanced_autosetting_prd.md#430-추천-프리셋-및-루틴-템플릿)
+- [x] **템플릿 선택 버튼** 🆕 → [PRD §4.3.0](./02_advanced_autosetting_prd.md#430-추천-프리셋-및-루틴-템플릿) ✅
   - 화면 상단에 "템플릿으로 시작하기" 버튼
   - Empty State일 때 눈에 띄게 표시
   - 클릭 시 `TemplateSelectionDialog` 표시
-  - 템플릿: 업무 집중, 공부 집중, 저녁 디톡시, 주말 집중
+  - 템플릿: 업무 집중, 공부 집중, 일일 루틴, 주말 집중
   - 선택 → 미리보기 → 적용하기 플로우
   - **최대 10개 제한 초과 시 안내 다이얼로그** 🔄 → [Wireframe §2.4](./02_advanced_wireframe_spec.md#24-templateselectiondialog-확장)
+  - **구현**: [EmptyStateComponents.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/EmptyStateComponents.kt) (88줄)
+  - **구현**: [TemplateSelectionDialog.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/TemplateSelectionDialog.kt) (149줄)
 
-- [ ] **메인 화면 Compose** → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면), **[Wireframe 스펙](./02_advanced_wireframe_spec.md)** ✅
+- [x] **메인 화면 Compose** → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면), **[Wireframe 스펙](./02_advanced_wireframe_spec.md)** ✅
   ```kotlin
   @Composable
   fun TimeBasedAutoRunScreen(
@@ -449,22 +452,25 @@
   ```
   - **참조**: [DetoxyControlSettingsScreen](../app/src/main/java/com/allday/detoxy/presentation/ui/settings/focus/DetoxyControlSettingsScreen.kt) - 설정 화면 레이아웃 패턴
   - **참조**: [1차 고도화 UI 작업](../working_history/2025-10-15_1st_advanced_2.2.md)
+  - **구현**: [TimeBasedAutoRunScreen.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/TimeBasedAutoRunScreen.kt) (139줄)
 
-- [ ] **배터리 영향 안내 카드** 🆕 → [PRD §6.3.1](./02_advanced_autosetting_prd.md#631-배터리데이터-사용-안내)
+- [x] **배터리 영향 안내 카드** 🆕 → [PRD §6.3.1](./02_advanced_autosetting_prd.md#631-배터리데이터-사용-안내) ✅
   - 화면 하단에 카드 표시
   - "시간 기반 자동 실행: 배터리 영향 최소 (< 1%/일)"
   - 접을 수 있는 카드 (expand/collapse)
   - 최적화 팁 표시 (확장 시)
+  - **구현**: [BatteryImpactInfoCard.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/BatteryImpactInfoCard.kt) (130줄)
 
-- [ ] **TimeBasedAutoRunCard** 컴포넌트 → **[Wireframe 컴포넌트 스펙](./02_advanced_wireframe_spec.md#22-시간대-카드-timebasedautoruncard)** ✅
+- [x] **TimeBasedAutoRunCard** 컴포넌트 → **[Wireframe 컴포넌트 스펙](./02_advanced_wireframe_spec.md#22-시간대-카드-timebasedautoruncard)** ✅
   - 시간 표시 (10:00 AM)
   - 타이머 시간 + 차단 프리셋
   - 요일 표시 (월, 화, 수, 목, 금)
   - 활성화 토글
   - 편집/삭제 아이콘 버튼
   - **참조**: [기존 카드 컴포넌트 패턴](../app/src/main/java/com/allday/detoxy/presentation/ui/report/components/)
+  - **구현**: [TimeBasedAutoRunCard.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/TimeBasedAutoRunCard.kt) (154줄)
 
-- [ ] **AddTimeBasedAutoRunDialog** 다이얼로그 → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면)
+- [x] **AddTimeBasedAutoRunDialog** 다이얼로그 → [PRD §4.1.1](./02_advanced_autosetting_prd.md#411-자동-실행-시간-설정-화면) ✅
   - TimePicker (24시간 형식)
   - 타이머 시간 선택 (프리셋 또는 입력)
   - 차단 프리셋 선택 (완전 차단/표준/완화)
@@ -472,9 +478,12 @@
   - 라벨 입력 (TextField, 선택)
   - "저장" 버튼
   - **참조**: [MessengerCategoryDialog](../app/src/main/java/com/allday/detoxy/presentation/ui/settings/focus/MessengerCategoryDialog.kt) - 다이얼로그 패턴
+  - **구현**: [AddTimeBasedAutoRunDialog.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/AddTimeBasedAutoRunDialog.kt) (385줄)
+
+**작업 기록**: `working_history/2025-10-23_2nd_advanced_3.1.md`
 
 #### 3.1.2 TimeBasedAutoRunViewModel
-- [ ] **StateFlow 정의** → [PRD §4.1](./02_advanced_autosetting_prd.md#41-시간-기반-자동-실행)
+- [x] **StateFlow 정의** → [PRD §4.1](./02_advanced_autosetting_prd.md#41-시간-기반-자동-실행) ✅
   ```kotlin
   @HiltViewModel
   class TimeBasedAutoRunViewModel @Inject constructor(
@@ -492,8 +501,9 @@
   ```
   - **참조**: [ReportViewModel 패턴](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/ReportViewModel.kt) - ViewModel 구조
   - **참조**: [TimerViewModel](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt) - StateFlow 관리 패턴
+  - **구현**: [TimeBasedAutoRunViewModel.kt](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimeBasedAutoRunViewModel.kt) (158줄)
 
-- [ ] **Repository 구현**
+- [x] **Repository 구현** ✅
   ```kotlin
   class TimeBasedAutoRunRepository @Inject constructor(
       private val dao: TimeBasedAutoRunDao
@@ -505,6 +515,7 @@
   }
   ```
   - **참조**: [FocusRepository 패턴](../app/src/main/java/com/allday/detoxy/data/repository/FocusRepository.kt)
+  - **구현**: [TimeBasedAutoRunRepository.kt](../app/src/main/java/com/allday/detoxy/data/repository/TimeBasedAutoRunRepository.kt) (48줄)
 
 #### 3.1.3 글로벌 옵션 UI
 - [ ] **GlobalOptionsSection** 컴포넌트 → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-글로벌-옵션)
@@ -514,12 +525,12 @@
   - DataStore에 저장
   - **참조**: [FocusSettingsRepository](../app/src/main/java/com/allday/detoxy/data/repository/FocusSettingsRepository.kt) - DataStore 패턴
 
-**작업 기록**: `working_history/2025-10-22_2nd_advanced_3.1.md`
+**작업 기록**: `working_history/2025-10-23_2nd_advanced_3.1.md`
 
 ### 3.2 AlarmManager 연동 및 트리거 (Day 11)
 
 #### 3.2.1 알람 스케줄링
-- [ ] ViewModel에서 AlarmManager 호출
+- [x] ViewModel에서 AlarmManager 호출 ✅
   ```kotlin
   fun addAutoRun(autoRun: TimeBasedAutoRun) {
       viewModelScope.launch {
@@ -530,6 +541,7 @@
       }
   }
   ```
+  - **구현**: [TimeBasedAutoRunViewModel.kt](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimeBasedAutoRunViewModel.kt)의 `addAutoRun()`, `updateAutoRun()`, `deleteAutoRun()`, `toggleAutoRun()` 메서드에서 AlarmManager 자동 호출
 
 - [ ] 앱 재시작 시 알람 재등록
   ```kotlin
