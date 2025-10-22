@@ -17,7 +17,6 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.GeofencingRequest
-import com.google.android.gms.location.LocationServices
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -173,13 +172,20 @@ class AutoRunGeofenceManager @Inject constructor(
                 )
             }
             
-            // 현재 등록된 Geofence 수 체크
+            // 현재 등록된 Geofence 수 체크 (재등록 시 자기 자신 제외)
+            val isAlreadyEnabled = locationBasedAutoRunDao.isEnabled(autoRun.id) == true
             val currentCount = locationBasedAutoRunDao.getEnabledCount()
-            if (currentCount >= MAX_GEOFENCES) {
-                Log.w(TAG, "⚠️ Max geofences limit reached: $currentCount/$MAX_GEOFENCES")
+            
+            // 재등록(이미 활성화된 경우)이 아니고, 신규 등록인데 최대 개수 도달한 경우에만 제한
+            if (!isAlreadyEnabled && currentCount >= MAX_GEOFENCES) {
+                Log.w(TAG, "⚠️ Max geofences limit reached: $currentCount/$MAX_GEOFENCES (ID: ${autoRun.id} is new)")
                 return Result.failure(
                     GeofenceException("최대 ${MAX_GEOFENCES}개까지만 등록할 수 있습니다. 기존 위치를 삭제한 후 다시 시도해주세요.")
                 )
+            }
+            
+            if (isAlreadyEnabled) {
+                Log.d(TAG, "🔄 Re-registering existing geofence (ID: ${autoRun.id})")
             }
             
             // Geofence 생성
@@ -190,7 +196,9 @@ class AutoRunGeofenceManager @Inject constructor(
             // Geofence 등록
             geofencingClient.addGeofences(geofencingRequest, pendingIntent).await()
             
-            Log.i(TAG, "✅ Geofence added successfully for ${autoRun.label} (ID: ${autoRun.id}, Count: ${currentCount + 1}/$MAX_GEOFENCES)")
+            // 등록 후 실제 카운트 (재등록이면 변화 없음, 신규면 +1)
+            val finalCount = if (isAlreadyEnabled) currentCount else currentCount + 1
+            Log.i(TAG, "✅ Geofence added successfully for ${autoRun.label} (ID: ${autoRun.id}, Count: $finalCount/$MAX_GEOFENCES)")
             Result.success(Unit)
             
         } catch (e: SecurityException) {

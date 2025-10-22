@@ -110,5 +110,16 @@ interface LocationBasedAutoRunDao {
      */
     @Query("SELECT id FROM location_based_auto_run WHERE isEnabled = 1")
     suspend fun getAllEnabledIds(): List<String>
+    
+    /**
+     * 특정 ID의 활성화 여부 확인
+     *
+     * 재등록 시 MAX_GEOFENCES 체크에서 자신을 제외하기 위해 사용
+     *
+     * @param id 확인할 자동 실행 ID
+     * @return true: 활성화됨, false: 비활성화 또는 존재하지 않음
+     */
+    @Query("SELECT isEnabled FROM location_based_auto_run WHERE id = :id")
+    suspend fun isEnabled(id: String): Boolean?
 }
 
