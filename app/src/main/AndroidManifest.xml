@@ -90,6 +90,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- NotificationActionReceiver for auto-run notification actions -->
+        <receiver
+            android:name=".receiver.NotificationActionReceiver"
+            android:exported="false"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="com.allday.detoxy.ACTION_AUTO_RUN_START" />
+                <action android:name="com.allday.detoxy.ACTION_AUTO_RUN_SNOOZE" />
+                <action android:name="com.allday.detoxy.ACTION_AUTO_RUN_SKIP" />
+            </intent-filter>
+        </receiver>
+
         <!-- BootCompletedReceiver for rescheduling alarms after device reboot -->
         <receiver
             android:name=".receiver.BootCompletedReceiver"

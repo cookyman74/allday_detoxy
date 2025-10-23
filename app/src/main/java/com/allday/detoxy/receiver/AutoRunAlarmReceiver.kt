@@ -4,14 +4,25 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.work.Data
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
+import com.allday.detoxy.core.manager.AutoRunNotificationManager
+import com.allday.detoxy.data.local.dao.AutoRunLogDao
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
+import com.allday.detoxy.data.local.entity.AutoRunLog
+import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
+import com.allday.detoxy.service.timer.FocusTimerService
+import com.allday.detoxy.worker.AutoStartTimerWorker
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 /**
@@ -52,6 +63,18 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
     @Inject
     lateinit var timeBasedAutoRunDao: TimeBasedAutoRunDao
 
+    @Inject
+    lateinit var notificationManager: AutoRunNotificationManager
+
+    @Inject
+    lateinit var autoRunLogDao: AutoRunLogDao
+
+    @Inject
+    lateinit var autoRunSettingsRepository: AutoRunSettingsRepository
+
+    @Inject
+    lateinit var workManager: WorkManager
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -90,21 +113,29 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      * 사전 알림 처리
      *
      * 실제 자동 실행 N분 전에 사용자에게 알림을 표시합니다.
-     *
-     * TODO (3.3.1): AutoRunNotificationManager.showPreNotification() 연동
      */
     private fun handlePreNotification(context: Context, autoRunId: String, durationMinutes: Int, label: String?) {
         Log.i(TAG, "📢 Pre-notification: ${label ?: autoRunId} (${durationMinutes}분 타이머 예정)")
         
-        // TODO (3.3.1): AutoRunNotificationManager를 통해 사전 알림 표시
-        // AutoRunNotificationManager.showPreNotification(
-        //     context = context,
-        //     autoRunId = autoRunId,
-        //     durationMinutes = durationMinutes,
-        //     label = label ?: "자동 실행"
-        // )
-        
-        Log.i(TAG, "📢 Pre-notification should be shown here (TODO: implement AutoRunNotificationManager)")
+        scope.launch {
+            try {
+                // 사전 알림 시간 가져오기
+                val preNotificationMinutes = autoRunSettingsRepository.getPreNotificationMinutes()
+                
+                // 사전 알림 표시
+                notificationManager.showPreNotification(
+                    autoRunId = autoRunId,
+                    durationMinutes = durationMinutes,
+                    label = label,
+                    minutesBefore = preNotificationMinutes,
+                    triggerType = "TIME"
+                )
+                
+                Log.d(TAG, "✅ Pre-notification shown")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to show pre-notification: ${e.message}", e)
+            }
+        }
     }
 
     /**
@@ -112,25 +143,15 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      *
      * 알림을 표시하고 다음 알람을 자동으로 스케줄링합니다.
      *
-     * ## 현재 구현 상태 (3.2)
+     * ## 구현 상태 (3.3) ✅
      * - ✅ 다음 알람 자동 스케줄링 (주간 반복)
-     * - ❌ 알림 표시 (3.3.1에서 구현 예정)
-     * - ❌ 자동 시작 딜레이 (3.3.2에서 구현 예정)
-     * - ❌ AutoRunLog 기록 (3.3.2에서 구현 예정)
+     * - ✅ 알림 표시 (AutoRunNotificationManager)
+     * - ✅ 자동 시작 딜레이 (autoStartDelayMinutes 적용) ⚠️ **Critical**
+     * - ✅ AutoRunLog 기록
      *
-     * ## ⚠️ 중요: UI와 동작 불일치 (2차 리뷰 지적)
-     * UI에서 "자동 시작 딜레이" 옵션을 노출하고 있지만, 실제 동작은 3.3.2에서 구현 예정입니다.
-     * 현재는 알람 트리거 시 로그만 출력하며, 사용자가 설정한 딜레이는 적용되지 않습니다.
-     * 
-     * **권장 조치** (3.3 작업 전):
-     * - UI에서 "자동 시작 딜레이" 옵션을 임시로 숨기거나
-     * - "다음 업데이트에서 적용 예정" 안내 표시
-     *
-     * ## TODO (3.3.1, 3.3.2) - 다음 작업에서 구현
-     * - [ ] AutoRunNotificationManager.showStartNotification() 연동
-     * - [ ] 자동 시작 딜레이 (autoStartDelayMinutes) 적용 ⚠️ **Critical**
-     * - [ ] AutoRunLog 기록
-     * - [ ] 이미 타이머 실행 중인지 확인
+     * ## 자동 시작 딜레이 로직 (⚠️ Critical - UI와 동작 일치)
+     * - autoStartDelayMinutes == 0: 알림만 표시, 사용자 액션 대기
+     * - autoStartDelayMinutes > 0: 알림 표시 + N분 후 자동 시작 (WorkManager)
      * 
      * @see com.allday.detoxy.domain.repository.AutoRunSettingsRepository.getAutoStartDelayMinutes
      * @see docs/02_advanced_autosetting_todolist.md §3.3.1, §3.3.2
@@ -141,37 +162,144 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
 
         scope.launch {
             try {
-                // TODO (3.3.2): 이미 타이머 실행 중인지 확인
-                // if (isTimerAlreadyRunning()) {
-                //     Log.w(TAG, "⚠️ Timer already running, skipping auto-run")
-                //     logAutoRunSkipped(autoRunId, "TIMER_ALREADY_RUNNING")
-                //     return@launch
-                // }
+                // 1. 이미 타이머 실행 중인지 확인
+                val currentState = FocusTimerService.state.first()
+                if (currentState != com.allday.detoxy.domain.model.FocusState.IDLE) {
+                    Log.w(TAG, "⚠️ Timer already running (state: $currentState), skipping auto-run")
+                    logAutoRunSkipped(autoRunId, "TIMER_ALREADY_RUNNING")
+                    return@launch
+                }
 
-                // TODO (3.3.2): AutoRunNotificationManager를 통해 알림 표시
-                // AutoRunNotificationManager.showStartNotification(
-                //     context = context,
-                //     autoRunId = autoRunId,
-                //     durationMinutes = durationMinutes,
-                //     label = label ?: "자동 실행"
-                // )
+                // 2. 실행 알림 표시
+                notificationManager.showStartNotification(
+                    autoRunId = autoRunId,
+                    durationMinutes = durationMinutes,
+                    presetType = presetType,
+                    label = label,
+                    triggerType = "TIME"
+                )
+                Log.d(TAG, "✅ Start notification shown")
+
+                // 3. AutoRunLog 기록 (알림 표시됨)
+                logAutoRunTriggered(autoRunId, "TIME", "NOTIFICATION_SHOWN")
+
+                // 4. 자동 시작 딜레이 적용 ⚠️ Critical
+                val autoStartDelayMinutes = autoRunSettingsRepository.getAutoStartDelayMinutes()
                 
-                Log.i(TAG, "📢 Start notification should be shown here (TODO: implement AutoRunNotificationManager)")
+                if (autoStartDelayMinutes > 0) {
+                    // N분 후 자동 시작 스케줄링
+                    scheduleAutoStart(autoRunId, durationMinutes, presetType, label, autoStartDelayMinutes)
+                    Log.i(TAG, "⏰ Auto-start scheduled: ${autoStartDelayMinutes}분 후 자동 시작")
+                } else {
+                    // 0분이면 사용자 액션 대기 (알림만 표시)
+                    Log.i(TAG, "⏸️ Auto-start delay is 0, waiting for user action")
+                }
 
-                // TODO (3.3.2): AutoRunLog 기록
-                // logAutoRunTriggered(
-                //     autoRunId = autoRunId,
-                //     triggerType = "TIME",
-                //     result = "NOTIFICATION_SHOWN"
-                // )
-
-                // ✅ 다음 알람 자동 스케줄링
+                // 5. 다음 알람 자동 스케줄링
                 rescheduleNextAlarm(autoRunId)
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Error processing auto-run alarm: ${e.message}", e)
+                logAutoRunFailed(autoRunId, "TIME", e.message ?: "Unknown error")
             } finally {
                 pendingResult.finish()
             }
+        }
+    }
+
+    /**
+     * 자동 시작 스케줄링 (WorkManager)
+     *
+     * autoStartDelayMinutes 설정에 따라 N분 후 타이머를 자동으로 시작합니다.
+     * 사용자가 알림에 반응하지 않을 때 자동으로 타이머를 시작하는 기능입니다.
+     *
+     * @param autoRunId 자동 실행 ID
+     * @param durationMinutes 타이머 시간 (분)
+     * @param presetType 차단 프리셋 타입
+     * @param label 자동 실행 라벨
+     * @param delayMinutes 지연 시간 (분)
+     */
+    private fun scheduleAutoStart(
+        autoRunId: String,
+        durationMinutes: Int,
+        presetType: String?,
+        label: String?,
+        delayMinutes: Int
+    ) {
+        val inputData = Data.Builder()
+            .putString("autoRunId", autoRunId)
+            .putInt("durationMinutes", durationMinutes)
+            .putString("presetType", presetType)
+            .putString("label", label)
+            .putBoolean("isSnooze", false)
+            .build()
+
+        val autoStartWork = OneTimeWorkRequest.Builder(AutoStartTimerWorker::class.java)
+            .setInputData(inputData)
+            .setInitialDelay(delayMinutes.toLong(), TimeUnit.MINUTES)
+            .addTag("auto_start_$autoRunId")
+            .build()
+
+        workManager.enqueue(autoStartWork)
+        Log.d(TAG, "📋 Auto-start work enqueued (${delayMinutes}분 후)")
+    }
+
+    /**
+     * AutoRunLog 기록 - 트리거됨
+     */
+    private suspend fun logAutoRunTriggered(autoRunId: String, triggerType: String, result: String) {
+        try {
+            val log = AutoRunLog(
+                triggerType = triggerType,
+                triggerSourceId = autoRunId,
+                triggerTime = System.currentTimeMillis(),
+                result = result,
+                failureReason = null,
+                sessionId = null
+            )
+            autoRunLogDao.insert(log)
+            Log.d(TAG, "✅ AutoRunLog recorded: $result")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
+        }
+    }
+
+    /**
+     * AutoRunLog 기록 - 건너뜀
+     */
+    private suspend fun logAutoRunSkipped(autoRunId: String, reason: String) {
+        try {
+            val log = AutoRunLog(
+                triggerType = "TIME",
+                triggerSourceId = autoRunId,
+                triggerTime = System.currentTimeMillis(),
+                result = "SKIPPED",
+                failureReason = reason,
+                sessionId = null
+            )
+            autoRunLogDao.insert(log)
+            Log.d(TAG, "✅ AutoRunLog recorded: SKIPPED ($reason)")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
+        }
+    }
+
+    /**
+     * AutoRunLog 기록 - 실패
+     */
+    private suspend fun logAutoRunFailed(autoRunId: String, triggerType: String, reason: String) {
+        try {
+            val log = AutoRunLog(
+                triggerType = triggerType,
+                triggerSourceId = autoRunId,
+                triggerTime = System.currentTimeMillis(),
+                result = "FAILED",
+                failureReason = reason,
+                sessionId = null
+            )
+            autoRunLogDao.insert(log)
+            Log.d(TAG, "✅ AutoRunLog recorded: FAILED ($reason)")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
         }
     }
 

@@ -33,6 +33,7 @@ class FocusTimerService : Service() {
         private const val CHANNEL_ID = "focus_timer_channel"
         private const val CHANNEL_NAME = "집중 모드 타이머"
 
+        const val ACTION_START = "com.allday.detoxy.ACTION_START" // 🆕 간소화된 ACTION
         const val ACTION_START_TIMER = "com.allday.detoxy.ACTION_START_TIMER"
         const val ACTION_STOP_TIMER = "com.allday.detoxy.ACTION_STOP_TIMER"
         const val ACTION_GIVE_UP_TIMER = "com.allday.detoxy.ACTION_GIVE_UP_TIMER"
@@ -41,6 +42,9 @@ class FocusTimerService : Service() {
         const val EXTRA_DURATION_MINUTES = "duration_minutes"
         const val EXTRA_SESSION_ID = "session_id"
         const val EXTRA_SUCCESS = "success"
+        const val EXTRA_PRESET_TYPE = "preset_type" // 🆕 차단 프리셋 타입
+        const val EXTRA_AUTO_RUN_ID = "auto_run_id" // 🆕 자동 실행 ID
+        const val EXTRA_AUTO_RUN_LABEL = "auto_run_label" // 🆕 자동 실행 라벨
 
         // Service 상태를 Static으로 관리하여 어디서든 접근 가능
         private val _state = MutableStateFlow(FocusState.IDLE)
@@ -102,10 +106,12 @@ class FocusTimerService : Service() {
         Log.d(TAG, "onStartCommand() - action: ${intent?.action}")
 
         when (intent?.action) {
-            ACTION_START_TIMER -> {
+            ACTION_START, ACTION_START_TIMER -> { // 🔄 ACTION_START 지원 추가
                 val durationMinutes = intent.getIntExtra(EXTRA_DURATION_MINUTES, 0)
                 val sessionId = intent.getStringExtra(EXTRA_SESSION_ID)
-                Log.d(TAG, "Starting timer: $durationMinutes minutes, sessionId: $sessionId")
+                val autoRunId = intent.getStringExtra(EXTRA_AUTO_RUN_ID) // 🆕
+                val autoRunLabel = intent.getStringExtra(EXTRA_AUTO_RUN_LABEL) // 🆕
+                Log.d(TAG, "Starting timer: $durationMinutes minutes, sessionId: $sessionId, autoRunId: $autoRunId")
                 startTimerInternal(durationMinutes, sessionId)
             }
             ACTION_STOP_TIMER -> {
