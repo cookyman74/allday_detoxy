@@ -163,12 +163,21 @@ class AutoRunAlarmManager @Inject constructor(
     /**
      * 사전 알림 알람 스케줄링
      *
-     * 실제 자동 실행 N분 전에 알림을 표시하기 위한 알람입니다.
+     * 실제 자동 실행 N분 전에 알림을 표시하기 위한 별도 알람을 등록합니다.
      * isPreNotification 플래그를 true로 설정하여 Receiver에서 구분할 수 있도록 합니다.
      *
-     * @param autoRun 시간 기반 자동 실행 설정
+     * ## PendingIntent 관리 (2차 리뷰 반영)
+     * - **requestCode**: `abs(autoRun.id.hashCode()) + PRE_NOTIFICATION_CODE_OFFSET`
+     *   - 메인 알람과 중복 방지를 위해 오프셋 추가
+     *   - 동일 autoRun.id에 대해서는 항상 동일한 requestCode 생성
+     * - **FLAG_UPDATE_CURRENT**: 동일 requestCode의 기존 PendingIntent를 업데이트
+     *   - 동일 ID에 대해 시간/파라미터가 변경되면 최신 extras로 덮어씀
+     *   - 의도된 동작: 사용자가 사전 알림 시간을 변경하면 기존 알람이 새 설정으로 교체됨
+     *   - ID 재활용이 없는 한 충돌 없음 (UUID 기반 ID 사용)
+     *
+     * @param autoRun 자동 실행 엔티티
      * @param preNotificationTime 사전 알림 시각 (epoch millis)
-     * @param minutesBefore 몇 분 전 알림인지 (로깅용)
+     * @param minutesBefore 실제 실행 전 몇 분인지 (로그용)
      */
     private fun schedulePreNotification(autoRun: TimeBasedAutoRun, preNotificationTime: Long, minutesBefore: Int) {
         val intent = Intent(context, AutoRunAlarmReceiver::class.java).apply {

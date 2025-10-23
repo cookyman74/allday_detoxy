@@ -10,7 +10,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,15 +20,18 @@ import javax.inject.Inject
  *
  * ## 처리 흐름
  * 1. BOOT_COMPLETED 브로드캐스트 수신
- * 2. DB에서 모든 활성화된 자동 실행 조회
+ * 2. DB에서 모든 활성화된 자동 실행 조회 (suspend 함수 사용)
  * 3. AutoRunAlarmManager.rescheduleAll() 호출하여 알람 재등록
  *
- * ## 주의사항
+ * ## 주의사항 (2차 리뷰 반영)
  * - Hilt 의존성 주입을 사용하므로 @AndroidEntryPoint 필수
- * - BroadcastReceiver는 10초 제한이 있으므로 goAsync() 사용 불필요
+ * - BroadcastReceiver는 10초 제한이 있으므로 goAsync() 사용
+ * - Flow.first() 대신 suspend 함수 getAllEnabled()를 직접 호출
+ *   (Flow emission 방식 변경 시 PendingResult가 닫히지 않을 위험 방지)
  * - 코루틴으로 비동기 처리 (CoroutineScope with SupervisorJob)
  *
  * @see AutoRunAlarmManager.rescheduleAll
+ * @see TimeBasedAutoRunDao.getAllEnabled
  */
 @AndroidEntryPoint
 class BootCompletedReceiver : BroadcastReceiver() {
@@ -59,8 +61,9 @@ class BootCompletedReceiver : BroadcastReceiver() {
 
         scope.launch {
             try {
-                // 모든 활성화된 자동 실행 조회
-                val enabledAutoRuns = timeBasedAutoRunDao.getAll().first().filter { it.isEnabled }
+                // 🔧 2차 리뷰 반영: Flow.first() 대신 suspend 함수 직접 호출
+                // Flow emission 방식 변경 시 PendingResult가 닫히지 않을 위험 방지
+                val enabledAutoRuns = timeBasedAutoRunDao.getAllEnabled()
                 
                 if (enabledAutoRuns.isEmpty()) {
                     Log.d(TAG, "⏭️ No enabled auto-runs to reschedule")

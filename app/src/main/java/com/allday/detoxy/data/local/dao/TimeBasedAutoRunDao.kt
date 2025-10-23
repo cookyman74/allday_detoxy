@@ -69,12 +69,23 @@ interface TimeBasedAutoRunDao {
     fun getById(id: String): Flow<TimeBasedAutoRun?>
 
     /**
-     * 활성화된 시간 기반 자동 실행 조회
+     * 활성화된 시간 기반 자동 실행 조회 (Flow)
      *
      * @return 활성화된 자동 실행 리스트 (Flow)
      */
     @Query("SELECT * FROM time_based_auto_run WHERE isEnabled = 1 ORDER BY hour ASC, minute ASC")
     fun getEnabled(): Flow<List<TimeBasedAutoRun>>
+
+    /**
+     * 활성화된 시간 기반 자동 실행 조회 (suspend, 일회성)
+     *
+     * BootCompletedReceiver 등에서 Flow emission 방식에 의존하지 않고
+     * 안전하게 한 번만 조회하기 위한 메서드입니다.
+     *
+     * @return 활성화된 자동 실행 리스트
+     */
+    @Query("SELECT * FROM time_based_auto_run WHERE isEnabled = 1 ORDER BY hour ASC, minute ASC")
+    suspend fun getAllEnabled(): List<TimeBasedAutoRun>
 
     /**
      * 특정 요일에 활성화된 자동 실행 조회 (효율적인 스케줄링)

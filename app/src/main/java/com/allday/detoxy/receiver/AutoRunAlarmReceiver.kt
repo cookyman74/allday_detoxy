@@ -112,13 +112,28 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      *
      * 알림을 표시하고 다음 알람을 자동으로 스케줄링합니다.
      *
-     * ## 다음 알람 스케줄링
-     * DB에서 최신 autoRun 정보를 가져와 다음 발생 시각을 계산하여 알람을 재등록합니다.
+     * ## 현재 구현 상태 (3.2)
+     * - ✅ 다음 알람 자동 스케줄링 (주간 반복)
+     * - ❌ 알림 표시 (3.3.1에서 구현 예정)
+     * - ❌ 자동 시작 딜레이 (3.3.2에서 구현 예정)
+     * - ❌ AutoRunLog 기록 (3.3.2에서 구현 예정)
      *
-     * TODO (3.3.2): 
-     * - AutoRunNotificationManager.showStartNotification() 연동
-     * - AutoRunLog 기록
-     * - 이미 타이머 실행 중인지 확인
+     * ## ⚠️ 중요: UI와 동작 불일치 (2차 리뷰 지적)
+     * UI에서 "자동 시작 딜레이" 옵션을 노출하고 있지만, 실제 동작은 3.3.2에서 구현 예정입니다.
+     * 현재는 알람 트리거 시 로그만 출력하며, 사용자가 설정한 딜레이는 적용되지 않습니다.
+     * 
+     * **권장 조치** (3.3 작업 전):
+     * - UI에서 "자동 시작 딜레이" 옵션을 임시로 숨기거나
+     * - "다음 업데이트에서 적용 예정" 안내 표시
+     *
+     * ## TODO (3.3.1, 3.3.2) - 다음 작업에서 구현
+     * - [ ] AutoRunNotificationManager.showStartNotification() 연동
+     * - [ ] 자동 시작 딜레이 (autoStartDelayMinutes) 적용 ⚠️ **Critical**
+     * - [ ] AutoRunLog 기록
+     * - [ ] 이미 타이머 실행 중인지 확인
+     * 
+     * @see com.allday.detoxy.domain.repository.AutoRunSettingsRepository.getAutoStartDelayMinutes
+     * @see docs/02_advanced_autosetting_todolist.md §3.3.1, §3.3.2
      */
     private fun handleAutoRunAlarm(context: Context, autoRunId: String, durationMinutes: Int, presetType: String?, label: String?) {
         // goAsync()를 사용하여 비동기 작업 완료 보장
