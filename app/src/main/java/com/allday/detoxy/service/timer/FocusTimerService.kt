@@ -12,11 +12,17 @@ import android.os.IBinder
 import android.util.Log
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
+import com.allday.detoxy.core.manager.DndManager
 import com.allday.detoxy.domain.model.FocusState
+import com.allday.detoxy.domain.repository.FocusSettingsRepository
+import com.allday.detoxy.service.accessibility.FocusAccessibilityService
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import javax.inject.Inject
 
 /**
  * 집중 모드 타이머 Foreground Service
@@ -25,7 +31,11 @@ import kotlinx.coroutines.flow.asStateFlow
  * Foreground Service로 실행되어 시스템에 의한 종료를 방지하고,
  * StateFlow를 통해 UI에 실시간 상태를 전달합니다.
  */
+@AndroidEntryPoint
 class FocusTimerService : Service() {
+
+    @Inject
+    lateinit var settingsRepository: FocusSettingsRepository
 
     companion object {
         private const val TAG = "FocusTimerService"
@@ -94,10 +104,12 @@ class FocusTimerService : Service() {
 
     private var serviceScope: CoroutineScope? = null
     private var timerJob: Job? = null
+    private lateinit var dndManager: DndManager
 
     override fun onCreate() {
         super.onCreate()
         serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        dndManager = DndManager(applicationContext)
         createNotificationChannel()
         Log.d(TAG, "FocusTimerService created")
     }
@@ -147,6 +159,31 @@ class FocusTimerService : Service() {
         _currentSessionId.value = sessionId
 
         Log.d(TAG, "Timer started: $totalSec seconds")
+
+        // ⭐ Critical: AccessibilityService 설정 (자동 실행 대응)
+        // 디톡시 제어 설정 로드 및 AccessibilityService에 전달
+        serviceScope?.launch {
+            try {
+                val (categories, otherApps) = settingsRepository.getCurrentSettings()
+                FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+                Log.i(TAG, "✅ Block settings loaded: ${categories.size} categories, otherApps=$otherApps")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to load block settings: ${e.message}", e)
+            }
+        }
+
+        // AccessibilityService 활성화 및 타이머 정보 전달
+        FocusAccessibilityService.isTimerRunning = true
+        FocusAccessibilityService.remainingSeconds = totalSec
+        FocusAccessibilityService.totalSeconds = totalSec
+        FocusAccessibilityService.currentSessionId = sessionId
+        Log.i(TAG, "✅ AccessibilityService activated (isTimerRunning=true)")
+
+        // DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            dndManager.enableDnd()
+            Log.d(TAG, "✅ DND mode enabled")
+        }
 
         // 타이머 Job 시작 (Dispatchers.Default에서 실행하여 메인 스레드 부하 방지)
         timerJob?.cancel()
