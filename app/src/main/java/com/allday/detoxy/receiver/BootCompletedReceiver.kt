@@ -6,12 +6,14 @@ import android.content.Intent
 import android.util.Log
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
-import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * 부팅 완료 BroadcastReceiver
@@ -23,8 +25,9 @@ import javax.inject.Inject
  * 2. DB에서 모든 활성화된 자동 실행 조회 (suspend 함수 사용)
  * 3. AutoRunAlarmManager.rescheduleAll() 호출하여 알람 재등록
  *
- * ## 주의사항 (2차 리뷰 반영)
- * - Hilt 의존성 주입을 사용하므로 @AndroidEntryPoint 필수
+ * ## 주의사항 (Hilt 이슈 대응)
+ * - ⚠️ @AndroidEntryPoint 제거: Hilt ASM 변환 오류로 인해 수동 의존성 주입 사용
+ * - EntryPointAccessors를 통해 수동으로 의존성 가져오기
  * - BroadcastReceiver는 10초 제한이 있으므로 goAsync() 사용
  * - Flow.first() 대신 suspend 함수 getAllEnabled()를 직접 호출
  *   (Flow emission 방식 변경 시 PendingResult가 닫히지 않을 위험 방지)
@@ -33,18 +36,24 @@ import javax.inject.Inject
  * @see AutoRunAlarmManager.rescheduleAll
  * @see TimeBasedAutoRunDao.getAllEnabled
  */
-@AndroidEntryPoint
 class BootCompletedReceiver : BroadcastReceiver() {
+
+    /**
+     * Hilt EntryPoint for manual dependency injection
+     *
+     * @AndroidEntryPoint를 사용하지 못하는 경우 (ASM 변환 오류),
+     * EntryPointAccessors를 통해 수동으로 의존성을 가져옵니다.
+     */
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface BootCompletedReceiverEntryPoint {
+        fun alarmManager(): AutoRunAlarmManager
+        fun timeBasedAutoRunDao(): TimeBasedAutoRunDao
+    }
 
     companion object {
         private const val TAG = "BootCompletedReceiver"
     }
-
-    @Inject
-    lateinit var alarmManager: AutoRunAlarmManager
-
-    @Inject
-    lateinit var timeBasedAutoRunDao: TimeBasedAutoRunDao
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -58,6 +67,15 @@ class BootCompletedReceiver : BroadcastReceiver() {
 
         // goAsync()를 사용하여 비동기 작업 완료 보장
         val pendingResult = goAsync()
+
+        // ⚠️ Hilt 이슈 대응: EntryPointAccessors를 통해 수동으로 의존성 가져오기
+        val appContext = context.applicationContext
+        val entryPoint = EntryPointAccessors.fromApplication(
+            appContext,
+            BootCompletedReceiverEntryPoint::class.java
+        )
+        val alarmManager = entryPoint.alarmManager()
+        val timeBasedAutoRunDao = entryPoint.timeBasedAutoRunDao()
 
         scope.launch {
             try {

@@ -12,13 +12,15 @@ import com.allday.detoxy.core.manager.AutoRunNotificationManager
 import com.allday.detoxy.data.local.dao.AutoRunLogDao
 import com.allday.detoxy.data.local.entity.AutoRunLog
 import com.allday.detoxy.worker.AutoStartTimerWorker
-import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 
 /**
  * 자동 실행 알림 액션 처리 BroadcastReceiver
@@ -30,17 +32,21 @@ import javax.inject.Inject
  * 2. **SNOOZE**: 10분 후 다시 알림 (스누즈)
  * 3. **SKIP**: 이번 회차 건너뛰기
  *
- * ## 처리 흐름
- * 1. 액션 종류에 따라 분기
- * 2. AutoRunLog 기록
- * 3. 알림 해제
- * 4. 타이머 시작 또는 스누즈 처리
+ * ## Hilt 이슈 대응
+ * - ⚠️ @AndroidEntryPoint 제거: Hilt ASM 변환 오류로 인해 수동 의존성 주입 사용
  *
  * @see AutoRunNotificationManager
  * @see AutoStartTimerWorker
  */
-@AndroidEntryPoint
 class NotificationActionReceiver : BroadcastReceiver() {
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface NotificationActionReceiverEntryPoint {
+        fun notificationManager(): AutoRunNotificationManager
+        fun autoRunLogDao(): AutoRunLogDao
+        fun workManager(): WorkManager
+    }
 
     companion object {
         private const val TAG = "NotificationActionReceiver"
@@ -54,18 +60,6 @@ class NotificationActionReceiver : BroadcastReceiver() {
         private const val SNOOZE_DELAY_MINUTES = 10L
     }
 
-    @Inject
-    lateinit var notificationManager: AutoRunNotificationManager
-
-    @Inject
-    lateinit var alarmManager: AutoRunAlarmManager
-
-    @Inject
-    lateinit var autoRunLogDao: AutoRunLogDao
-
-    @Inject
-    lateinit var workManager: WorkManager
-
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -77,20 +71,27 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
         Log.d(TAG, "Action received: ${intent.action} for autoRunId=$autoRunId")
 
+        // ⚠️ Hilt 이슈 대응: EntryPointAccessors를 통해 수동으로 의존성 가져오기
+        val appContext = context.applicationContext
+        val entryPoint = EntryPointAccessors.fromApplication(
+            appContext,
+            NotificationActionReceiverEntryPoint::class.java
+        )
+
         when (intent.action) {
             ACTION_START -> {
-                handleStart(context, autoRunId, durationMinutes, presetType, label, triggerType)
+                handleStart(context, autoRunId, durationMinutes, presetType, label, triggerType, entryPoint)
             }
             ACTION_SNOOZE -> {
-                handleSnooze(context, autoRunId, durationMinutes, presetType, label, triggerType)
+                handleSnooze(context, autoRunId, durationMinutes, presetType, label, triggerType, entryPoint)
             }
             ACTION_SKIP -> {
-                handleSkip(context, autoRunId, triggerType)
+                handleSkip(context, autoRunId, triggerType, entryPoint)
             }
         }
 
         // 알림 해제
-        notificationManager.dismissNotification(autoRunId, isPreNotification = false)
+        entryPoint.notificationManager().dismissNotification(autoRunId, isPreNotification = false)
     }
 
     /**
@@ -116,12 +117,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
         durationMinutes: Int,
         presetType: String?,
         label: String?,
-        triggerType: String
+        triggerType: String,
+        entryPoint: NotificationActionReceiverEntryPoint
     ) {
         Log.i(TAG, "🚀 Starting timer immediately: ${durationMinutes}분 (autoRunId=$autoRunId)")
 
         // ⚠️ Critical: 기존 자동 시작 작업 취소 (autoStartDelayMinutes로 예약된 작업)
-        workManager.cancelAllWorkByTag("auto_start_$autoRunId")
+        entryPoint.workManager().cancelAllWorkByTag("auto_start_$autoRunId")
         Log.d(TAG, "🗑️ Cancelled existing auto-start work for autoRunId=$autoRunId")
 
         // AutoRunLog 기록
@@ -135,7 +137,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     failureReason = null,
                     sessionId = null // TODO: 타이머 시작 후 세션 ID 업데이트
                 )
-                autoRunLogDao.insert(log)
+                entryPoint.autoRunLogDao().insert(log)
                 Log.d(TAG, "✅ AutoRunLog recorded: STARTED")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
@@ -154,7 +156,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             .setInputData(inputData)
             .build()
 
-        workManager.enqueue(startTimerWork)
+        entryPoint.workManager().enqueue(startTimerWork)
         Log.d(TAG, "📋 AutoStartTimerWorker enqueued")
     }
 
@@ -181,12 +183,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
         durationMinutes: Int,
         presetType: String?,
         label: String?,
-        triggerType: String
+        triggerType: String,
+        entryPoint: NotificationActionReceiverEntryPoint
     ) {
         Log.i(TAG, "⏰ Snoozing for ${SNOOZE_DELAY_MINUTES}분 (autoRunId=$autoRunId)")
 
         // ⚠️ Critical: 기존 자동 시작 작업 취소 (autoStartDelayMinutes로 예약된 작업)
-        workManager.cancelAllWorkByTag("auto_start_$autoRunId")
+        entryPoint.workManager().cancelAllWorkByTag("auto_start_$autoRunId")
         Log.d(TAG, "🗑️ Cancelled existing auto-start work for autoRunId=$autoRunId")
 
         // AutoRunLog 기록
@@ -200,7 +203,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     failureReason = "User requested ${SNOOZE_DELAY_MINUTES}min snooze",
                     sessionId = null
                 )
-                autoRunLogDao.insert(log)
+                entryPoint.autoRunLogDao().insert(log)
                 Log.d(TAG, "✅ AutoRunLog recorded: SNOOZED")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
@@ -222,7 +225,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             .addTag("snooze_$autoRunId")
             .build()
 
-        workManager.enqueue(snoozeWork)
+        entryPoint.workManager().enqueue(snoozeWork)
         Log.d(TAG, "📋 Snooze work enqueued (${SNOOZE_DELAY_MINUTES}분 후)")
     }
 
@@ -243,12 +246,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
     private fun handleSkip(
         context: Context,
         autoRunId: String,
-        triggerType: String
+        triggerType: String,
+        entryPoint: NotificationActionReceiverEntryPoint
     ) {
         Log.i(TAG, "⏭️ Skipping auto-run (autoRunId=$autoRunId)")
 
         // ⚠️ Critical: 기존 자동 시작 작업 취소 (autoStartDelayMinutes로 예약된 작업)
-        workManager.cancelAllWorkByTag("auto_start_$autoRunId")
+        entryPoint.workManager().cancelAllWorkByTag("auto_start_$autoRunId")
         Log.d(TAG, "🗑️ Cancelled existing auto-start work for autoRunId=$autoRunId")
 
         // AutoRunLog 기록
@@ -262,7 +266,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
                     failureReason = "User manually skipped",
                     sessionId = null
                 )
-                autoRunLogDao.insert(log)
+                entryPoint.autoRunLogDao().insert(log)
                 Log.d(TAG, "✅ AutoRunLog recorded: SKIPPED")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)

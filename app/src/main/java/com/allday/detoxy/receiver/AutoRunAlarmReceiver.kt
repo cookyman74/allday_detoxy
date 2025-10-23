@@ -15,7 +15,10 @@ import com.allday.detoxy.data.local.entity.AutoRunLog
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import com.allday.detoxy.service.timer.FocusTimerService
 import com.allday.detoxy.worker.AutoStartTimerWorker
-import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -23,7 +26,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 
 /**
  * 시간 기반 자동 실행 알람 BroadcastReceiver
@@ -35,45 +37,31 @@ import javax.inject.Inject
  * 1. 알람 트리거 감지 (ACTION_AUTO_RUN_ALARM 또는 ACTION_PRE_NOTIFICATION)
  * 2. 사전 알림 or 실행 알림 처리
  * 3. 다음 알람 자동 스케줄링 (실행 알림일 때만)
- * 4. AutoRunLog 기록 (TODO: 3.3)
+ * 4. AutoRunLog 기록
  *
- * ## 다음 알람 스케줄링 ✅
- * 실행 알람 트리거 시 DB에서 autoRun을 조회하여 다음 알람을 자동으로 스케줄링합니다.
- * 이를 통해 주간 반복 알람을 지속적으로 유지할 수 있습니다.
- *
- * ## TODO (3.3.1, 3.3.2) - 알림 및 자동 시작
- * - AutoRunNotificationManager 구현 후 알림 표시 연동
- * - AutoRunLog 기록 로직 추가
- * - 이미 타이머 실행 중인지 확인 로직
- * - 자동 시작 딜레이 (autoStartDelayMinutes) 적용
+ * ## Hilt 이슈 대응
+ * - ⚠️ @AndroidEntryPoint 제거: Hilt ASM 변환 오류로 인해 수동 의존성 주입 사용
+ * - EntryPointAccessors를 통해 수동으로 의존성 가져오기
  * 
  * @see com.allday.detoxy.domain.repository.AutoRunSettingsRepository
- * @see docs/02_advanced_autosetting_todolist.md §3.3.1, §3.3.2
+ * @see docs/02_advanced_autosetting_todolist.md §3.3
  */
-@AndroidEntryPoint
 class AutoRunAlarmReceiver : BroadcastReceiver() {
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface AutoRunAlarmReceiverEntryPoint {
+        fun alarmManager(): AutoRunAlarmManager
+        fun timeBasedAutoRunDao(): TimeBasedAutoRunDao
+        fun notificationManager(): AutoRunNotificationManager
+        fun autoRunLogDao(): AutoRunLogDao
+        fun autoRunSettingsRepository(): AutoRunSettingsRepository
+        fun workManager(): WorkManager
+    }
 
     companion object {
         private const val TAG = "AutoRunAlarmReceiver"
     }
-
-    @Inject
-    lateinit var alarmManager: AutoRunAlarmManager
-
-    @Inject
-    lateinit var timeBasedAutoRunDao: TimeBasedAutoRunDao
-
-    @Inject
-    lateinit var notificationManager: AutoRunNotificationManager
-
-    @Inject
-    lateinit var autoRunLogDao: AutoRunLogDao
-
-    @Inject
-    lateinit var autoRunSettingsRepository: AutoRunSettingsRepository
-
-    @Inject
-    lateinit var workManager: WorkManager
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -92,16 +80,23 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
             return
         }
 
+        // ⚠️ Hilt 이슈 대응: EntryPointAccessors를 통해 수동으로 의존성 가져오기
+        val appContext = context.applicationContext
+        val entryPoint = EntryPointAccessors.fromApplication(
+            appContext,
+            AutoRunAlarmReceiverEntryPoint::class.java
+        )
+
         when (intent.action) {
             AutoRunAlarmManager.ACTION_PRE_NOTIFICATION -> {
                 // 사전 알림
                 Log.i(TAG, "📢 Pre-notification triggered for: ${label ?: autoRunId}")
-                handlePreNotification(context, autoRunId, durationMinutes, label)
+                handlePreNotification(context, autoRunId, durationMinutes, label, entryPoint)
             }
             AutoRunAlarmManager.ACTION_AUTO_RUN_ALARM -> {
                 // 실행 알림
                 Log.i(TAG, "✅ Auto-run alarm triggered - ID: $autoRunId, Duration: $durationMinutes min, Preset: $presetType, Label: $label")
-                handleAutoRunAlarm(context, autoRunId, durationMinutes, presetType, label)
+                handleAutoRunAlarm(context, autoRunId, durationMinutes, presetType, label, entryPoint)
             }
             else -> {
                 Log.w(TAG, "⚠️ Unknown action: ${intent.action}")
@@ -114,16 +109,22 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      *
      * 실제 자동 실행 N분 전에 사용자에게 알림을 표시합니다.
      */
-    private fun handlePreNotification(context: Context, autoRunId: String, durationMinutes: Int, label: String?) {
+    private fun handlePreNotification(
+        context: Context,
+        autoRunId: String,
+        durationMinutes: Int,
+        label: String?,
+        entryPoint: AutoRunAlarmReceiverEntryPoint
+    ) {
         Log.i(TAG, "📢 Pre-notification: ${label ?: autoRunId} (${durationMinutes}분 타이머 예정)")
         
         scope.launch {
             try {
                 // 사전 알림 시간 가져오기
-                val preNotificationMinutes = autoRunSettingsRepository.getPreNotificationMinutes()
+                val preNotificationMinutes = entryPoint.autoRunSettingsRepository().getPreNotificationMinutes()
                 
                 // 사전 알림 표시
-                notificationManager.showPreNotification(
+                entryPoint.notificationManager().showPreNotification(
                     autoRunId = autoRunId,
                     durationMinutes = durationMinutes,
                     label = label,
@@ -156,7 +157,14 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      * @see com.allday.detoxy.domain.repository.AutoRunSettingsRepository.getAutoStartDelayMinutes
      * @see docs/02_advanced_autosetting_todolist.md §3.3.1, §3.3.2
      */
-    private fun handleAutoRunAlarm(context: Context, autoRunId: String, durationMinutes: Int, presetType: String?, label: String?) {
+    private fun handleAutoRunAlarm(
+        context: Context,
+        autoRunId: String,
+        durationMinutes: Int,
+        presetType: String?,
+        label: String?,
+        entryPoint: AutoRunAlarmReceiverEntryPoint
+    ) {
         // goAsync()를 사용하여 비동기 작업 완료 보장
         val pendingResult = goAsync()
 
@@ -166,12 +174,12 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 val currentState = FocusTimerService.state.first()
                 if (currentState != com.allday.detoxy.domain.model.FocusState.IDLE) {
                     Log.w(TAG, "⚠️ Timer already running (state: $currentState), skipping auto-run")
-                    logAutoRunSkipped(autoRunId, "TIMER_ALREADY_RUNNING")
+                    logAutoRunSkipped(autoRunId, "TIMER_ALREADY_RUNNING", entryPoint)
                     return@launch
                 }
 
                 // 2. 실행 알림 표시
-                notificationManager.showStartNotification(
+                entryPoint.notificationManager().showStartNotification(
                     autoRunId = autoRunId,
                     durationMinutes = durationMinutes,
                     presetType = presetType,
@@ -181,14 +189,14 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 Log.d(TAG, "✅ Start notification shown")
 
                 // 3. AutoRunLog 기록 (알림 표시됨)
-                logAutoRunTriggered(autoRunId, "TIME", "NOTIFICATION_SHOWN")
+                logAutoRunTriggered(autoRunId, "TIME", "NOTIFICATION_SHOWN", entryPoint)
 
                 // 4. 자동 시작 딜레이 적용 ⚠️ Critical
-                val autoStartDelayMinutes = autoRunSettingsRepository.getAutoStartDelayMinutes()
+                val autoStartDelayMinutes = entryPoint.autoRunSettingsRepository().getAutoStartDelayMinutes()
                 
                 if (autoStartDelayMinutes > 0) {
                     // N분 후 자동 시작 스케줄링
-                    scheduleAutoStart(autoRunId, durationMinutes, presetType, label, autoStartDelayMinutes)
+                    scheduleAutoStart(autoRunId, durationMinutes, presetType, label, autoStartDelayMinutes, entryPoint)
                     Log.i(TAG, "⏰ Auto-start scheduled: ${autoStartDelayMinutes}분 후 자동 시작")
                 } else {
                     // 0분이면 사용자 액션 대기 (알림만 표시)
@@ -196,10 +204,10 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 }
 
                 // 5. 다음 알람 자동 스케줄링
-                rescheduleNextAlarm(autoRunId)
+                rescheduleNextAlarm(autoRunId, entryPoint)
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Error processing auto-run alarm: ${e.message}", e)
-                logAutoRunFailed(autoRunId, "TIME", e.message ?: "Unknown error")
+                logAutoRunFailed(autoRunId, "TIME", e.message ?: "Unknown error", entryPoint)
             } finally {
                 pendingResult.finish()
             }
@@ -223,7 +231,8 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
         durationMinutes: Int,
         presetType: String?,
         label: String?,
-        delayMinutes: Int
+        delayMinutes: Int,
+        entryPoint: AutoRunAlarmReceiverEntryPoint
     ) {
         val inputData = Data.Builder()
             .putString("autoRunId", autoRunId)
@@ -239,14 +248,14 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
             .addTag("auto_start_$autoRunId")
             .build()
 
-        workManager.enqueue(autoStartWork)
+        entryPoint.workManager().enqueue(autoStartWork)
         Log.d(TAG, "📋 Auto-start work enqueued (${delayMinutes}분 후)")
     }
 
     /**
      * AutoRunLog 기록 - 트리거됨
      */
-    private suspend fun logAutoRunTriggered(autoRunId: String, triggerType: String, result: String) {
+    private suspend fun logAutoRunTriggered(autoRunId: String, triggerType: String, result: String, entryPoint: AutoRunAlarmReceiverEntryPoint) {
         try {
             val log = AutoRunLog(
                 triggerType = triggerType,
@@ -256,7 +265,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 failureReason = null,
                 sessionId = null
             )
-            autoRunLogDao.insert(log)
+            entryPoint.autoRunLogDao().insert(log)
             Log.d(TAG, "✅ AutoRunLog recorded: $result")
         } catch (e: Exception) {
             Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
@@ -266,7 +275,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
     /**
      * AutoRunLog 기록 - 건너뜀
      */
-    private suspend fun logAutoRunSkipped(autoRunId: String, reason: String) {
+    private suspend fun logAutoRunSkipped(autoRunId: String, reason: String, entryPoint: AutoRunAlarmReceiverEntryPoint) {
         try {
             val log = AutoRunLog(
                 triggerType = "TIME",
@@ -276,7 +285,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 failureReason = reason,
                 sessionId = null
             )
-            autoRunLogDao.insert(log)
+            entryPoint.autoRunLogDao().insert(log)
             Log.d(TAG, "✅ AutoRunLog recorded: SKIPPED ($reason)")
         } catch (e: Exception) {
             Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
@@ -286,7 +295,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
     /**
      * AutoRunLog 기록 - 실패
      */
-    private suspend fun logAutoRunFailed(autoRunId: String, triggerType: String, reason: String) {
+    private suspend fun logAutoRunFailed(autoRunId: String, triggerType: String, reason: String, entryPoint: AutoRunAlarmReceiverEntryPoint) {
         try {
             val log = AutoRunLog(
                 triggerType = triggerType,
@@ -296,7 +305,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 failureReason = reason,
                 sessionId = null
             )
-            autoRunLogDao.insert(log)
+            entryPoint.autoRunLogDao().insert(log)
             Log.d(TAG, "✅ AutoRunLog recorded: FAILED ($reason)")
         } catch (e: Exception) {
             Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
@@ -316,11 +325,11 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      *
      * @param autoRunId 재스케줄링할 autoRun ID
      */
-    private suspend fun rescheduleNextAlarm(autoRunId: String) {
+    private suspend fun rescheduleNextAlarm(autoRunId: String, entryPoint: AutoRunAlarmReceiverEntryPoint) {
         try {
             // 🔧 Critical Fix: firstOrNull() 사용하여 단일 스냅샷만 가져오기
             // collect()를 사용하면 Flow가 완료되지 않아 코루틴이 무한히 살아있게 됨
-            val autoRun = timeBasedAutoRunDao.getById(autoRunId).firstOrNull()
+            val autoRun = entryPoint.timeBasedAutoRunDao().getById(autoRunId).firstOrNull()
             
             if (autoRun == null) {
                 Log.w(TAG, "⚠️ AutoRun not found in DB: $autoRunId, cannot reschedule")
@@ -333,7 +342,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
             }
 
             // 다음 알람 스케줄링
-            val success = alarmManager.scheduleTimeBasedAutoRun(autoRun)
+            val success = entryPoint.alarmManager().scheduleTimeBasedAutoRun(autoRun)
             
             if (success) {
                 Log.i(TAG, "✅ Next alarm scheduled for: ${autoRun.label ?: autoRunId}")
