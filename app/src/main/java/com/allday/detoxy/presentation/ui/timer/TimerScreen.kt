@@ -33,6 +33,7 @@ fun TimerScreen(
     val remainingSeconds by viewModel.remainingSeconds.collectAsState()
     val totalSeconds by viewModel.totalSeconds.collectAsState()
     val permissionError by viewModel.permissionError.collectAsState()
+    val nextAutoRunInfo by viewModel.nextAutoRunInfo.collectAsState()
 
     // 권한 에러 다이얼로그
     permissionError?.let { error ->
@@ -75,6 +76,16 @@ fun TimerScreen(
             remainingSeconds = remainingSeconds,
             totalSeconds = totalSeconds
         )
+
+        // 다음 예약 정보 표시 (타이머 IDLE 상태일 때만)
+        if (timerState == FocusState.IDLE && nextAutoRunInfo != null) {
+            Text(
+                text = nextAutoRunInfo!!,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

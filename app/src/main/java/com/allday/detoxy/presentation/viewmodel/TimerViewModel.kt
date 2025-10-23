@@ -5,7 +5,9 @@ import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.DndManager
+import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.entity.FocusSession
+import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.local.entity.UserSettings
 import com.allday.detoxy.domain.manager.GamificationManager
 import com.allday.detoxy.core.utils.PermissionUtils
@@ -18,10 +20,16 @@ import com.allday.detoxy.service.timer.FocusTimerService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
@@ -43,7 +51,8 @@ class TimerViewModel @Inject constructor(
     private val application: Application,
     private val repository: FocusRepository,
     private val settingsRepository: FocusSettingsRepository,
-    private val gamificationManager: GamificationManager
+    private val gamificationManager: GamificationManager,
+    private val timeBasedAutoRunDao: TimeBasedAutoRunDao
 ) : ViewModel() {
 
     // DndManager 인스턴스
@@ -70,6 +79,17 @@ class TimerViewModel @Inject constructor(
 
     // 타이머 완료 추적을 위한 이전 상태
     private var previousTimerState: FocusState = FocusState.IDLE
+
+    // 다음 예약 정보 (UI 표시용)
+    val nextAutoRunInfo: StateFlow<String?> = timeBasedAutoRunDao.getEnabled()
+        .map { autoRuns ->
+            calculateNextAutoRunInfo(autoRuns)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
 
     companion object {
         private const val TAG = "TimerViewModel"
@@ -360,5 +380,177 @@ class TimerViewModel @Inject constructor(
         }
         
         Log.d(TAG, "✅ TimerViewModel cleared")
+    }
+
+    /**
+     * 다음 예약 정보 계산
+     *
+     * 활성화된 예약 중 현재 시각 이후 가장 가까운 예약을 찾아 UI용 텍스트를 생성합니다.
+     *
+     * @param autoRuns 활성화된 예약 리스트
+     * @return UI 표시용 텍스트 (예: "다음 예약: 오늘 23:17 (오후 업무)") 또는 null
+     */
+    private fun calculateNextAutoRunInfo(autoRuns: List<TimeBasedAutoRun>): String? {
+        if (autoRuns.isEmpty()) return null
+
+        val now = Calendar.getInstance()
+        val currentDay = getDayOfWeekCode(now)
+        val currentTimeMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+
+        var nearestAutoRun: TimeBasedAutoRun? = null
+        var nearestTimeMillis = Long.MAX_VALUE
+
+        // 모든 활성화된 예약에 대해 다음 트리거 시각 계산
+        for (autoRun in autoRuns) {
+            val enabledDays = parseEnabledDays(autoRun.enabledDays)
+            if (enabledDays.isEmpty()) continue
+
+            // 오늘부터 14일 내에서 다음 발생 시각 찾기
+            for (dayOffset in 0..13) {
+                val targetCalendar = Calendar.getInstance().apply {
+                    add(Calendar.DAY_OF_MONTH, dayOffset)
+                }
+                val targetDay = getDayOfWeekCode(targetCalendar)
+
+                // 해당 요일이 활성화되어 있는지 확인
+                if (!enabledDays.contains(targetDay)) continue
+
+                // 시각 설정
+                targetCalendar.set(Calendar.HOUR_OF_DAY, autoRun.hour)
+                targetCalendar.set(Calendar.MINUTE, autoRun.minute)
+                targetCalendar.set(Calendar.SECOND, 0)
+                targetCalendar.set(Calendar.MILLISECOND, 0)
+
+                val targetTimeMillis = targetCalendar.timeInMillis
+
+                // 미래 시각이고, 현재까지 찾은 가장 가까운 시각보다 가까우면 업데이트
+                if (targetTimeMillis > now.timeInMillis && targetTimeMillis < nearestTimeMillis) {
+                    nearestTimeMillis = targetTimeMillis
+                    nearestAutoRun = autoRun
+                }
+
+                // 가장 가까운 예약을 찾았으면 더 이상 검색하지 않음
+                if (nearestAutoRun != null) break
+            }
+
+            // 이미 예약을 찾았으면 종료
+            if (nearestAutoRun != null) break
+        }
+
+        // 가장 가까운 예약이 없으면 null 반환
+        if (nearestAutoRun == null) return null
+
+        // UI 표시용 텍스트 생성
+        return formatNextAutoRunText(nearestTimeMillis, nearestAutoRun)
+    }
+
+    /**
+     * 다음 예약 텍스트 포맷팅
+     *
+     * @param timeMillis 예약 시각 (epoch millis)
+     * @param autoRun 예약 정보
+     * @return 포맷된 텍스트 (예: "다음 예약: 오늘 23:17 (오후 업무)")
+     */
+    private fun formatNextAutoRunText(timeMillis: Long, autoRun: TimeBasedAutoRun): String {
+        val targetCalendar = Calendar.getInstance().apply {
+            this.timeInMillis = timeMillis
+        }
+        val now = Calendar.getInstance()
+
+        // 날짜 표현 ("오늘", "내일", "월요일" 등)
+        val dayText = when {
+            isSameDay(now, targetCalendar) -> "오늘"
+            isTomorrow(now, targetCalendar) -> "내일"
+            else -> getDayOfWeekName(targetCalendar)
+        }
+
+        // 시각 포맷 (HH:mm)
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val timeText = timeFormat.format(targetCalendar.time)
+
+        // 라벨 표시 (있으면)
+        val labelText = if (!autoRun.label.isNullOrBlank()) {
+            " (${autoRun.label})"
+        } else {
+            ""
+        }
+
+        return "다음 예약: $dayText $timeText$labelText"
+    }
+
+    /**
+     * enabledDays JSON 파싱
+     *
+     * @param enabledDaysJson JSON 문자열 (예: "[\"MON\",\"WED\",\"FRI\"]")
+     * @return 요일 코드 Set (예: ["MON", "WED", "FRI"])
+     */
+    private fun parseEnabledDays(enabledDaysJson: String): Set<String> {
+        return try {
+            enabledDaysJson
+                .removeSurrounding("[", "]")
+                .split(",")
+                .map { it.trim().removeSurrounding("\"") }
+                .filter { it.isNotBlank() }
+                .toSet()
+        } catch (e: Exception) {
+            emptySet()
+        }
+    }
+
+    /**
+     * Calendar에서 요일 코드 가져오기
+     *
+     * @param calendar Calendar 인스턴스
+     * @return 요일 코드 (예: "MON", "TUE", ...)
+     */
+    private fun getDayOfWeekCode(calendar: Calendar): String {
+        return when (calendar.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "MON"
+            Calendar.TUESDAY -> "TUE"
+            Calendar.WEDNESDAY -> "WED"
+            Calendar.THURSDAY -> "THU"
+            Calendar.FRIDAY -> "FRI"
+            Calendar.SATURDAY -> "SAT"
+            Calendar.SUNDAY -> "SUN"
+            else -> "MON"
+        }
+    }
+
+    /**
+     * 요일 한글 이름 가져오기
+     *
+     * @param calendar Calendar 인스턴스
+     * @return 요일 이름 (예: "월요일", "화요일", ...)
+     */
+    private fun getDayOfWeekName(calendar: Calendar): String {
+        return when (calendar.get(Calendar.DAY_OF_WEEK)) {
+            Calendar.MONDAY -> "월요일"
+            Calendar.TUESDAY -> "화요일"
+            Calendar.WEDNESDAY -> "수요일"
+            Calendar.THURSDAY -> "목요일"
+            Calendar.FRIDAY -> "금요일"
+            Calendar.SATURDAY -> "토요일"
+            Calendar.SUNDAY -> "일요일"
+            else -> ""
+        }
+    }
+
+    /**
+     * 같은 날인지 확인
+     */
+    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
+    }
+
+    /**
+     * 내일인지 확인
+     */
+    private fun isTomorrow(now: Calendar, target: Calendar): Boolean {
+        val tomorrow = Calendar.getInstance().apply {
+            timeInMillis = now.timeInMillis
+            add(Calendar.DAY_OF_MONTH, 1)
+        }
+        return isSameDay(tomorrow, target)
     }
 }
