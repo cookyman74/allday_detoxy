@@ -99,6 +99,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * 즉시 타이머를 시작합니다.
      * WorkManager를 사용하여 타이머 시작 작업을 스케줄링합니다.
      *
+     * ⚠️ **Critical Fix**: 기존 자동 시작 작업 취소
+     * - 사용자가 수동으로 "시작하기"를 눌렀으므로, autoStartDelayMinutes로 예약된 자동 시작 작업을 취소해야 함
+     * - 취소하지 않으면 N분 후 타이머가 중복 실행됨
+     *
      * @param context Context
      * @param autoRunId 자동 실행 ID
      * @param durationMinutes 타이머 시간 (분)
@@ -115,6 +119,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
         triggerType: String
     ) {
         Log.i(TAG, "🚀 Starting timer immediately: ${durationMinutes}분 (autoRunId=$autoRunId)")
+
+        // ⚠️ Critical: 기존 자동 시작 작업 취소 (autoStartDelayMinutes로 예약된 작업)
+        workManager.cancelAllWorkByTag("auto_start_$autoRunId")
+        Log.d(TAG, "🗑️ Cancelled existing auto-start work for autoRunId=$autoRunId")
 
         // AutoRunLog 기록
         scope.launch {
@@ -156,6 +164,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * 10분 후 다시 자동 실행 알림을 표시합니다.
      * WorkManager를 사용하여 지연 작업을 스케줄링합니다.
      *
+     * ⚠️ **Critical Fix**: 기존 자동 시작 작업 취소
+     * - 사용자가 수동으로 "10분 후"를 눌렀으므로, autoStartDelayMinutes로 예약된 자동 시작 작업을 취소해야 함
+     * - 취소하지 않으면 기존 자동 시작과 스누즈가 중복 트리거됨
+     *
      * @param context Context
      * @param autoRunId 자동 실행 ID
      * @param durationMinutes 타이머 시간 (분)
@@ -172,6 +184,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
         triggerType: String
     ) {
         Log.i(TAG, "⏰ Snoozing for ${SNOOZE_DELAY_MINUTES}분 (autoRunId=$autoRunId)")
+
+        // ⚠️ Critical: 기존 자동 시작 작업 취소 (autoStartDelayMinutes로 예약된 작업)
+        workManager.cancelAllWorkByTag("auto_start_$autoRunId")
+        Log.d(TAG, "🗑️ Cancelled existing auto-start work for autoRunId=$autoRunId")
 
         // AutoRunLog 기록
         scope.launch {
@@ -216,6 +232,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * 이번 회차 자동 실행을 건너뜁니다.
      * AutoRunLog에 SKIPPED 결과를 기록합니다.
      *
+     * ⚠️ **Critical Fix**: 기존 자동 시작 작업 취소
+     * - 사용자가 수동으로 "건너뛰기"를 눌렀으므로, autoStartDelayMinutes로 예약된 자동 시작 작업을 취소해야 함
+     * - 취소하지 않으면 사용자가 건너뛰기를 선택했는데도 N분 후 타이머가 자동 시작됨
+     *
      * @param context Context
      * @param autoRunId 자동 실행 ID
      * @param triggerType 트리거 타입
@@ -226,6 +246,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
         triggerType: String
     ) {
         Log.i(TAG, "⏭️ Skipping auto-run (autoRunId=$autoRunId)")
+
+        // ⚠️ Critical: 기존 자동 시작 작업 취소 (autoStartDelayMinutes로 예약된 작업)
+        workManager.cancelAllWorkByTag("auto_start_$autoRunId")
+        Log.d(TAG, "🗑️ Cancelled existing auto-start work for autoRunId=$autoRunId")
 
         // AutoRunLog 기록
         scope.launch {
