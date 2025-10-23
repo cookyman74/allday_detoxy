@@ -3,6 +3,7 @@ package com.allday.detoxy.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequest
@@ -191,16 +192,43 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 // 3. AutoRunLog 기록 (알림 표시됨)
                 logAutoRunTriggered(autoRunId, "TIME", "NOTIFICATION_SHOWN", entryPoint)
 
-                // 4. 자동 시작 딜레이 적용 ⚠️ Critical
+                // 4. 자동 시작 딜레이 적용 ✅ Fixed
                 val autoStartDelayMinutes = entryPoint.autoRunSettingsRepository().getAutoStartDelayMinutes()
                 
                 if (autoStartDelayMinutes > 0) {
-                    // N분 후 자동 시작 스케줄링
+                    // N분 후 자동 시작 스케줄링 (WorkManager)
                     scheduleAutoStart(autoRunId, durationMinutes, presetType, label, autoStartDelayMinutes, entryPoint)
                     Log.i(TAG, "⏰ Auto-start scheduled: ${autoStartDelayMinutes}분 후 자동 시작")
                 } else {
-                    // 0분이면 사용자 액션 대기 (알림만 표시)
-                    Log.i(TAG, "⏸️ Auto-start delay is 0, waiting for user action")
+                    // 0분이면 즉시 타이머 시작 (알림 표시 후 바로 실행)
+                    Log.i(TAG, "🚀 Auto-start delay is 0, starting timer immediately")
+                    
+                    // 고유 세션 ID 생성
+                    val sessionId = java.util.UUID.randomUUID().toString()
+                    
+                    // FocusTimerService 즉시 시작
+                    val startIntent = Intent(context, com.allday.detoxy.service.timer.FocusTimerService::class.java).apply {
+                        action = com.allday.detoxy.service.timer.FocusTimerService.ACTION_START
+                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_DURATION_MINUTES, durationMinutes)
+                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_SESSION_ID, sessionId)
+                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_PRESET_TYPE, presetType)
+                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_AUTO_RUN_ID, autoRunId)
+                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_AUTO_RUN_LABEL, label)
+                    }
+                    
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        context.startForegroundService(startIntent)
+                    } else {
+                        context.startService(startIntent)
+                    }
+                    
+                    // 알림 즉시 해제 (타이머가 시작되면 알림 불필요)
+                    entryPoint.notificationManager().dismissNotification(autoRunId, isPreNotification = false)
+                    
+                    // TODO: AutoRunLog 기록 (자동 시작됨) - logAutoRunStarted() 구현 필요
+                    // 현재는 NOTIFICATION_SHOWN 상태만 기록됨 (위의 logAutoRunTriggered)
+                    
+                    Log.d(TAG, "✅ Timer started immediately (auto-start delay = 0, sessionId: $sessionId)")
                 }
 
                 // 5. 다음 알람 자동 스케줄링
