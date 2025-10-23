@@ -639,6 +639,59 @@
 **작업 기록**: `working_history/2025-10-23_2nd_advanced_3.3.md` ✅
 
 <추가 작업: 타이머 메인화면에 예약시각 표시 기능>
+
+#### 3.3.5 타이머 화면 예약 정보 표시 (추가 작업)
+
+**목표**: 사용자가 타이머 메인 화면에서 다음 예약된 자동 실행 시각을 한눈에 확인할 수 있도록 개선
+
+##### 3.3.5.1 다음 예약 시각 표시 기능
+- [x] **TimerViewModel 확장** ✅
+  - **파일**: [TimerViewModel.kt](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt)
+  - **추가 사항**:
+    - `TimeBasedAutoRunDao` 주입
+    - `nextAutoRunInfo: StateFlow<String?>` 추가 - 다음 예약 정보 노출
+    - `calculateNextAutoRunInfo()` 구현 - 활성화된 예약 중 가장 가까운 시각 계산
+  - **로직**:
+    - `timeBasedAutoRunDao.getEnabled()` Flow 구독
+    - 현재 시각 이후 14일 내 검색
+    - 활성화된 요일과 시간 고려
+    - 형식: "다음 예약: 오늘 23:17 (오후 업무)" / "내일 09:00 (출근 루틴)" / "월요일 14:00"
+  - **헬퍼 함수**:
+    - `formatNextAutoRunText()`: 날짜/시간 포맷팅
+    - `parseEnabledDays()`: JSON 파싱
+    - `getDayOfWeekCode()`, `getDayOfWeekName()`: 요일 변환
+    - `isSameDay()`, `isTomorrow()`: 날짜 비교
+
+- [x] **TimerScreen UI 업데이트** ✅
+  - **파일**: [TimerScreen.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/timer/TimerScreen.kt)
+  - **추가 사항**:
+    - 타이머 원형 디스플레이 하단에 다음 예약 정보 텍스트 표시
+    - IDLE 상태에서만 표시 (타이머 실행 중에는 숨김)
+    - `MaterialTheme.colorScheme.onSurfaceVariant` 색상 사용
+    - 예약 없을 때는 미표시
+
+##### 3.3.5.2 타이머 화면 스크롤 기능 추가
+- [x] **스크롤 가능 레이아웃 개선** ✅ (긴급 버그 수정)
+  - **문제**: 60분 버튼이 화면 하단에 잘려서 보이지 않음
+  - **원인**: "다음 예약" 텍스트 추가로 컨텐츠 높이 증가, Column이 스크롤 불가능
+  - **해결**:
+    - `Column`에 `.verticalScroll(rememberScrollState())` modifier 추가
+    - `rememberScrollState` import 추가
+  - **효과**:
+    - 모든 프리셋 버튼(25분, 45분, 60분) 접근 가능
+    - 작은 화면 기기에서도 정상 동작
+    - 다음 예약 정보가 추가되어도 UI 잘림 없음
+
+**작업 기록**: 사용자 피드백 반영
+**커밋 정보**:
+- `c5f5c74`: feat(timer): 타이머 화면에 다음 예약 정보 표시
+- `5e17c3d`: fix(timer): 타이머 화면 스크롤 가능하도록 수정
+
+**개선 효과**:
+- 사용자가 다음 집중 세션 시작 시각을 미리 인지 가능
+- 예약 설정의 실효성 증대 (사용자 신뢰도 향상)
+- 작은 화면 기기 사용자 경험 개선
+
 </>
 
 ---
