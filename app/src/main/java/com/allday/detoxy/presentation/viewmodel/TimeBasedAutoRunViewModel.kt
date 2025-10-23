@@ -33,6 +33,10 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     // 정확 알람 권한 상태 (AlarmManager에서 가져옴)
     val canScheduleExactAlarms: StateFlow<Boolean> = alarmManager.canScheduleExactAlarms
 
+    // 에러 상태
+    private val _errorState = MutableStateFlow<String?>(null)
+    val errorState: StateFlow<String?> = _errorState.asStateFlow()
+
     init {
         loadAutoRuns()
     }
@@ -58,9 +62,13 @@ class TimeBasedAutoRunViewModel @Inject constructor(
      */
     fun addAutoRun(autoRun: TimeBasedAutoRun) {
         viewModelScope.launch {
-            repository.insert(autoRun)
-            if (autoRun.isEnabled) {
-                alarmManager.scheduleTimeBasedAutoRun(autoRun)
+            try {
+                repository.insert(autoRun)
+                if (autoRun.isEnabled) {
+                    alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                }
+            } catch (e: Exception) {
+                _errorState.value = "자동 실행 추가 실패: ${e.message}"
             }
         }
     }
@@ -72,11 +80,15 @@ class TimeBasedAutoRunViewModel @Inject constructor(
      */
     fun updateAutoRun(autoRun: TimeBasedAutoRun) {
         viewModelScope.launch {
-            repository.update(autoRun)
-            // 알람 재등록
-            alarmManager.cancelTimeBasedAutoRun(autoRun.id)
-            if (autoRun.isEnabled) {
-                alarmManager.scheduleTimeBasedAutoRun(autoRun)
+            try {
+                repository.update(autoRun)
+                // 알람 재등록
+                alarmManager.cancelTimeBasedAutoRun(autoRun.id)
+                if (autoRun.isEnabled) {
+                    alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                }
+            } catch (e: Exception) {
+                _errorState.value = "자동 실행 수정 실패: ${e.message}"
             }
         }
     }
@@ -88,8 +100,12 @@ class TimeBasedAutoRunViewModel @Inject constructor(
      */
     fun deleteAutoRun(autoRunId: String) {
         viewModelScope.launch {
-            repository.delete(autoRunId)
-            alarmManager.cancelTimeBasedAutoRun(autoRunId)
+            try {
+                alarmManager.cancelTimeBasedAutoRun(autoRunId)
+                repository.delete(autoRunId)
+            } catch (e: Exception) {
+                _errorState.value = "자동 실행 삭제 실패: ${e.message}"
+            }
         }
     }
 
@@ -101,16 +117,35 @@ class TimeBasedAutoRunViewModel @Inject constructor(
      */
     fun toggleAutoRun(autoRunId: String, isEnabled: Boolean) {
         viewModelScope.launch {
-            repository.toggleEnabled(autoRunId, isEnabled)
-            
-            // 활성화 시 알람 등록, 비활성화 시 알람 취소
-            if (isEnabled) {
-                val autoRun = _autoRuns.value.find { it.id == autoRunId }
-                autoRun?.let { alarmManager.scheduleTimeBasedAutoRun(it) }
-            } else {
-                alarmManager.cancelTimeBasedAutoRun(autoRunId)
+            try {
+                // 🔧 Critical Fix: stale data 문제 해결
+                // DB 업데이트 전에 현재 엔티티를 복사하여 isEnabled 업데이트
+                val currentAutoRun = _autoRuns.value.find { it.id == autoRunId }
+                if (currentAutoRun == null) {
+                    _errorState.value = "자동 실행을 찾을 수 없습니다"
+                    return@launch
+                }
+                
+                repository.toggleEnabled(autoRunId, isEnabled)
+                
+                // 활성화 시 알람 등록, 비활성화 시 알람 취소
+                if (isEnabled) {
+                    // 복사한 엔티티의 isEnabled를 업데이트하여 전달
+                    alarmManager.scheduleTimeBasedAutoRun(currentAutoRun.copy(isEnabled = true))
+                } else {
+                    alarmManager.cancelTimeBasedAutoRun(autoRunId)
+                }
+            } catch (e: Exception) {
+                _errorState.value = "활성화 변경 실패: ${e.message}"
             }
         }
+    }
+
+    /**
+     * 에러 상태 초기화
+     */
+    fun clearError() {
+        _errorState.value = null
     }
 }
 

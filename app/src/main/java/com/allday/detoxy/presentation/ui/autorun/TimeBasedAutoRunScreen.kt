@@ -8,6 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,13 +44,29 @@ fun TimeBasedAutoRunScreen(
 ) {
     val autoRuns by viewModel.autoRuns.collectAsStateWithLifecycle()
     val canScheduleExactAlarms by viewModel.canScheduleExactAlarms.collectAsStateWithLifecycle()
+    val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     
     var showAddDialog by remember { mutableStateOf(false) }
     var showTemplateDialog by remember { mutableStateOf(false) }
     var editingAutoRun by remember { mutableStateOf<TimeBasedAutoRun?>(null) }
+    var deletingAutoRunId by remember { mutableStateOf<String?>(null) }
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // 에러 표시
+    LaunchedEffect(errorState) {
+        errorState?.let { error ->
+            snackbarHostState.showSnackbar(
+                message = error,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearError()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("시간 기반 자동 실행") },
@@ -122,7 +139,7 @@ fun TimeBasedAutoRunScreen(
                         },
                         onEdit = { editingAutoRun = it },
                         onDelete = { id ->
-                            viewModel.deleteAutoRun(id)
+                            deletingAutoRunId = id
                         }
                     )
                 }
@@ -171,6 +188,46 @@ fun TimeBasedAutoRunScreen(
                     viewModel.addAutoRun(template)
                 }
                 showTemplateDialog = false
+            }
+        )
+    }
+
+    // 삭제 확인 다이얼로그
+    deletingAutoRunId?.let { id ->
+        val autoRun = autoRuns.find { it.id == id }
+        AlertDialog(
+            onDismissRequest = { deletingAutoRunId = null },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null
+                )
+            },
+            title = { Text("삭제 확인") },
+            text = {
+                Text(
+                    if (autoRun != null) {
+                        val timeString = String.format("%02d:%02d", autoRun.hour, autoRun.minute)
+                        "\"$timeString\" 자동 실행을 삭제하시겠습니까?\n알람도 함께 취소됩니다."
+                    } else {
+                        "이 자동 실행을 삭제하시겠습니까?"
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteAutoRun(id)
+                        deletingAutoRunId = null
+                    }
+                ) {
+                    Text("삭제", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingAutoRunId = null }) {
+                    Text("취소")
+                }
             }
         )
     }
