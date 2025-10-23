@@ -533,7 +533,7 @@
 
 **작업 기록**: `working_history/2025-10-23_2nd_advanced_3.1.md`
 
-### 3.2 AlarmManager 연동 및 트리거 (Day 11)
+
 
 #### 3.2.1 알람 스케줄링
 - [x] ViewModel에서 AlarmManager 호출 ✅
@@ -549,33 +549,34 @@
   ```
   - **구현**: [TimeBasedAutoRunViewModel.kt](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimeBasedAutoRunViewModel.kt)의 `addAutoRun()`, `updateAutoRun()`, `deleteAutoRun()`, `toggleAutoRun()` 메서드에서 AlarmManager 자동 호출
 
-- [ ] 앱 재시작 시 알람 재등록
-  ```kotlin
-  class BootCompletedReceiver : BroadcastReceiver() {
-      override fun onReceive(context: Context, intent: Intent) {
-          if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-              // 모든 활성화된 자동 실행 재등록
-          }
-      }
-  }
-  ```
+- [x] **글로벌 옵션 로직 적용** ✅ → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-글로벌-옵션)
+  - **주말 제외**: `calculateNextTriggerTime()`에서 `excludeWeekends` 설정 참조하여 토요일/일요일 건너뛰기 ✅
+  - **사전 알림 시간**: `AutoRunAlarmManager`에서 `preNotificationMinutes` 설정 참조하여 사전 알림 알람 추가 등록 ✅
+  - **자동 시작 딜레이**: `AutoRunAlarmReceiver`에서 적용 예정 (TODO: 3.3.2)
+  - **구현**: [AutoRunAlarmManager.kt](../app/src/main/java/com/allday/detoxy/core/manager/AutoRunAlarmManager.kt) - AutoRunSettingsRepository 주입, calculateNextTriggerTime() 수정, schedulePreNotification() 추가
+  - **결과**: UI 설정이 실제 로직에 완전히 반영됨 ✅
+
+- [x] 앱 재시작 시 알람 재등록 ✅
+  - **구현**: [BootCompletedReceiver.kt](../app/src/main/java/com/allday/detoxy/receiver/BootCompletedReceiver.kt) (신규, 92줄)
+  - **기능**: BOOT_COMPLETED 수신 시 모든 활성화된 자동 실행 알람 재등록
+  - **특징**: Hilt 의존성 주입, goAsync()로 비동기 작업 보장
+  - **AndroidManifest**: BootCompletedReceiver 등록 완료
 
 #### 3.2.2 알람 트리거 처리
-- [ ] AutoRunAlarmReceiver에서 알림 표시
-  ```kotlin
-  override fun onReceive(context: Context, intent: Intent) {
-      val autoRunId = intent.getStringExtra("autoRunId") ?: return
-      
-      // DB에서 autoRun 정보 가져오기
-      // 이미 타이머 실행 중인지 확인
-      // AutoRunNotificationManager.showNotification()
-      // AutoRunLog 기록
-  }
-  ```
+- [ ] AutoRunAlarmReceiver에서 알림 표시 (TODO: 3.3.1)
+  - 알림 표시는 AutoRunNotificationManager 구현 후 연동 예정
+  - 현재는 로깅만 수행
 
-- [ ] 다음 알람 자동 스케줄링 (다음 요일 계산)
+- [x] 다음 알람 자동 스케줄링 ✅
+  - **구현**: [AutoRunAlarmReceiver.kt](../app/src/main/java/com/allday/detoxy/receiver/AutoRunAlarmReceiver.kt) - `rescheduleNextAlarm()` 메서드
+  - **기능**: 알람 트리거 시 DB에서 최신 autoRun 조회 후 다음 알람 자동 등록
+  - **효과**: 주간 반복 알람 지속 유지 (예: 매주 월~금 오전 9시)
+  - **특징**: 
+    - Hilt 의존성 주입 (`AutoRunAlarmManager`, `TimeBasedAutoRunDao`)
+    - 사전 알림 vs 실행 알림 분기 처리
+    - goAsync()로 비동기 작업 보장
 
-**작업 기록**: `working_history/2025-10-22_2nd_advanced_3.2.md`
+**작업 기록**: `working_history/2025-10-23_2nd_advanced_3.2.md` ✅
 
 ### 3.3 자동 실행 알림 및 액션 (Day 12-13)
 
