@@ -341,4 +341,74 @@ object PermissionUtils {
             false
         }
     }
+    
+    // ==================== 알림 권한 (Android 13+) ====================
+    
+    /**
+     * 알림 권한 부여 여부 확인
+     *
+     * Android 13 (API 33) 이상에서는 POST_NOTIFICATIONS 권한이 필요합니다.
+     * Android 13 미만에서는 항상 true를 반환합니다 (알림 권한이 자동 부여됨).
+     *
+     * @param context Context
+     * @return true: 알림 권한이 있음, false: 권한 없음 (Android 13+에서만 해당)
+     */
+    fun hasNotificationPermission(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Android 13 미만에서는 알림 권한이 자동으로 부여됨
+            true
+        }
+    }
+    
+    /**
+     * 알림 권한 설명(Rationale)을 보여줘야 하는지 확인
+     *
+     * Android 13 (API 33) 이상에서만 의미가 있습니다.
+     * 
+     * @param activity Activity 컨텍스트
+     * @return true: 설명을 보여줘야 함, false: 바로 권한 요청 가능 또는 Android 13 미만
+     */
+    fun shouldShowNotificationRationale(activity: Activity): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                activity,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+        } else {
+            false
+        }
+    }
+    
+    /**
+     * 알림 설정 화면 열기
+     *
+     * 앱의 알림 설정 화면으로 이동합니다.
+     * 사용자가 알림 권한을 영구적으로 거부한 경우 이 화면으로 안내합니다.
+     *
+     * @param context Context
+     */
+    fun openNotificationSettings(context: Context) {
+        try {
+            val intent = Intent().apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    // Android 8.0 이상: 앱 알림 설정 화면
+                    action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                } else {
+                    // Android 8.0 미만: 앱 상세 설정 화면
+                    action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                    data = android.net.Uri.fromParts("package", context.packageName, null)
+                }
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open notification settings", e)
+        }
+    }
 }
