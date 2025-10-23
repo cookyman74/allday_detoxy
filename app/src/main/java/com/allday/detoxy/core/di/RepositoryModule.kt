@@ -1,8 +1,10 @@
 package com.allday.detoxy.core.di
 
 import android.content.Context
+import com.allday.detoxy.data.repository.AutoRunSettingsRepositoryImpl
 import com.allday.detoxy.data.repository.FocusRepositoryImpl
 import com.allday.detoxy.data.repository.FocusSettingsRepositoryImpl
+import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import dagger.Binds
@@ -53,6 +55,21 @@ abstract class RepositoryModule {
             @ApplicationContext context: Context
         ): FocusSettingsRepository {
             return FocusSettingsRepositoryImpl(context)
+        }
+
+        /**
+         * AutoRunSettingsRepository 제공
+         *
+         * DataStore 기반 자동 실행 글로벌 설정 Repository
+         * 주말 제외, 자동 시작 딜레이, 사전 알림 시간 설정 관리
+         * Clean Architecture: 인터페이스(domain) ← 구현체(data)
+         */
+        @Provides
+        @Singleton
+        fun provideAutoRunSettingsRepository(
+            @ApplicationContext context: Context
+        ): AutoRunSettingsRepository {
+            return AutoRunSettingsRepositoryImpl(context)
         }
     }
 }

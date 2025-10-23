@@ -5,25 +5,30 @@ import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
+import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * 시간 기반 자동 실행 화면 ViewModel
  *
- * 시간 기반 자동 실행 설정, AlarmManager 연동, 권한 상태 관리를 담당합니다.
+ * 시간 기반 자동 실행 설정, AlarmManager 연동, 권한 상태 관리, 글로벌 옵션 관리를 담당합니다.
  *
  * @param repository TimeBasedAutoRunRepository 인스턴스
  * @param alarmManager AutoRunAlarmManager 인스턴스
+ * @param settingsRepository AutoRunSettingsRepository 인스턴스 (글로벌 옵션)
  */
 @HiltViewModel
 class TimeBasedAutoRunViewModel @Inject constructor(
     private val repository: TimeBasedAutoRunRepository,
-    private val alarmManager: AutoRunAlarmManager
+    private val alarmManager: AutoRunAlarmManager,
+    private val settingsRepository: AutoRunSettingsRepository
 ) : ViewModel() {
 
     // 시간 기반 자동 실행 목록
@@ -36,6 +41,26 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     // 에러 상태
     private val _errorState = MutableStateFlow<String?>(null)
     val errorState: StateFlow<String?> = _errorState.asStateFlow()
+
+    // ==================== 글로벌 옵션 ====================
+
+    /**
+     * 주말 제외 설정
+     */
+    val excludeWeekends: StateFlow<Boolean> = settingsRepository.excludeWeekendsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /**
+     * 자동 시작 딜레이 (분)
+     */
+    val autoStartDelayMinutes: StateFlow<Int> = settingsRepository.autoStartDelayMinutesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    /**
+     * 사전 알림 시간 (분)
+     */
+    val preNotificationMinutes: StateFlow<Int> = settingsRepository.preNotificationMinutesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 5)
 
     init {
         loadAutoRuns()
@@ -146,6 +171,53 @@ class TimeBasedAutoRunViewModel @Inject constructor(
      */
     fun clearError() {
         _errorState.value = null
+    }
+
+    // ==================== 글로벌 옵션 저장 ====================
+
+    /**
+     * 주말 제외 설정 저장
+     *
+     * @param exclude true: 주말에 자동 실행 안 함, false: 주말에도 자동 실행
+     */
+    fun setExcludeWeekends(exclude: Boolean) {
+        viewModelScope.launch {
+            try {
+                settingsRepository.saveExcludeWeekends(exclude)
+            } catch (e: Exception) {
+                _errorState.value = "설정 저장 실패: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * 자동 시작 딜레이 저장
+     *
+     * @param minutes 0, 5, 10 중 하나
+     */
+    fun setAutoStartDelayMinutes(minutes: Int) {
+        viewModelScope.launch {
+            try {
+                settingsRepository.saveAutoStartDelayMinutes(minutes)
+            } catch (e: Exception) {
+                _errorState.value = "설정 저장 실패: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * 사전 알림 시간 저장
+     *
+     * @param minutes 0, 5, 10, 15 중 하나
+     */
+    fun setPreNotificationMinutes(minutes: Int) {
+        viewModelScope.launch {
+            try {
+                settingsRepository.savePreNotificationMinutes(minutes)
+            } catch (e: Exception) {
+                _errorState.value = "설정 저장 실패: ${e.message}"
+            }
+        }
     }
 }
 

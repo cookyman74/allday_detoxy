@@ -45,6 +45,12 @@ fun TimeBasedAutoRunScreen(
     val autoRuns by viewModel.autoRuns.collectAsStateWithLifecycle()
     val canScheduleExactAlarms by viewModel.canScheduleExactAlarms.collectAsStateWithLifecycle()
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
+    
+    // 글로벌 옵션 상태
+    val excludeWeekends by viewModel.excludeWeekends.collectAsStateWithLifecycle()
+    val autoStartDelayMinutes by viewModel.autoStartDelayMinutes.collectAsStateWithLifecycle()
+    val preNotificationMinutes by viewModel.preNotificationMinutes.collectAsStateWithLifecycle()
+    
     val context = LocalContext.current
     
     var showAddDialog by remember { mutableStateOf(false) }
@@ -145,7 +151,17 @@ fun TimeBasedAutoRunScreen(
                 }
             }
 
-            // 4. 배터리 영향 안내 카드
+            // 4. 글로벌 옵션 섹션
+            GlobalOptionsSection(
+                excludeWeekends = excludeWeekends,
+                autoStartDelayMinutes = autoStartDelayMinutes,
+                preNotificationMinutes = preNotificationMinutes,
+                onExcludeWeekendsChange = { viewModel.setExcludeWeekends(it) },
+                onAutoStartDelayChange = { viewModel.setAutoStartDelayMinutes(it) },
+                onPreNotificationChange = { viewModel.setPreNotificationMinutes(it) }
+            )
+
+            // 5. 배터리 영향 안내 카드
             BatteryImpactInfoCard(
                 impactLevel = "최소",
                 estimatedPercentage = "< 1%/일",

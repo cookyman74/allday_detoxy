@@ -518,12 +518,18 @@
   - **구현**: [TimeBasedAutoRunRepository.kt](../app/src/main/java/com/allday/detoxy/data/repository/TimeBasedAutoRunRepository.kt) (48줄)
 
 #### 3.1.3 글로벌 옵션 UI
-- [ ] **GlobalOptionsSection** 컴포넌트 → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-글로벌-옵션)
+- [x] **GlobalOptionsSection** 컴포넌트 → [PRD §4.1.4](./02_advanced_autosetting_prd.md#414-글로벌-옵션) ✅
   - 주말 제외 토글
   - 자동 시작 딜레이 선택 (0분, 5분, 10분)
   - 사전 알림 시간 선택 (0분, 5분, 10분, 15분)
   - DataStore에 저장
   - **참조**: [FocusSettingsRepository](../app/src/main/java/com/allday/detoxy/data/repository/FocusSettingsRepository.kt) - DataStore 패턴
+  - **구현**: 
+    - [AutoRunSettingsRepository.kt](../app/src/main/java/com/allday/detoxy/domain/repository/AutoRunSettingsRepository.kt) - 인터페이스 (59줄)
+    - [AutoRunSettingsRepositoryImpl.kt](../app/src/main/java/com/allday/detoxy/data/repository/AutoRunSettingsRepositoryImpl.kt) - DataStore 구현체 (108줄)
+    - [GlobalOptionsSection.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/GlobalOptionsSection.kt) - UI 컴포넌트 (161줄)
+    - [TimeBasedAutoRunViewModel.kt](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimeBasedAutoRunViewModel.kt) - 글로벌 옵션 StateFlow 노출 및 저장 메서드
+    - [TimeBasedAutoRunScreen.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/TimeBasedAutoRunScreen.kt) - GlobalOptionsSection 통합
 
 **작업 기록**: `working_history/2025-10-23_2nd_advanced_3.1.md`
 
