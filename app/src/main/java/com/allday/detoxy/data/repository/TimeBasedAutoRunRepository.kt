@@ -78,8 +78,8 @@ class TimeBasedAutoRunRepository @Inject constructor(
      * @param id 토글할 자동 실행 ID
      * @param isEnabled 활성화 여부
      */
-    suspend fun toggleEnabled(id: String, isEnabled: Boolean) {
-        dao.toggleEnabled(id, isEnabled)
+    suspend fun setEnabled(id: String, isEnabled: Boolean) {
+        dao.setEnabled(id, isEnabled)
     }
 
     /**
@@ -92,4 +92,3 @@ class TimeBasedAutoRunRepository @Inject constructor(
         return dao.getEnabledForDay(dayOfWeek)
     }
 }
-

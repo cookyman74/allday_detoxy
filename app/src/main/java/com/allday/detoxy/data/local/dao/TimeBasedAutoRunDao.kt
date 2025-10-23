@@ -110,7 +110,7 @@ interface TimeBasedAutoRunDao {
      * @param isEnabled 활성화 여부
      */
     @Query("UPDATE time_based_auto_run SET isEnabled = :isEnabled WHERE id = :id")
-    suspend fun toggleEnabled(id: String, isEnabled: Boolean)
+    suspend fun setEnabled(id: String, isEnabled: Boolean)
 
     /**
      * 총 개수 조회
@@ -128,4 +128,3 @@ interface TimeBasedAutoRunDao {
     @Query("SELECT COUNT(*) FROM time_based_auto_run WHERE isEnabled = 1")
     suspend fun getEnabledCount(): Int
 }
-

@@ -151,7 +151,7 @@ class TimeBasedAutoRunViewModel @Inject constructor(
                     return@launch
                 }
                 
-                repository.toggleEnabled(autoRunId, isEnabled)
+                repository.setEnabled(autoRunId, isEnabled)
                 
                 // 활성화 시 알람 등록, 비활성화 시 알람 취소
                 if (isEnabled) {
@@ -220,4 +220,3 @@ class TimeBasedAutoRunViewModel @Inject constructor(
         }
     }
 }
-
