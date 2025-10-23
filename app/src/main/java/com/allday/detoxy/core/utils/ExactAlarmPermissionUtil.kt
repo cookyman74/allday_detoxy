@@ -69,6 +69,27 @@ object ExactAlarmPermissionUtil {
     }
 
     /**
+     * 정확 알람 설정 화면으로 안전하게 이동 (API 레벨 체크 포함)
+     *
+     * Android 12 이상: 정확 알람 설정 화면
+     * Android 11 이하: 앱 정보 화면 (대체)
+     *
+     * @param context Context
+     * @return 설정 화면 Intent (null이 아님을 보장)
+     */
+    fun createSettingsIntentSafe(context: Context): Intent {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            createSettingsIntent(context)
+        } else {
+            // Android 11 이하: 앱 정보 화면으로 대체
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+        }
+    }
+
+    /**
      * 현재 스케줄러 타입 반환
      *
      * UI에서 사용자에게 표시할 스케줄러 정보를 제공합니다.

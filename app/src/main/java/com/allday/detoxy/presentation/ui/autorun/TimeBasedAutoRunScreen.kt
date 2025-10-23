@@ -111,7 +111,7 @@ fun TimeBasedAutoRunScreen(
             if (!canScheduleExactAlarms) {
                 ExactAlarmPermissionWarningBanner(
                     onSettingsClick = {
-                        val intent = ExactAlarmPermissionUtil.createSettingsIntent(context)
+                        val intent = ExactAlarmPermissionUtil.createSettingsIntentSafe(context)
                         context.startActivity(intent)
                     }
                 )
