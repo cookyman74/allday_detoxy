@@ -310,17 +310,31 @@ class AutoRunAlarmManager @Inject constructor(
      * @param autoRunId 취소할 자동 실행 ID
      */
     fun cancelTimeBasedAutoRun(autoRunId: String) {
-        // AlarmManager 취소
+        // 🔧 Critical Fix: 메인 알람과 사전 알림 알람 모두 취소
+        
+        // 1. 메인 알람 취소
         try {
             val pendingIntent = createPendingIntentById(autoRunId)
             alarmManager.cancel(pendingIntent)
             pendingIntent.cancel()
-            Log.d(TAG, "🗑️ AlarmManager canceled for autoRunId: $autoRunId")
+            Log.d(TAG, "🗑️ Main alarm canceled for autoRunId: $autoRunId")
         } catch (e: Exception) {
-            Log.w(TAG, "⚠️ Failed to cancel AlarmManager: ${e.message}")
+            Log.w(TAG, "⚠️ Failed to cancel main alarm: ${e.message}")
         }
         
-        // WorkManager 취소 (혹시 WorkManager로 스케줄링되어 있을 수 있으므로)
+        // 2. 🔧 사전 알림 알람 취소 (Critical Fix)
+        // 비활성화/삭제 시 사전 알림 알람도 함께 취소하지 않으면
+        // 사용자가 "N분 전" 알림을 계속 받게 됨
+        try {
+            val preNotificationIntent = createPreNotificationPendingIntentById(autoRunId)
+            alarmManager.cancel(preNotificationIntent)
+            preNotificationIntent.cancel()
+            Log.d(TAG, "🗑️ Pre-notification alarm canceled for autoRunId: $autoRunId")
+        } catch (e: Exception) {
+            Log.w(TAG, "⚠️ Failed to cancel pre-notification alarm: ${e.message}")
+        }
+        
+        // 3. WorkManager 취소 (혹시 WorkManager로 스케줄링되어 있을 수 있으므로)
         try {
             val workName = "${AutoRunWorker.WORK_NAME_PREFIX}$autoRunId"
             workManager.cancelUniqueWork(workName)
@@ -329,7 +343,7 @@ class AutoRunAlarmManager @Inject constructor(
             Log.w(TAG, "⚠️ Failed to cancel WorkManager: ${e.message}")
         }
         
-        Log.i(TAG, "✅ AutoRun canceled: $autoRunId")
+        Log.i(TAG, "✅ AutoRun canceled (main + pre-notification + WorkManager): $autoRunId")
     }
 
     /**
@@ -511,6 +525,32 @@ class AutoRunAlarmManager @Inject constructor(
 
         // requestCode 생성 (음수 hashCode 대응)
         val requestCode = kotlin.math.abs(autoRunId.hashCode()) % 10000 + REQUEST_CODE_BASE
+        
+        return PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    /**
+     * ID로 사전 알림 PendingIntent 생성 (취소용)
+     *
+     * 사전 알림 알람을 취소할 때 사용하는 PendingIntent를 생성합니다.
+     * requestCode가 메인 알람과 달라 별도 메서드로 분리했습니다.
+     *
+     * @param autoRunId 자동 실행 ID
+     * @return PendingIntent for pre-notification alarm
+     */
+    private fun createPreNotificationPendingIntentById(autoRunId: String): PendingIntent {
+        val intent = Intent(context, AutoRunAlarmReceiver::class.java).apply {
+            action = ACTION_PRE_NOTIFICATION
+            putExtra(EXTRA_AUTO_RUN_ID, autoRunId)
+        }
+
+        // 사전 알림용 requestCode (메인 알람과 중복 방지)
+        val requestCode = kotlin.math.abs(autoRunId.hashCode()) + PRE_NOTIFICATION_CODE_OFFSET
         
         return PendingIntent.getBroadcast(
             context,

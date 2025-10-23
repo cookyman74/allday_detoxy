@@ -10,6 +10,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -165,31 +166,36 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      * DB에서 최신 autoRun 정보를 가져와 다음 발생 시각을 계산하여 알람을 재등록합니다.
      * 주간 반복 알람을 지속적으로 유지하기 위해 필수적입니다.
      *
+     * ## 🔧 Critical Fix: Flow 무한 구독 문제 해결
+     * - 기존: `collect { ... }` 사용 → Flow가 완료되지 않아 코루틴이 무한히 살아있음
+     * - 수정: `firstOrNull()` 사용 → 단일 스냅샷만 가져와 즉시 완료
+     * - 영향: `pendingResult.finish()`에 정상 도달, goAsync() 윈도우 시간 초과 방지
+     *
      * @param autoRunId 재스케줄링할 autoRun ID
      */
     private suspend fun rescheduleNextAlarm(autoRunId: String) {
         try {
-            // DB에서 최신 autoRun 정보 가져오기
-            val autoRunFlow = timeBasedAutoRunDao.getById(autoRunId)
-            autoRunFlow.collect { autoRun ->
-                if (autoRun == null) {
-                    Log.w(TAG, "⚠️ AutoRun not found in DB: $autoRunId, cannot reschedule")
-                    return@collect
-                }
+            // 🔧 Critical Fix: firstOrNull() 사용하여 단일 스냅샷만 가져오기
+            // collect()를 사용하면 Flow가 완료되지 않아 코루틴이 무한히 살아있게 됨
+            val autoRun = timeBasedAutoRunDao.getById(autoRunId).firstOrNull()
+            
+            if (autoRun == null) {
+                Log.w(TAG, "⚠️ AutoRun not found in DB: $autoRunId, cannot reschedule")
+                return
+            }
 
-                if (!autoRun.isEnabled) {
-                    Log.d(TAG, "⏭️ AutoRun is disabled: $autoRunId, skipping reschedule")
-                    return@collect
-                }
+            if (!autoRun.isEnabled) {
+                Log.d(TAG, "⏭️ AutoRun is disabled: $autoRunId, skipping reschedule")
+                return
+            }
 
-                // 다음 알람 스케줄링
-                val success = alarmManager.scheduleTimeBasedAutoRun(autoRun)
-                
-                if (success) {
-                    Log.i(TAG, "✅ Next alarm scheduled for: ${autoRun.label ?: autoRunId}")
-                } else {
-                    Log.e(TAG, "❌ Failed to schedule next alarm for: ${autoRun.label ?: autoRunId}")
-                }
+            // 다음 알람 스케줄링
+            val success = alarmManager.scheduleTimeBasedAutoRun(autoRun)
+            
+            if (success) {
+                Log.i(TAG, "✅ Next alarm scheduled for: ${autoRun.label ?: autoRunId}")
+            } else {
+                Log.e(TAG, "❌ Failed to schedule next alarm for: ${autoRun.label ?: autoRunId}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error rescheduling alarm: ${e.message}", e)
