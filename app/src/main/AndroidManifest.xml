@@ -86,6 +86,17 @@
             android:enabled="true">
             <intent-filter>
                 <action android:name="com.allday.detoxy.ACTION_AUTO_RUN_ALARM" />
+                <action android:name="com.allday.detoxy.ACTION_PRE_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+
+        <!-- BootCompletedReceiver for rescheduling alarms after device reboot -->
+        <receiver
+            android:name=".receiver.BootCompletedReceiver"
+            android:exported="false"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
