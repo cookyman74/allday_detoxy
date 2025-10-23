@@ -24,13 +24,13 @@ import com.allday.detoxy.presentation.ui.autorun.components.*
 import com.allday.detoxy.presentation.viewmodel.TimeBasedAutoRunViewModel
 
 /**
- * 시간 기반 자동 실행 설정 화면
+ * 예약설정 화면 (시간 기반 자동 실행)
  *
  * 사용자가 특정 시간에 자동으로 타이머를 시작하도록 설정할 수 있는 화면입니다.
  * - 정확 알람 권한 경고 배너
  * - 템플릿 선택 버튼
- * - 시간대 리스트 (LazyColumn)
- * - 시간대 추가 버튼
+ * - 예약 목록 (LazyColumn)
+ * - 예약 추가 버튼
  * - 배터리 영향 안내 카드
  *
  * @param onBack 뒤로가기 콜백
@@ -75,7 +75,7 @@ fun TimeBasedAutoRunScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("시간 기반 자동 실행") },
+                title = { Text("예약설정") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

@@ -22,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.allday.detoxy.core.utils.PreferenceManager
+import com.allday.detoxy.presentation.ui.autorun.TimeBasedAutoRunScreen
 import com.allday.detoxy.presentation.ui.onboarding.WelcomeScreen
 import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
 import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
@@ -117,49 +118,54 @@ fun MainScreen() {
  *
  * Week 3.3.1: 타이머와 리포트 화면 간 탭 네비게이션 제공
  * 1차 고도화 (Week 1): 설정 탭 추가
- * 구성: 타이머, 리포트, 설정 (3개 탭)
+ * 2차 고도화 (Week 2): 예약설정(시간 기반 자동 실행) 화면 추가
+ * 구성: 타이머, 리포트, 설정, 예약설정 (3개 탭 + 1개 상세 화면)
  */
 @Composable
 fun MainScreenWithNavigation() {
     var selectedTab by remember { mutableStateOf(0) }
+    var showTimeBasedAutoRun by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = null
-                        )
-                    },
-                    label = { Text("타이머") }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null
-                        )
-                    },
-                    label = { Text("리포트") }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = null
-                        )
-                    },
-                    label = { Text("설정") }
-                )
+            // 예약설정 화면에서는 하단 네비게이션 숨김
+            if (!showTimeBasedAutoRun) {
+                NavigationBar {
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = null
+                            )
+                        },
+                        label = { Text("타이머") }
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null
+                            )
+                        },
+                        label = { Text("리포트") }
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = null
+                            )
+                        },
+                        label = { Text("설정") }
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -168,12 +174,24 @@ fun MainScreenWithNavigation() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (selectedTab) {
-                0 -> TimerScreen()
-                1 -> ReportScreen()
-                2 -> DetoxyControlSettingsScreen(
-                    onBack = { selectedTab = 0 }  // 뒤로 가기 시 타이머로
-                )
+            when {
+                // 예약설정 화면
+                showTimeBasedAutoRun -> {
+                    TimeBasedAutoRunScreen(
+                        onBack = { showTimeBasedAutoRun = false }
+                    )
+                }
+                // 탭별 화면
+                else -> {
+                    when (selectedTab) {
+                        0 -> TimerScreen()
+                        1 -> ReportScreen()
+                        2 -> DetoxyControlSettingsScreen(
+                            onBack = { selectedTab = 0 },  // 뒤로 가기 시 타이머로
+                            onNavigateToAutoRun = { showTimeBasedAutoRun = true }  // 예약설정으로
+                        )
+                    }
+                }
             }
         }
     }

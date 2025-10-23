@@ -40,6 +40,7 @@ import com.allday.detoxy.presentation.viewmodel.FocusSettingsUiState
 @Composable
 fun DetoxyControlSettingsScreen(
     onBack: () -> Unit = {},
+    onNavigateToAutoRun: () -> Unit = {},
     viewModel: FocusSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -118,7 +119,12 @@ fun DetoxyControlSettingsScreen(
                 overlayEnabled = uiState.overlayEnabled
             )
 
-            // Section 5: 디톡시 루틴 (향후 구현)
+            // Section 5: 예약설정 (2차 고도화)
+            TimeBasedAutoRunSection(
+                onNavigateToAutoRun = onNavigateToAutoRun
+            )
+
+            // Section 6: 디톡시 루틴 (향후 구현)
             DetoxyRoutineSection(
                 routineEnabled = uiState.routineEnabled,
                 onRoutineToggle = { enabled ->
@@ -542,6 +548,54 @@ fun PermissionStatusItem(
 
         if (!isGranted) {
             TextButton(onClick = onSettingsClick) {
+                Text("설정하기")
+            }
+        }
+    }
+}
+
+/**
+ * 예약설정 섹션 (2차 고도화)
+ * 
+ * 시간 기반 자동 실행 화면으로 이동하는 버튼을 제공합니다.
+ */
+@Composable
+fun TimeBasedAutoRunSection(
+    onNavigateToAutoRun: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "⏰")
+                    Text(
+                        text = "예약설정",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "원하는 시간에 자동으로 집중모드 시작",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            TextButton(onClick = onNavigateToAutoRun) {
                 Text("설정하기")
             }
         }
