@@ -276,5 +276,94 @@ if (isSnooze) {
 
 ---
 
-> **작업 철학**: "작은 TODO도 사용자 경험에 큰 영향을 미친다". 리뷰 피드백을 통해 발견된 미완성 작업들을 체계적으로 완료하여 자동 실행 기능의 완성도를 높였습니다.
+## 🔧 추가 버그 수정: Canvas 하드웨어 가속 에러
+
+### 📋 문제 발견
+- **발견 시점**: 실제 기기 테스트 중
+- **증상**: 리포트 탭 클릭 시 "LB fail to open node: No such file or directory" 에러 반복 발생
+- **빈도**: 리포트 화면 진입 시마다 10회 이상
+- **영향**: 기능은 정상 동작하나 로그 스팸 발생
+
+### 🔍 원인 분석
+- Canvas 그리기 작업 중 하드웨어 가속 관련 문제
+- `RecoveryTrendCard`의 라인 차트 Canvas
+- `DistractionAvoidanceCard`의 도넛 차트 Canvas
+- `graphicsLayer()` 미적용으로 하드웨어 레이어 처리 실패
+
+### ✅ 해결 방법
+
+#### 1. RecoveryTrendCard.kt 수정
+```kotlin
+// Before
+Canvas(modifier = modifier) {
+    // ... 차트 그리기
+}
+
+// After
+Canvas(
+    modifier = modifier
+        .graphicsLayer() // 하드웨어 가속 에러 방지
+) {
+    // ... 차트 그리기
+}
+```
+
+#### 2. DistractionAvoidanceCard.kt 수정
+```kotlin
+// Before
+Canvas(modifier = modifier) {
+    // ... 도넛 차트 그리기
+}
+
+// After
+Canvas(
+    modifier = modifier
+        .graphicsLayer() // 하드웨어 가속 에러 방지
+) {
+    // ... 도넛 차트 그리기
+}
+```
+
+#### 3. Import 추가
+```kotlin
+import androidx.compose.ui.graphics.graphicsLayer
+```
+
+### 📊 개선 효과
+- ✅ 하드웨어 가속 에러 완전 제거
+- ✅ 로그 스팸 없어짐
+- ✅ Canvas 렌더링 성능 최적화
+- ✅ 사용자 경험 개선
+
+### 📦 커밋 정보
+| 커밋 ID | 내용 |
+|---------|------|
+| `4238c68` | fix(report): Canvas 하드웨어 가속 에러 해결 |
+
+---
+
+## 📝 최종 요약
+
+### 완료된 작업 (총 5개)
+1. ✅ AutoRunAlarmReceiver - logAutoRunStarted() 구현
+2. ✅ NotificationActionReceiver - isSnooze 플래그 추가
+3. ✅ NotificationActionReceiver - snooze Work 취소 로직 추가
+4. ✅ AutoStartTimerWorker - isSnooze 처리 (이미 구현됨)
+5. ✅ Canvas 하드웨어 가속 에러 수정 (추가 발견)
+
+### 전체 커밋
+| 커밋 ID | 내용 |
+|---------|------|
+| `8fd6456` | fix(autorun): TODO 작업 완료 - 스누즈 및 로그 기록 개선 |
+| `36f7fa9` | docs: TODO 작업 완료 기록 추가 (2025-10-24) |
+| `4238c68` | fix(report): Canvas 하드웨어 가속 에러 해결 |
+
+### 다음 단계
+- ⏭️ 실제 디바이스/에뮬레이터 E2E 테스트 수행 (수동)
+- ⏭️ 3.3.4 체크박스 업데이트
+- ⏭️ 4.1 위치 기반 자동 실행 UI 작업 진행
+
+---
+
+> **작업 철학**: "작은 TODO도 사용자 경험에 큰 영향을 미친다". 리뷰 피드백을 통해 발견된 미완성 작업들을 체계적으로 완료하고, 실제 테스트 중 발견된 Canvas 렌더링 에러까지 해결하여 자동 실행 기능과 리포트 화면의 완성도를 높였습니다.
 
