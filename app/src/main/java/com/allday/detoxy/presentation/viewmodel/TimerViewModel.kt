@@ -427,14 +427,11 @@ class TimerViewModel @Inject constructor(
                 if (targetTimeMillis > now.timeInMillis && targetTimeMillis < nearestTimeMillis) {
                     nearestTimeMillis = targetTimeMillis
                     nearestAutoRun = autoRun
+                    // 이 autoRun에서 가장 가까운 예약을 찾았으므로 다음 날짜는 확인하지 않음
+                    break
                 }
-
-                // 가장 가까운 예약을 찾았으면 더 이상 검색하지 않음
-                if (nearestAutoRun != null) break
             }
-
-            // 이미 예약을 찾았으면 종료
-            if (nearestAutoRun != null) break
+            // 모든 autoRun을 확인하여 전체 중 가장 가까운 예약을 찾아야 하므로 여기서 break하지 않음
         }
 
         // 가장 가까운 예약이 없으면 null 반환
