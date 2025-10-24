@@ -160,24 +160,26 @@ class FocusTimerService : Service() {
 
         Log.d(TAG, "Timer started: $totalSec seconds")
 
-        // ⭐ Critical: AccessibilityService 설정 (자동 실행 대응)
+        // ⭐ Critical: AccessibilityService 설정 먼저 동기적으로 활성화
+        // 타이머 정보 전달을 먼저 하여 앱 차단이 즉시 동작하도록 함
+        FocusAccessibilityService.isTimerRunning = true
+        FocusAccessibilityService.remainingSeconds = totalSec
+        FocusAccessibilityService.totalSeconds = totalSec
+        FocusAccessibilityService.currentSessionId = sessionId
+        Log.i(TAG, "✅ [1/2] AccessibilityService activated (isTimerRunning=true, sessionId=$sessionId)")
+
         // 디톡시 제어 설정 로드 및 AccessibilityService에 전달
         serviceScope?.launch {
             try {
                 val (categories, otherApps) = settingsRepository.getCurrentSettings()
                 FocusAccessibilityService.updateBlockSettings(categories, otherApps)
-                Log.i(TAG, "✅ Block settings loaded: ${categories.size} categories, otherApps=$otherApps")
+                Log.i(TAG, "✅ [2/2] Block settings loaded: ${categories.joinToString(", ") { it.name }}, otherApps=$otherApps")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to load block settings: ${e.message}", e)
+                // 실패 시 기본 프리셋 사용
+                Log.w(TAG, "⚠️ Using default preset (SNS, WEB, VIDEO_SHORTS)")
             }
         }
-
-        // AccessibilityService 활성화 및 타이머 정보 전달
-        FocusAccessibilityService.isTimerRunning = true
-        FocusAccessibilityService.remainingSeconds = totalSec
-        FocusAccessibilityService.totalSeconds = totalSec
-        FocusAccessibilityService.currentSessionId = sessionId
-        Log.i(TAG, "✅ AccessibilityService activated (isTimerRunning=true)")
 
         // DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

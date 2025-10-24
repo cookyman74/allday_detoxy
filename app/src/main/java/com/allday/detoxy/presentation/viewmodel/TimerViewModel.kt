@@ -186,28 +186,15 @@ class TimerViewModel @Inject constructor(
                     success = false
                 )
             )
-
-            // 1.5. 디톡시 제어 설정 로드 및 AccessibilityService에 전달 (1차 고도화)
-            val (categories, otherApps) = settingsRepository.getCurrentSettings()
-            FocusAccessibilityService.updateBlockSettings(categories, otherApps)
-            Log.i(TAG, "✅ Block settings loaded: ${categories.size} categories, otherApps=$otherApps")
         }
 
-        // 2. AccessibilityService 활성화 및 타이머 정보 전달
-        val totalSec = durationMinutes * 60
-        FocusAccessibilityService.isTimerRunning = true
-        FocusAccessibilityService.remainingSeconds = totalSec
-        FocusAccessibilityService.totalSeconds = totalSec
-        FocusAccessibilityService.currentSessionId = sessionId  // 차단 이벤트 로깅용 (v2)
-
-        // 3. DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            dndManager.enableDnd()
-        }
-
-        // 4. FocusTimerService 시작 (Foreground Service)
+        // 2. FocusTimerService 시작 (Foreground Service)
+        // ⚠️ FocusTimerService.startTimerInternal()에서 모든 설정을 처리하도록 일원화
+        // - AccessibilityService 설정 로드
+        // - isTimerRunning, remainingSeconds, totalSeconds, currentSessionId 설정
+        // - DND 모드 활성화
         FocusTimerService.startTimer(application, durationMinutes, sessionId)
-        Log.d(TAG, "✅ FocusTimerService started")
+        Log.d(TAG, "✅ FocusTimerService started (sessionId=$sessionId)")
     }
 
     /**

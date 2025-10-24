@@ -114,21 +114,26 @@ class FocusAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 타이머 실행 상태 로그
-        Log.d(TAG, "Event received - Timer: $isTimerRunning, Type: ${event.eventType}, Package: ${event.packageName}")
-
-        if (!isTimerRunning) return  // 타이머가 실행 중이 아니면 차단하지 않음
-
         // TYPE_WINDOW_STATE_CHANGED 이벤트만 처리
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
         val packageName = event.packageName?.toString() ?: return
+
+        // 타이머 실행 상태 확인 (상세 로그)
+        if (!isTimerRunning) {
+            Log.d(TAG, "⏸️ Timer not running - Ignoring $packageName")
+            return
+        }
+
+        Log.d(TAG, "🔍 Checking app: $packageName (Timer: RUNNING, Categories: ${enabledCategories.size}, OtherApps: $otherAppsEnabled)")
 
         // 디톡시 제어 설정 기반 차단 여부 확인
         if (isAppBlocked(packageName)) {
             val category = AppCategoryMapper.getCategoryByPackage(packageName)
             Log.w(TAG, "⚠️ BLOCKED APP DETECTED: $packageName (Category: ${category?.getDisplayName() ?: "OTHER"})")
             handleBlockedApp(packageName, category)
+        } else {
+            Log.d(TAG, "✅ App allowed: $packageName")
         }
     }
 
