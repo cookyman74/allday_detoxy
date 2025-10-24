@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -160,7 +161,10 @@ private fun DailyRecoveryLineChart(
     
     if (sortedEntries.isEmpty()) return
 
-    Canvas(modifier = modifier) {
+    Canvas(
+        modifier = modifier
+            .graphicsLayer() // 하드웨어 가속 에러 방지
+    ) {
         val width = size.width
         val height = size.height
         val padding = 40f

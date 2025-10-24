@@ -13,6 +13,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -190,7 +191,10 @@ private fun GiveUpDonutChart(
     val midPercentage = midCount.toFloat() / total
     val latePercentage = lateCount.toFloat() / total
 
-    Canvas(modifier = modifier) {
+    Canvas(
+        modifier = modifier
+            .graphicsLayer() // 하드웨어 가속 에러 방지
+    ) {
         val canvasSize = size.minDimension
         val strokeWidth = canvasSize / 6
         val radius = (canvasSize - strokeWidth) / 2
