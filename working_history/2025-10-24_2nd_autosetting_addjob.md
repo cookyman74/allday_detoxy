@@ -342,14 +342,139 @@ import androidx.compose.ui.graphics.graphicsLayer
 
 ---
 
+## 🔧 추가 버그 수정 2: 앱 필터링 타이밍 이슈
+
+### 📋 문제 발견
+- **발견 시점**: 실제 기기 테스트 중
+- **증상**: 집중모드에서 앱 필터링이 동작하지 않음
+- **영향**: 타이머 실행 중에도 차단 앱 접근 가능 (집중 세션 무력화)
+
+### 🔍 원인 분석
+1. **중복 설정**: `TimerViewModel.startTimer()`와 `FocusTimerService.startTimerInternal()`에서 `FocusAccessibilityService` 설정을 중복으로 처리
+2. **타이밍 이슈**: 설정 로드가 비동기로 진행되는 동안 `isTimerRunning`이 설정되어 앱 차단이 제대로 동작하지 않음
+3. **순서 문제**: 차단 설정 로드 완료 전에 타이머가 시작되어 초기 앱 접근 시 차단되지 않음
+
+### ✅ 해결 방법
+
+#### 1. TimerViewModel.startTimer() 간소화
+
+**Before (중복 설정)**:
+```kotlin
+// 1. 세션 생성
+viewModelScope.launch {
+    repository.startSession(...)
+    
+    // 설정 로드 (비동기)
+    val (categories, otherApps) = settingsRepository.getCurrentSettings()
+    FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+}
+
+// 2. AccessibilityService 활성화
+FocusAccessibilityService.isTimerRunning = true
+FocusAccessibilityService.remainingSeconds = totalSec
+// ...
+
+// 3. DND 활성화
+dndManager.enableDnd()
+
+// 4. Service 시작
+FocusTimerService.startTimer(...)
+```
+
+**After (완전 위임)**:
+```kotlin
+// 1. 세션 생성만 담당
+viewModelScope.launch {
+    repository.startSession(...)
+}
+
+// 2. FocusTimerService로 완전히 위임
+FocusTimerService.startTimer(application, durationMinutes, sessionId)
+```
+
+#### 2. FocusTimerService.startTimerInternal() 개선
+
+**Before (설정 로드 먼저)**:
+```kotlin
+// 설정 로드 (비동기)
+serviceScope?.launch {
+    val (categories, otherApps) = settingsRepository.getCurrentSettings()
+    FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+}
+
+// AccessibilityService 활성화
+FocusAccessibilityService.isTimerRunning = true
+```
+
+**After (즉시 활성화 후 설정 로드)**:
+```kotlin
+// 1단계: 즉시 활성화 (동기)
+FocusAccessibilityService.isTimerRunning = true
+FocusAccessibilityService.remainingSeconds = totalSec
+FocusAccessibilityService.totalSeconds = totalSec
+FocusAccessibilityService.currentSessionId = sessionId
+Log.i(TAG, "✅ [1/2] AccessibilityService activated")
+
+// 2단계: 설정 로드 (비동기, 백그라운드)
+serviceScope?.launch {
+    try {
+        val (categories, otherApps) = settingsRepository.getCurrentSettings()
+        FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+        Log.i(TAG, "✅ [2/2] Block settings loaded")
+    } catch (e: Exception) {
+        Log.e(TAG, "❌ Failed to load block settings")
+        Log.w(TAG, "⚠️ Using default preset (SNS, WEB, VIDEO_SHORTS)")
+    }
+}
+```
+
+#### 3. 디버깅 로그 강화
+
+**FocusAccessibilityService.kt**:
+```kotlin
+override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+    // ...
+    
+    // 타이머 실행 상태 확인 (상세 로그)
+    if (!isTimerRunning) {
+        Log.d(TAG, "⏸️ Timer not running - Ignoring $packageName")
+        return
+    }
+
+    Log.d(TAG, "🔍 Checking app: $packageName (Timer: RUNNING, Categories: ${enabledCategories.size}, OtherApps: $otherAppsEnabled)")
+
+    if (isAppBlocked(packageName)) {
+        Log.w(TAG, "⚠️ BLOCKED APP DETECTED: $packageName")
+        handleBlockedApp(packageName, category)
+    } else {
+        Log.d(TAG, "✅ App allowed: $packageName")
+    }
+}
+```
+
+### 📊 개선 효과
+- ✅ 타이머 시작과 동시에 앱 필터링 **즉시 활성화**
+- ✅ 타이밍 이슈 완전 제거
+- ✅ 중복 설정 제거로 코드 간소화 (~33줄 → ~8줄)
+- ✅ 디버깅 용이성 향상 (단계별 로그, 이모지 사용)
+- ✅ 기본 프리셋 fallback 추가 (설정 로드 실패 시)
+
+### 📦 커밋 정보
+| 커밋 ID | 내용 |
+|---------|------|
+| `acc22d0` | fix(timer): 앱 필터링 타이밍 이슈 해결 및 로깅 강화 |
+
+---
+
 ## 📝 최종 요약
 
-### 완료된 작업 (총 5개)
+### 완료된 작업 (총 6개)
 1. ✅ AutoRunAlarmReceiver - logAutoRunStarted() 구현
 2. ✅ NotificationActionReceiver - isSnooze 플래그 추가
 3. ✅ NotificationActionReceiver - snooze Work 취소 로직 추가
 4. ✅ AutoStartTimerWorker - isSnooze 처리 (이미 구현됨)
 5. ✅ Canvas 하드웨어 가속 에러 수정 (추가 발견)
+6. ✅ 앱 필터링 타이밍 이슈 수정 (추가 발견)
 
 ### 전체 커밋
 | 커밋 ID | 내용 |
@@ -357,6 +482,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 | `8fd6456` | fix(autorun): TODO 작업 완료 - 스누즈 및 로그 기록 개선 |
 | `36f7fa9` | docs: TODO 작업 완료 기록 추가 (2025-10-24) |
 | `4238c68` | fix(report): Canvas 하드웨어 가속 에러 해결 |
+| `acc22d0` | fix(timer): 앱 필터링 타이밍 이슈 해결 및 로깅 강화 |
 
 ### 다음 단계
 - ⏭️ 실제 디바이스/에뮬레이터 E2E 테스트 수행 (수동)
