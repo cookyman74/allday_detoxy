@@ -701,12 +701,12 @@
 ### 4.1 위치 설정 UI (Day 14-15)
 
 #### 4.1.1 LocationBasedAutoRunScreen 레이아웃
-- [ ] **오류 상태 UI 추가** 🔄 → [Wireframe §3.1](./02_advanced_wireframe_spec.md#31-메인-화면-locationbasedautorunscreen)
+- [x] **오류 상태 UI 추가** 🔄 → [Wireframe §3.1](./02_advanced_wireframe_spec.md#31-메인-화면-locationbasedautorunscreen) ✅
   - **Play Services 미지원 상태**: "이 기기에서는 위치 기반 자동 실행을 사용할 수 없습니다" 메시지 + 시간 기반 대안 제안
   - **위치 권한 거부 상태**: "위치 권한이 필요합니다" 메시지 + "권한 설정하기" 버튼
   - **위치 서비스 OFF 상태**: "위치 서비스를 켜주세요" 메시지 + 설정 이동 버튼
 
-- [ ] **메인 화면 Compose**
+- [x] **메인 화면 Compose** ✅
   ```kotlin
   @Composable
   fun LocationBasedAutoRunScreen(
@@ -726,7 +726,7 @@
   }
   ```
 
-- [ ] **LocationBasedAutoRunCard** 컴포넌트
+- [x] **LocationBasedAutoRunCard** 컴포넌트 ✅
   - 위치 이름 + 주소
   - 반경 표시 (반경 100m)
   - 타이머 시간 + 차단 프리셋
@@ -736,12 +736,12 @@
   - **최근 GPS 정확도 표시** 🆕 (AutoRunLog에서 가져옴)
   - **위치별 성공률 표시** 🆕 → [PRD §4.4.5](./02_advanced_autosetting_prd.md#445-위치-기반-신뢰도-강화)
 
-- [ ] **LocationPermissionCard** 컴포넌트
+- [x] **LocationPermissionCard** 컴포넌트 ✅
   - 위치 권한 필요성 설명
   - "권한 설정하기" 버튼
   - 현재 권한 상태 표시
 
-- [ ] **배터리 영향 안내 카드** 🆕 → [PRD §6.3.1](./02_advanced_autosetting_prd.md#631-배터리데이터-사용-안내), [Wireframe §3.1](./02_advanced_wireframe_spec.md#31-메인-화면-locationbasedautorunscreen)
+- [x] **배터리 영향 안내 카드** 🆕 → [PRD §6.3.1](./02_advanced_autosetting_prd.md#631-배터리데이터-사용-안내), [Wireframe §3.1](./02_advanced_wireframe_spec.md#31-메인-화면-locationbasedautorunscreen) ✅
   - 화면 하단에 카드 표시
   - "위치 기반 자동 실행: 배터리 영향 최소 수준" 🔄 (구체적 수치는 실측 후 업데이트)
   - "현재 설정으로 예상 배터리 소모" (등록된 위치 수에 따라 일반적 안내)

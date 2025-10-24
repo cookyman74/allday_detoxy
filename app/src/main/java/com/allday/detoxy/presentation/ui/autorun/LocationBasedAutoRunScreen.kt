@@ -1,0 +1,271 @@
+package com.allday.detoxy.presentation.ui.autorun
+
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.allday.detoxy.core.manager.AutoRunGeofenceManager
+import com.allday.detoxy.core.utils.PermissionUtils
+import com.allday.detoxy.presentation.ui.autorun.components.*
+import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
+
+/**
+ * 위치 기반 자동 실행 설정 화면
+ *
+ * 위치 기반 자동 실행 설정을 관리하는 메인 화면입니다.
+ *
+ * 주요 기능:
+ * - Play Services 미지원 경고 표시
+ * - 위치 권한 안내 및 요청
+ * - 등록된 위치 리스트 표시
+ * - 위치 추가 버튼 (최대 5개 제한)
+ * - 배터리 영향 안내
+ *
+ * @param onBack 뒤로가기 콜백
+ * @param onNavigateToTimeBased 시간 기반 자동 실행으로 이동 콜백
+ * @param viewModel LocationBasedAutoRunViewModel
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LocationBasedAutoRunScreen(
+    onBack: () -> Unit = {},
+    onNavigateToTimeBased: () -> Unit = {},
+    viewModel: LocationBasedAutoRunViewModel = hiltViewModel()
+) {
+    val context = LocalContext.current
+
+    // StateFlow 수집
+    val locations by viewModel.locations.collectAsState()
+    val playServicesAvailable by viewModel.playServicesAvailable.collectAsState()
+    val locationPermissionGranted by viewModel.locationPermissionGranted.collectAsState()
+    val backgroundLocationPermissionGranted by viewModel.backgroundLocationPermissionGranted.collectAsState()
+    val hasFullLocationPermission by viewModel.hasFullLocationPermission.collectAsState()
+
+    // 위치 권한 요청 런처
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // 백그라운드 위치 권한 요청으로 진행
+            viewModel.checkPermissions()
+        } else {
+            // 권한 거부 처리
+        }
+    }
+
+    // 백그라운드 위치 권한 요청 런처
+    val backgroundLocationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.checkPermissions()
+        if (!isGranted) {
+            // 설정 화면으로 이동 안내
+        }
+    }
+
+    // 권한 요청 핸들러
+    val requestLocationPermission: () -> Unit = {
+        when {
+            !locationPermissionGranted -> {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+            !backgroundLocationPermissionGranted -> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    backgroundLocationPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                }
+            }
+            else -> {
+                // 모든 권한 있음, 설정 화면으로 이동
+                PermissionUtils.openAppLocationSettings(context)
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("위치 기반 자동 실행") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "뒤로가기"
+                        )
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            // 권한이 모두 있고, Play Services가 사용 가능하며, 5개 미만일 때만 표시
+            if (playServicesAvailable && hasFullLocationPermission && locations.size < AutoRunGeofenceManager.MAX_GEOFENCES) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        // TODO: AddLocationAutoRunDialog 표시
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "위치 추가"
+                        )
+                    },
+                    text = { Text("위치 추가") }
+                )
+            }
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(vertical = 16.dp)
+        ) {
+            // Play Services 미지원 경고
+            if (!playServicesAvailable) {
+                item {
+                    PlayServicesWarningCard(
+                        onNavigateToTimeBased = onNavigateToTimeBased
+                    )
+                }
+                return@LazyColumn // 이후 항목 표시 안 함
+            }
+
+            // 위치 권한 안내
+            if (!hasFullLocationPermission) {
+                item {
+                    LocationPermissionCard(
+                        hasLocationPermission = locationPermissionGranted,
+                        hasBackgroundPermission = backgroundLocationPermissionGranted,
+                        onRequestPermission = requestLocationPermission,
+                        onNavigateToTimeBased = onNavigateToTimeBased
+                    )
+                }
+            }
+
+            // 등록된 위치 리스트
+            if (locations.isEmpty() && hasFullLocationPermission) {
+                item {
+                    EmptyLocationState()
+                }
+            } else {
+                items(
+                    items = locations,
+                    key = { it.id }
+                ) { location ->
+                    LocationBasedAutoRunCard(
+                        location = location,
+                        successRate = null, // TODO: AutoRunLog에서 성공률 계산
+                        gpsAccuracy = null, // TODO: AutoRunLog에서 GPS 정확도 계산
+                        onToggle = { isEnabled ->
+                            viewModel.toggleLocation(location.id, isEnabled)
+                        },
+                        onEdit = {
+                            // TODO: EditLocationAutoRunDialog 표시
+                        },
+                        onDelete = {
+                            viewModel.deleteLocation(location.id)
+                        }
+                    )
+                }
+            }
+
+            // 최대 개수 안내
+            if (locations.size >= AutoRunGeofenceManager.MAX_GEOFENCES) {
+                item {
+                    MaxLocationLimitWarning()
+                }
+            }
+
+            // 배터리 영향 안내
+            if (hasFullLocationPermission && locations.isNotEmpty()) {
+                item {
+                    LocationBatteryImpactCard(
+                        enabledCount = locations.count { it.isEnabled }
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 빈 상태 (위치가 등록되지 않았을 때)
+ */
+@Composable
+private fun EmptyLocationState() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "📍",
+                style = MaterialTheme.typography.displayMedium
+            )
+            Text(
+                text = "등록된 위치가 없습니다",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "특정 장소 도착 시 자동으로 집중 모드를 시작하세요",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * 최대 개수 초과 경고
+ */
+@Composable
+private fun MaxLocationLimitWarning() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "⚠️",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "최대 ${AutoRunGeofenceManager.MAX_GEOFENCES}개까지 등록 가능합니다.\n배터리 효율을 위해 개수가 제한됩니다.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
+    }
+}
+
