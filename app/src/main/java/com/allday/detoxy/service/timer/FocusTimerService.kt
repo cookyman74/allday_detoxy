@@ -195,6 +195,9 @@ class FocusTimerService : Service() {
                     // StateFlow 업데이트
                     val newRemaining = _remainingSeconds.value - 1
                     _remainingSeconds.value = newRemaining
+                    
+                    // AccessibilityService의 remainingSeconds도 동기화
+                    FocusAccessibilityService.remainingSeconds = newRemaining
 
                     // 디버깅: 30초마다 로그 출력
                     if (newRemaining % 30 == 0 || newRemaining <= 5) {
@@ -239,6 +242,19 @@ class FocusTimerService : Service() {
         _state.value = if (success) FocusState.FINISHED else FocusState.FAILED
         
         Log.d(TAG, "Timer stopped: success=$success, previousState=$previousState")
+
+        // AccessibilityService 비활성화
+        FocusAccessibilityService.isTimerRunning = false
+        FocusAccessibilityService.remainingSeconds = 0
+        FocusAccessibilityService.totalSeconds = 0
+        FocusAccessibilityService.currentSessionId = null
+        Log.i(TAG, "✅ AccessibilityService deactivated (isTimerRunning=false)")
+
+        // DND 모드 비활성화
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            dndManager.disableDnd()
+            Log.d(TAG, "✅ DND mode disabled")
+        }
 
         // 타이머 완료/포기 브로드캐스트
         if (previousState == FocusState.RUNNING) {
@@ -339,6 +355,19 @@ class FocusTimerService : Service() {
         // 코루틴 스코프 취소
         serviceScope?.cancel()
         serviceScope = null
+        
+        // AccessibilityService 비활성화 (비정상 종료 대응)
+        FocusAccessibilityService.isTimerRunning = false
+        FocusAccessibilityService.remainingSeconds = 0
+        FocusAccessibilityService.totalSeconds = 0
+        FocusAccessibilityService.currentSessionId = null
+        Log.i(TAG, "✅ AccessibilityService deactivated on destroy")
+        
+        // DND 모드 비활성화 (비정상 종료 대응)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            dndManager.disableDnd()
+            Log.d(TAG, "✅ DND mode disabled on destroy")
+        }
         
         // 상태 초기화
         _state.value = FocusState.IDLE
