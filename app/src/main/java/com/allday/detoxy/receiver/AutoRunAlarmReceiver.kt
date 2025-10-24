@@ -225,8 +225,10 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     // 알림 즉시 해제 (타이머가 시작되면 알림 불필요)
                     entryPoint.notificationManager().dismissNotification(autoRunId, isPreNotification = false)
                     
-                    // TODO: AutoRunLog 기록 (자동 시작됨) - logAutoRunStarted() 구현 필요
-                    // 현재는 NOTIFICATION_SHOWN 상태만 기록됨 (위의 logAutoRunTriggered)
+                    // AutoRunLog 기록 (자동 시작됨)
+                    scope.launch {
+                        logAutoRunStarted(autoRunId, "TIME", sessionId, entryPoint)
+                    }
                     
                     Log.d(TAG, "✅ Timer started immediately (auto-start delay = 0, sessionId: $sessionId)")
                 }
@@ -335,6 +337,32 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
             )
             entryPoint.autoRunLogDao().insert(log)
             Log.d(TAG, "✅ AutoRunLog recorded: FAILED ($reason)")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
+        }
+    }
+
+    /**
+     * AutoRunLog 기록 - 자동 시작됨
+     * 
+     * 자동 시작 딜레이가 0분이거나 WorkManager에 의해 자동으로 타이머가 시작된 경우 기록합니다.
+     * 
+     * @param autoRunId 자동 실행 ID
+     * @param triggerType 트리거 타입 (TIME/LOCATION)
+     * @param sessionId 시작된 세션 ID
+     */
+    private suspend fun logAutoRunStarted(autoRunId: String, triggerType: String, sessionId: String, entryPoint: AutoRunAlarmReceiverEntryPoint) {
+        try {
+            val log = AutoRunLog(
+                triggerType = triggerType,
+                triggerSourceId = autoRunId,
+                triggerTime = System.currentTimeMillis(),
+                result = "STARTED",
+                failureReason = null,
+                sessionId = sessionId
+            )
+            entryPoint.autoRunLogDao().insert(log)
+            Log.d(TAG, "✅ AutoRunLog recorded: STARTED (sessionId=$sessionId)")
         } catch (e: Exception) {
             Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
         }

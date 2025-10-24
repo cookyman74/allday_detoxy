@@ -122,9 +122,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
     ) {
         Log.i(TAG, "🚀 Starting timer immediately: ${durationMinutes}분 (autoRunId=$autoRunId)")
 
-        // ⚠️ Critical: 기존 자동 시작 작업 취소 (autoStartDelayMinutes로 예약된 작업)
+        // ⚠️ Critical: 기존 자동 시작 작업 및 스누즈 작업 취소
         entryPoint.workManager().cancelAllWorkByTag("auto_start_$autoRunId")
-        Log.d(TAG, "🗑️ Cancelled existing auto-start work for autoRunId=$autoRunId")
+        entryPoint.workManager().cancelAllWorkByTag("snooze_$autoRunId")
+        Log.d(TAG, "🗑️ Cancelled existing auto-start and snooze work for autoRunId=$autoRunId")
 
         // AutoRunLog 기록
         scope.launch {
@@ -217,6 +218,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             .putString("presetType", presetType)
             .putString("label", label)
             .putString("triggerType", triggerType)
+            .putBoolean("isSnooze", true) // 스누즈 플래그 추가
             .build()
 
         val snoozeWork = OneTimeWorkRequest.Builder(AutoStartTimerWorker::class.java)
@@ -251,9 +253,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
     ) {
         Log.i(TAG, "⏭️ Skipping auto-run (autoRunId=$autoRunId)")
 
-        // ⚠️ Critical: 기존 자동 시작 작업 취소 (autoStartDelayMinutes로 예약된 작업)
+        // ⚠️ Critical: 기존 자동 시작 작업 및 스누즈 작업 취소
         entryPoint.workManager().cancelAllWorkByTag("auto_start_$autoRunId")
-        Log.d(TAG, "🗑️ Cancelled existing auto-start work for autoRunId=$autoRunId")
+        entryPoint.workManager().cancelAllWorkByTag("snooze_$autoRunId")
+        Log.d(TAG, "🗑️ Cancelled existing auto-start and snooze work for autoRunId=$autoRunId")
 
         // AutoRunLog 기록
         scope.launch {
