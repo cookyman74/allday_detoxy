@@ -1,6 +1,7 @@
 package com.allday.detoxy.presentation.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
@@ -46,6 +47,10 @@ class LocationBasedAutoRunViewModel @Inject constructor(
     private val geofenceManager: AutoRunGeofenceManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "LocationBasedAutoRunViewModel"
+    }
 
     /**
      * 위치 기반 자동 실행 리스트
@@ -114,12 +119,32 @@ class LocationBasedAutoRunViewModel @Inject constructor(
 
     /**
      * 권한 상태 확인
+     * 
+     * 권한 변경 감지 시 Geofence 자동 해제:
+     * - 이전에는 전체 권한이 있었는데 현재는 없는 경우 → 모든 Geofence 해제
      */
     fun checkPermissions() {
+        val previousHasFullPermission = hasFullLocationPermission.value
+        
         _playServicesAvailable.value = geofenceManager.isPlayServicesAvailable()
         _locationPermissionGranted.value = geofenceManager.hasLocationPermission()
         _backgroundLocationPermissionGranted.value = geofenceManager.hasBackgroundLocationPermission()
         _locationServiceEnabled.value = geofenceManager.isLocationEnabled()
+        
+        val currentHasFullPermission = hasFullLocationPermission.value
+        
+        // 권한 해제 감지: 이전에는 있었는데 현재는 없음
+        if (previousHasFullPermission && !currentHasFullPermission) {
+            viewModelScope.launch {
+                Log.w(TAG, "⚠️ Location permission revoked, removing all geofences")
+                geofenceManager.removeAllGeofences()
+                
+                // 사용자에게 알림
+                _errorState.value = LocationError.PermissionError(
+                    "위치 권한이 해제되어 위치 기반 자동 실행이 비활성화되었습니다."
+                )
+            }
+        }
     }
 
     /**

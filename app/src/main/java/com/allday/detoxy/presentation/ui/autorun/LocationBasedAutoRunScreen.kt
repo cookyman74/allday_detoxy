@@ -91,15 +91,24 @@ fun LocationBasedAutoRunScreen(
         }
     }
 
+    // 다이얼로그 상태
+    var showAddDialog by remember { mutableStateOf(false) }
+    var locationToEdit by remember { mutableStateOf<LocationBasedAutoRun?>(null) }
+    var showBackgroundLocationRationaleDialog by remember { mutableStateOf(false) }
+    var showLocationDeniedDialog by remember { mutableStateOf(false) }
+    var showOpenSettingsDialog by remember { mutableStateOf(false) }
+
     // 위치 권한 요청 런처
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // 백그라운드 위치 권한 요청으로 진행
+            // 백그라운드 위치 권한 설명 다이얼로그 표시
+            showBackgroundLocationRationaleDialog = true
             viewModel.checkPermissions()
         } else {
-            // 권한 거부 처리
+            // 권한 거부 다이얼로그 표시
+            showLocationDeniedDialog = true
         }
     }
 
@@ -110,6 +119,7 @@ fun LocationBasedAutoRunScreen(
         viewModel.checkPermissions()
         if (!isGranted) {
             // 설정 화면으로 이동 안내
+            showOpenSettingsDialog = true
         }
     }
 
@@ -120,8 +130,9 @@ fun LocationBasedAutoRunScreen(
                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
             !backgroundLocationPermissionGranted -> {
+                // Android 10+ 에서만 백그라운드 위치 권한 필요
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    backgroundLocationPermissionLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                    showBackgroundLocationRationaleDialog = true
                 }
             }
             else -> {
@@ -130,10 +141,6 @@ fun LocationBasedAutoRunScreen(
             }
         }
     }
-
-    // 다이얼로그 상태
-    var showAddDialog by remember { mutableStateOf(false) }
-    var locationToEdit by remember { mutableStateOf<LocationBasedAutoRun?>(null) }
 
     Scaffold(
         topBar = {
@@ -262,6 +269,53 @@ fun LocationBasedAutoRunScreen(
                 } else {
                     viewModel.addLocation(location)
                 }
+            }
+        )
+    }
+    
+    // 백그라운드 위치 권한 설명 다이얼로그
+    if (showBackgroundLocationRationaleDialog) {
+        BackgroundLocationRationaleDialog(
+            onProceed = {
+                showBackgroundLocationRationaleDialog = false
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    backgroundLocationPermissionLauncher.launch(
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    )
+                }
+            },
+            onDismiss = {
+                showBackgroundLocationRationaleDialog = false
+            }
+        )
+    }
+    
+    // 위치 권한 거부 다이얼로그
+    if (showLocationDeniedDialog) {
+        LocationPermissionDeniedDialog(
+            onRetry = {
+                showLocationDeniedDialog = false
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            },
+            onNavigateToTimeBased = {
+                showLocationDeniedDialog = false
+                onNavigateToTimeBased()
+            },
+            onDismiss = {
+                showLocationDeniedDialog = false
+            }
+        )
+    }
+    
+    // 설정 화면 이동 안내 다이얼로그
+    if (showOpenSettingsDialog) {
+        OpenSettingsDialog(
+            onOpenSettings = {
+                showOpenSettingsDialog = false
+                PermissionUtils.openAppLocationSettings(context)
+            },
+            onDismiss = {
+                showOpenSettingsDialog = false
             }
         )
     }

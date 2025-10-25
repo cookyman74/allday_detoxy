@@ -881,7 +881,7 @@
 - **대체 기능**: 시간 기반 자동 실행 제안
 
 #### 4.3.1 위치 권한 요청
-- [ ] **정확한 위치 권한 요청**
+- [x] **정확한 위치 권한 요청** ✅
   ```kotlin
   val locationPermissionLauncher = rememberLauncherForActivityResult(
       ActivityResultContracts.RequestPermission()
@@ -895,7 +895,7 @@
   }
   ```
 
-- [ ] **백그라운드 위치 권한 요청** (Android 10+)
+- [x] **백그라운드 위치 권한 요청** (Android 10+) ✅
   ```kotlin
   val backgroundLocationPermissionLauncher = rememberLauncherForActivityResult(
       ActivityResultContracts.RequestPermission()
@@ -909,24 +909,28 @@
   ```
 
 #### 4.3.2 권한 안내 다이얼로그
-- [ ] **BackgroundLocationPermissionDialog**
+- [x] **BackgroundLocationRationaleDialog** ✅
   - 왜 백그라운드 위치가 필요한지 설명
   - "항상 허용"을 선택해야 함을 명시
-  - "설정으로 이동" 버튼
+  - "다음" 버튼 (권한 요청)
   - "나중에" 버튼
 
-- [ ] **LocationPermissionDeniedDialog**
+- [x] **LocationPermissionDeniedDialog** ✅
   - 권한 거부 시 위치 기반 자동 실행 불가 안내
   - 시간 기반 자동 실행 대안 제시
   - "권한 재요청" 버튼
 
-#### 4.3.3 권한 상태 모니터링
-- [ ] 위치 권한 변경 감지
-  - 앱 포그라운드 진입 시 권한 재확인
-  - 권한 해제 시 Geofence 자동 해제
-  - 사용자에게 경고 알림 표시
+- [x] **OpenSettingsDialog** ✅
+  - 설정 화면으로 이동 안내
+  - 단계별 가이드 제공
 
-**작업 기록**: `working_history/2025-10-25_2nd_advanced_4.3.md`
+#### 4.3.3 권한 상태 모니터링
+- [x] 위치 권한 변경 감지 ✅
+  - 앱 포그라운드 진입 시 권한 재확인 (LifecycleObserver)
+  - 권한 해제 시 Geofence 자동 해제
+  - 사용자에게 경고 알림 표시 (errorState)
+
+**작업 기록**: `working_history/2025-10-25_2nd_advanced_4.3.md` ✅
 
 ---
 
