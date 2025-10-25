@@ -779,7 +779,7 @@
   - "저장" 버튼
 
 #### 4.1.3 LocationBasedAutoRunViewModel
-- [ ] **StateFlow 정의**
+- [x] **StateFlow 정의** ✅
   ```kotlin
   @HiltViewModel
   class LocationBasedAutoRunViewModel @Inject constructor(
@@ -798,7 +798,7 @@
   }
   ```
 
-**작업 기록**: `working_history/2025-10-24_2nd_advanced_4.1.md`
+**작업 기록**: `working_history/2025-10-24_2nd_advanced_4.1.md`, `working_history/2025-10-25_2nd_advanced_4.1.md` ✅
 
 ### 4.2 Geofencing 등록 및 트리거 (Day 16-17)
 
