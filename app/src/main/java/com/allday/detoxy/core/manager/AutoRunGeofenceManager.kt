@@ -253,6 +253,48 @@ class AutoRunGeofenceManager @Inject constructor(
     }
     
     /**
+     * 모든 활성화된 Geofence 재등록
+     *
+     * 앱 재시작(BOOT_COMPLETED) 시 호출되어 모든 활성화된 위치 기반 자동 실행의 Geofence를 재등록합니다.
+     *
+     * 처리 방식:
+     * - 사전 조건 체크 (Play Services, 위치 서비스, 권한) 수행
+     * - 실패한 항목은 로그에 기록하고 계속 진행 (일부 실패해도 나머지 등록)
+     *
+     * @param enabledLocations 활성화된 위치 기반 자동 실행 리스트
+     */
+    suspend fun rescheduleAll(enabledLocations: List<LocationBasedAutoRun>) {
+        if (enabledLocations.isEmpty()) {
+            Log.i(TAG, "ℹ️ No enabled locations to reschedule")
+            return
+        }
+        
+        Log.i(TAG, "🔄 Rescheduling ${enabledLocations.size} geofences")
+        
+        var successCount = 0
+        var failureCount = 0
+        
+        enabledLocations.forEach { location ->
+            val result = addGeofence(location)
+            if (result.isSuccess) {
+                successCount++
+                Log.d(TAG, "✅ Geofence rescheduled: ${location.label} (ID: ${location.id})")
+            } else {
+                failureCount++
+                val error = result.exceptionOrNull()
+                Log.w(TAG, "⚠️ Failed to reschedule geofence for ${location.label}: ${error?.message}")
+            }
+        }
+        
+        Log.i(TAG, """
+            📊 Geofence reschedule completed:
+            - Total: ${enabledLocations.size}
+            - Success: $successCount
+            - Failure: $failureCount
+        """.trimIndent())
+    }
+    
+    /**
      * Geofence 생성
      *
      * dwellTimeMinutes에 따라 트랜지션 타입 자동 설정:
