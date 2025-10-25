@@ -803,7 +803,7 @@
 ### 4.2 Geofencing 등록 및 트리거 (Day 16-17)
 
 #### 4.2.1 Geofence 등록
-- [ ] ViewModel에서 GeofenceManager 호출
+- [x] ViewModel에서 GeofenceManager 호출 ✅
   ```kotlin
   fun addLocation(location: LocationBasedAutoRun) {
       viewModelScope.launch {
@@ -818,10 +818,12 @@
   }
   ```
 
-- [ ] Geofence 등록 실패 처리
-  - 권한 없음: 권한 요청 유도
-  - 최대 개수 초과: 경고 메시지
-  - 위치 서비스 비활성화: 설정 안내
+- [x] Geofence 등록 실패 처리 ✅
+  - 권한 없음: 권한 요청 유도 ✅
+  - 최대 개수 초과: 경고 메시지 ✅
+  - 위치 서비스 비활성화: 설정 안내 ✅
+
+**작업 기록**: `working_history/2025-10-25_2nd_advanced_4.2.md` ✅
 
 #### 4.2.2 Geofence 트리거 처리
 - [ ] GeofenceTransitionsReceiver 구현
