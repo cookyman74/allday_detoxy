@@ -14,6 +14,16 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
+ * 위치 기반 자동 실행 에러 타입
+ */
+sealed class LocationError {
+    data class GeofenceError(val message: String) : LocationError()
+    data class PermissionError(val message: String) : LocationError()
+    data class DatabaseError(val message: String) : LocationError()
+    data class UnknownError(val message: String) : LocationError()
+}
+
+/**
  * 위치 기반 자동 실행 ViewModel
  *
  * 위치 기반 자동 실행 설정 화면의 비즈니스 로직을 담당합니다.
@@ -24,6 +34,7 @@ import javax.inject.Inject
  * - Google Play Services 상태 체크
  * - 위치 권한 상태 체크
  * - 위치 서비스 상태 체크
+ * - 에러 상태 관리
  *
  * @property repository LocationBasedAutoRunRepository
  * @property geofenceManager AutoRunGeofenceManager
@@ -84,8 +95,21 @@ class LocationBasedAutoRunViewModel @Inject constructor(
         initialValue = false
     )
 
+    /**
+     * 에러 상태
+     */
+    private val _errorState = MutableStateFlow<LocationError?>(null)
+    val errorState: StateFlow<LocationError?> = _errorState.asStateFlow()
+
     init {
         checkPermissions()
+    }
+
+    /**
+     * 에러 상태 초기화
+     */
+    fun clearError() {
+        _errorState.value = null
     }
 
     /**
@@ -101,23 +125,38 @@ class LocationBasedAutoRunViewModel @Inject constructor(
     /**
      * 위치 기반 자동 실행 추가
      *
+     * 트랜잭션 순서:
+     * 1. Geofence 등록 (활성화된 경우만) - 실패 시 DB 저장 안 함
+     * 2. DB 저장 - 실패 시 Geofence 롤백
+     *
      * @param location 추가할 위치 기반 자동 실행
      */
     fun addLocation(location: LocationBasedAutoRun) {
         viewModelScope.launch {
             try {
-                // DB에 저장
-                repository.insert(location)
-
-                // Geofence 등록 (활성화된 경우만)
+                // 1. Geofence 등록 먼저 시도 (활성화된 경우만)
                 if (location.isEnabled) {
                     val result = geofenceManager.addGeofence(location)
                     if (result.isFailure) {
-                        // TODO: 실패 처리 (사용자에게 알림)
+                        val exception = result.exceptionOrNull()
+                        _errorState.value = LocationError.GeofenceError(
+                            exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
+                        )
+                        return@launch  // 실패 시 DB 저장 안 함
                     }
                 }
+
+                // 2. Geofence 성공 후 DB 저장
+                repository.insert(location)
+
             } catch (e: Exception) {
-                // TODO: 예외 처리
+                // Geofence는 등록되었지만 DB 저장 실패 → Geofence 롤백
+                if (location.isEnabled) {
+                    geofenceManager.removeGeofence(location.id)
+                }
+                _errorState.value = LocationError.DatabaseError(
+                    "저장 실패: ${e.message ?: "알 수 없는 오류"}"
+                )
             }
         }
     }
@@ -125,26 +164,40 @@ class LocationBasedAutoRunViewModel @Inject constructor(
     /**
      * 위치 기반 자동 실행 업데이트
      *
+     * 트랜잭션 순서:
+     * 1. 기존 Geofence 제거
+     * 2. 새 Geofence 등록 (활성화된 경우만) - 실패 시 DB 업데이트 안 함
+     * 3. DB 업데이트 - 실패 시 원래 Geofence 복구 시도
+     *
      * @param location 업데이트할 위치 기반 자동 실행
      */
     fun updateLocation(location: LocationBasedAutoRun) {
         viewModelScope.launch {
             try {
-                // DB에 업데이트
-                repository.update(location)
+                // 1. 기존 Geofence 제거
+                geofenceManager.removeGeofence(location.id)
 
-                // Geofence 재등록
+                // 2. 새 Geofence 등록 (활성화된 경우만)
                 if (location.isEnabled) {
-                    geofenceManager.removeGeofence(location.id)
                     val result = geofenceManager.addGeofence(location)
                     if (result.isFailure) {
-                        // TODO: 실패 처리
+                        val exception = result.exceptionOrNull()
+                        _errorState.value = LocationError.GeofenceError(
+                            exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
+                        )
+                        return@launch  // 실패 시 DB 업데이트 안 함
                     }
-                } else {
-                    geofenceManager.removeGeofence(location.id)
                 }
+
+                // 3. Geofence 성공 후 DB 업데이트
+                repository.update(location)
+
             } catch (e: Exception) {
-                // TODO: 예외 처리
+                // DB 업데이트 실패 → Geofence 롤백 (제거)
+                geofenceManager.removeGeofence(location.id)
+                _errorState.value = LocationError.DatabaseError(
+                    "업데이트 실패: ${e.message ?: "알 수 없는 오류"}"
+                )
             }
         }
     }
@@ -152,18 +205,25 @@ class LocationBasedAutoRunViewModel @Inject constructor(
     /**
      * 위치 기반 자동 실행 삭제
      *
+     * 트랜잭션 순서:
+     * 1. DB에서 삭제
+     * 2. Geofence 해제 - 실패해도 치명적이지 않음 (이미 DB 삭제됨)
+     *
      * @param locationId 삭제할 위치 기반 자동 실행 ID
      */
     fun deleteLocation(locationId: String) {
         viewModelScope.launch {
             try {
-                // Geofence 해제
+                // 1. DB에서 먼저 삭제
+                repository.deleteById(locationId)
+
+                // 2. Geofence 해제 (실패해도 치명적이지 않음)
                 geofenceManager.removeGeofence(locationId)
 
-                // DB에서 삭제
-                repository.deleteById(locationId)
             } catch (e: Exception) {
-                // TODO: 예외 처리
+                _errorState.value = LocationError.DatabaseError(
+                    "삭제 실패: ${e.message ?: "알 수 없는 오류"}"
+                )
             }
         }
     }
@@ -171,29 +231,49 @@ class LocationBasedAutoRunViewModel @Inject constructor(
     /**
      * 위치 기반 자동 실행 활성화/비활성화 토글
      *
+     * 트랜잭션 순서:
+     * - 활성화: 1) Geofence 등록 → 2) DB 토글 (실패 시 Geofence 롤백)
+     * - 비활성화: 1) DB 토글 → 2) Geofence 해제
+     *
      * @param locationId 토글할 위치 기반 자동 실행 ID
      * @param isEnabled 활성화 여부
      */
     fun toggleLocation(locationId: String, isEnabled: Boolean) {
         viewModelScope.launch {
             try {
-                // DB에 토글
-                repository.toggleEnabled(locationId, isEnabled)
-
-                // Geofence 등록/해제
                 if (isEnabled) {
+                    // 활성화: Geofence 먼저 등록
                     val location = repository.getById(locationId).first()
                     if (location != null) {
                         val result = geofenceManager.addGeofence(location)
                         if (result.isFailure) {
-                            // TODO: 실패 처리
+                            val exception = result.exceptionOrNull()
+                            _errorState.value = LocationError.GeofenceError(
+                                exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
+                            )
+                            return@launch  // 실패 시 DB 토글 안 함
                         }
                     }
+
+                    // Geofence 성공 후 DB 토글
+                    repository.toggleEnabled(locationId, isEnabled)
+
                 } else {
+                    // 비활성화: DB 먼저 토글
+                    repository.toggleEnabled(locationId, isEnabled)
+
+                    // Geofence 해제 (실패해도 치명적이지 않음)
                     geofenceManager.removeGeofence(locationId)
                 }
+
             } catch (e: Exception) {
-                // TODO: 예외 처리
+                // Geofence는 등록되었지만 DB 토글 실패 → Geofence 롤백
+                if (isEnabled) {
+                    geofenceManager.removeGeofence(locationId)
+                }
+                _errorState.value = LocationError.DatabaseError(
+                    "토글 실패: ${e.message ?: "알 수 없는 오류"}"
+                )
             }
         }
     }

@@ -14,14 +14,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
 import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.presentation.ui.autorun.components.*
 import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
+import com.allday.detoxy.presentation.viewmodel.LocationError
 
 /**
  * 위치 기반 자동 실행 설정 화면
@@ -47,6 +51,7 @@ fun LocationBasedAutoRunScreen(
     viewModel: LocationBasedAutoRunViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     // StateFlow 수집
     val locations by viewModel.locations.collectAsState()
@@ -54,6 +59,37 @@ fun LocationBasedAutoRunScreen(
     val locationPermissionGranted by viewModel.locationPermissionGranted.collectAsState()
     val backgroundLocationPermissionGranted by viewModel.backgroundLocationPermissionGranted.collectAsState()
     val hasFullLocationPermission by viewModel.hasFullLocationPermission.collectAsState()
+    val errorState by viewModel.errorState.collectAsState()
+
+    // Snackbar 상태
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // 에러 표시
+    LaunchedEffect(errorState) {
+        errorState?.let { error ->
+            val message = when (error) {
+                is LocationError.GeofenceError -> "Geofence 오류: ${error.message}"
+                is LocationError.PermissionError -> "권한 오류: ${error.message}"
+                is LocationError.DatabaseError -> "저장소 오류: ${error.message}"
+                is LocationError.UnknownError -> "알 수 없는 오류: ${error.message}"
+            }
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearError()
+        }
+    }
+
+    // 화면 복귀 시 권한 재확인 (설정 화면에서 돌아올 때)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.checkPermissions()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     // 위치 권한 요청 런처
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -114,8 +150,9 @@ fun LocationBasedAutoRunScreen(
             )
         },
         floatingActionButton = {
-            // 권한이 모두 있고, Play Services가 사용 가능하며, 5개 미만일 때만 표시
-            if (playServicesAvailable && hasFullLocationPermission && locations.size < AutoRunGeofenceManager.MAX_GEOFENCES) {
+            // 권한이 모두 있고, Play Services가 사용 가능하며, 활성화된 개수가 5개 미만일 때만 표시
+            val enabledCount = locations.count { it.isEnabled }
+            if (playServicesAvailable && hasFullLocationPermission && enabledCount < AutoRunGeofenceManager.MAX_GEOFENCES) {
                 ExtendedFloatingActionButton(
                     onClick = {
                         showAddDialog = true
@@ -129,6 +166,9 @@ fun LocationBasedAutoRunScreen(
                     text = { Text("위치 추가") }
                 )
             }
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { paddingValues ->
         LazyColumn(
@@ -189,8 +229,9 @@ fun LocationBasedAutoRunScreen(
                 }
             }
 
-            // 최대 개수 안내
-            if (locations.size >= AutoRunGeofenceManager.MAX_GEOFENCES) {
+            // 최대 개수 안내 (활성화된 개수 기준)
+            val enabledCount = locations.count { it.isEnabled }
+            if (enabledCount >= AutoRunGeofenceManager.MAX_GEOFENCES) {
                 item {
                     MaxLocationLimitWarning()
                 }
