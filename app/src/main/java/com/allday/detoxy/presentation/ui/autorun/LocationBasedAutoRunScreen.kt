@@ -186,11 +186,9 @@ fun LocationBasedAutoRunScreen(
                         onNavigateToTimeBased = onNavigateToTimeBased
                     )
                 }
-                return@LazyColumn // 이후 항목 표시 안 함
-            }
-
-            // 위치 권한 안내
-            if (!hasFullLocationPermission) {
+                // Play Services 없으면 이후 항목 표시 안 함
+            } else if (!hasFullLocationPermission) {
+                // 위치 권한 안내 (Play Services는 있지만 권한 없음)
                 item {
                     LocationPermissionCard(
                         hasLocationPermission = locationPermissionGranted,
@@ -199,50 +197,52 @@ fun LocationBasedAutoRunScreen(
                         onNavigateToTimeBased = onNavigateToTimeBased
                     )
                 }
-            }
-
-            // 등록된 위치 리스트
-            if (locations.isEmpty() && hasFullLocationPermission) {
-                item {
-                    EmptyLocationState()
-                }
             } else {
-                items(
-                    items = locations,
-                    key = { it.id }
-                ) { location ->
-                    LocationBasedAutoRunCard(
-                        location = location,
-                        successRate = null, // TODO: AutoRunLog에서 성공률 계산
-                        gpsAccuracy = null, // TODO: AutoRunLog에서 GPS 정확도 계산
-                        onToggle = { isEnabled ->
-                            viewModel.toggleLocation(location.id, isEnabled)
-                        },
-                        onEdit = {
-                            locationToEdit = location
-                            showAddDialog = true
-                        },
-                        onDelete = {
-                            viewModel.deleteLocation(location.id)
-                        }
-                    )
+                // Play Services 있고 권한도 있음 - 위치 리스트 표시
+                
+                // 등록된 위치 리스트
+                if (locations.isEmpty()) {
+                    item {
+                        EmptyLocationState()
+                    }
+                } else {
+                    items(
+                        items = locations,
+                        key = { it.id }
+                    ) { location ->
+                        LocationBasedAutoRunCard(
+                            location = location,
+                            successRate = null, // TODO: AutoRunLog에서 성공률 계산 (Day 16-17)
+                            gpsAccuracy = null, // TODO: AutoRunLog에서 GPS 정확도 계산 (Day 16-17)
+                            onToggle = { isEnabled ->
+                                viewModel.toggleLocation(location.id, isEnabled)
+                            },
+                            onEdit = {
+                                locationToEdit = location
+                                showAddDialog = true
+                            },
+                            onDelete = {
+                                viewModel.deleteLocation(location.id)
+                            }
+                        )
+                    }
                 }
-            }
 
-            // 최대 개수 안내 (활성화된 개수 기준)
-            val enabledCount = locations.count { it.isEnabled }
-            if (enabledCount >= AutoRunGeofenceManager.MAX_GEOFENCES) {
-                item {
-                    MaxLocationLimitWarning()
+                // 최대 개수 안내 (활성화된 개수 기준)
+                val enabledCount = locations.count { it.isEnabled }
+                if (enabledCount >= AutoRunGeofenceManager.MAX_GEOFENCES) {
+                    item {
+                        MaxLocationLimitWarning()
+                    }
                 }
-            }
 
-            // 배터리 영향 안내
-            if (hasFullLocationPermission && locations.isNotEmpty()) {
-                item {
-                    LocationBatteryImpactCard(
-                        enabledCount = locations.count { it.isEnabled }
-                    )
+                // 배터리 영향 안내
+                if (locations.isNotEmpty()) {
+                    item {
+                        LocationBatteryImpactCard(
+                            enabledCount = locations.count { it.isEnabled }
+                        )
+                    }
                 }
             }
         }
