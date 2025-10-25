@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
 import com.allday.detoxy.core.utils.PermissionUtils
+import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.presentation.ui.autorun.components.*
 import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
 
@@ -94,6 +95,10 @@ fun LocationBasedAutoRunScreen(
         }
     }
 
+    // 다이얼로그 상태
+    var showAddDialog by remember { mutableStateOf(false) }
+    var locationToEdit by remember { mutableStateOf<LocationBasedAutoRun?>(null) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -113,7 +118,7 @@ fun LocationBasedAutoRunScreen(
             if (playServicesAvailable && hasFullLocationPermission && locations.size < AutoRunGeofenceManager.MAX_GEOFENCES) {
                 ExtendedFloatingActionButton(
                     onClick = {
-                        // TODO: AddLocationAutoRunDialog 표시
+                        showAddDialog = true
                     },
                     icon = {
                         Icon(
@@ -174,7 +179,8 @@ fun LocationBasedAutoRunScreen(
                             viewModel.toggleLocation(location.id, isEnabled)
                         },
                         onEdit = {
-                            // TODO: EditLocationAutoRunDialog 표시
+                            locationToEdit = location
+                            showAddDialog = true
                         },
                         onDelete = {
                             viewModel.deleteLocation(location.id)
@@ -199,6 +205,24 @@ fun LocationBasedAutoRunScreen(
                 }
             }
         }
+    }
+
+    // 다이얼로그 표시
+    if (showAddDialog) {
+        AddLocationAutoRunDialog(
+            existingLocation = locationToEdit,
+            onDismiss = {
+                showAddDialog = false
+                locationToEdit = null
+            },
+            onSave = { location ->
+                if (locationToEdit != null) {
+                    viewModel.updateLocation(location)
+                } else {
+                    viewModel.addLocation(location)
+                }
+            }
+        )
     }
 }
 
