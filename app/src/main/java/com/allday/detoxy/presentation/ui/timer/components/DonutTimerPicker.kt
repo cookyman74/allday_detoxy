@@ -102,11 +102,10 @@ fun DonutTimerPicker(
             .size(300.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Canvas를 먼저 그리기 (아래 레이어, 아래로 offset 적용)
+        // Canvas를 먼저 그리기 (아래 레이어)
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .offset(y = 20.dp) // 도넛 그래프를 아래로 이동
                 .pointerInput(Unit) {
                     // 드래그 제스처
                     detectDragGestures { change, _ ->
@@ -218,6 +217,7 @@ fun DonutTimerPicker(
         
         // 중앙 텍스트 (Canvas 위에 그리기 - 위 레이어)
         Column(
+            modifier = Modifier.offset(y = (-20).dp), // 텍스트를 위로 이동
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
