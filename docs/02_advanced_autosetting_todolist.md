@@ -1231,16 +1231,18 @@
 ### 6.1 자동 실행 대시보드 (Day 24-25)
 
 #### 6.1.1 AutoRunDashboardScreen 확장 🆕
-- [ ] **자동 실행 제어 카드** (섹션 1) → [PRD §4.4.1](./02_advanced_autosetting_prd.md#441-자동-실행-대시보드)
-  - 전체 활성화/비활성화 토글 (마스터 스위치)
-  - 일시중지 옵션 UI:
-    - "오늘 하루 중지" 버튼
-    - "N시간 동안 중지" 드롭다운 (1h/3h/6h)
-    - "다음 자동 실행까지 중지" 버튼
-  - 현재 상태 표시 (활성화/일시중지/비활성화)
+- [x] **자동 실행 제어 카드** (섹션 1) ✅ (MVP) → [PRD §4.4.1](./02_advanced_autosetting_prd.md#441-자동-실행-대시보드)
+  - [x] 전체 활성화/비활성화 토글 (마스터 스위치) ✅
+  - [x] 일시중지 옵션 UI ✅:
+    - [x] "오늘 하루 중지" 버튼 ✅
+    - [x] "N시간 동안 중지" 드롭다운 (1h/3h/6h) ✅
+    - [ ] "다음 자동 실행까지 중지" 버튼 ⏳ (3차 고도화)
+  - [x] 현재 상태 표시 (활성화/일시중지/비활성화) ✅
+  - **구현**: [AutoRunControlCard.kt](../app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/AutoRunControlCard.kt) (~190줄)
+  - **구현**: [UserSettingsRepository.kt](../app/src/main/java/com/allday/detoxy/data/repository/UserSettingsRepository.kt) (~170줄)
   - **참조**: [기존 설정 화면 토글 패턴](../app/src/main/java/com/allday/detoxy/presentation/ui/settings/focus/DetoxyControlSettingsScreen.kt)
 
-- [ ] **다음 예정 자동 실행 카드** (섹션 2) 🆕
+- [ ] **다음 예정 자동 실행 카드** (섹션 2) ⏳ (3차 고도화)
   - 가장 가까운 자동 실행 계산 로직
   - 예정 시간/위치 표시 (예: "오후 2:00 (1시간 30분 후)")
   - 타이머 시간 + 차단 프리셋 표시

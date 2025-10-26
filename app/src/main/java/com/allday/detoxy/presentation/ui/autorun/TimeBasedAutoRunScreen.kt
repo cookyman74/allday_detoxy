@@ -53,6 +53,10 @@ fun TimeBasedAutoRunScreen(
     val autoStartDelayMinutes by viewModel.autoStartDelayMinutes.collectAsStateWithLifecycle()
     val preNotificationMinutes by viewModel.preNotificationMinutes.collectAsStateWithLifecycle()
     
+    // 자동 실행 제어 상태
+    val masterEnabled by viewModel.masterEnabled.collectAsStateWithLifecycle()
+    val pauseUntil by viewModel.pauseUntil.collectAsStateWithLifecycle()
+    
     val context = LocalContext.current
     
     var showAddDialog by remember { mutableStateOf(false) }
@@ -109,7 +113,17 @@ fun TimeBasedAutoRunScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. 정확 알람 권한 경고 배너
+            // 1. 자동 실행 제어 카드 (MVP)
+            AutoRunControlCard(
+                masterEnabled = masterEnabled,
+                pauseUntil = pauseUntil,
+                onMasterEnabledChange = { viewModel.setMasterEnabled(it) },
+                onPauseForHours = { viewModel.pauseForHours(it) },
+                onPauseUntilMidnight = { viewModel.pauseUntilMidnight() },
+                onResume = { viewModel.resumeAutoRun() }
+            )
+            
+            // 2. 정확 알람 권한 경고 배너
             if (!canScheduleExactAlarms) {
                 ExactAlarmPermissionWarningBanner(
                     onSettingsClick = {
@@ -119,7 +133,7 @@ fun TimeBasedAutoRunScreen(
                 )
             }
 
-            // 2. 템플릿 선택 버튼 (Empty State일 때 눈에 띄게 표시)
+            // 3. 템플릿 선택 버튼 (Empty State일 때 눈에 띄게 표시)
             if (autoRuns.isEmpty()) {
                 EmptyStateWithTemplate(
                     onTemplateClick = { showTemplateDialog = true }
@@ -131,7 +145,7 @@ fun TimeBasedAutoRunScreen(
                 )
             }
 
-            // 3. 시간대 리스트
+            // 4. 시간대 리스트
             if (autoRuns.isNotEmpty()) {
                 Text(
                     text = "등록된 시간대 (${autoRuns.size}/10)",
@@ -153,7 +167,7 @@ fun TimeBasedAutoRunScreen(
                 }
             }
 
-            // 4. 글로벌 옵션 섹션
+            // 5. 글로벌 옵션 섹션
             GlobalOptionsSection(
                 excludeWeekends = excludeWeekends,
                 autoStartDelayMinutes = autoStartDelayMinutes,
@@ -163,7 +177,7 @@ fun TimeBasedAutoRunScreen(
                 onPreNotificationChange = { viewModel.setPreNotificationMinutes(it) }
             )
 
-            // 5. 위치 기반 자동 실행 안내 카드
+            // 6. 위치 기반 자동 실행 안내 카드
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(

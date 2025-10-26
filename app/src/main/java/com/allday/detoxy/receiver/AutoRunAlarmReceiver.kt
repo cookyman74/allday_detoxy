@@ -13,6 +13,7 @@ import com.allday.detoxy.core.manager.AutoRunNotificationManager
 import com.allday.detoxy.data.local.dao.AutoRunLogDao
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.entity.AutoRunLog
+import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import com.allday.detoxy.service.timer.FocusTimerService
 import com.allday.detoxy.worker.AutoStartTimerWorker
@@ -57,6 +58,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
         fun notificationManager(): AutoRunNotificationManager
         fun autoRunLogDao(): AutoRunLogDao
         fun autoRunSettingsRepository(): AutoRunSettingsRepository
+        fun userSettingsRepository(): UserSettingsRepository
         fun workManager(): WorkManager
     }
 
@@ -171,7 +173,14 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
 
         scope.launch {
             try {
-                // 1. 이미 타이머 실행 중인지 확인
+                // 1. 자동 실행 가능 여부 확인 (마스터 스위치 + 일시중지)
+                if (!entryPoint.userSettingsRepository().isAutoRunEnabled()) {
+                    Log.w(TAG, "⚠️ AutoRun is disabled or paused, skipping auto-run")
+                    logAutoRunSkipped(autoRunId, "AUTO_RUN_DISABLED_OR_PAUSED", entryPoint)
+                    return@launch
+                }
+
+                // 2. 이미 타이머 실행 중인지 확인
                 val currentState = FocusTimerService.state.first()
                 if (currentState != com.allday.detoxy.domain.model.FocusState.IDLE) {
                     Log.w(TAG, "⚠️ Timer already running (state: $currentState), skipping auto-run")
@@ -179,7 +188,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // 2. 실행 알림 표시
+                // 3. 실행 알림 표시
                 entryPoint.notificationManager().showStartNotification(
                     autoRunId = autoRunId,
                     durationMinutes = durationMinutes,
@@ -189,10 +198,10 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 )
                 Log.d(TAG, "✅ Start notification shown")
 
-                // 3. AutoRunLog 기록 (알림 표시됨)
+                // 4. AutoRunLog 기록 (알림 표시됨)
                 logAutoRunTriggered(autoRunId, "TIME", "NOTIFICATION_SHOWN", entryPoint)
 
-                // 4. 자동 시작 딜레이 적용 ✅ Fixed
+                // 5. 자동 시작 딜레이 적용 ✅ Fixed
                 val autoStartDelayMinutes = entryPoint.autoRunSettingsRepository().getAutoStartDelayMinutes()
                 
                 if (autoStartDelayMinutes > 0) {
@@ -233,7 +242,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     Log.d(TAG, "✅ Timer started immediately (auto-start delay = 0, sessionId: $sessionId)")
                 }
 
-                // 5. 다음 알람 자동 스케줄링
+                // 6. 다음 알람 자동 스케줄링
                 rescheduleNextAlarm(autoRunId, entryPoint)
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Error processing auto-run alarm: ${e.message}", e)

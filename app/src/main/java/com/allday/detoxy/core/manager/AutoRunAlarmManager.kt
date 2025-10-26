@@ -10,6 +10,7 @@ import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
+import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import com.allday.detoxy.receiver.AutoRunAlarmReceiver
 import com.allday.detoxy.worker.AutoRunWorker
@@ -49,13 +50,15 @@ import javax.inject.Singleton
  * @param alarmManager AlarmManager 시스템 서비스
  * @param workManager WorkManager 인스턴스
  * @param autoRunSettingsRepository 자동 실행 글로벌 설정 Repository
+ * @param userSettingsRepository 사용자 설정 Repository (마스터 토글, 일시중지)
  */
 @Singleton
 class AutoRunAlarmManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val alarmManager: AlarmManager,
     private val workManager: WorkManager,
-    private val autoRunSettingsRepository: AutoRunSettingsRepository
+    private val autoRunSettingsRepository: AutoRunSettingsRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) {
 
     companion object {
@@ -115,6 +118,7 @@ class AutoRunAlarmManager @Inject constructor(
      * - PendingIntent.FLAG_IMMUTABLE 사용 (Android 12+ 필수)
      * - AlarmManager 실패 시 WorkManager로 자동 Fallback
      * - 글로벌 옵션: 사전 알림이 설정된 경우 별도 알람 등록
+     * - 마스터 스위치 체크: 꺼져 있으면 알람 등록하지 않음
      *
      * @param autoRun 스케줄링할 시간 기반 자동 실행 설정
      * @return true: 성공, false: 실패
@@ -122,6 +126,15 @@ class AutoRunAlarmManager @Inject constructor(
     fun scheduleTimeBasedAutoRun(autoRun: TimeBasedAutoRun): Boolean {
         if (!autoRun.isEnabled) {
             Log.w(TAG, "⚠️ AutoRun is disabled, skipping: ${autoRun.id}")
+            return false
+        }
+
+        // 마스터 스위치 체크
+        val masterEnabled = runBlocking {
+            userSettingsRepository.getAutoRunMasterEnabled()
+        }
+        if (!masterEnabled) {
+            Log.w(TAG, "⚠️ AutoRun master switch is OFF, skipping: ${autoRun.id}")
             return false
         }
 

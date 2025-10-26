@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
+import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,12 +24,14 @@ import javax.inject.Inject
  * @param repository TimeBasedAutoRunRepository 인스턴스
  * @param alarmManager AutoRunAlarmManager 인스턴스
  * @param settingsRepository AutoRunSettingsRepository 인스턴스 (글로벌 옵션)
+ * @param userSettingsRepository UserSettingsRepository 인스턴스 (마스터 토글, 일시중지)
  */
 @HiltViewModel
 class TimeBasedAutoRunViewModel @Inject constructor(
     private val repository: TimeBasedAutoRunRepository,
     private val alarmManager: AutoRunAlarmManager,
-    private val settingsRepository: AutoRunSettingsRepository
+    private val settingsRepository: AutoRunSettingsRepository,
+    private val userSettingsRepository: UserSettingsRepository
 ) : ViewModel() {
 
     // 시간 기반 자동 실행 목록
@@ -62,8 +65,80 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     val preNotificationMinutes: StateFlow<Int> = settingsRepository.preNotificationMinutesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 5)
 
+    // ==================== 자동 실행 제어 (v4) ====================
+
+    /**
+     * 자동 실행 마스터 스위치 상태
+     */
+    private val _masterEnabled = MutableStateFlow(true)
+    val masterEnabled: StateFlow<Boolean> = _masterEnabled.asStateFlow()
+
+    /**
+     * 자동 실행 일시중지 해제 시각
+     */
+    private val _pauseUntil = MutableStateFlow<Long?>(null)
+    val pauseUntil: StateFlow<Long?> = _pauseUntil.asStateFlow()
+
     init {
         loadAutoRuns()
+        loadAutoRunControlState()
+    }
+
+    /**
+     * 자동 실행 제어 상태 로드
+     */
+    private fun loadAutoRunControlState() {
+        viewModelScope.launch {
+            _masterEnabled.value = userSettingsRepository.getAutoRunMasterEnabled()
+            _pauseUntil.value = userSettingsRepository.getAutoRunPauseUntil()
+        }
+    }
+
+    /**
+     * 마스터 스위치 설정
+     */
+    fun setMasterEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userSettingsRepository.setAutoRunMasterEnabled(enabled)
+            _masterEnabled.value = enabled
+            
+            // 마스터 스위치를 켜면 모든 활성화된 자동 실행 재등록
+            if (enabled) {
+                _autoRuns.value.filter { it.isEnabled }.forEach { autoRun ->
+                    alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                }
+            }
+        }
+    }
+
+    /**
+     * N시간 동안 일시중지
+     */
+    fun pauseForHours(hours: Int) {
+        viewModelScope.launch {
+            userSettingsRepository.pauseForHours(hours)
+            _pauseUntil.value = userSettingsRepository.getAutoRunPauseUntil()
+        }
+    }
+
+    /**
+     * 오늘 하루 중지 (자정까지)
+     */
+    fun pauseUntilMidnight() {
+        viewModelScope.launch {
+            userSettingsRepository.pauseUntilMidnight()
+            _pauseUntil.value = userSettingsRepository.getAutoRunPauseUntil()
+        }
+    }
+
+    /**
+     * 일시중지 해제
+     */
+    fun resumeAutoRun() {
+        viewModelScope.launch {
+            userSettingsRepository.resumeAutoRun()
+            _pauseUntil.value = null
+        }
     }
 
     /**
