@@ -1644,66 +1644,52 @@
 
 **작업 기록**: `working_history/2025-10-31_2nd_advanced_7.3.md`
 
-### 7.4 문서화 및 릴리스 노트 (Day 33)
+### 7.4 문서화 및 릴리스 노트 (Day 33) - MVP ✅
 
-#### 7.4.1 문서 업데이트
-- [ ] `README.md` 업데이트 → [README.md](../README.md)
-  - 2차 고도화 기능 추가
-  - 위치 권한 안내 추가
-  - 스크린샷 업데이트
-  - **참조**: [1차 고도화 README 업데이트](../working_history/2025-10-20_1st_advanced_4.0.md) - 문서 업데이트 패턴
+#### 7.4.1 문서 업데이트 ✅
+- [x] `README.md` 업데이트 → [README.md](../README.md) ✅
+  - 2차 고도화 기능 추가 (시간 기반, 위치 기반, 커스텀 타이머, 자동 실행 제어)
+  - 위치 권한 안내 추가 (프라이버시 보호 명시)
+  - 기술 스택 업데이트 (AlarmManager, Geofencing, WorkManager)
+  - 2차 고도화 문서 링크 업데이트
 
-- [ ] `02_advanced_wireframe_spec.md` 최종 검토 → [Wireframe 스펙](./02_advanced_wireframe_spec.md)
-- [ ] `02_advanced_room_migration_strategy.md` 최종 검토 → [마이그레이션 전략](./02_advanced_room_migration_strategy.md)
-- [ ] `02_advanced_analytics_schema.md` 최종 검토 → [Analytics 스키마](./02_advanced_analytics_schema.md)
-- [ ] `02_advanced_qa_devices.md` 최종 검토 → [QA 시나리오](./02_advanced_qa_devices.md)
+- [x] 기존 문서 최종 검토 ✅
+  - `02_advanced_wireframe_spec.md`: 완료 상태 확인
+  - `02_advanced_room_migration_strategy.md`: 완료 상태 확인
+  - `02_advanced_analytics_schema.md`: 완료 상태 확인
+  - `02_advanced_qa_devices.md`: 완료 상태 확인
 
-#### 7.4.2 릴리스 노트 작성
-- [ ] `RELEASE_NOTES_v0.6.md` 생성 → [docs/RELEASE_NOTES_v0.6.md](./RELEASE_NOTES_v0.6.md)
-  - 새로운 기능 (자동 실행, 커스텀 타이머)
-  - 개선 사항
-  - 버그 수정
-  - 알려진 이슈
-  - 다음 계획 (3차 고도화 힌트)
-  - **참조**: [v0.5 릴리스 노트](./RELEASE_NOTES_v0.5.md) - 릴리스 노트 포맷
+#### 7.4.2 릴리스 노트 작성 ✅
+- [x] `RELEASE_NOTES_v0.6.md` 생성 → [docs/RELEASE_NOTES_v0.6.md](./RELEASE_NOTES_v0.6.md) ✅
+  - 새로운 기능 (시간 기반 자동 실행, 위치 기반 자동 실행, 커스텀 타이머 UI, 자동 실행 제어)
+  - 기술 개선 사항 (Room v3→v4, Analytics 21개 이벤트, 성능 최적화, 빌드 시스템)
+  - 버그 수정 (Hilt ClassNotFoundException, 도넛 그래프 가독성)
+  - 다음 계획 (3차 고도화: 실제 QA, DST/심야 테스트, OEM 호환성, 자동 실행 대시보드, Play Store 배포)
+  - v0.5 릴리스 노트 포맷 참조
 
-#### 7.4.3 프라이버시 정책 업데이트
-- [ ] 위치 정보 수집 관련 내용 추가 → [PRD §7](./02_advanced_autosetting_prd.md#7-위험-요소-및-대응)
-  - 수집 목적: 위치 기반 자동 실행
-  - 수집 방법: Geofencing API
-  - 보관 기간: 영구 (사용자 삭제 시 즉시 삭제)
-  - 제3자 제공: 없음
-  - **참조**: [GDPR 준수 가이드](https://developer.android.com/privacy-and-security/privacy-policy)
-  - **참조**: [개인정보보호법](https://www.pipc.go.kr/) - 위치정보 수집 관련 법령
+#### 7.4.3 프라이버시 정책 업데이트 (3차 고도화로 연기) ⏳
+- [ ] 위치 정보 수집 관련 내용 추가 ⏳
+  - **연기 이유**: 실제 Play Store 배포 시점에 작성
+  - **향후 계획**: 3차 고도화에서 Play Store 배포 준비 시 작성
 
-#### 7.4.4 Play Store 정책 준수 문서 (필수) 🆕
-- [ ] **데이터 보안 섹션 작성** → [PRD §4.2.5](./02_advanced_autosetting_prd.md#425-google-play-store-정책-준수)
-  - Google Play Console → "앱 콘텐츠" → "데이터 보안"
-  - 위치 데이터 수집 선언:
-    - 수집 여부: 예
-    - 공유 여부: 아니오
-    - 암호화 여부: 예
-    - 사용자 삭제 요청: 가능
-  - 백그라운드 위치 사용 목적 상세 설명
+#### 7.4.4 Play Store 정책 준수 문서 (3차 고도화로 연기) ⏳
+- [ ] **데이터 보안 섹션 작성** ⏳
+  - **연기 이유**: Play Store 배포 시점에 실제 Console 작성 필요
+  - **향후 계획**: 3차 고도화에서 배포 준비 시 작성
   
-- [ ] **Location Permission Declaration 작성**
-  - 백그라운드 위치 권한 사용 정당성 문서화
-  - 기능 설명: "사용자가 등록한 특정 장소 (회사, 학교) 도착 시 자동으로 집중 모드 시작"
-  - 대체 기능 명시: "시간 기반 자동 실행으로 대체 가능"
+- [ ] **Location Permission Declaration 작성** ⏳
+  - **연기 이유**: Play Store 심사 시점에 제출
+  - **향후 계획**: 3차 고도화에서 배포 준비 시 작성
   
-- [ ] **기능 시연 비디오 제작** (1-2분)
-  - 위치 등록 과정
-  - 지오펜스 진입 시 자동 실행 동작
-  - 사용자 동의 및 설정 화면
-  - 위치 데이터 로컬 저장 증명
+- [ ] **기능 시연 비디오 제작** ⏳
+  - **연기 이유**: 실기기 테스트 완료 후 제작 필요
+  - **향후 계획**: 3차 고도화에서 QA 완료 후 제작
   
-- [ ] **심사 대응 준비 문서**
-  - Q&A 예상 질문 및 답변 준비
-  - 백그라운드 위치 필수성 설명
-  - 데이터 처리 방식 증명 자료
-  - Plan B: 위치 기능 제외 버전 준비 (필요 시)
+- [ ] **심사 대응 준비 문서** ⏳
+  - **연기 이유**: 실제 심사 시점에 필요
+  - **향후 계획**: 3차 고도화에서 배포 준비 시 작성
 
-**작업 기록**: `working_history/2025-10-31_2nd_advanced_7.4.md`
+**작업 기록**: `working_history/2025-10-26_2nd_advanced_7.4.md`
 
 ---
 

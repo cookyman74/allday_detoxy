@@ -87,30 +87,33 @@ app/
    - **방해요인 Top 3**: 카테고리별 차단 횟수 및 비율
    - **디톡시 코치 추천**: 위험 단계별 맞춤 행동 제안
 
-### 2차 고도화 기능 (v0.6 개발 중) 🚧
+### 2차 고도화 기능 (v0.6 완료) ✅
 9. **시간 기반 자동 실행**
    - 특정 시간에 타이머 자동 시작 (최대 10개 시간대)
    - 요일별 반복 설정 (월~일 선택 가능)
-   - 사전 알림 및 자동 시작 딜레이 옵션
-   - 정확 알람 권한 지원 (Android 12+)
+   - 사전 알림 (5분 전) 및 자동 시작 딜레이 옵션
+   - 정확 알람 권한 지원 (Android 12+, Doze 모드 대응)
+   - AlarmManager + WorkManager fallback
 
 10. **위치 기반 자동 실행**
     - 특정 장소 도착 시 타이머 자동 시작 (최대 5개 위치)
-    - Geofencing API 기반 위치 감지
+    - Geofencing API 기반 위치 감지 (배터리 효율적)
     - 반경 설정 (50m~500m) 및 GPS 정확도 표시
     - 백그라운드 위치 권한 관리
+    - 위치 정보는 기기에만 저장 (서버 전송 없음)
 
 11. **커스텀 타이머 UI**
     - 도넛 그래프 기반 직관적 시간 조정 (5~180분)
     - 드래그/탭 제스처로 시간 설정
+    - 햅틱 피드백 및 부드러운 애니메이션
     - 커스텀 프리셋 저장 및 관리 (최대 10개)
-    - 기본 루틴 템플릿 제공 (업무/공부/저녁/주말)
+    - 기본 루틴 템플릿 제공 (표준/집중/휴식/짧은휴식)
 
-12. **자동 실행 대시보드**
-    - 다음 예정 자동 실행 표시
-    - 이번 주 자동 실행 통계 (성공률, 총 집중 시간)
-    - 일시중지 및 건너뛰기 제어
-    - 최근 자동 실행 이력 (성공/실패 사유)
+12. **자동 실행 제어**
+    - 자동 실행 마스터 토글 (전체 활성화/비활성화)
+    - 임시 일시중지 (30분/1시간/3시간/내일까지)
+    - 다음 예정 자동 실행 표시 (타이머 화면)
+    - 예약설정 화면 통합 (별도 대시보드 없음)
 
 ## 🚀 빌드 및 실행
 
@@ -195,13 +198,14 @@ app/
 - [릴리스 노트](./docs/RELEASE_NOTES_v0.5.md) - v0.5 배포 내역
 - [산출물 체크리스트](./docs/DELIVERABLES_v0.5.md) - 1차 고도화 완료 문서
 
-### 2차 고도화 문서 (v0.6 개발 중) 🚧
+### 2차 고도화 문서 (v0.6 완료) ✅
 - [2차 고도화 PRD](./docs/02_advanced_autosetting_prd.md) - 자동 실행 & 커스텀 타이머
 - [2차 고도화 작업 계획](./docs/02_advanced_autosetting_todolist.md) - 6주 개발 일정
-- [Wireframe 스펙](./docs/02_advanced_wireframe_spec.md) - UI/UX 상세 설계 (작성 예정)
-- [Analytics 스키마](./docs/02_advanced_analytics_schema.md) - 이벤트 로깅 스펙 (작성 예정)
-- [Room 마이그레이션 전략](./docs/02_advanced_room_migration_strategy.md) - DB v3→v4 (작성 예정)
-- [QA 시나리오](./docs/02_advanced_qa_devices.md) - 테스트 계획 (작성 예정)
+- [Wireframe 스펙](./docs/02_advanced_wireframe_spec.md) - UI/UX 상세 설계
+- [Analytics 스키마](./docs/02_advanced_analytics_schema.md) - 이벤트 로깅 스펙
+- [Room 마이그레이션 전략](./docs/02_advanced_room_migration_strategy.md) - DB v3→v4
+- [QA 시나리오](./docs/02_advanced_qa_devices.md) - 테스트 계획
+- [릴리스 노트](./docs/RELEASE_NOTES_v0.6.md) - v0.6 배포 내역
 
 ## 📄 라이선스
 
