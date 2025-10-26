@@ -1094,7 +1094,7 @@
 ### 5.2 커스텀 프리셋 저장 및 관리 (Day 21-22)
 
 #### 5.2.1 SavePresetDialog
-- [ ] **다이얼로그 UI**
+- [x] **다이얼로그 UI** ✅
   ```kotlin
   @Composable
   fun SavePresetDialog(
@@ -1142,7 +1142,7 @@
   ```
 
 #### 5.2.2 CustomTimerPresetViewModel
-- [ ] **StateFlow 정의**
+- [x] **StateFlow 정의** ✅
   ```kotlin
   @HiltViewModel
   class CustomTimerPresetViewModel @Inject constructor(
@@ -1158,13 +1158,13 @@
   ```
 
 #### 5.2.3 프리셋 리스트 UI
-- [ ] **PresetButtonRow** 컴포넌트
+- [x] **PresetButtonRow** 컴포넌트 ✅
   - 기본 프리셋 (25분, 45분, 60분)
   - 커스텀 프리셋 (최대 10개)
   - 스크롤 가능한 Row
   - 길게 누르면 편집/삭제 옵션
 
-- [ ] **PresetButton** 컴포넌트
+- [x] **PresetButton** 컴포넌트 ✅
   ```kotlin
   @Composable
   fun PresetButton(
@@ -1193,35 +1193,36 @@
   ```
 
 #### 5.2.4 프리셋 관리 화면
-- [ ] **ManagePresetsDialog**
-  - 프리셋 리스트 (드래그로 순서 변경)
-  - 편집 버튼 (이름, 시간, 차단 프리셋 변경)
-  - 삭제 버튼
-  - 사용 횟수 표시
+- [x] **ManagePresetsDialog** ✅ (PresetManagementBottomSheet로 구현)
+  - 프리셋 리스트 (드래그로 순서 변경) ⏳ (향후 구현)
+  - 편집 버튼 (이름, 시간, 차단 프리셋 변경) ✅
+  - 삭제 버튼 ✅
+  - 사용 횟수 표시 ✅
 
-**작업 기록**: `working_history/2025-10-27_2nd_advanced_5.2.md`
+**작업 기록**: `working_history/2025-10-26_2nd_advanced_5.2.md` ✅
 
 ### 5.3 기존 타이머 화면 리팩토링 (Day 23)
 
 #### 5.3.1 TimerScreen 통합
-- [ ] CustomTimerScreen을 TimerScreen으로 통합 → [PRD §4.3.3](./02_advanced_autosetting_prd.md#433-빠른-시작)
-  - 기존 타이머 UI 제거
-  - 도넛 그래프를 메인 UI로 사용
-  - 프리셋 버튼 하단 배치
+- [x] CustomTimerScreen을 TimerScreen으로 통합 → [PRD §4.3.3](./02_advanced_autosetting_prd.md#433-빠른-시작) ✅
+  - 기존 타이머 UI 제거 ✅
+  - 도넛 그래프를 메인 UI로 사용 ✅
+  - 프리셋 버튼 하단 배치 ✅
   - **참조**: [기존 TimerScreen](../app/src/main/java/com/allday/detoxy/presentation/ui/timer/TimerScreen.kt) - 현재 타이머 UI
 
-- [ ] TimerViewModel 확장
-  - CustomTimerPreset 로딩
-  - 프리셋 선택 시 시간 자동 설정
-  - 사용 횟수 자동 증가
+- [x] TimerViewModel 확장 ✅
+  - CustomTimerPreset 로딩 ✅
+  - 프리셋 선택 시 시간 자동 설정 ✅
+  - 사용 횟수 자동 증가 ✅
   - **참조**: [기존 TimerViewModel](../app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt)
 
 #### 5.3.2 하위 호환성 유지
-- [ ] 기존 프리셋 데이터 마이그레이션
-  - 25분, 45분, 60분 → CustomTimerPreset으로 자동 생성
-  - displayOrder: 0, 1, 2 (최우선)
+- [x] 기존 프리셋 데이터 마이그레이션 ✅
+  - 25분, 45분, 60분 → 기본 프리셋으로 유지 (별도 저장 불필요) ✅
+  - CustomTimerPreset은 사용자 생성 프리셋만 저장 ✅
+  - displayOrder: 사용자가 추가한 순서대로 (0부터) ✅
 
-**작업 기록**: `working_history/2025-10-27_2nd_advanced_5.3.md`
+**작업 기록**: `working_history/2025-10-26_2nd_advanced_5.2.md` ✅ (5.1~5.3 통합 완료)
 
 ---
 
