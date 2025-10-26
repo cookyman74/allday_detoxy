@@ -102,10 +102,11 @@ fun DonutTimerPicker(
             .size(300.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Canvas를 먼저 그리기 (아래 레이어)
+        // Canvas를 먼저 그리기 (아래 레이어, 아래로 offset 적용)
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .offset(y = 20.dp) // 도넛 그래프를 아래로 이동
                 .pointerInput(Unit) {
                     // 드래그 제스처
                     detectDragGestures { change, _ ->
@@ -140,8 +141,8 @@ fun DonutTimerPicker(
         ) {
             val center = Offset(size.width / 2f, size.height / 2f)
             val strokeWidth = 20.dp.toPx()
-            // 중앙 텍스트와 충분한 간격 확보를 위해 radius를 더 작게 설정
-            val radius = size.minDimension / 2f - strokeWidth / 2f - 50.dp.toPx()
+            // 원래 크기로 복원 (디자인 균형 유지)
+            val radius = size.minDimension / 2f - strokeWidth / 2f - 16.dp.toPx()
             
             // 1. 배경 원 그리기
             drawCircle(
@@ -168,8 +169,8 @@ fun DonutTimerPicker(
                 val markerAngle = minutesToAngle(markerMinutes, maxMinutes)
                 val angleRad = Math.toRadians((markerAngle - 90).toDouble())
                 
-                // 눈금 위치 계산 (도넛 그래프 바깥쪽에 배치)
-                val markerRadius = radius + strokeWidth / 2f + 30.dp.toPx()
+                // 눈금 위치 계산
+                val markerRadius = radius + 30.dp.toPx()
                 val markerX = center.x + (markerRadius * cos(angleRad)).toFloat()
                 val markerY = center.y + (markerRadius * sin(angleRad)).toFloat()
                 
