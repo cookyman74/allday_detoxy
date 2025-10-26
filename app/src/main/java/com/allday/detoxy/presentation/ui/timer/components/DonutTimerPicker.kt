@@ -99,9 +99,27 @@ fun DonutTimerPicker(
     
     Box(
         modifier = modifier
-            .size(280.dp),
+            .size(300.dp),
         contentAlignment = Alignment.Center
     ) {
+        // 중앙 텍스트를 Canvas보다 먼저 배치 (z-order 보장)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "$selectedMinutes",
+                style = MaterialTheme.typography.displayLarge,
+                fontWeight = FontWeight.Bold,
+                color = onSurface
+            )
+            Text(
+                text = "분",
+                style = MaterialTheme.typography.titleMedium,
+                color = onSurfaceVariant
+            )
+        }
+        
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -138,8 +156,8 @@ fun DonutTimerPicker(
                 }
         ) {
             val center = Offset(size.width / 2f, size.height / 2f)
-            val radius = size.minDimension / 2f - 40.dp.toPx()
-            val strokeWidth = 24.dp.toPx()
+            val strokeWidth = 20.dp.toPx()
+            val radius = size.minDimension / 2f - strokeWidth / 2f - 16.dp.toPx()
             
             // 1. 배경 원 그리기
             drawCircle(
@@ -210,24 +228,6 @@ fun DonutTimerPicker(
                 color = primaryColor,
                 radius = 12.dp.toPx(),
                 center = Offset(handleX, handleY)
-            )
-        }
-        
-        // 중앙 텍스트 (선택된 시간)
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "$selectedMinutes",
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-                color = onSurface
-            )
-            Text(
-                text = "분",
-                style = MaterialTheme.typography.titleMedium,
-                color = onSurfaceVariant
             )
         }
     }
