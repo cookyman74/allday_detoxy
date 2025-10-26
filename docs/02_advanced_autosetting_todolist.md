@@ -1390,10 +1390,15 @@
 
 **작업 기록**: `working_history/2025-10-26_2nd_advanced_6.2.md`
 
-### 6.3 단위 테스트 작성 (Day 27)
+### 6.3 단위 테스트 작성 (Day 27) - MVP
 
-#### 6.3.1 Room 마이그레이션 테스트
-- [ ] **MigrationTest_3_4.kt**
+#### 6.3.1 데이터 엔티티 검증 테스트 (MVP)
+- [x] **TimeBasedAutoRunTest.kt** ✅ - 시간 기반 자동 실행 엔티티
+- [x] **CustomTimerPresetTest.kt** ✅ - 커스텀 타이머 프리셋 엔티티
+- [x] **AutoRunLogTest.kt** ✅ - 자동 실행 로그 엔티티
+
+#### 6.3.2 Room 마이그레이션 테스트 ⏳ (3차 고도화)
+- [ ] **MigrationTest_3_4.kt** (instrumentation test 필요)
   ```kotlin
   @Test
   fun migrate3To4_CreatesNewTables() {
@@ -1409,11 +1414,12 @@
   }
   ```
 
-#### 6.3.2 비즈니스 로직 테스트
+#### 6.3.3 비즈니스 로직 테스트 ⏳ (3차 고도화 - MockK 도입 필요)
 - [ ] **AutoRunAlarmManagerTest.kt**
   - 알람 스케줄링 테스트
   - 요일 계산 로직 테스트
   - PendingIntent 생성 테스트
+  - **연기 이유**: MockK/Mockito 없이 Android 컴포넌트 테스트 어려움
 
 - [ ] **AutoRunGeofenceManagerTest.kt**
   - Geofence 생성 테스트
@@ -1423,14 +1429,15 @@
 - [ ] **TimeCalculationTest.kt**
   - 각도 ↔ 시간 변환 테스트
   - 5분 단위 스냅 테스트
+  - **연기 이유**: 변환 함수가 private으로 직접 테스트 불가
 
-#### 6.3.3 통합 테스트
+#### 6.3.4 통합 테스트 ⏳ (3차 고도화)
 - [ ] **AutoRunE2ETest.kt**
   - 시간 기반 자동 실행 전체 플로우
   - 위치 기반 자동 실행 전체 플로우
   - 커스텀 프리셋 생성 및 사용 플로우
 
-**작업 기록**: `working_history/2025-10-29_2nd_advanced_6.3.md`
+**작업 기록**: `working_history/2025-10-26_2nd_advanced_6.3.md`
 
 ### 6.4 회귀 테스트 (Day 28)
 
