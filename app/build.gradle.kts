@@ -24,6 +24,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../screensence-release-key.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "screensense@hoya1024"
+            keyAlias = "screensence"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "screensense@hoya1024"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -31,6 +40,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
