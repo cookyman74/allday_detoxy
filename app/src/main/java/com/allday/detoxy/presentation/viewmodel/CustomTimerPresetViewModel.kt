@@ -2,6 +2,7 @@ package com.allday.detoxy.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.data.local.entity.CustomTimerPreset
 import com.allday.detoxy.data.repository.CustomTimerPresetRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,6 +60,14 @@ class CustomTimerPresetViewModel @Inject constructor(
             )
             
             repository.insert(preset)
+            
+            // Analytics 로깅
+            AnalyticsHelper.logCustomPresetCreated(
+                nameLength = name.length,
+                durationMinutes = durationMinutes,
+                hasPresetType = presetType != null,
+                totalCustomCount = count + 1
+            )
         }
     }
 
@@ -80,10 +89,22 @@ class CustomTimerPresetViewModel @Inject constructor(
      */
     fun deletePreset(presetId: String) {
         viewModelScope.launch {
+            // Analytics 로깅용 데이터 수집 (삭제 전)
+            val preset = presets.value.find { it.id == presetId }
+            
             repository.delete(presetId)
             
             // 삭제 후 표시 순서 재정렬
             reorderPresets()
+            
+            // Analytics 로깅
+            if (preset != null) {
+                val daysActive = ((System.currentTimeMillis() - preset.createdAt) / (1000 * 60 * 60 * 24)).toInt()
+                AnalyticsHelper.logCustomPresetDeleted(
+                    usageCount = preset.usageCount,
+                    daysActive = daysActive
+                )
+            }
         }
     }
 

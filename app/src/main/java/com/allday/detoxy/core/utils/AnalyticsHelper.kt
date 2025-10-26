@@ -207,6 +207,412 @@ object AnalyticsHelper {
         logEvent("session_give_up", bundle)
     }
 
+    // ==================== 2차 고도화: 자동 실행 설정 이벤트 ====================
+
+    /**
+     * auto_run_time_created 이벤트
+     *
+     * 시간 기반 자동 실행 생성
+     */
+    fun logTimeBasedAutoRunCreated(
+        hour: Int,
+        minute: Int,
+        durationMinutes: Int,
+        presetType: String,
+        enabledDaysCount: Int,
+        hasLabel: Boolean,
+        isFromTemplate: Boolean,
+        templateType: String?
+    ) {
+        val bundle = Bundle().apply {
+            putInt("hour", hour)
+            putInt("minute", minute)
+            putInt("duration_minutes", durationMinutes)
+            putString("preset_type", presetType)
+            putInt("enabled_days_count", enabledDaysCount)
+            putBoolean("has_label", hasLabel)
+            putBoolean("is_from_template", isFromTemplate)
+            templateType?.let { putString("template_type", it) }
+        }
+        logEvent("auto_run_time_created", bundle)
+    }
+
+    /**
+     * auto_run_time_edited 이벤트
+     *
+     * 시간 기반 자동 실행 편집
+     */
+    fun logTimeBasedAutoRunEdited(
+        changedFields: String,
+        newDurationMinutes: Int?,
+        newEnabledDaysCount: Int?
+    ) {
+        val bundle = Bundle().apply {
+            putString("changed_fields", changedFields)
+            newDurationMinutes?.let { putInt("new_duration_minutes", it) }
+            newEnabledDaysCount?.let { putInt("new_enabled_days_count", it) }
+        }
+        logEvent("auto_run_time_edited", bundle)
+    }
+
+    /**
+     * auto_run_time_toggled 이벤트
+     *
+     * 시간 기반 자동 실행 활성화/비활성화
+     */
+    fun logTimeBasedAutoRunToggled(
+        isEnabled: Boolean,
+        totalEnabledCount: Int
+    ) {
+        val bundle = Bundle().apply {
+            putBoolean("is_enabled", isEnabled)
+            putInt("total_enabled_count", totalEnabledCount)
+        }
+        logEvent("auto_run_time_toggled", bundle)
+    }
+
+    /**
+     * auto_run_time_deleted 이벤트
+     *
+     * 시간 기반 자동 실행 삭제
+     */
+    fun logTimeBasedAutoRunDeleted(
+        usageCount: Int,
+        daysActive: Int
+    ) {
+        val bundle = Bundle().apply {
+            putInt("usage_count", usageCount)
+            putInt("days_active", daysActive)
+        }
+        logEvent("auto_run_time_deleted", bundle)
+    }
+
+    /**
+     * auto_run_location_created 이벤트
+     *
+     * 위치 기반 자동 실행 생성
+     */
+    fun logLocationBasedAutoRunCreated(
+        locationLabelHash: String,
+        radiusMeters: Int,
+        durationMinutes: Int,
+        presetType: String,
+        triggerType: String,
+        dwellTimeMinutes: Int,
+        requiresConfirmation: Boolean
+    ) {
+        val bundle = Bundle().apply {
+            putString("location_label_hash", locationLabelHash)
+            putInt("radius_meters", radiusMeters)
+            putInt("duration_minutes", durationMinutes)
+            putString("preset_type", presetType)
+            putString("trigger_type", triggerType)
+            putInt("dwell_time_minutes", dwellTimeMinutes)
+            putBoolean("requires_confirmation", requiresConfirmation)
+        }
+        logEvent("auto_run_location_created", bundle)
+    }
+
+    /**
+     * auto_run_location_edited 이벤트
+     *
+     * 위치 기반 자동 실행 편집
+     */
+    fun logLocationBasedAutoRunEdited(
+        changedFields: String,
+        newRadiusMeters: Int?,
+        newDwellTimeMinutes: Int?
+    ) {
+        val bundle = Bundle().apply {
+            putString("changed_fields", changedFields)
+            newRadiusMeters?.let { putInt("new_radius_meters", it) }
+            newDwellTimeMinutes?.let { putInt("new_dwell_time_minutes", it) }
+        }
+        logEvent("auto_run_location_edited", bundle)
+    }
+
+    /**
+     * auto_run_location_toggled 이벤트
+     *
+     * 위치 기반 자동 실행 활성화/비활성화
+     */
+    fun logLocationBasedAutoRunToggled(
+        isEnabled: Boolean,
+        totalEnabledCount: Int
+    ) {
+        val bundle = Bundle().apply {
+            putBoolean("is_enabled", isEnabled)
+            putInt("total_enabled_count", totalEnabledCount)
+        }
+        logEvent("auto_run_location_toggled", bundle)
+    }
+
+    /**
+     * auto_run_location_deleted 이벤트
+     *
+     * 위치 기반 자동 실행 삭제
+     */
+    fun logLocationBasedAutoRunDeleted(
+        usageCount: Int,
+        successRate: Int,
+        daysActive: Int
+    ) {
+        val bundle = Bundle().apply {
+            putInt("usage_count", usageCount)
+            putInt("success_rate", successRate)
+            putInt("days_active", daysActive)
+        }
+        logEvent("auto_run_location_deleted", bundle)
+    }
+
+    // ==================== 2차 고도화: 자동 실행 트리거 및 결과 이벤트 ====================
+
+    /**
+     * auto_run_triggered 이벤트
+     *
+     * 자동 실행 트리거 발생
+     */
+    fun logAutoRunTriggered(
+        triggerType: String,
+        sourceIdHash: String,
+        durationMinutes: Int,
+        presetType: String
+    ) {
+        val bundle = Bundle().apply {
+            putString("trigger_type", triggerType)
+            putString("source_id_hash", sourceIdHash)
+            putInt("duration_minutes", durationMinutes)
+            putString("preset_type", presetType)
+        }
+        logEvent("auto_run_triggered", bundle)
+    }
+
+    /**
+     * auto_run_notification_shown 이벤트
+     *
+     * 자동 실행 알림 표시
+     */
+    fun logAutoRunNotificationShown(
+        triggerType: String,
+        isPreNotification: Boolean,
+        minutesBefore: Int?
+    ) {
+        val bundle = Bundle().apply {
+            putString("trigger_type", triggerType)
+            putBoolean("is_pre_notification", isPreNotification)
+            minutesBefore?.let { putInt("minutes_before", it) }
+        }
+        logEvent("auto_run_notification_shown", bundle)
+    }
+
+    /**
+     * auto_run_notification_action 이벤트
+     *
+     * 자동 실행 알림 액션
+     */
+    fun logAutoRunNotificationAction(
+        action: String,
+        triggerType: String,
+        responseTimeSeconds: Int
+    ) {
+        val bundle = Bundle().apply {
+            putString("action", action)
+            putString("trigger_type", triggerType)
+            putInt("response_time_seconds", responseTimeSeconds)
+        }
+        logEvent("auto_run_notification_action", bundle)
+    }
+
+    /**
+     * auto_run_started 이벤트
+     *
+     * 자동 실행으로 타이머 시작
+     */
+    fun logAutoRunStarted(
+        triggerType: String,
+        durationMinutes: Int,
+        isAutoStart: Boolean,
+        delaySeconds: Int,
+        gpsAccuracyMeters: Float? = null,
+        dwellSeconds: Int? = null
+    ) {
+        val bundle = Bundle().apply {
+            putString("trigger_type", triggerType)
+            putInt("duration_minutes", durationMinutes)
+            putBoolean("is_auto_start", isAutoStart)
+            putInt("delay_seconds", delaySeconds)
+            gpsAccuracyMeters?.let { putDouble("gps_accuracy_meters", it.toDouble()) }
+            dwellSeconds?.let { putInt("dwell_seconds", it) }
+        }
+        logEvent("auto_run_started", bundle)
+    }
+
+    /**
+     * auto_run_skipped 이벤트
+     *
+     * 자동 실행 건너뜀
+     */
+    fun logAutoRunSkipped(
+        triggerType: String,
+        reason: String
+    ) {
+        val bundle = Bundle().apply {
+            putString("trigger_type", triggerType)
+            putString("reason", reason)
+        }
+        logEvent("auto_run_skipped", bundle)
+    }
+
+    /**
+     * auto_run_failed 이벤트
+     *
+     * 자동 실행 실패
+     */
+    fun logAutoRunFailed(
+        triggerType: String,
+        failureReason: String,
+        gpsAccuracyMeters: Float? = null
+    ) {
+        val bundle = Bundle().apply {
+            putString("trigger_type", triggerType)
+            putString("failure_reason", failureReason)
+            gpsAccuracyMeters?.let { putDouble("gps_accuracy_meters", it.toDouble()) }
+        }
+        logEvent("auto_run_failed", bundle)
+    }
+
+    // ==================== 2차 고도화: 커스텀 타이머 이벤트 ====================
+
+    /**
+     * custom_timer_adjusted 이벤트
+     *
+     * 도넛 그래프로 시간 조정
+     */
+    fun logCustomTimerAdjusted(
+        durationMinutes: Int,
+        method: String,
+        isCustomTime: Boolean
+    ) {
+        val bundle = Bundle().apply {
+            putInt("duration_minutes", durationMinutes)
+            putString("method", method)
+            putBoolean("is_custom_time", isCustomTime)
+        }
+        logEvent("custom_timer_adjusted", bundle)
+    }
+
+    /**
+     * custom_preset_created 이벤트
+     *
+     * 커스텀 프리셋 생성
+     */
+    fun logCustomPresetCreated(
+        nameLength: Int,
+        durationMinutes: Int,
+        hasPresetType: Boolean,
+        totalCustomCount: Int
+    ) {
+        val bundle = Bundle().apply {
+            putInt("name_length", nameLength)
+            putInt("duration_minutes", durationMinutes)
+            putBoolean("has_preset_type", hasPresetType)
+            putInt("total_custom_count", totalCustomCount)
+        }
+        logEvent("custom_preset_created", bundle)
+    }
+
+    /**
+     * custom_preset_used 이벤트
+     *
+     * 커스텀 프리셋 사용
+     */
+    fun logCustomPresetUsed(
+        presetIdHash: String,
+        durationMinutes: Int,
+        usageCount: Int
+    ) {
+        val bundle = Bundle().apply {
+            putString("preset_id_hash", presetIdHash)
+            putInt("duration_minutes", durationMinutes)
+            putInt("usage_count", usageCount)
+        }
+        logEvent("custom_preset_used", bundle)
+    }
+
+    /**
+     * custom_preset_edited 이벤트
+     *
+     * 커스텀 프리셋 편집
+     */
+    fun logCustomPresetEdited(
+        changedFields: String,
+        newDurationMinutes: Int?,
+        newNameLength: Int?
+    ) {
+        val bundle = Bundle().apply {
+            putString("changed_fields", changedFields)
+            newDurationMinutes?.let { putInt("new_duration_minutes", it) }
+            newNameLength?.let { putInt("new_name_length", it) }
+        }
+        logEvent("custom_preset_edited", bundle)
+    }
+
+    /**
+     * custom_preset_deleted 이벤트
+     *
+     * 커스텀 프리셋 삭제
+     */
+    fun logCustomPresetDeleted(
+        usageCount: Int,
+        daysActive: Int
+    ) {
+        val bundle = Bundle().apply {
+            putInt("usage_count", usageCount)
+            putInt("days_active", daysActive)
+        }
+        logEvent("custom_preset_deleted", bundle)
+    }
+
+    // ==================== 2차 고도화: 권한 이벤트 ====================
+
+    /**
+     * permission_exact_alarm_requested 이벤트
+     *
+     * 정확 알람 권한 요청 (Android 12+)
+     */
+    fun logPermissionExactAlarmRequested(
+        source: String,
+        isGranted: Boolean,
+        fallbackToWorkmanager: Boolean,
+        wentToSettings: Boolean
+    ) {
+        val bundle = Bundle().apply {
+            putString("source", source)
+            putBoolean("is_granted", isGranted)
+            putBoolean("fallback_to_workmanager", fallbackToWorkmanager)
+            putBoolean("went_to_settings", wentToSettings)
+        }
+        logEvent("permission_exact_alarm_requested", bundle)
+    }
+
+    /**
+     * permission_background_location_requested 이벤트
+     *
+     * 백그라운드 위치 권한 요청
+     */
+    fun logPermissionBackgroundLocationRequested(
+        source: String,
+        isGranted: Boolean,
+        permissionLevel: String
+    ) {
+        val bundle = Bundle().apply {
+            putString("source", source)
+            putBoolean("is_granted", isGranted)
+            putString("permission_level", permissionLevel)
+        }
+        logEvent("permission_background_location_requested", bundle)
+    }
+
     // ==================== 내부 헬퍼 ====================
 
     /**

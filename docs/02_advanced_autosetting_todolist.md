@@ -1350,7 +1350,7 @@
 ### 6.2 Analytics 이벤트 로깅 (Day 26)
 
 #### 6.2.1 AnalyticsHelper 확장
-- [ ] **21개 신규 이벤트 구현** → [PRD §5.2](./02_advanced_autosetting_prd.md#52-이벤트-로깅), **[Analytics 스키마](./02_advanced_analytics_schema.md)** ✅
+- [x] **21개 신규 이벤트 구현** ✅ → [PRD §5.2](./02_advanced_autosetting_prd.md#52-이벤트-로깅), **[Analytics 스키마](./02_advanced_analytics_schema.md)**
   ```kotlin
   object AnalyticsHelper {
       // 설정 이벤트
@@ -1379,15 +1379,16 @@
   - **참조**: [1차 고도화 Analytics 스키마](./01_advanced_analytics_schema.md)
   - **참조**: [개인정보 보호 강화](./02_advanced_analytics_schema.md#12-custom_preset_created) - 이름 대신 길이만 로깅
 
-#### 6.2.2 이벤트 로깅 위치
-- [ ] TimeBasedAutoRunViewModel → 설정 이벤트
-- [ ] LocationBasedAutoRunViewModel → 설정 이벤트
-- [ ] CustomTimerScreen → 커스텀 타이머 이벤트
-- [ ] AutoRunAlarmReceiver → 자동 실행 이벤트
-- [ ] GeofenceTransitionsReceiver → 자동 실행 이벤트
-- [ ] NotificationActionReceiver → 액션 이벤트
+#### 6.2.2 이벤트 로깅 위치 (MVP)
+- [x] TimeBasedAutoRunViewModel → 설정 이벤트 ✅
+- [ ] LocationBasedAutoRunViewModel → 설정 이벤트 ⏳ (3차 고도화)
+- [x] CustomTimerPresetViewModel → 커스텀 프리셋 이벤트 ✅
+- [ ] CustomTimerScreen → 커스텀 타이머 이벤트 ⏳ (도넛 타이머 조정은 3차 고도화)
+- [x] AutoRunAlarmReceiver → 자동 실행 이벤트 ✅
+- [ ] GeofenceTransitionsReceiver → 자동 실행 이벤트 ⏳ (위치 기반은 3차 고도화)
+- [ ] NotificationActionReceiver → 액션 이벤트 ⏳ (3차 고도화)
 
-**작업 기록**: `working_history/2025-10-28_2nd_advanced_6.2.md`
+**작업 기록**: `working_history/2025-10-26_2nd_advanced_6.2.md`
 
 ### 6.3 단위 테스트 작성 (Day 27)
 

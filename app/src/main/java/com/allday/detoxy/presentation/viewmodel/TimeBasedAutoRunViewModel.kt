@@ -3,6 +3,7 @@ package com.allday.detoxy.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
+import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
 import com.allday.detoxy.data.repository.UserSettingsRepository
@@ -167,6 +168,24 @@ class TimeBasedAutoRunViewModel @Inject constructor(
                 if (autoRun.isEnabled) {
                     alarmManager.scheduleTimeBasedAutoRun(autoRun)
                 }
+                
+                // Analytics 로깅
+                val enabledDaysCount = try {
+                    // enabledDays는 JSON 배열 문자열 (예: "[\"MON\",\"TUE\"]")
+                    autoRun.enabledDays.count { it == ',' } + 1
+                } catch (e: Exception) {
+                    1
+                }
+                AnalyticsHelper.logTimeBasedAutoRunCreated(
+                    hour = autoRun.hour,
+                    minute = autoRun.minute,
+                    durationMinutes = autoRun.durationMinutes,
+                    presetType = autoRun.presetType,
+                    enabledDaysCount = enabledDaysCount,
+                    hasLabel = !autoRun.label.isNullOrEmpty(),
+                    isFromTemplate = false, // TODO: 템플릿 기능 추가 시 업데이트
+                    templateType = null
+                )
             } catch (e: Exception) {
                 _errorState.value = "자동 실행 추가 실패: ${e.message}"
             }
@@ -201,8 +220,20 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     fun deleteAutoRun(autoRunId: String) {
         viewModelScope.launch {
             try {
+                // Analytics 로깅용 데이터 수집 (삭제 전)
+                val autoRun = _autoRuns.value.find { it.id == autoRunId }
+                
                 alarmManager.cancelTimeBasedAutoRun(autoRunId)
                 repository.delete(autoRunId)
+                
+                // Analytics 로깅
+                if (autoRun != null) {
+                    val daysActive = ((System.currentTimeMillis() - autoRun.createdAt) / (1000 * 60 * 60 * 24)).toInt()
+                    AnalyticsHelper.logTimeBasedAutoRunDeleted(
+                        usageCount = 0, // TODO: usageCount 필드 추가 필요
+                        daysActive = daysActive
+                    )
+                }
             } catch (e: Exception) {
                 _errorState.value = "자동 실행 삭제 실패: ${e.message}"
             }
@@ -235,6 +266,13 @@ class TimeBasedAutoRunViewModel @Inject constructor(
                 } else {
                     alarmManager.cancelTimeBasedAutoRun(autoRunId)
                 }
+                
+                // Analytics 로깅
+                val totalEnabledCount = _autoRuns.value.count { it.isEnabled || (it.id == autoRunId && isEnabled) }
+                AnalyticsHelper.logTimeBasedAutoRunToggled(
+                    isEnabled = isEnabled,
+                    totalEnabledCount = totalEnabledCount
+                )
             } catch (e: Exception) {
                 _errorState.value = "활성화 변경 실패: ${e.message}"
             }

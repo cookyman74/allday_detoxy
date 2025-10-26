@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
 import com.allday.detoxy.core.manager.AutoRunNotificationManager
+import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.data.local.dao.AutoRunLogDao
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.entity.AutoRunLog
@@ -135,6 +136,13 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     triggerType = "TIME"
                 )
                 
+                // Analytics 로깅
+                AnalyticsHelper.logAutoRunNotificationShown(
+                    triggerType = "TIME",
+                    isPreNotification = true,
+                    minutesBefore = preNotificationMinutes
+                )
+                
                 Log.d(TAG, "✅ Pre-notification shown")
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to show pre-notification: ${e.message}", e)
@@ -177,6 +185,12 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 if (!entryPoint.userSettingsRepository().isAutoRunEnabled()) {
                     Log.w(TAG, "⚠️ AutoRun is disabled or paused, skipping auto-run")
                     logAutoRunSkipped(autoRunId, "AUTO_RUN_DISABLED_OR_PAUSED", entryPoint)
+                    
+                    // Analytics 로깅
+                    AnalyticsHelper.logAutoRunSkipped(
+                        triggerType = "TIME",
+                        reason = "AUTO_RUN_DISABLED_OR_PAUSED"
+                    )
                     return@launch
                 }
 
@@ -185,10 +199,24 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                 if (currentState != com.allday.detoxy.domain.model.FocusState.IDLE) {
                     Log.w(TAG, "⚠️ Timer already running (state: $currentState), skipping auto-run")
                     logAutoRunSkipped(autoRunId, "TIMER_ALREADY_RUNNING", entryPoint)
+                    
+                    // Analytics 로깅
+                    AnalyticsHelper.logAutoRunSkipped(
+                        triggerType = "TIME",
+                        reason = "TIMER_ALREADY_RUNNING"
+                    )
                     return@launch
                 }
 
-                // 3. 실행 알림 표시
+                // 3. Analytics - 자동 실행 트리거
+                AnalyticsHelper.logAutoRunTriggered(
+                    triggerType = "TIME",
+                    sourceIdHash = autoRunId.hashCode().toString(),
+                    durationMinutes = durationMinutes,
+                    presetType = presetType ?: "NONE"
+                )
+                
+                // 4. 실행 알림 표시
                 entryPoint.notificationManager().showStartNotification(
                     autoRunId = autoRunId,
                     durationMinutes = durationMinutes,
@@ -197,11 +225,18 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     triggerType = "TIME"
                 )
                 Log.d(TAG, "✅ Start notification shown")
+                
+                // Analytics - 알림 표시
+                AnalyticsHelper.logAutoRunNotificationShown(
+                    triggerType = "TIME",
+                    isPreNotification = false,
+                    minutesBefore = null
+                )
 
-                // 4. AutoRunLog 기록 (알림 표시됨)
+                // 5. AutoRunLog 기록 (알림 표시됨)
                 logAutoRunTriggered(autoRunId, "TIME", "NOTIFICATION_SHOWN", entryPoint)
 
-                // 5. 자동 시작 딜레이 적용 ✅ Fixed
+                // 6. 자동 시작 딜레이 적용 ✅ Fixed
                 val autoStartDelayMinutes = entryPoint.autoRunSettingsRepository().getAutoStartDelayMinutes()
                 
                 if (autoStartDelayMinutes > 0) {
@@ -239,10 +274,18 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                         logAutoRunStarted(autoRunId, "TIME", sessionId, entryPoint)
                     }
                     
+                    // Analytics 로깅
+                    AnalyticsHelper.logAutoRunStarted(
+                        triggerType = "TIME",
+                        durationMinutes = durationMinutes,
+                        isAutoStart = true,
+                        delaySeconds = 0
+                    )
+                    
                     Log.d(TAG, "✅ Timer started immediately (auto-start delay = 0, sessionId: $sessionId)")
                 }
 
-                // 6. 다음 알람 자동 스케줄링
+                // 7. 다음 알람 자동 스케줄링
                 rescheduleNextAlarm(autoRunId, entryPoint)
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Error processing auto-run alarm: ${e.message}", e)
