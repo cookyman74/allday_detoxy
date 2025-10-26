@@ -102,24 +102,7 @@ fun DonutTimerPicker(
             .size(300.dp),
         contentAlignment = Alignment.Center
     ) {
-        // 중앙 텍스트를 Canvas보다 먼저 배치 (z-order 보장)
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "$selectedMinutes",
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-                color = onSurface
-            )
-            Text(
-                text = "분",
-                style = MaterialTheme.typography.titleMedium,
-                color = onSurfaceVariant
-            )
-        }
-        
+        // Canvas를 먼저 그리기 (아래 레이어)
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -228,6 +211,24 @@ fun DonutTimerPicker(
                 color = primaryColor,
                 radius = 12.dp.toPx(),
                 center = Offset(handleX, handleY)
+            )
+        }
+        
+        // 중앙 텍스트 (Canvas 위에 그리기 - 위 레이어)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "$selectedMinutes",
+                style = MaterialTheme.typography.displayLarge,
+                fontWeight = FontWeight.Bold,
+                color = onSurface
+            )
+            Text(
+                text = "분",
+                style = MaterialTheme.typography.titleMedium,
+                color = onSurfaceVariant
             )
         }
     }
