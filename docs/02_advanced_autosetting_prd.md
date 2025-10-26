@@ -24,8 +24,18 @@
   - **웹 서비스 기반 고도화 분석** → 서버 데이터 기반 장기 트렌드, AI 인사이트 제공
   - **소셜 기능** (동료와의 공유, 챌린지, 리더보드) → 커뮤니티 기반 동기부여
   - iOS 앱
-  - 복잡한 조건 조합 (시간 AND 위치, 요일별 시간 변경 등)
   - 날씨, 캘린더 연동 자동 실행
+- **재검토 필요 (2.5차 고도화로 이동)** 🔄:
+  - **복잡한 조건 조합 (위치 기반 컨텍스트 + 시간 기반 스케줄)** → 사용자 리뷰 반영
+    - 특정 위치 진입 시 해당 위치에 맞는 시간대 스케줄 자동 활성화
+    - 예: 회사 도착 → "업무 시간표" 활성화 (오전 10시, 오후 2시, 오후 4시)
+    - 예: 도서관 도착 → "공부 시간표" 활성화 (오전 9시, 오후 2시)
+    - 위치 이탈 시 해당 스케줄 자동 비활성화
+    - 반복 진입 시 동일 스케줄 재적용
+  - **UI 구조 개선**: "자동 실행" 상위 카테고리 추가
+    - 현재: 설정 탭 → 예약설정 (시간 기반) → 위치 기반 (종속)
+    - 개선: 설정 탭 → 자동 실행 → 시간 기반 / 위치 기반 (동등)
+    - 자동 실행 대시보드에서 모든 자동 실행 통합 관리
 
 ## 3. 주요 사용자 시나리오
 1. **시간 기반 자동 실행**
@@ -33,10 +43,19 @@
    - 설정된 시간이 되면 알림과 함께 타이머가 자동으로 시작되고, 차단 설정이 적용된다.
    - A가 회의 중이라면 "지금은 건너뛰기" 버튼으로 해당 회차를 연기할 수 있다.
 
-2. **위치 기반 자동 실행**
+2. **위치 기반 자동 실행 (기본)**
    - 학생 B는 학교 도서관 위치를 등록하고 "도착 시 60분 집중 모드 자동 시작"으로 설정한다.
    - B가 도서관 반경 100m 내에 진입하면 앱이 자동으로 타이머를 시작한다.
    - B가 도서관을 떠나면 타이머가 자동으로 종료되거나 연장 여부를 묻는 다이얼로그가 표시된다.
+   - **제약**: 1회성 트리거로, 반복 진입 시 매번 수동 설정 필요
+
+2-1. **위치 기반 컨텍스트 + 시간 기반 스케줄 (2.5차 고도화)** 🆕
+   - 직장인 A는 "회사" 위치를 등록하고 "업무 시간표"를 연결한다.
+   - 업무 시간표: 오전 10시(45분), 오후 2시(30분), 오후 4시(45분)
+   - A가 회사에 도착하면 "업무 시간표"가 자동 활성화되고, 해당 시간대에 자동 실행된다.
+   - A가 회사를 떠나면 "업무 시간표"가 자동 비활성화된다.
+   - 다음날 회사에 다시 도착하면 동일한 "업무 시간표"가 자동으로 재활성화된다.
+   - **장점**: 위치별로 다른 시간 스케줄 자동 전환, 반복 사용 시나리오 완벽 지원
 
 3. **커스텀 타이머 생성**
    - 사용자 C는 타이머 화면에서 도넛 그래프를 터치하여 35분으로 시간을 조정한다.
@@ -384,7 +403,150 @@
   - 실패 시 "왜 실패했나요?" 사용자 제보 옵션
   - 피드백 데이터를 통한 위치 설정 최적화 제안
 
-#### 4.4.6 권한 현황 페이지 🆕
+#### 4.4.6 위치 기반 컨텍스트 + 시간 기반 스케줄 (2.5차 고도화) 🆕
+
+**문제 정의**:
+- 현재 위치 기반 자동 실행은 1회성 트리거만 지원
+- 특정 위치(회사, 도서관)에서 반복적인 시간 스케줄이 필요한 경우 매번 수동 설정 필요
+- 사용자 리뷰: "회사에 도착하면 업무 시간표가 자동으로 적용되어야 함"
+
+**솔루션**:
+
+**4.4.6.1 위치 기반 컨텍스트 모델**
+- `LocationBasedAutoRun`에 `linkedScheduleGroupId` 필드 추가
+  ```kotlin
+  data class LocationBasedAutoRun(
+      // 기존 필드들...
+      val linkedScheduleGroupId: String? = null,  // 🆕 연결된 시간표 그룹 ID
+      val activateScheduleOnEnter: Boolean = false,  // 🆕 진입 시 시간표 활성화
+      val deactivateScheduleOnExit: Boolean = false  // 🆕 이탈 시 시간표 비활성화
+  )
+  ```
+
+- `ScheduleGroup` 새로운 엔티티 추가
+  ```kotlin
+  @Entity(tableName = "schedule_group")
+  data class ScheduleGroup(
+      @PrimaryKey val id: String = UUID.randomUUID().toString(),
+      val name: String,  // "업무 시간표", "공부 시간표"
+      val description: String? = null,
+      val isActive: Boolean = false,  // 현재 활성화 상태
+      val linkedLocationId: String? = null,  // 연결된 위치 ID
+      val createdAt: Long = System.currentTimeMillis()
+  )
+  ```
+
+- `TimeBasedAutoRun`에 `scheduleGroupId` 필드 추가
+  ```kotlin
+  data class TimeBasedAutoRun(
+      // 기존 필드들...
+      val scheduleGroupId: String? = null,  // 🆕 소속 시간표 그룹 ID
+      val isIndependent: Boolean = true  // 🆕 독립 실행 가능 여부
+  )
+  ```
+
+**4.4.6.2 동작 플로우**
+
+**설정 단계**:
+1. 사용자가 "회사" 위치 등록
+2. "이 위치에서 시간표 활성화" 옵션 선택
+3. "업무 시간표" 생성 또는 기존 시간표 선택
+4. 시간표에 시간대 추가:
+   - 오전 10시: 45분 (완전 차단)
+   - 오후 2시: 30분 (표준)
+   - 오후 4시: 45분 (완전 차단)
+
+**실행 단계**:
+1. **위치 진입 감지** (GeofenceTransitionsReceiver)
+   - 회사 반경 100m 진입
+   - `linkedScheduleGroupId` 확인
+   - `ScheduleGroup.isActive = true` 업데이트
+   - 연결된 모든 `TimeBasedAutoRun` 활성화
+   - 사용자 알림: "업무 시간표가 활성화되었습니다"
+
+2. **시간 기반 트리거 수정** (AutoRunAlarmManager)
+   - 알람 트리거 시 `scheduleGroupId` 확인
+   - 소속 그룹이 `isActive == true`일 때만 실행
+   - 독립 실행(`isIndependent == true`)은 그룹 상태 무관하게 실행
+
+3. **위치 이탈 감지** (GeofenceTransitionsReceiver - EXIT)
+   - 회사 반경 이탈
+   - `ScheduleGroup.isActive = false` 업데이트
+   - 연결된 모든 `TimeBasedAutoRun` 비활성화
+   - 사용자 알림: "업무 시간표가 비활성화되었습니다"
+
+4. **반복 진입**
+   - 다음날 회사에 다시 도착
+   - 동일한 플로우 자동 반복
+   - 시간표 설정 유지
+
+**4.4.6.3 UI 변경사항**
+
+**AddLocationAutoRunDialog 확장**:
+- **단계 4 추가**: 시간표 연결 설정
+  - "이 위치에서 시간표 활성화" 토글
+  - 시간표 선택 드롭다운 (기존 시간표 / 새로 만들기)
+  - "위치 이탈 시 자동 비활성화" 옵션
+
+**새로운 화면: ScheduleGroupScreen**:
+- 시간표 그룹 리스트
+- 각 그룹의 시간대 표시
+- 연결된 위치 표시
+- 현재 활성화 상태 표시 (실시간)
+- 시간표 편집/삭제
+
+**TimeBasedAutoRunScreen 확장**:
+- 시간대 카드에 그룹 배지 표시
+- "독립 실행" vs "그룹 소속" 구분
+- 그룹 필터링 기능
+
+**4.4.6.4 데이터베이스 마이그레이션**
+
+**v4 → v5 마이그레이션**:
+```sql
+-- ScheduleGroup 테이블 생성
+CREATE TABLE IF NOT EXISTS schedule_group (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    isActive INTEGER NOT NULL DEFAULT 0,
+    linkedLocationId TEXT,
+    createdAt INTEGER NOT NULL,
+    FOREIGN KEY (linkedLocationId) REFERENCES location_based_auto_run(id) ON DELETE SET NULL
+);
+
+-- LocationBasedAutoRun 확장
+ALTER TABLE location_based_auto_run ADD COLUMN linkedScheduleGroupId TEXT;
+ALTER TABLE location_based_auto_run ADD COLUMN activateScheduleOnEnter INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE location_based_auto_run ADD COLUMN deactivateScheduleOnExit INTEGER NOT NULL DEFAULT 0;
+
+-- TimeBasedAutoRun 확장
+ALTER TABLE time_based_auto_run ADD COLUMN scheduleGroupId TEXT;
+ALTER TABLE time_based_auto_run ADD COLUMN isIndependent INTEGER NOT NULL DEFAULT 1;
+```
+
+**4.4.6.5 구현 우선순위**
+
+**2.5차 고도화 (v0.7) - 선택적 구현**:
+- ✅ 기본 구조: ScheduleGroup 엔티티, DB 마이그레이션
+- ✅ 핵심 로직: 위치 진입/이탈 시 그룹 활성화/비활성화
+- ✅ 기본 UI: 시간표 연결 설정, 그룹 관리 화면
+- ⚠️ 고급 기능: 다중 위치-그룹 매핑, 우선순위 관리
+
+**3차 고도화 (v0.8)**:
+- 시간표 템플릿 (업무, 공부, 운동 등)
+- 위치별 자동 전환 히스토리
+- AI 기반 시간표 추천
+
+**4.4.6.6 예상 효과**
+- 위치 기반 자동 실행 재사용성 100% 향상
+- 사용자 설정 시간 50% 단축 (한 번 설정 → 지속 사용)
+- 직장인/학생 사용자 만족도 대폭 향상
+- 위치 + 시간 복합 시나리오 완벽 지원
+
+---
+
+#### 4.4.7 권한 현황 페이지 🆕
 - **엔트리 포인트**: 설정 → "권한 관리" 또는 자동 실행 대시보드 → "권한 현황 확인"
 - **레이아웃**:
   - **정확 알람 권한 (Android 12+)**:
