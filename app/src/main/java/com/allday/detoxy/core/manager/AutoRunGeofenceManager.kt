@@ -339,6 +339,7 @@ class AutoRunGeofenceManager @Inject constructor(
      */
     private fun createGeofencingRequest(geofences: List<Geofence>): GeofencingRequest {
         return GeofencingRequest.Builder().apply {
+            // 초기 트리거: 현재 위치가 Geofence 내부인 경우 즉시 트리거
             setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
             addGeofences(geofences)
         }.build()
