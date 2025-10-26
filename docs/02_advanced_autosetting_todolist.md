@@ -962,7 +962,7 @@
   - 목표: 60fps 유지 (16ms/프레임)
 
 #### 5.1.1 CustomTimerScreen 레이아웃
-- [ ] **메인 화면 Compose**
+- [x] **메인 화면 Compose** ✅
   ```kotlin
   @Composable
   fun CustomTimerScreen(
@@ -999,7 +999,7 @@
   ```
 
 #### 5.1.2 DonutTimerPicker Composable
-- [ ] **Canvas 그리기** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui), **[Wireframe 스펙](./02_advanced_wireframe_spec.md#5-커스텀-타이머-ui)** ✅
+- [x] **Canvas 그리기** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui), **[Wireframe 스펙](./02_advanced_wireframe_spec.md#5-커스텀-타이머-ui)** ✅
   ```kotlin
   @Composable
   fun DonutTimerPicker(
@@ -1059,7 +1059,7 @@
   }
   ```
 
-- [ ] **각도 ↔ 시간 변환 함수**
+- [x] **각도 ↔ 시간 변환 함수** ✅
   ```kotlin
   private fun minutesToAngle(minutes: Int, max: Int = 180): Float {
       return (minutes.toFloat() / max) * 360f
@@ -1072,24 +1072,24 @@
   ```
 
 #### 5.1.3 터치 인터랙션
-- [ ] **드래그 제스처 처리** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui)
+- [x] **드래그 제스처 처리** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui) ✅
   - `detectDragGestures`로 드래그 감지
   - 터치 위치 → 각도 계산
   - 각도 → 시간(분) 변환
   - 5분 단위로 스냅 (roundToNearestStep)
   - **참조**: [Compose Gesture 문서](https://developer.android.com/jetpack/compose/touch-input)
 
-- [ ] **탭 제스처 처리**
+- [x] **탭 제스처 처리** ✅
   - `detectTapGestures`로 탭 감지
   - 탭 위치 → 각도 계산
   - 즉시 해당 시간으로 설정
 
-- [ ] **햅틱 피드백** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui)
+- [x] **햅틱 피드백** → [PRD §4.3.1](./02_advanced_autosetting_prd.md#431-도넛-그래프-타이머-ui) ✅
   - 5분 단위 변경 시 미세한 진동
-  - `HapticFeedbackType.TextHandleMove` 사용
+  - `HapticFeedbackConstants.CLOCK_TICK` 사용
   - **참조**: [Android HapticFeedback 문서](https://developer.android.com/reference/android/view/HapticFeedbackConstants)
 
-**작업 기록**: `working_history/2025-10-26_2nd_advanced_5.1.md`
+**작업 기록**: `working_history/2025-10-26_2nd_advanced_5.1.md` ✅
 
 ### 5.2 커스텀 프리셋 저장 및 관리 (Day 21-22)
 

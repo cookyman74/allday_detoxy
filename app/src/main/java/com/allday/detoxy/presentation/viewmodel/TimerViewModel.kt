@@ -52,7 +52,8 @@ class TimerViewModel @Inject constructor(
     private val repository: FocusRepository,
     private val settingsRepository: FocusSettingsRepository,
     private val gamificationManager: GamificationManager,
-    private val timeBasedAutoRunDao: TimeBasedAutoRunDao
+    private val timeBasedAutoRunDao: TimeBasedAutoRunDao,
+    private val presetRepository: com.allday.detoxy.data.repository.CustomTimerPresetRepository
 ) : ViewModel() {
 
     // DndManager 인스턴스
@@ -90,6 +91,15 @@ class TimerViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null
         )
+
+    // 커스텀 프리셋 목록
+    val customPresets: StateFlow<List<com.allday.detoxy.data.local.entity.CustomTimerPreset>> = 
+        presetRepository.getAll()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
 
     companion object {
         private const val TAG = "TimerViewModel"
@@ -536,5 +546,61 @@ class TimerViewModel @Inject constructor(
             add(Calendar.DAY_OF_MONTH, 1)
         }
         return isSameDay(tomorrow, target)
+    }
+
+    /**
+     * 커스텀 프리셋 저장
+     *
+     * @param name 프리셋 이름
+     * @param durationMinutes 타이머 시간 (분)
+     * @param presetType 차단 프리셋 (옵션)
+     */
+    fun saveCustomPreset(name: String, durationMinutes: Int, presetType: String?) {
+        viewModelScope.launch {
+            presetRepository.insert(
+                com.allday.detoxy.data.local.entity.CustomTimerPreset(
+                    name = name,
+                    durationMinutes = durationMinutes,
+                    presetType = presetType,
+                    usageCount = 0,
+                    displayOrder = presetRepository.getCount()
+                )
+            )
+        }
+    }
+
+    /**
+     * 커스텀 프리셋 업데이트
+     *
+     * @param preset 업데이트할 프리셋
+     */
+    fun updateCustomPreset(preset: com.allday.detoxy.data.local.entity.CustomTimerPreset) {
+        viewModelScope.launch {
+            presetRepository.update(preset)
+        }
+    }
+
+    /**
+     * 커스텀 프리셋 삭제
+     *
+     * @param presetId 삭제할 프리셋 ID
+     */
+    fun deleteCustomPreset(presetId: String) {
+        viewModelScope.launch {
+            presetRepository.delete(presetId)
+        }
+    }
+
+    /**
+     * 프리셋 사용 시 사용 횟수 증가
+     *
+     * @param presetId 프리셋 ID (null이면 기본 프리셋)
+     */
+    fun incrementPresetUsage(presetId: String?) {
+        if (presetId != null) {
+            viewModelScope.launch {
+                presetRepository.incrementUsageCount(presetId)
+            }
+        }
     }
 }

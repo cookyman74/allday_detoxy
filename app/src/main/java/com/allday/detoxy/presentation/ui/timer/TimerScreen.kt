@@ -12,17 +12,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
+import com.allday.detoxy.presentation.ui.timer.components.*
 
 /**
- * 타이머 메인 화면
+ * 타이머 메인 화면 (도넛 그래프 통합)
  *
- * 프리셋 버튼, 원형 프로그레스 바, 시작/포기 버튼을 제공합니다.
- * MVP 버전으로 간소화되어 커스텀 시간 입력과 일시정지 기능은 제외됩니다.
+ * 도넛 그래프로 시간을 선택하고 프리셋 버튼을 제공합니다.
+ *
+ * ## 주요 기능
+ * - 도넛 그래프 타이머 선택 (5-180분)
+ * - 기본 프리셋 (25/45/60분)
+ * - 커스텀 프리셋 저장 및 관리
+ * - 원형 프로그레스 바 표시
+ * - 다음 예약 정보 표시
  *
  * @param viewModel 타이머 ViewModel
  */
@@ -36,7 +42,18 @@ fun TimerScreen(
     val totalSeconds by viewModel.totalSeconds.collectAsState()
     val permissionError by viewModel.permissionError.collectAsState()
     val nextAutoRunInfo by viewModel.nextAutoRunInfo.collectAsState()
-
+    val customPresets by viewModel.customPresets.collectAsState()
+    
+    // 도넛 그래프 선택 시간
+    var selectedMinutes by remember { mutableStateOf(25) }
+    
+    // 다이얼로그 상태
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showPresetSheet by remember { mutableStateOf(false) }
+    var selectedPreset by remember { mutableStateOf<com.allday.detoxy.data.local.entity.CustomTimerPreset?>(null) }
+    
     // 권한 에러 다이얼로그
     permissionError?.let { error ->
         PermissionErrorDialog(
@@ -55,6 +72,61 @@ fun TimerScreen(
             }
         )
     }
+    
+    // 프리셋 저장 다이얼로그
+    if (showSaveDialog) {
+        SavePresetDialog(
+            durationMinutes = selectedMinutes,
+            onSave = { name, presetType ->
+                viewModel.saveCustomPreset(name, selectedMinutes, presetType)
+            },
+            onDismiss = { showSaveDialog = false }
+        )
+    }
+    
+    // 프리셋 편집 다이얼로그
+    if (showEditDialog && selectedPreset != null) {
+        EditPresetDialog(
+            presetName = selectedPreset!!.name,
+            presetType = selectedPreset!!.presetType,
+            onSave = { name, presetType ->
+                viewModel.updateCustomPreset(
+                    selectedPreset!!.copy(
+                        name = name,
+                        presetType = presetType
+                    )
+                )
+            },
+            onDismiss = { showEditDialog = false }
+        )
+    }
+    
+    // 프리셋 삭제 확인 다이얼로그
+    if (showDeleteDialog && selectedPreset != null) {
+        DeletePresetDialog(
+            presetName = selectedPreset!!.name,
+            onConfirm = {
+                viewModel.deleteCustomPreset(selectedPreset!!.id)
+            },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+    
+    // 프리셋 관리 BottomSheet
+    if (showPresetSheet && selectedPreset != null) {
+        PresetManagementBottomSheet(
+            preset = selectedPreset!!,
+            onEdit = {
+                showPresetSheet = false
+                showEditDialog = true
+            },
+            onDelete = {
+                showPresetSheet = false
+                showDeleteDialog = true
+            },
+            onDismiss = { showPresetSheet = false }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -62,7 +134,7 @@ fun TimerScreen(
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(32.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         // 제목
         Text(
@@ -71,40 +143,75 @@ fun TimerScreen(
             fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 원형 프로그레스 바 & 타이머 표시
-        CircularTimerDisplay(
-            state = timerState,
-            remainingSeconds = remainingSeconds,
-            totalSeconds = totalSeconds
-        )
-
-        // 다음 예약 정보 표시 (타이머 IDLE 상태일 때만)
-        if (timerState == FocusState.IDLE && nextAutoRunInfo != null) {
-            Text(
-                text = nextAutoRunInfo!!,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // 타이머 상태에 따른 UI 표시
         when (timerState) {
             FocusState.IDLE -> {
+                // 도넛 그래프 (IDLE 상태에서만 표시)
+                DonutTimerPicker(
+                    selectedMinutes = selectedMinutes,
+                    onMinutesChange = { selectedMinutes = it },
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+                
+                // 다음 예약 정보 표시
+                if (nextAutoRunInfo != null) {
+                    Text(
+                        text = nextAutoRunInfo!!,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                // 프리셋으로 저장 버튼 (기본 프리셋이 아닐 때)
+                if (selectedMinutes !in listOf(25, 45, 60)) {
+                    OutlinedButton(
+                        onClick = { showSaveDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("프리셋으로 저장")
+                    }
+                }
+                
                 // 프리셋 버튼
-                PresetButtons(
-                    presets = viewModel.presetDurations,
-                    onPresetClick = { duration ->
-                        viewModel.startTimer(duration)
+                PresetButtonRow(
+                    customPresets = customPresets,
+                    selectedMinutes = selectedMinutes,
+                    onPresetClick = { minutes, presetId ->
+                        selectedMinutes = minutes
+                        viewModel.incrementPresetUsage(presetId)
+                    },
+                    onPresetLongClick = { preset ->
+                        selectedPreset = preset
+                        showPresetSheet = true
                     }
                 )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // 시작 버튼
+                Button(
+                    onClick = { viewModel.startTimer(selectedMinutes) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {
+                    Text(
+                        text = "시작하기",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
             }
 
             FocusState.RUNNING -> {
+                // 원형 프로그레스 바 & 타이머 표시
+                CircularTimerDisplay(
+                    state = timerState,
+                    remainingSeconds = remainingSeconds,
+                    totalSeconds = totalSeconds
+                )
+                
+                Spacer(modifier = Modifier.height(32.dp))
+                
                 // 포기 버튼
                 Button(
                     onClick = { viewModel.giveUpTimer() },
@@ -127,16 +234,21 @@ fun TimerScreen(
                 ) {
                     Text(
                         text = "🎉 타이머 완료!",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         text = "집중 시간을 성공적으로 완료했습니다.",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyLarge
                     )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
                     Button(
                         onClick = { viewModel.resetTimer() },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
                     ) {
                         Text("새 타이머 시작")
                     }
@@ -151,16 +263,21 @@ fun TimerScreen(
                 ) {
                     Text(
                         text = "타이머 포기",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.error
                     )
                     Text(
                         text = "다음엔 더 잘할 수 있어요!",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyLarge
                     )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
                     Button(
                         onClick = { viewModel.resetTimer() },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
                     ) {
                         Text("다시 시작")
                     }
@@ -232,43 +349,6 @@ fun CircularTimerDisplay(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
         )
-    }
-}
-
-/**
- * 프리셋 타이머 버튼
- *
- * @param presets 프리셋 시간 리스트 (분 단위)
- * @param onPresetClick 프리셋 클릭 콜백
- */
-@Composable
-fun PresetButtons(
-    presets: List<Int>,
-    onPresetClick: (Int) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            text = "집중 시간 선택",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-
-        presets.forEach { duration ->
-            Button(
-                onClick = { onPresetClick(duration) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-            ) {
-                Text(
-                    text = "${duration}분",
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-        }
     }
 }
 
