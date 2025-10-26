@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.allday.detoxy.core.utils.PreferenceManager
 import com.allday.detoxy.presentation.ui.autorun.TimeBasedAutoRunScreen
+import com.allday.detoxy.presentation.ui.autorun.LocationBasedAutoRunScreen
 import com.allday.detoxy.presentation.ui.onboarding.WelcomeScreen
 import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
 import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
@@ -114,23 +115,33 @@ fun MainScreen() {
 }
 
 /**
+ * 자동 실행 화면 타입
+ */
+enum class AutoRunScreenType {
+    NONE,           // 자동 실행 화면 없음
+    TIME_BASED,     // 시간 기반 자동 실행
+    LOCATION_BASED  // 위치 기반 자동 실행
+}
+
+/**
  * 네비게이션이 포함된 메인 화면
  *
  * Week 3.3.1: 타이머와 리포트 화면 간 탭 네비게이션 제공
  * 1차 고도화 (Week 1): 설정 탭 추가
  * 2차 고도화 (Week 2): 예약설정(시간 기반 자동 실행) 화면 추가
- * 구성: 타이머, 리포트, 설정, 예약설정 (3개 탭 + 1개 상세 화면)
+ * 2차 고도화 (Week 3): 위치 기반 자동 실행 화면 추가
+ * 구성: 타이머, 리포트, 설정, 예약설정 (3개 탭 + 2개 상세 화면)
  */
 @Composable
 fun MainScreenWithNavigation() {
     var selectedTab by remember { mutableStateOf(0) }
-    var showTimeBasedAutoRun by remember { mutableStateOf(false) }
+    var showAutoRunScreen by remember { mutableStateOf(AutoRunScreenType.NONE) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            // 예약설정 화면에서는 하단 네비게이션 숨김
-            if (!showTimeBasedAutoRun) {
+            // 자동 실행 화면에서는 하단 네비게이션 숨김
+            if (showAutoRunScreen == AutoRunScreenType.NONE) {
                 NavigationBar {
                     NavigationBarItem(
                         selected = selectedTab == 0,
@@ -174,21 +185,29 @@ fun MainScreenWithNavigation() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when {
-                // 예약설정 화면
-                showTimeBasedAutoRun -> {
+            when (showAutoRunScreen) {
+                // 시간 기반 자동 실행 화면
+                AutoRunScreenType.TIME_BASED -> {
                     TimeBasedAutoRunScreen(
-                        onBack = { showTimeBasedAutoRun = false }
+                        onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
+                        onNavigateToLocationBased = { showAutoRunScreen = AutoRunScreenType.LOCATION_BASED }
+                    )
+                }
+                // 위치 기반 자동 실행 화면
+                AutoRunScreenType.LOCATION_BASED -> {
+                    LocationBasedAutoRunScreen(
+                        onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
+                        onNavigateToTimeBased = { showAutoRunScreen = AutoRunScreenType.TIME_BASED }
                     )
                 }
                 // 탭별 화면
-                else -> {
+                AutoRunScreenType.NONE -> {
                     when (selectedTab) {
                         0 -> TimerScreen()
                         1 -> ReportScreen()
                         2 -> DetoxyControlSettingsScreen(
                             onBack = { selectedTab = 0 },  // 뒤로 가기 시 타이머로
-                            onNavigateToAutoRun = { showTimeBasedAutoRun = true }  // 예약설정으로
+                            onNavigateToAutoRun = { showAutoRunScreen = AutoRunScreenType.TIME_BASED }  // 예약설정으로
                         )
                     }
                 }
