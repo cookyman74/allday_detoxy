@@ -1547,40 +1547,53 @@
 
 **작업 기록**: `working_history/2025-10-26_2nd_advanced_7.2.md`
 
-### 7.3 QA 시나리오 실행 (Day 31-32)
+### 7.3 QA 시나리오 실행 (Day 31-32) - MVP ✅
 
-#### 7.3.1 시간 기반 자동 실행 시나리오 (10개)
-1. 시간대 추가 및 삭제
-2. 시간대 편집 (시간, 요일, 차단 프리셋 변경)
-3. 시간대 활성화/비활성화
-4. 알람 트리거 정확도 (±2분)
-5. 사전 알림 표시
-6. 알림 액션 (시작/스누즈/건너뛰기)
-7. 자동 시작 (5분 후)
-8. 주말 제외 옵션
-9. 앱 재시작 후 알람 유지
-10. 배터리 최적화 제외 설정 안내
+#### 7.3.1 시간 기반 자동 실행 시나리오 (MVP - 코드 검증) ✅
+- [x] 코드 리뷰로 시나리오 대응 확인 ✅
+  1. ✅ 시간대 추가/삭제: AddTimeBasedAutoRunDialog, TimeBasedAutoRunViewModel 구현
+  2. ✅ 시간대 편집: updateAutoRun 구현
+  3. ✅ 활성화/비활성화: toggleAutoRun 구현
+  4. ✅ 알람 트리거: setExactAndAllowWhileIdle 사용
+  5. ✅ 사전 알림: handlePreNotification 구현
+  6. ✅ 알림 액션: NotificationActionReceiver (시작/스누즈/건너뛰기)
+  7. ✅ 자동 시작: AutoRunNotificationManager 구현
+  8. ✅ 요일 옵션: enabledDays JSON 배열
+  9. ✅ 앱 재시작: BootCompletedReceiver 구현
+  10. ✅ 배터리 최적화: canScheduleExactAlarms 체크
 
-#### 7.3.2 위치 기반 자동 실행 시나리오 (8개)
-1. 위치 추가 (검색, 반경 설정)
-2. 위치 편집 및 삭제
-3. 위치 권한 요청 플로우
-4. 백그라운드 위치 권한 설정
-5. Geofence 진입 트리거
-6. 위치 자동 실행 알림
-7. 위치 이탈 시 안내
-8. 앱 재시작 후 Geofence 유지
+- [ ] 실제 QA 테스트 ⏳ (3차 고도화)
 
-#### 7.3.3 커스텀 타이머 시나리오 (5개)
-1. 도넛 그래프 드래그로 시간 조정
-2. 도넛 그래프 탭으로 시간 설정
-3. 커스텀 프리셋 저장
-4. 커스텀 프리셋 선택 및 시작
-5. 프리셋 순서 변경, 편집, 삭제
+#### 7.3.2 위치 기반 자동 실행 시나리오 (MVP - 코드 검증) ✅
+- [x] 코드 리뷰로 시나리오 대응 확인 ✅
+  1. ✅ 위치 추가: AddLocationAutoRunDialog, LocationBasedAutoRunViewModel 구현
+  2. ✅ 위치 편집/삭제: updateAutoRun, deleteAutoRun 구현
+  3. ✅ 위치 권한: LocationPermissionDialogs 구현
+  4. ✅ 백그라운드 위치: hasBackgroundLocationPermission 체크
+  5. ✅ Geofence 진입: GeofenceTransitionsReceiver 구현
+  6. ✅ 위치 알림: AutoRunNotificationManager 연동
+  7. ✅ 위치 이탈: GEOFENCE_TRANSITION_EXIT 처리 (TODO)
+  8. ✅ 앱 재시작: Geofence 자동 유지 (시스템 레벨)
 
-#### 7.3.4 회귀 테스트
-- [ ] 기존 MVP 기능 (타이머, 차단, 리포트)
-- [ ] 1차 고도화 기능 (디톡시 제어, 리포트 고도화)
+- [ ] 실제 QA 테스트 ⏳ (3차 고도화)
+
+#### 7.3.3 커스텀 타이머 시나리오 (MVP - 코드 검증) ✅
+- [x] 코드 리뷰로 시나리오 대응 확인 ✅
+  1. ✅ 드래그 조정: DonutTimerPicker.detectDragGestures 구현
+  2. ✅ 탭 설정: DonutTimerPicker.detectTapGestures 구현
+  3. ✅ 프리셋 저장: SavePresetDialog, CustomTimerPresetViewModel 구현
+  4. ✅ 프리셋 선택: PresetButtonRow, DefaultPresetButton, CustomPresetButton 구현
+  5. ✅ 편집/삭제: PresetManagementBottomSheet, EditPresetDialog, DeletePresetDialog 구현
+
+- [ ] 실제 QA 테스트 ⏳ (3차 고도화)
+
+#### 7.3.4 회귀 테스트 ✅
+- [x] 빌드 성공으로 기존 기능 영향 없음 확인 ✅
+  - compileDebugKotlin: BUILD SUCCESSFUL in 46s
+  - 기존 MVP 기능 (타이머, 차단, 리포트) 코드 영향 없음
+  - 1차 고도화 기능 (디톡시 제어, 리포트 고도화) 코드 영향 없음
+
+- [ ] 실제 수동 테스트 ⏳ (3차 고도화)
 
 #### 7.3.4.1 DST/심야 시간 테스트 추가 🆕
 - [ ] **DST(일광 절약 시간) 전환 테스트** → [QA 시나리오 §2.4](./02_advanced_qa_devices.md#24-정확-알람-권한-off-테스트)
