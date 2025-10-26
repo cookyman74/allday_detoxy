@@ -99,7 +99,7 @@ fun DonutTimerPicker(
     
     Box(
         modifier = modifier
-            .size(300.dp),
+            .size(360.dp), // 300dp → 360dp (도넛 크기 확대)
         contentAlignment = Alignment.Center
     ) {
         // Canvas를 먼저 그리기 (아래 레이어)
@@ -112,13 +112,13 @@ fun DonutTimerPicker(
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val angle = calculateAngle(change.position, center)
                         val minutes = angleToMinutes(angle, minMinutes, maxMinutes, stepMinutes)
-                        
+
                         if (minutes != previousMinutes) {
                             // 햅틱 피드백 (5분 단위 변경 시)
                             view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                             previousMinutes = minutes
                         }
-                        
+
                         currentAngle = angle
                         onMinutesChange(minutes)
                     }
@@ -129,20 +129,20 @@ fun DonutTimerPicker(
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val angle = calculateAngle(offset, center)
                         val minutes = angleToMinutes(angle, minMinutes, maxMinutes, stepMinutes)
-                        
+
                         currentAngle = angle
                         onMinutesChange(minutes)
-                        
+
                         // 햅틱 피드백
                         view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                     }
                 }
         ) {
             val center = Offset(size.width / 2f, size.height / 2f)
-            val strokeWidth = 20.dp.toPx()
-            // 원래 크기로 복원 (디자인 균형 유지)
-            val radius = size.minDimension / 2f - strokeWidth / 2f - 16.dp.toPx()
-            
+            val strokeWidth = 24.dp.toPx() // 도넛 두께
+            // 마커를 위한 여유 공간 최소화 (도넛 크기 최대화)
+            val radius = size.minDimension / 2f - strokeWidth / 2f - 50.dp.toPx()
+
             // 1. 배경 원 그리기
             drawCircle(
                 color = surfaceVariant,
@@ -150,7 +150,7 @@ fun DonutTimerPicker(
                 center = center,
                 style = Stroke(width = strokeWidth)
             )
-            
+
             // 2. 선택된 영역 arc 그리기
             drawArc(
                 color = primaryColor,
@@ -161,63 +161,76 @@ fun DonutTimerPicker(
                 size = androidx.compose.ui.geometry.Size(radius * 2, radius * 2),
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
             )
-            
-            // 3. 시간 눈금 그리기
-            val markers = listOf(5, 15, 30, 60, 90, 120, 180)
-            markers.forEach { markerMinutes ->
-                val markerAngle = minutesToAngle(markerMinutes, maxMinutes)
-                val angleRad = Math.toRadians((markerAngle - 90).toDouble())
-                
-                // 눈금 위치 계산
-                val markerRadius = radius + 30.dp.toPx()
+
+            // 3. 시간 눈금 그리기 (균등 간격: 45도씩 8개 마커)
+            // 각도별로 표시할 분 값 계산 (0도=0분, 45도=22.5분 → 반올림)
+            val markerAngles = listOf(0f, 45f, 90f, 135f, 180f, 225f, 270f, 315f)
+            markerAngles.forEach { markerAngleDeg ->
+                // 해당 각도에서의 분 값 계산
+                val markerMinutes = ((markerAngleDeg / 360f) * maxMinutes).roundToInt()
+                    .coerceIn(minMinutes, maxMinutes)
+
+                // 5분 단위로 반올림
+                val displayMinutes = roundToNearestStep(markerMinutes, stepMinutes)
+
+                // 각도를 라디안으로 변환 (12시 방향이 0도이므로 -90도 보정)
+                val angleRad = Math.toRadians((markerAngleDeg - 90).toDouble())
+
+                // 눈금 위치 계산 (도넛에 가깝게 배치)
+                val markerRadius = radius + strokeWidth / 2f + 32.dp.toPx()
                 val markerX = center.x + (markerRadius * cos(angleRad)).toFloat()
                 val markerY = center.y + (markerRadius * sin(angleRad)).toFloat()
-                
+
                 // 눈금 점 그리기
                 drawCircle(
-                    color = onSurfaceVariant.copy(alpha = 0.5f),
-                    radius = 4.dp.toPx(),
+                    color = onSurfaceVariant.copy(alpha = 0.4f),
+                    radius = 3.dp.toPx(),
                     center = Offset(markerX, markerY)
                 )
-                
-                // 눈금 텍스트 그리기
+
+                // 눈금 텍스트 그리기 (점에서 가까이 배치)
                 val textLayoutResult = textMeasurer.measure(
-                    text = "${markerMinutes}",
+                    text = "$displayMinutes",
                     style = markerTextStyle
                 )
+
+                // 텍스트를 점에서 방사형으로 가까이 배치
+                val textRadius = markerRadius + 10.dp.toPx()
+                val textX = center.x + (textRadius * cos(angleRad)).toFloat()
+                val textY = center.y + (textRadius * sin(angleRad)).toFloat()
+
                 drawText(
                     textLayoutResult = textLayoutResult,
                     topLeft = Offset(
-                        markerX - textLayoutResult.size.width / 2,
-                        markerY + 12.dp.toPx()
+                        textX - textLayoutResult.size.width / 2,
+                        textY - textLayoutResult.size.height / 2
                     )
                 )
             }
             
-            // 4. 드래그 핸들 그리기
+            // 4. 드래그 핸들 그리기 (크기 확대로 터치하기 쉽게)
             val handleAngle = animatedAngle - 90 // Canvas 좌표계 변환
             val handleAngleRad = Math.toRadians(handleAngle.toDouble())
             val handleX = center.x + (radius * cos(handleAngleRad)).toFloat()
             val handleY = center.y + (radius * sin(handleAngleRad)).toFloat()
-            
-            // 외부 원 (흰색)
+
+            // 외부 원 (흰색) - 크기 확대
             drawCircle(
                 color = Color.White,
-                radius = 16.dp.toPx(),
+                radius = 18.dp.toPx(), // 16dp → 18dp
                 center = Offset(handleX, handleY)
             )
-            
-            // 내부 원 (primary color)
+
+            // 내부 원 (primary color) - 크기 확대
             drawCircle(
                 color = primaryColor,
-                radius = 12.dp.toPx(),
+                radius = 14.dp.toPx(), // 12dp → 14dp
                 center = Offset(handleX, handleY)
             )
         }
         
         // 중앙 텍스트 (Canvas 위에 그리기 - 위 레이어)
         Column(
-            modifier = Modifier.offset(y = (-20).dp), // 텍스트를 위로 이동
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
