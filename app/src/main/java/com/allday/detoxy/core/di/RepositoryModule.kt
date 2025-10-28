@@ -1,13 +1,17 @@
 package com.allday.detoxy.core.di
 
 import android.content.Context
+import com.allday.detoxy.data.repository.AutoRunLogRepository
 import com.allday.detoxy.data.repository.AutoRunSettingsRepositoryImpl
 import com.allday.detoxy.data.repository.FocusRepositoryImpl
+import com.allday.detoxy.data.repository.FocusSessionRepository
 import com.allday.detoxy.data.repository.FocusSettingsRepositoryImpl
 import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
+import com.allday.detoxy.domain.repository.IAutoRunLogRepository
+import com.allday.detoxy.domain.repository.IFocusSessionRepository
 import com.allday.detoxy.domain.repository.IUserSettingsRepository
 import dagger.Binds
 import dagger.Module
@@ -59,6 +63,36 @@ abstract class RepositoryModule {
     abstract fun bindUserSettingsRepository(
         impl: UserSettingsRepository
     ): IUserSettingsRepository
+
+    /**
+     * IAutoRunLogRepository 바인딩
+     *
+     * AutoRunLogRepository를 IAutoRunLogRepository 인터페이스로 제공합니다.
+     * 통계 계산 등 도메인 로직에서 자동 실행 로그 데이터에 접근할 때 사용합니다.
+     *
+     * @param impl AutoRunLogRepository 구현체
+     * @return IAutoRunLogRepository 인터페이스
+     */
+    @Binds
+    @Singleton
+    abstract fun bindAutoRunLogRepository(
+        impl: AutoRunLogRepository
+    ): IAutoRunLogRepository
+
+    /**
+     * IFocusSessionRepository 바인딩
+     *
+     * FocusSessionRepository를 IFocusSessionRepository 인터페이스로 제공합니다.
+     * 통계 계산 등 도메인 로직에서 집중 세션 데이터에 접근할 때 사용합니다.
+     *
+     * @param impl FocusSessionRepository 구현체
+     * @return IFocusSessionRepository 인터페이스
+     */
+    @Binds
+    @Singleton
+    abstract fun bindFocusSessionRepository(
+        impl: FocusSessionRepository
+    ): IFocusSessionRepository
 
     companion object {
         /**

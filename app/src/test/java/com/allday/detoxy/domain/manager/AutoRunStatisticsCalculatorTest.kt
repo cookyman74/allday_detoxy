@@ -1,9 +1,9 @@
 package com.allday.detoxy.domain.manager
 
-import com.allday.detoxy.data.local.dao.AutoRunLogDao
-import com.allday.detoxy.data.local.dao.FocusSessionDao
 import com.allday.detoxy.data.local.entity.AutoRunLog
 import com.allday.detoxy.data.local.entity.FocusSession
+import com.allday.detoxy.domain.repository.IAutoRunLogRepository
+import com.allday.detoxy.domain.repository.IFocusSessionRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -18,14 +18,14 @@ import java.util.Calendar
 class AutoRunStatisticsCalculatorTest {
 
     private lateinit var calculator: AutoRunStatisticsCalculator
-    private lateinit var fakeAutoRunLogDao: FakeAutoRunLogDao
-    private lateinit var fakeFocusSessionDao: FakeFocusSessionDao
+    private lateinit var fakeAutoRunLogRepository: FakeAutoRunLogRepository
+    private lateinit var fakeFocusSessionRepository: FakeFocusSessionRepository
 
     @Before
     fun setup() {
-        fakeAutoRunLogDao = FakeAutoRunLogDao()
-        fakeFocusSessionDao = FakeFocusSessionDao()
-        calculator = AutoRunStatisticsCalculator(fakeAutoRunLogDao, fakeFocusSessionDao)
+        fakeAutoRunLogRepository = FakeAutoRunLogRepository()
+        fakeFocusSessionRepository = FakeFocusSessionRepository()
+        calculator = AutoRunStatisticsCalculator(fakeAutoRunLogRepository, fakeFocusSessionRepository)
     }
 
     // ========== 데이터 클래스 테스트 ==========
@@ -69,7 +69,7 @@ class AutoRunStatisticsCalculatorTest {
     @Test
     fun `로그가 없을 때 빈 통계 반환`() = runBlocking {
         // Given: 로그 없음
-        fakeAutoRunLogDao.logs = emptyList()
+        fakeAutoRunLogRepository.logs = emptyList()
 
         // When
         val statistics = calculator.calculateStatistics()
@@ -86,7 +86,7 @@ class AutoRunStatisticsCalculatorTest {
     fun `시간 기반 자동 실행 횟수 계산`() = runBlocking {
         // Given
         val now = System.currentTimeMillis()
-        fakeAutoRunLogDao.logs = listOf(
+        fakeAutoRunLogRepository.logs = listOf(
             createAutoRunLog("TIME", "STARTED", now),
             createAutoRunLog("TIME", "STARTED", now - 3600000), // 1시간 전
             createAutoRunLog("TIME", "FAILED", now - 7200000), // 2시간 전
@@ -105,7 +105,7 @@ class AutoRunStatisticsCalculatorTest {
     fun `성공률 계산 - 모두 성공`() = runBlocking {
         // Given
         val now = System.currentTimeMillis()
-        fakeAutoRunLogDao.logs = listOf(
+        fakeAutoRunLogRepository.logs = listOf(
             createAutoRunLog("TIME", "STARTED", now),
             createAutoRunLog("TIME", "STARTED", now - 3600000),
             createAutoRunLog("LOCATION", "STARTED", now - 7200000)
@@ -122,7 +122,7 @@ class AutoRunStatisticsCalculatorTest {
     fun `성공률 계산 - 일부 실패`() = runBlocking {
         // Given
         val now = System.currentTimeMillis()
-        fakeAutoRunLogDao.logs = listOf(
+        fakeAutoRunLogRepository.logs = listOf(
             createAutoRunLog("TIME", "STARTED", now, "session-1"),
             createAutoRunLog("TIME", "FAILED", now - 3600000),
             createAutoRunLog("LOCATION", "STARTED", now - 7200000, "session-2"),
@@ -155,12 +155,12 @@ class AutoRunStatisticsCalculatorTest {
             success = true
         )
 
-        fakeFocusSessionDao.sessions = mapOf(
+        fakeFocusSessionRepository.sessions = mapOf(
             "session-1" to session1,
             "session-2" to session2
         )
 
-        fakeAutoRunLogDao.logs = listOf(
+        fakeAutoRunLogRepository.logs = listOf(
             createAutoRunLog("TIME", "STARTED", now - 3600000, "session-1"),
             createAutoRunLog("LOCATION", "STARTED", now - 7200000, "session-2")
         )
@@ -186,7 +186,7 @@ class AutoRunStatisticsCalculatorTest {
         calendar.add(Calendar.DAY_OF_YEAR, -2) // 그저께
         val dayBefore = calendar.timeInMillis
 
-        fakeAutoRunLogDao.logs = listOf(
+        fakeAutoRunLogRepository.logs = listOf(
             createAutoRunLog("TIME", "STARTED", today),
             createAutoRunLog("TIME", "STARTED", today),
             createAutoRunLog("LOCATION", "STARTED", yesterday),
@@ -231,49 +231,22 @@ class AutoRunStatisticsCalculatorTest {
         )
     }
 
-    // ========== Fake DAOs ==========
+    // ========== Fake Repositories ==========
 
-    private class FakeAutoRunLogDao : AutoRunLogDao {
+    private class FakeAutoRunLogRepository : IAutoRunLogRepository {
         var logs: List<AutoRunLog> = emptyList()
 
-        override suspend fun getLogsInRangeList(startTime: Long, endTime: Long): List<AutoRunLog> {
+        override suspend fun getLogsInRange(startTime: Long, endTime: Long): List<AutoRunLog> {
             return logs.filter { it.triggerTime in startTime..endTime }
         }
-
-        // 나머지 메서드는 사용하지 않으므로 구현하지 않음
-        override suspend fun insert(log: AutoRunLog) = throw NotImplementedError()
-        override fun getAll() = throw NotImplementedError()
-        override fun getByTriggerType(triggerType: String) = throw NotImplementedError()
-        override fun getRecentLogs(limit: Int) = throw NotImplementedError()
-        override fun getLogsInRange(startTime: Long, endTime: Long) = throw NotImplementedError()
-        override fun getBySourceId(sourceId: String) = throw NotImplementedError()
-        override suspend fun getTotalCount() = throw NotImplementedError()
-        override suspend fun getSuccessCount() = throw NotImplementedError()
-        override suspend fun getFailureCount() = throw NotImplementedError()
-        override suspend fun getSkippedCount() = throw NotImplementedError()
-        override suspend fun getSuccessRate() = throw NotImplementedError()
-        override suspend fun getSuccessRateByType(triggerType: String) = throw NotImplementedError()
-        override suspend fun getSuccessRateBySource(sourceId: String) = throw NotImplementedError()
-        override suspend fun getTodayCount() = throw NotImplementedError()
-        override suspend fun getWeekCount() = throw NotImplementedError()
     }
 
-    private class FakeFocusSessionDao : FocusSessionDao {
+    private class FakeFocusSessionRepository : IFocusSessionRepository {
         var sessions: Map<String, FocusSession> = emptyMap()
 
-        override suspend fun getSessionByIdSync(sessionId: String): FocusSession? {
+        override suspend fun getSessionById(sessionId: String): FocusSession? {
             return sessions[sessionId]
         }
-
-        // 나머지 메서드는 사용하지 않으므로 구현하지 않음
-        override suspend fun insert(session: FocusSession) = throw NotImplementedError()
-        override suspend fun update(session: FocusSession) = throw NotImplementedError()
-        override fun getTodaySessions() = throw NotImplementedError()
-        override fun getAllSessions() = throw NotImplementedError()
-        override fun getSessionById(sessionId: String) = throw NotImplementedError()
-        override fun getSuccessfulSessions() = throw NotImplementedError()
-        override suspend fun getSessionsInLastDays(days: Int) = throw NotImplementedError()
-        override suspend fun getSessionsInRange(startTimestamp: Long, endTimestamp: Long) = throw NotImplementedError()
     }
 }
 

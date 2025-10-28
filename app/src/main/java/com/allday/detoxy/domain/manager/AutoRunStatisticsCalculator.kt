@@ -1,9 +1,9 @@
 package com.allday.detoxy.domain.manager
 
-import com.allday.detoxy.data.local.dao.AutoRunLogDao
-import com.allday.detoxy.data.local.dao.FocusSessionDao
 import com.allday.detoxy.data.local.entity.AutoRunLog
 import com.allday.detoxy.data.local.entity.FocusSession
+import com.allday.detoxy.domain.repository.IAutoRunLogRepository
+import com.allday.detoxy.domain.repository.IFocusSessionRepository
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -13,6 +13,10 @@ import javax.inject.Inject
  * 자동 실행 통계 계산기
  *
  * AutoRunLog와 FocusSession 데이터를 분석하여 통계를 생성합니다.
+ *
+ * ## Clean Architecture 준수
+ * - domain 레이어의 인터페이스(IAutoRunLogRepository, IFocusSessionRepository)에 의존
+ * - data 레이어의 구현체(DAO)에 직접 의존하지 않음
  *
  * ## 주요 기능
  * - 이번 주 자동 실행 횟수 계산 (시간/위치 분리)
@@ -25,15 +29,17 @@ import javax.inject.Inject
  * val statistics = autoRunStatisticsCalculator.calculateStatistics()
  * ```
  *
- * @param autoRunLogDao AutoRunLog DAO
- * @param focusSessionDao FocusSession DAO
+ * @param autoRunLogRepository 자동 실행 로그 Repository (인터페이스)
+ * @param focusSessionRepository 집중 세션 Repository (인터페이스)
  *
  * @see AutoRunStatistics
  * @see DailyStats
+ * @see IAutoRunLogRepository
+ * @see IFocusSessionRepository
  */
 class AutoRunStatisticsCalculator @Inject constructor(
-    private val autoRunLogDao: AutoRunLogDao,
-    private val focusSessionDao: FocusSessionDao
+    private val autoRunLogRepository: IAutoRunLogRepository,
+    private val focusSessionRepository: IFocusSessionRepository
 ) {
     
     /**
@@ -103,7 +109,7 @@ class AutoRunStatisticsCalculator @Inject constructor(
      * @return 자동 실행 로그 리스트
      */
     private suspend fun getLogsInCurrentWeek(startTime: Long, endTime: Long): List<AutoRunLog> {
-        return autoRunLogDao.getLogsInRangeList(startTime, endTime)
+        return autoRunLogRepository.getLogsInRange(startTime, endTime)
     }
     
     /**
@@ -126,7 +132,7 @@ class AutoRunStatisticsCalculator @Inject constructor(
             val sessionId = log.sessionId ?: continue
             
             // FocusSession 조회
-            val session = focusSessionDao.getSessionByIdSync(sessionId)
+            val session = focusSessionRepository.getSessionById(sessionId)
             if (session != null) {
                 // 세션의 실제 집중 시간 계산 (durationMinutes 또는 startTime ~ endTime 차이)
                 // FocusSession에 durationMinutes 필드가 있다고 가정
