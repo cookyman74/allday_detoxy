@@ -3,6 +3,7 @@ package com.allday.detoxy.presentation.ui.autorun.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
@@ -60,15 +61,15 @@ fun NextAutoRunCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = if (nextAutoRunInfo?.triggerType == "TIME") {
-                        Icons.Default.Notifications
-                    } else {
-                        Icons.Default.LocationOn
+                    imageVector = when (nextAutoRunInfo?.triggerType) {
+                        "TIME" -> Icons.Default.Notifications
+                        "LOCATION" -> Icons.Default.LocationOn
+                        else -> Icons.Default.Info // null일 때 중립적인 아이콘
                     },
-                    contentDescription = if (nextAutoRunInfo?.triggerType == "TIME") {
-                        "시간 기반"
-                    } else {
-                        "위치 기반"
+                    contentDescription = when (nextAutoRunInfo?.triggerType) {
+                        "TIME" -> "시간 기반"
+                        "LOCATION" -> "위치 기반"
+                        else -> "자동 실행" // null일 때 중립적인 설명
                     },
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)

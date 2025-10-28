@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -109,6 +110,9 @@ class AutoRunDashboardViewModel @Inject constructor(
      *
      * 활성화된 시간 기반 자동 실행 목록을 조회하여
      * NextAutoRunCalculator로 다음 예정 자동 실행을 계산합니다.
+     *
+     * Flow에서 first()를 사용하여 한 번만 값을 가져옵니다.
+     * 실시간 업데이트가 필요한 경우 init 블록에서 별도 구독을 설정합니다.
      */
     fun refreshNextAutoRun() {
         viewModelScope.launch {
@@ -116,15 +120,15 @@ class AutoRunDashboardViewModel @Inject constructor(
                 _isLoading.value = true
                 _errorState.value = null
 
-                // 활성화된 시간 기반 자동 실행 목록 조회
-                timeBasedAutoRunRepository.getEnabled().collect { enabledAutoRuns ->
-                    // 다음 예정 자동 실행 계산
-                    val nextInfo = nextAutoRunCalculator.calculateNextAutoRun(enabledAutoRuns)
-                    _nextAutoRunInfo.value = nextInfo
+                // 활성화된 시간 기반 자동 실행 목록 조회 (한 번만)
+                val enabledAutoRuns = timeBasedAutoRunRepository.getEnabled().first()
+                
+                // 다음 예정 자동 실행 계산
+                val nextInfo = nextAutoRunCalculator.calculateNextAutoRun(enabledAutoRuns)
+                _nextAutoRunInfo.value = nextInfo
 
-                    // Analytics 이벤트는 필요시 추가
-                    // 현재는 nextInfo를 단순히 계산만 하고 로깅하지 않음
-                }
+                // Analytics 이벤트는 필요시 추가
+                // 현재는 nextInfo를 단순히 계산만 하고 로깅하지 않음
             } catch (e: Exception) {
                 _errorState.value = "다음 자동 실행 정보를 불러오지 못했습니다: ${e.message}"
                 // 에러 로깅은 별도 구현 필요시 추가
