@@ -1,4 +1,4 @@
-# Evaluated ADHD Support – Enhancement Plan
+# 5차 고도화 개발 계획: Evaluated ADHD Support – Enhancement Plan 
 
 ## 1. 배경 & 목표
 - 현재 앱은 집중 세션 기록, 자동 실행(시간·위치 기반) 관리, 사용자 알림 기능을 제공하지만 **ADHD 관련 자가 평가**에 필요한 정량/정성 데이터가 부족함.

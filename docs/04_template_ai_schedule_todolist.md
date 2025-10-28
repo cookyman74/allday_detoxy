@@ -1,7 +1,7 @@
-# Allday Detoxy 3차 고도화 작업 계획
+# Allday Detoxy 4차 고도화 작업 계획
 ## 시간표 템플릿 및 AI 기반 스케줄 추천
 
-- **기준 문서**: [3차 고도화 PRD](./03_template_ai_schedule_prd.md)
+- **기준 문서**: [4차 고도화 PRD](./03_template_ai_schedule_prd.md)
 - **선행 작업**: 2.5차 고도화 (v0.7) 완료 필수
 - **버전**: v0.7 → v0.8
 - **예상 기간**: 3주 (Day 1-21)
@@ -1400,7 +1400,7 @@ class ABTestManager @Inject constructor(
 
 ## 10. 참조 문서
 
-- [3차 고도화 PRD](./03_template_ai_schedule_prd.md)
+- [4차 고도화 PRD](./03_template_ai_schedule_prd.md)
 - [2.5차 고도화 PRD](./02_advanced_autosetting_prd.md)
 - [2.5차 고도화 작업계획](./02.5_complex_time&location_todolist.md)
 - [2차 고도화 PRD](./02_advanced_autosetting_prd.md)
@@ -1408,5 +1408,5 @@ class ABTestManager @Inject constructor(
 
 ---
 
-> **3차 고도화 철학**: "지능형 자동화". 템플릿으로 즉시 시작하고, AI가 패턴을 학습하여 최적화합니다. "생각 없이 시작, 지능적으로 최적화"를 실현합니다.
+> **4차 고도화 철학**: "지능형 자동화". 템플릿으로 즉시 시작하고, AI가 패턴을 학습하여 최적화합니다. "생각 없이 시작, 지능적으로 최적화"를 실현합니다.
 

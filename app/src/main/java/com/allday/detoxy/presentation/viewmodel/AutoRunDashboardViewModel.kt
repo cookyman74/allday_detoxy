@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
-import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.manager.NextAutoRunCalculator
 import com.allday.detoxy.domain.manager.NextAutoRunInfo
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
+import com.allday.detoxy.domain.repository.IUserSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,7 +33,6 @@ import javax.inject.Inject
  * @param timeBasedAutoRunRepository 시간 기반 자동 실행 저장소
  * @param autoRunSettingsRepository 자동 실행 설정 저장소
  * @param userSettingsRepository 사용자 설정 저장소
- * @param analyticsHelper Analytics 헬퍼
  *
  * @see NextAutoRunCalculator
  * @see NextAutoRunInfo
@@ -45,8 +44,7 @@ class AutoRunDashboardViewModel @Inject constructor(
     private val nextAutoRunCalculator: NextAutoRunCalculator,
     private val timeBasedAutoRunRepository: TimeBasedAutoRunRepository,
     private val autoRunSettingsRepository: AutoRunSettingsRepository,
-    private val userSettingsRepository: UserSettingsRepository,
-    private val analyticsHelper: AnalyticsHelper
+    private val userSettingsRepository: IUserSettingsRepository
 ) : ViewModel() {
 
     // ========== 다음 예정 자동 실행 ==========
@@ -157,7 +155,7 @@ class AutoRunDashboardViewModel @Inject constructor(
                 _pauseUntil.value = pauseUntil
 
                 // Analytics 이벤트
-                analyticsHelper.logAutoRunSkipped(
+                AnalyticsHelper.logAutoRunSkipped(
                     triggerType = nextInfo.triggerType,
                     reason = "manual_dashboard_skip"
                 )

@@ -2,7 +2,7 @@ package com.allday.detoxy.domain.manager
 
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
-import com.allday.detoxy.data.repository.UserSettingsRepository
+import com.allday.detoxy.domain.repository.IUserSettingsRepository
 import kotlinx.coroutines.flow.first
 import java.util.Calendar
 import javax.inject.Inject
@@ -32,7 +32,7 @@ import javax.inject.Singleton
 @Singleton
 class NextAutoRunCalculator @Inject constructor(
     private val autoRunSettingsRepository: AutoRunSettingsRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: IUserSettingsRepository
 ) {
 
     companion object {

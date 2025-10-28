@@ -4,9 +4,11 @@ import android.content.Context
 import com.allday.detoxy.data.repository.AutoRunSettingsRepositoryImpl
 import com.allday.detoxy.data.repository.FocusRepositoryImpl
 import com.allday.detoxy.data.repository.FocusSettingsRepositoryImpl
+import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
+import com.allday.detoxy.domain.repository.IUserSettingsRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -41,6 +43,22 @@ abstract class RepositoryModule {
     abstract fun bindFocusRepository(
         impl: FocusRepositoryImpl
     ): FocusRepository
+
+    /**
+     * IUserSettingsRepository 바인딩
+     *
+     * UserSettingsRepository를 IUserSettingsRepository 인터페이스로 제공합니다.
+     * Clean Architecture의 의존성 역전 원칙을 준수하여
+     * domain 계층이 data 계층을 직접 의존하지 않도록 합니다.
+     *
+     * @param impl UserSettingsRepository 구현체
+     * @return IUserSettingsRepository 인터페이스
+     */
+    @Binds
+    @Singleton
+    abstract fun bindUserSettingsRepository(
+        impl: UserSettingsRepository
+    ): IUserSettingsRepository
 
     companion object {
         /**

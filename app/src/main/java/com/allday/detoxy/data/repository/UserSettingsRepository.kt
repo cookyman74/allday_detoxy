@@ -2,6 +2,7 @@ package com.allday.detoxy.data.repository
 
 import com.allday.detoxy.data.local.dao.UserSettingsDao
 import com.allday.detoxy.data.local.entity.UserSettings
+import com.allday.detoxy.domain.repository.IUserSettingsRepository
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
 import javax.inject.Inject
@@ -18,12 +19,15 @@ import javax.inject.Singleton
  * - 자동 실행 마스터 토글 관리 (v4+)
  * - 자동 실행 일시중지 관리 (v4+)
  *
+ * ## Clean Architecture
+ * domain.repository.IUserSettingsRepository 인터페이스 구현
+ *
  * @property dao UserSettingsDao
  */
 @Singleton
 class UserSettingsRepository @Inject constructor(
     private val dao: UserSettingsDao
-) {
+) : IUserSettingsRepository {
 
     /**
      * 사용자 설정 조회 (반응형)
@@ -85,7 +89,7 @@ class UserSettingsRepository @Inject constructor(
      *
      * @param enabled true면 모든 자동 실행 활성화, false면 전체 비활성화
      */
-    suspend fun setAutoRunMasterEnabled(enabled: Boolean) {
+    override suspend fun setAutoRunMasterEnabled(enabled: Boolean) {
         dao.setAutoRunMasterEnabled(enabled)
     }
 
@@ -94,17 +98,17 @@ class UserSettingsRepository @Inject constructor(
      *
      * @return 마스터 스위치 상태 (기본값: true)
      */
-    suspend fun getAutoRunMasterEnabled(): Boolean {
+    override suspend fun getAutoRunMasterEnabled(): Boolean {
         return dao.getAutoRunMasterEnabled() ?: true
     }
 
     /**
      * 자동 실행 일시중지 설정
      *
-     * @param timestamp null이면 일시중지 해제, 값이 있으면 해당 시각까지 일시중지
+     * @param pauseUntil null이면 일시중지 해제, 값이 있으면 해당 시각까지 일시중지
      */
-    suspend fun setAutoRunPauseUntil(timestamp: Long?) {
-        dao.setAutoRunPauseUntil(timestamp)
+    override suspend fun setAutoRunPauseUntil(pauseUntil: Long?) {
+        dao.setAutoRunPauseUntil(pauseUntil)
     }
 
     /**
@@ -112,7 +116,7 @@ class UserSettingsRepository @Inject constructor(
      *
      * @return 일시중지 해제 시각 (null이면 일시중지되지 않음)
      */
-    suspend fun getAutoRunPauseUntil(): Long? {
+    override suspend fun getAutoRunPauseUntil(): Long? {
         return dao.getAutoRunPauseUntil()
     }
 
