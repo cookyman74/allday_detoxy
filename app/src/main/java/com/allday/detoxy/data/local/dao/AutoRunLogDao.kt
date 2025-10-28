@@ -174,5 +174,17 @@ interface AutoRunLogDao {
         WHERE DATE(triggerTime/1000, 'unixepoch', 'localtime') >= DATE('now', 'localtime', 'weekday 0', '-7 days')
     """)
     suspend fun getWeekCount(): Int
+
+    /**
+     * 특정 기간 로그 조회 (suspend)
+     *
+     * 통계 계산용으로 Flow가 아닌 List를 반환합니다.
+     *
+     * @param startTime 시작 시간 (timestamp)
+     * @param endTime 종료 시간 (timestamp)
+     * @return 로그 리스트
+     */
+    @Query("SELECT * FROM auto_run_log WHERE triggerTime >= :startTime AND triggerTime <= :endTime ORDER BY triggerTime DESC")
+    suspend fun getLogsInRangeList(startTime: Long, endTime: Long): List<AutoRunLog>
 }
 

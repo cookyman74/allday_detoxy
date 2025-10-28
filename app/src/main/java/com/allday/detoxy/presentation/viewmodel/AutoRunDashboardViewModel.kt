@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
+import com.allday.detoxy.domain.manager.AutoRunStatistics
+import com.allday.detoxy.domain.manager.AutoRunStatisticsCalculator
 import com.allday.detoxy.domain.manager.NextAutoRunCalculator
 import com.allday.detoxy.domain.manager.NextAutoRunInfo
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
@@ -22,6 +24,7 @@ import javax.inject.Inject
  * 자동 실행 대시보드 ViewModel
  *
  * 2.5차 고도화 Week 1, Day 4-6: AutoRunDashboardViewModel 확장
+ * 2.5차 고도화 Week 2, Day 8-10: 통계 기능 추가
  *
  * ## 책임
  * - 다음 예정 자동 실행 정보 제공 (nextAutoRunInfo)
@@ -29,20 +32,25 @@ import javax.inject.Inject
  * - 수동 새로고침 (refreshNextAutoRun)
  * - 자동 실행 마스터 스위치 상태 제공
  * - 일시중지 상태 제공
+ * - 이번 주 자동 실행 통계 제공 (statistics)
  *
  * @param nextAutoRunCalculator 다음 자동 실행 계산기
+ * @param autoRunStatisticsCalculator 자동 실행 통계 계산기
  * @param timeBasedAutoRunRepository 시간 기반 자동 실행 저장소
  * @param autoRunSettingsRepository 자동 실행 설정 저장소
  * @param userSettingsRepository 사용자 설정 저장소
  *
  * @see NextAutoRunCalculator
+ * @see AutoRunStatisticsCalculator
  * @see NextAutoRunInfo
- * @see docs/02.5_autosetting_todolist.md §1.2.2
+ * @see AutoRunStatistics
+ * @see docs/02.5_autosetting_todolist.md §1.2.2, §2.1.2
  * @see docs/02_advanced_wireframe_spec.md §5.1
  */
 @HiltViewModel
 class AutoRunDashboardViewModel @Inject constructor(
     private val nextAutoRunCalculator: NextAutoRunCalculator,
+    private val autoRunStatisticsCalculator: AutoRunStatisticsCalculator,
     private val timeBasedAutoRunRepository: TimeBasedAutoRunRepository,
     private val autoRunSettingsRepository: AutoRunSettingsRepository,
     private val userSettingsRepository: IUserSettingsRepository
@@ -67,6 +75,20 @@ class AutoRunDashboardViewModel @Inject constructor(
      */
     private val _errorState = MutableStateFlow<String?>(null)
     val errorState: StateFlow<String?> = _errorState.asStateFlow()
+
+    // ========== 자동 실행 통계 ==========
+
+    /**
+     * 이번 주 자동 실행 통계
+     */
+    private val _statistics = MutableStateFlow<AutoRunStatistics?>(null)
+    val statistics: StateFlow<AutoRunStatistics?> = _statistics.asStateFlow()
+
+    /**
+     * 통계 로딩 상태
+     */
+    private val _statisticsLoading = MutableStateFlow(false)
+    val statisticsLoading: StateFlow<Boolean> = _statisticsLoading.asStateFlow()
 
     // ========== 자동 실행 제어 상태 ==========
 
@@ -93,6 +115,7 @@ class AutoRunDashboardViewModel @Inject constructor(
     init {
         loadAutoRunControlState()
         refreshNextAutoRun()
+        refreshStatistics()
     }
 
     /**
@@ -228,6 +251,34 @@ class AutoRunDashboardViewModel @Inject constructor(
      */
     fun clearError() {
         _errorState.value = null
+    }
+
+    // ========== 통계 관리 ==========
+
+    /**
+     * 자동 실행 통계 새로고침
+     *
+     * 이번 주 자동 실행 통계를 계산하여 UI에 표시합니다.
+     */
+    fun refreshStatistics() {
+        viewModelScope.launch {
+            try {
+                _statisticsLoading.value = true
+
+                // 통계 계산
+                val newStatistics = autoRunStatisticsCalculator.calculateStatistics()
+                _statistics.value = newStatistics
+
+                // Analytics 이벤트는 필요시 추가
+                // 현재는 통계만 계산하고 로깅하지 않음
+
+            } catch (e: Exception) {
+                _errorState.value = "통계를 불러오지 못했습니다: ${e.message}"
+                // 에러 발생 시에도 기존 통계 유지
+            } finally {
+                _statisticsLoading.value = false
+            }
+        }
     }
 }
 

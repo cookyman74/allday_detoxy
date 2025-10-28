@@ -96,4 +96,15 @@ interface FocusSessionDao {
         ORDER BY startTime DESC
     """)
     suspend fun getSessionsInRange(startTimestamp: Long, endTimestamp: Long): List<FocusSession>
+
+    /**
+     * 특정 ID의 세션 조회 (suspend)
+     *
+     * 통계 계산용으로 Flow가 아닌 nullable FocusSession을 반환합니다.
+     *
+     * @param sessionId 세션 ID
+     * @return 세션 (nullable)
+     */
+    @Query("SELECT * FROM focus_sessions WHERE id = :sessionId")
+    suspend fun getSessionByIdSync(sessionId: String): FocusSession?
 }
