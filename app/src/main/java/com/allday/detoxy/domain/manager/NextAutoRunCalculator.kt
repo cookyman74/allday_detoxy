@@ -69,7 +69,7 @@ class NextAutoRunCalculator @Inject constructor(
         }
 
         // 2. 글로벌 일시중지 상태 체크
-        val pauseUntil = userSettingsRepository.getAutoRunPauseUntil()
+        val pauseUntil = userSettingsRepository.getAutoRunPauseUntil() ?: 0L
         val now = System.currentTimeMillis()
         if (pauseUntil > now) {
             // 일시중지 중 - null 반환
@@ -82,7 +82,7 @@ class NextAutoRunCalculator @Inject constructor(
         }
 
         // 4. 글로벌 옵션: 주말 제외 설정 확인
-        val excludeWeekends = autoRunSettingsRepository.getExcludeWeekends().first()
+        val excludeWeekends = autoRunSettingsRepository.getExcludeWeekends()
 
         // 5. 각 자동 실행의 다음 트리거 시각 계산
         val nextTriggers = enabledAutoRuns.mapNotNull { autoRun ->
@@ -259,7 +259,7 @@ class NextAutoRunCalculator @Inject constructor(
                 val minute = targetCalendar.get(Calendar.MINUTE)
                 val amPm = if (hour < 12) "오전" else "오후"
                 val displayHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
-                "$dayOfWeek요일 $amPm ${displayHour}:${String.format("%02d", minute)}"
+                "${dayOfWeek}요일 $amPm ${displayHour}:${String.format("%02d", minute)}"
             }
         }
     }
