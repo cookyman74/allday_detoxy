@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
+import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.data.repository.LocationBasedAutoRunRepository
@@ -12,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.security.MessageDigest
 import javax.inject.Inject
 
 /**
@@ -118,6 +120,22 @@ class LocationBasedAutoRunViewModel @Inject constructor(
     }
 
     /**
+     * 위치 라벨을 SHA-256으로 해시 처리
+     *
+     * Analytics 개인정보 보호를 위해 라벨을 해시 처리합니다.
+     * 실제 위치 이름 대신 해시값만 로깅됩니다.
+     *
+     * @param label 위치 라벨 (예: "회사", "도서관")
+     * @return SHA-256 해시값 (32자 hex)
+     */
+    private fun hashLocationLabel(label: String): String {
+        val bytes = label.toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+        return digest.joinToString("") { "%02x".format(it) }
+    }
+
+    /**
      * 권한 상태 확인
      * 
      * 권한 변경 감지 시 Geofence 자동 해제:
@@ -153,6 +171,7 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      * 트랜잭션 순서:
      * 1. Geofence 등록 (활성화된 경우만) - 실패 시 DB 저장 안 함
      * 2. DB 저장 - 실패 시 Geofence 롤백
+     * 3. Analytics 로깅
      *
      * @param location 추가할 위치 기반 자동 실행
      */
@@ -173,6 +192,18 @@ class LocationBasedAutoRunViewModel @Inject constructor(
 
                 // 2. Geofence 성공 후 DB 저장
                 repository.insert(location)
+
+                // 3. Analytics 로깅
+                AnalyticsHelper.logLocationBasedAutoRunCreated(
+                    locationLabelHash = hashLocationLabel(location.label),
+                    radiusMeters = location.radiusMeters,
+                    durationMinutes = location.durationMinutes,
+                    presetType = location.presetType,
+                    triggerType = location.triggerType,
+                    dwellTimeMinutes = location.dwellTimeMinutes,
+                    requiresConfirmation = location.requiresUserConfirmation
+                )
+                Log.d(TAG, "📊 Analytics: location_created (label_hash: ${hashLocationLabel(location.label).take(8)}...)")
 
             } catch (e: Exception) {
                 // Geofence는 등록되었지만 DB 저장 실패 → Geofence 롤백
@@ -231,19 +262,40 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      * 위치 기반 자동 실행 삭제
      *
      * 트랜잭션 순서:
-     * 1. DB에서 삭제
-     * 2. Geofence 해제 - 실패해도 치명적이지 않음 (이미 DB 삭제됨)
+     * 1. 통계 조회 (Analytics용)
+     * 2. DB에서 삭제
+     * 3. Geofence 해제 - 실패해도 치명적이지 않음 (이미 DB 삭제됨)
+     * 4. Analytics 로깅
      *
      * @param locationId 삭제할 위치 기반 자동 실행 ID
      */
     fun deleteLocation(locationId: String) {
         viewModelScope.launch {
             try {
-                // 1. DB에서 먼저 삭제
+                // 1. 삭제 전 통계 조회 (Analytics용)
+                val location = repository.getById(locationId).first()
+                val usageCount = 0 // TODO: AutoRunLog에서 조회 (3차 고도화)
+                val successRate = 0 // TODO: AutoRunLog에서 계산 (3차 고도화)
+                val daysActive = if (location != null) {
+                    val days = (System.currentTimeMillis() - location.createdAt) / (1000 * 60 * 60 * 24)
+                    days.toInt()
+                } else {
+                    0
+                }
+
+                // 2. DB에서 먼저 삭제
                 repository.deleteById(locationId)
 
-                // 2. Geofence 해제 (실패해도 치명적이지 않음)
+                // 3. Geofence 해제 (실패해도 치명적이지 않음)
                 geofenceManager.removeGeofence(locationId)
+
+                // 4. Analytics 로깅
+                AnalyticsHelper.logLocationBasedAutoRunDeleted(
+                    usageCount = usageCount,
+                    successRate = successRate,
+                    daysActive = daysActive
+                )
+                Log.d(TAG, "📊 Analytics: location_deleted (days_active: $daysActive)")
 
             } catch (e: Exception) {
                 _errorState.value = LocationError.DatabaseError(
@@ -257,8 +309,8 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      * 위치 기반 자동 실행 활성화/비활성화 토글
      *
      * 트랜잭션 순서:
-     * - 활성화: 1) Geofence 등록 → 2) DB 토글 (실패 시 Geofence 롤백)
-     * - 비활성화: 1) DB 토글 → 2) Geofence 해제
+     * - 활성화: 1) Geofence 등록 → 2) DB 토글 (실패 시 Geofence 롤백) → 3) Analytics 로깅
+     * - 비활성화: 1) DB 토글 → 2) Geofence 해제 → 3) Analytics 로깅
      *
      * @param locationId 토글할 위치 기반 자동 실행 ID
      * @param isEnabled 활성화 여부
@@ -290,6 +342,14 @@ class LocationBasedAutoRunViewModel @Inject constructor(
                     // Geofence 해제 (실패해도 치명적이지 않음)
                     geofenceManager.removeGeofence(locationId)
                 }
+
+                // Analytics 로깅
+                val totalEnabledCount = locations.value.count { it.isEnabled }
+                AnalyticsHelper.logLocationBasedAutoRunToggled(
+                    isEnabled = isEnabled,
+                    totalEnabledCount = totalEnabledCount
+                )
+                Log.d(TAG, "📊 Analytics: location_toggled (enabled: $isEnabled, total: $totalEnabledCount)")
 
             } catch (e: Exception) {
                 // Geofence는 등록되었지만 DB 토글 실패 → Geofence 롤백

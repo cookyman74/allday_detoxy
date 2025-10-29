@@ -8,6 +8,8 @@ import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
+import com.allday.detoxy.core.utils.AnalyticsHelper
+import java.security.MessageDigest
 
 /**
  * Geofence 트리거 이벤트를 수신하는 BroadcastReceiver
@@ -27,6 +29,21 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
     
     companion object {
         private const val TAG = "GeofenceTransitionsReceiver"
+
+        /**
+         * 소스 ID를 SHA-256으로 해시 처리
+         *
+         * Analytics 개인정보 보호를 위해 소스 ID를 해시 처리합니다.
+         *
+         * @param sourceId 소스 ID (위치 기반 자동 실행 ID)
+         * @return SHA-256 해시값 (16자 hex)
+         */
+        private fun hashSourceId(sourceId: String): String {
+            val bytes = sourceId.toByteArray()
+            val md = MessageDigest.getInstance("SHA-256")
+            val digest = md.digest(bytes)
+            return digest.joinToString("") { "%02x".format(it) }.take(16)
+        }
     }
     
     override fun onReceive(context: Context, intent: Intent) {
@@ -109,12 +126,29 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     - Transition Type: $transitionType
                 """.trimIndent())
                 
+                // Analytics: auto_run_triggered
+                AnalyticsHelper.logAutoRunTriggered(
+                    triggerType = "LOCATION",
+                    sourceIdHash = hashSourceId(locationId),
+                    durationMinutes = durationMinutes,
+                    presetType = presetType ?: "UNKNOWN"
+                )
+                Log.d(TAG, "📊 Analytics: auto_run_triggered (LOCATION)")
+                
                 // TODO: Week 3 작업 - AutoRunNotificationManager 연동
                 // if (requiresConfirmation) {
                 //     autoRunNotificationManager.showConfirmationNotification(locationId, locationLabel, durationMinutes)
                 // } else {
                 //     autoRunNotificationManager.showStartNotification(locationId, locationLabel, durationMinutes)
                 // }
+                
+                // Analytics: auto_run_notification_shown (알림 표시 시)
+                AnalyticsHelper.logAutoRunNotificationShown(
+                    triggerType = "LOCATION",
+                    isPreNotification = false,
+                    minutesBefore = null
+                )
+                Log.d(TAG, "📊 Analytics: auto_run_notification_shown (LOCATION)")
                 
                 // TODO: Week 3 작업 - AutoRunLog 기록
                 // val log = AutoRunLog(
@@ -133,8 +167,37 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 // TODO: Week 3 작업 - 이미 타이머 실행 중인지 확인
                 // if (timerViewModel.isTimerRunning()) {
                 //     Log.w(TAG, "⚠️ Timer is already running, skipping auto-run")
+                //     
+                //     // Analytics: auto_run_skipped
+                //     AnalyticsHelper.logAutoRunSkipped(
+                //         triggerType = "LOCATION",
+                //         reason = "timer_already_running"
+                //     )
                 //     return
                 // }
+                
+                // Analytics: auto_run_started (타이머 시작 시)
+                // TODO: Week 3 작업 - 실제 타이머 시작 후 호출
+                // AnalyticsHelper.logAutoRunStarted(
+                //     triggerType = "LOCATION",
+                //     durationMinutes = durationMinutes,
+                //     isAutoStart = !requiresConfirmation,
+                //     delaySeconds = 0,
+                //     gpsAccuracyMeters = gpsAccuracyMeters,
+                //     dwellSeconds = dwellTimeMinutes * 60
+                // )
+                // Log.d(TAG, "📊 Analytics: auto_run_started (LOCATION)")
+                
+                // Analytics: auto_run_failed (GPS 정확도 낮을 때)
+                if (gpsAccuracyMeters != null && gpsAccuracyMeters > 100f) {
+                    Log.w(TAG, "⚠️ GPS accuracy is low (${gpsAccuracyMeters}m), might cause issues")
+                    // TODO: Week 3 작업 - 정확도 낮음 처리 로직
+                    // AnalyticsHelper.logAutoRunFailed(
+                    //     triggerType = "LOCATION",
+                    //     failureReason = "low_gps_accuracy",
+                    //     gpsAccuracyMeters = gpsAccuracyMeters
+                    // )
+                }
                 
                 Log.i(TAG, "✅ Location-based auto-run triggered for $locationLabel")
         }
