@@ -4,6 +4,8 @@ import com.allday.detoxy.data.local.entity.AutoRunLog
 import com.allday.detoxy.data.local.entity.FocusSession
 import com.allday.detoxy.domain.repository.IAutoRunLogRepository
 import com.allday.detoxy.domain.repository.IFocusSessionRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -235,6 +237,10 @@ class AutoRunStatisticsCalculatorTest {
 
     private class FakeAutoRunLogRepository : IAutoRunLogRepository {
         var logs: List<AutoRunLog> = emptyList()
+
+        override fun getAll(): Flow<List<AutoRunLog>> {
+            return flowOf(logs)
+        }
 
         override suspend fun getLogsInRange(startTime: Long, endTime: Long): List<AutoRunLog> {
             return logs.filter { it.triggerTime in startTime..endTime }

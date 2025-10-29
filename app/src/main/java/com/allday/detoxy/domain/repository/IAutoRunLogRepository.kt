@@ -1,6 +1,7 @@
 package com.allday.detoxy.domain.repository
 
 import com.allday.detoxy.data.local.entity.AutoRunLog
+import kotlinx.coroutines.flow.Flow
 
 /**
  * 자동 실행 로그 Repository 인터페이스 (Domain Layer)
@@ -16,6 +17,13 @@ import com.allday.detoxy.data.local.entity.AutoRunLog
  * @see com.allday.detoxy.data.repository.AutoRunLogRepository
  */
 interface IAutoRunLogRepository {
+    /**
+     * 모든 자동 실행 로그 조회 (최신순)
+     *
+     * @return 로그 리스트 (Flow)
+     */
+    fun getAll(): Flow<List<AutoRunLog>>
+
     /**
      * 특정 기간의 자동 실행 로그 조회
      *

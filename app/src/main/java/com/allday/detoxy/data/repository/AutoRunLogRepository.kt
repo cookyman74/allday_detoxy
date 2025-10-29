@@ -3,6 +3,7 @@ package com.allday.detoxy.data.repository
 import com.allday.detoxy.data.local.dao.AutoRunLogDao
 import com.allday.detoxy.data.local.entity.AutoRunLog
 import com.allday.detoxy.domain.repository.IAutoRunLogRepository
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,6 +19,10 @@ import javax.inject.Singleton
 class AutoRunLogRepository @Inject constructor(
     private val dao: AutoRunLogDao
 ) : IAutoRunLogRepository {
+
+    override fun getAll(): Flow<List<AutoRunLog>> {
+        return dao.getAll()
+    }
 
     override suspend fun getLogsInRange(startTime: Long, endTime: Long): List<AutoRunLog> {
         return dao.getLogsInRangeList(startTime, endTime)

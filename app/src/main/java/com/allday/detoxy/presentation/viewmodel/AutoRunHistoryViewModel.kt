@@ -2,10 +2,10 @@ package com.allday.detoxy.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.allday.detoxy.data.local.dao.AutoRunLogDao
 import com.allday.detoxy.data.local.entity.AutoRunLog
 import com.allday.detoxy.domain.manager.AutoRunStatistics
 import com.allday.detoxy.domain.manager.AutoRunStatisticsCalculator
+import com.allday.detoxy.domain.repository.IAutoRunLogRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -18,21 +18,26 @@ import javax.inject.Inject
  *
  * 2.5차 고도화 Week 2, Day 11-13: AutoRunHistoryScreen 구현
  *
+ * ## Clean Architecture 준수
+ * - domain 레이어의 인터페이스(IAutoRunLogRepository)에 의존
+ * - data 레이어의 구현체(DAO)에 직접 의존하지 않음
+ *
  * ## 책임
  * - 자동 실행 이력 로드
  * - 필터링 (트리거 타입, 결과)
  * - 날짜 범위 선택
  * - 기본 통계 제공
  *
- * @param autoRunLogDao 자동 실행 로그 DAO
+ * @param autoRunLogRepository 자동 실행 로그 Repository (인터페이스)
  * @param autoRunStatisticsCalculator 통계 계산기
  *
  * @see AutoRunLog
  * @see AutoRunStatistics
+ * @see IAutoRunLogRepository
  */
 @HiltViewModel
 class AutoRunHistoryViewModel @Inject constructor(
-    private val autoRunLogDao: AutoRunLogDao,
+    private val autoRunLogRepository: IAutoRunLogRepository,
     private val autoRunStatisticsCalculator: AutoRunStatisticsCalculator
 ) : ViewModel() {
 
@@ -71,7 +76,7 @@ class AutoRunHistoryViewModel @Inject constructor(
     /**
      * 모든 자동 실행 로그
      */
-    private val allLogs: StateFlow<List<AutoRunLog>> = autoRunLogDao.getAll()
+    private val allLogs: StateFlow<List<AutoRunLog>> = autoRunLogRepository.getAll()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
