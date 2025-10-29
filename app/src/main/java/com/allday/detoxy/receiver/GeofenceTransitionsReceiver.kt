@@ -138,17 +138,25 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 // TODO: Week 3 작업 - AutoRunNotificationManager 연동
                 // if (requiresConfirmation) {
                 //     autoRunNotificationManager.showConfirmationNotification(locationId, locationLabel, durationMinutes)
+                //     
+                //     // Analytics: auto_run_notification_shown (알림 표시 후)
+                //     AnalyticsHelper.logAutoRunNotificationShown(
+                //         triggerType = "LOCATION",
+                //         isPreNotification = false,
+                //         minutesBefore = null
+                //     )
+                //     Log.d(TAG, "📊 Analytics: auto_run_notification_shown (LOCATION)")
                 // } else {
                 //     autoRunNotificationManager.showStartNotification(locationId, locationLabel, durationMinutes)
+                //     
+                //     // Analytics: auto_run_notification_shown (알림 표시 후)
+                //     AnalyticsHelper.logAutoRunNotificationShown(
+                //         triggerType = "LOCATION",
+                //         isPreNotification = false,
+                //         minutesBefore = null
+                //     )
+                //     Log.d(TAG, "📊 Analytics: auto_run_notification_shown (LOCATION)")
                 // }
-                
-                // Analytics: auto_run_notification_shown (알림 표시 시)
-                AnalyticsHelper.logAutoRunNotificationShown(
-                    triggerType = "LOCATION",
-                    isPreNotification = false,
-                    minutesBefore = null
-                )
-                Log.d(TAG, "📊 Analytics: auto_run_notification_shown (LOCATION)")
                 
                 // TODO: Week 3 작업 - AutoRunLog 기록
                 // val log = AutoRunLog(

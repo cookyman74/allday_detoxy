@@ -343,8 +343,14 @@ class LocationBasedAutoRunViewModel @Inject constructor(
                     geofenceManager.removeGeofence(locationId)
                 }
 
-                // Analytics 로깅
-                val totalEnabledCount = locations.value.count { it.isEnabled }
+                // Analytics 로깅 (토글 전후 값 보정)
+                // 토글 전 상태에서 +1 (활성화) 또는 -1 (비활성화)하여 토글 후 상태 계산
+                val currentEnabledCount = locations.value.count { it.isEnabled }
+                val totalEnabledCount = if (isEnabled) {
+                    currentEnabledCount + 1  // 활성화: 현재 + 1
+                } else {
+                    currentEnabledCount - 1  // 비활성화: 현재 - 1
+                }
                 AnalyticsHelper.logLocationBasedAutoRunToggled(
                     isEnabled = isEnabled,
                     totalEnabledCount = totalEnabledCount
