@@ -64,7 +64,7 @@ import com.allday.detoxy.data.local.entity.UserSettings
         ScheduleGroup::class
     ],
     version = 5,
-    exportSchema = true
+    exportSchema = false
 )
 abstract class DetoxyDatabase : RoomDatabase() {
 

@@ -53,6 +53,18 @@ android {
     buildFeatures {
         compose = true
     }
+    
+    // Room schema export for migration testing
+    kapt {
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
+    }
+    
+    sourceSets {
+        // Export Room schemas to test assets
+        getByName("androidTest").assets.srcDirs("$projectDir/schemas")
+    }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
     }

@@ -40,8 +40,8 @@ class MigrationTest_4_5 {
 
     @Test
     fun migrate4To5_createsScheduleGroupTable() {
-        // v4 DB 생성 및 샘플 데이터 삽입
-        helper.createDatabase(TEST_DB, 4).apply {
+        // v4 DB 수동 생성 (스키마 파일 없이)
+        val db = helper.createDatabase(TEST_DB, 4).apply {
             // TimeBasedAutoRun 샘플 데이터
             execSQL("""
                 INSERT INTO time_based_auto_run 
