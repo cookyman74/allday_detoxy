@@ -36,9 +36,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * @see com.allday.detoxy.data.local.entity.FocusSettings
  */
 val MIGRATION_2_3 = object : Migration(2, 3) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 1. FocusDistraction 테이블 생성
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS focus_distractions (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -54,7 +54,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         )
 
         // 2. DetoxyRoutineLog 테이블 생성
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS detoxy_routine_logs (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -67,7 +67,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         )
 
         // 3. FocusSettings 테이블 생성
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS focus_settings (
                 id INTEGER PRIMARY KEY NOT NULL DEFAULT 1,
@@ -84,7 +84,7 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         // 4. 기본 설정 삽입 (Singleton) - 표준 디톡시 프리셋
         //    SNS, WEB, VIDEO: 차단 (1)
         //    MESSENGER, OTHER: 허용 (0)
-        database.execSQL(
+        db.execSQL(
             """
             INSERT OR IGNORE INTO focus_settings (id, snsEnabled, messengerEnabled, webEnabled, videoEnabled, otherEnabled, lastUpdated)
             VALUES (1, 1, 0, 1, 1, 0, ${System.currentTimeMillis()})
@@ -92,10 +92,10 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         )
 
         // 5. FocusDistraction 인덱스 생성
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_focus_distractions_sessionId ON focus_distractions(sessionId)"
         )
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_focus_distractions_timestamp ON focus_distractions(timestamp)"
         )
     }

@@ -42,17 +42,17 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * @see com.allday.detoxy.data.local.entity.LocationBasedAutoRun
  */
 val MIGRATION_4_5 = object : Migration(4, 5) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 1. UserSettings 테이블 확장
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE user_settings ADD COLUMN autoRunMasterEnabled INTEGER NOT NULL DEFAULT 1"
         )
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE user_settings ADD COLUMN autoRunPauseUntil INTEGER"
         )
 
         // 2. ScheduleGroup 테이블 생성
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS schedule_group (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -65,30 +65,30 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         )
 
         // 3. ScheduleGroup 인덱스 생성
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_schedule_group_isActive ON schedule_group(isActive)"
         )
 
         // 4. TimeBasedAutoRun 테이블 확장
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE time_based_auto_run ADD COLUMN scheduleGroupId TEXT"
         )
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE time_based_auto_run ADD COLUMN isIndependent INTEGER NOT NULL DEFAULT 1"
         )
 
         // 5. TimeBasedAutoRun 인덱스 생성
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_time_based_auto_run_scheduleGroupId ON time_based_auto_run(scheduleGroupId)"
         )
 
         // 6. LocationBasedAutoRun 테이블 확장
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE location_based_auto_run ADD COLUMN linkedScheduleGroupId TEXT"
         )
 
         // 7. LocationBasedAutoRun 인덱스 생성
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_location_based_auto_run_linkedScheduleGroupId ON location_based_auto_run(linkedScheduleGroupId)"
         )
     }

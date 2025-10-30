@@ -49,9 +49,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * @see com.allday.detoxy.data.local.entity.AutoRunLog
  */
 val MIGRATION_3_4 = object : Migration(3, 4) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 1. TimeBasedAutoRun 테이블 생성
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS time_based_auto_run (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -68,15 +68,15 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         )
 
         // 2. TimeBasedAutoRun 인덱스 생성
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_time_based_auto_run_hour_minute ON time_based_auto_run(hour, minute)"
         )
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_time_based_auto_run_isEnabled ON time_based_auto_run(isEnabled)"
         )
 
         // 3. LocationBasedAutoRun 테이블 생성
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS location_based_auto_run (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -98,12 +98,12 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         )
 
         // 4. LocationBasedAutoRun 인덱스 생성
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_location_based_auto_run_isEnabled ON location_based_auto_run(isEnabled)"
         )
 
         // 5. CustomTimerPreset 테이블 생성
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS custom_timer_preset (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -118,12 +118,12 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         )
 
         // 6. CustomTimerPreset 인덱스 생성
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_custom_timer_preset_displayOrder ON custom_timer_preset(displayOrder)"
         )
 
         // 7. AutoRunLog 테이블 생성 (FK: sessionId)
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS auto_run_log (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -142,27 +142,27 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         )
 
         // 8. AutoRunLog 인덱스 생성
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_auto_run_log_triggerTime ON auto_run_log(triggerTime)"
         )
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_auto_run_log_triggerType_triggerTime ON auto_run_log(triggerType, triggerTime)"
         )
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_auto_run_log_sessionId ON auto_run_log(sessionId)"
         )
 
         // 9. UserSettings 테이블 확장 (새 필드 추가)
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE user_settings ADD COLUMN autoRunMasterEnabled INTEGER NOT NULL DEFAULT 1"
         )
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE user_settings ADD COLUMN autoRunPauseUntil INTEGER"
         )
 
         // 10. 기본 커스텀 타이머 프리셋 추가 (25/45/60분)
         val now = System.currentTimeMillis()
-        database.execSQL(
+        db.execSQL(
             """
             INSERT OR IGNORE INTO custom_timer_preset (id, name, durationMinutes, presetType, usageCount, displayOrder, createdAt)
             VALUES 

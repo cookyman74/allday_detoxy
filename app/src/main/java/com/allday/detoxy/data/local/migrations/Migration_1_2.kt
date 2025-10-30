@@ -25,20 +25,20 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * @see com.allday.detoxy.data.local.entity.FocusInterruption
  */
 val MIGRATION_1_2 = object : Migration(1, 2) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 1. FocusSession 테이블에 컬럼 추가
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE focus_sessions ADD COLUMN interruptedSeconds INTEGER NOT NULL DEFAULT 0"
         )
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE focus_sessions ADD COLUMN primaryDistractionCategory TEXT"
         )
-        database.execSQL(
+        db.execSQL(
             "ALTER TABLE focus_sessions ADD COLUMN giveUpReason TEXT"
         )
 
         // 2. FocusInterruption 테이블 생성
-        database.execSQL(
+        db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS focus_interruptions (
                 id TEXT PRIMARY KEY NOT NULL,
@@ -52,7 +52,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         )
 
         // 3. FocusInterruption 테이블 인덱스 생성 (쿼리 성능 최적화)
-        database.execSQL(
+        db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_focus_interruptions_sessionId ON focus_interruptions(sessionId)"
         )
     }
