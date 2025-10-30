@@ -34,14 +34,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  *    - 인덱스: (triggerTime), (triggerType, triggerTime), (sessionId)
  *    - Foreign Key: sessionId → focus_sessions(id) ON DELETE SET NULL
  *
- * 5. **UserSettings 테이블 확장**
- *    - autoRunMasterEnabled: 자동 실행 마스터 토글 (기본: true)
- *    - autoRunPauseUntil: 자동 실행 일시중지 종료 시간 (nullable)
- *
  * ## 마이그레이션 전략
- * - 기존 데이터 영향 없음 (신규 테이블만 추가, UserSettings 필드 추가)
+ * - 기존 데이터 영향 없음 (신규 테이블만 추가)
  * - 모든 필드에 NOT NULL 또는 DEFAULT 설정
  * - AutoRunLog는 FocusSession FK (ON DELETE SET NULL)
+ *
+ * ## 참고
+ * - UserSettings 확장(autoRunMasterEnabled, autoRunPauseUntil)은 v4→v5에서 추가됨
  *
  * @see com.allday.detoxy.data.local.entity.TimeBasedAutoRun
  * @see com.allday.detoxy.data.local.entity.LocationBasedAutoRun
@@ -152,15 +151,7 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
             "CREATE INDEX IF NOT EXISTS index_auto_run_log_sessionId ON auto_run_log(sessionId)"
         )
 
-        // 9. UserSettings 테이블 확장 (새 필드 추가)
-        db.execSQL(
-            "ALTER TABLE user_settings ADD COLUMN autoRunMasterEnabled INTEGER NOT NULL DEFAULT 1"
-        )
-        db.execSQL(
-            "ALTER TABLE user_settings ADD COLUMN autoRunPauseUntil INTEGER"
-        )
-
-        // 10. 기본 커스텀 타이머 프리셋 추가 (25/45/60분)
+        // 9. 기본 커스텀 타이머 프리셋 추가 (25/45/60분)
         val now = System.currentTimeMillis()
         db.execSQL(
             """

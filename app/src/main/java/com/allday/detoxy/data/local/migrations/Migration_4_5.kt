@@ -32,10 +32,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - Soft Reference 관계 (Foreign Key 없음, 애플리케이션 레벨에서 참조 무결성 보장)
  *
  * ## 예상 실행 시간
+ * - UserSettings ALTER TABLE: < 10ms
  * - ScheduleGroup 테이블 생성: < 10ms
- * - ALTER TABLE 3회: < 30ms (각 10ms)
+ * - ALTER TABLE 2회: < 20ms (각 10ms)
  * - 인덱스 생성 3개: < 30ms (각 10ms)
- * - 총 예상 시간: < 100ms
+ * - 총 예상 시간: < 80ms
  *
  * @see com.allday.detoxy.data.local.entity.ScheduleGroup
  * @see com.allday.detoxy.data.local.entity.TimeBasedAutoRun

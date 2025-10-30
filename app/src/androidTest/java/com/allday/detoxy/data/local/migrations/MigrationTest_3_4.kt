@@ -67,11 +67,7 @@ class MigrationTest_3_4 {
             assertNotNull(cursor, "auto_run_log table should exist")
         }
 
-        // 5. UserSettings 새 필드 확인
-        db.query("SELECT autoRunMasterEnabled, autoRunPauseUntil FROM user_settings WHERE id = 1").use { cursor ->
-            // 필드가 있으면 쿼리가 실패하지 않음을 확인
-            assertNotNull(cursor, "user_settings should have autoRunMasterEnabled and autoRunPauseUntil")
-        }
+        // Note: UserSettings 필드 (autoRunMasterEnabled, autoRunPauseUntil)는 v4→v5에서 추가됨
 
         db.close()
     }
