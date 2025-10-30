@@ -6,6 +6,7 @@ import com.allday.detoxy.data.repository.AutoRunSettingsRepositoryImpl
 import com.allday.detoxy.data.repository.FocusRepositoryImpl
 import com.allday.detoxy.data.repository.FocusSessionRepository
 import com.allday.detoxy.data.repository.FocusSettingsRepositoryImpl
+import com.allday.detoxy.data.repository.ScheduleGroupRepositoryImpl
 import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import com.allday.detoxy.domain.repository.FocusRepository
@@ -13,6 +14,7 @@ import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import com.allday.detoxy.domain.repository.IAutoRunLogRepository
 import com.allday.detoxy.domain.repository.IFocusSessionRepository
 import com.allday.detoxy.domain.repository.IUserSettingsRepository
+import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -93,6 +95,21 @@ abstract class RepositoryModule {
     abstract fun bindFocusSessionRepository(
         impl: FocusSessionRepository
     ): IFocusSessionRepository
+
+    /**
+     * ScheduleGroupRepository 바인딩 (v5+)
+     *
+     * ScheduleGroupRepositoryImpl을 ScheduleGroupRepository 인터페이스로 제공합니다.
+     * 스케줄 그룹 관리 및 참조 무결성 보장을 위한 Repository입니다.
+     *
+     * @param impl ScheduleGroupRepositoryImpl 구현체
+     * @return ScheduleGroupRepository 인터페이스
+     */
+    @Binds
+    @Singleton
+    abstract fun bindScheduleGroupRepository(
+        impl: ScheduleGroupRepositoryImpl
+    ): ScheduleGroupRepository
 
     companion object {
         /**
