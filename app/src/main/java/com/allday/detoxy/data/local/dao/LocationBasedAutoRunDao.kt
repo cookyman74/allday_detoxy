@@ -143,5 +143,26 @@ interface LocationBasedAutoRunDao {
      */
     @Query("SELECT COUNT(*) FROM location_based_auto_run WHERE isEnabled = 1 AND id != :excludeId")
     suspend fun getEnabledCountExcept(excludeId: String): Int
+
+    // ==================== v5 추가: ScheduleGroup 지원 ====================
+
+    /**
+     * 특정 스케줄 그룹에 연결된 위치 기반 자동 실행 조회 (v5+)
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     * @return 해당 그룹에 연결된 LocationBasedAutoRun 리스트
+     */
+    @Query("SELECT * FROM location_based_auto_run WHERE linkedScheduleGroupId = :scheduleGroupId ORDER BY createdAt DESC")
+    suspend fun getByLinkedGroup(scheduleGroupId: String): List<LocationBasedAutoRun>
+
+    /**
+     * 특정 스케줄 그룹에서 위치 참조 해제 (v5+)
+     *
+     * linkedScheduleGroupId를 NULL로 설정하여 단순 트리거 모드로 전환합니다.
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     */
+    @Query("UPDATE location_based_auto_run SET linkedScheduleGroupId = NULL WHERE linkedScheduleGroupId = :scheduleGroupId")
+    suspend fun unlinkFromGroup(scheduleGroupId: String)
 }
 

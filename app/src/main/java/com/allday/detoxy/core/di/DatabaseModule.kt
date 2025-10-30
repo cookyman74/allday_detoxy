@@ -11,11 +11,13 @@ import com.allday.detoxy.data.local.dao.FocusInterruptionDao
 import com.allday.detoxy.data.local.dao.FocusSessionDao
 import com.allday.detoxy.data.local.dao.FocusSettingsDao
 import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
+import com.allday.detoxy.data.local.dao.ScheduleGroupDao
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.UserSettingsDao
 import com.allday.detoxy.data.local.migrations.MIGRATION_1_2
 import com.allday.detoxy.data.local.migrations.MIGRATION_2_3
 import com.allday.detoxy.data.local.migrations.MIGRATION_3_4
+import com.allday.detoxy.data.local.migrations.MIGRATION_4_5
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,6 +35,7 @@ import javax.inject.Singleton
  * - v1 → v2 (Week 2A): FocusSession 확장 + FocusInterruption 추가 (MIGRATION_1_2)
  * - v2 → v3 (Week 2B): FocusDistraction, DetoxyRoutineLog, FocusSettings 추가 (MIGRATION_2_3)
  * - v3 → v4 (2차 고도화): TimeBasedAutoRun, LocationBasedAutoRun, CustomTimerPreset, AutoRunLog 추가 + UserSettings 확장 (MIGRATION_3_4)
+ * - v4 → v5 (2.5차 고도화): ScheduleGroup 추가 + TimeBasedAutoRun/LocationBasedAutoRun 확장 (MIGRATION_4_5)
  *
  * @InstallIn(SingletonComponent::class)로 앱 전체 생명주기 동안 싱글톤 유지
  */
@@ -56,7 +59,7 @@ object DatabaseModule {
             DetoxyDatabase::class.java,
             "detoxy_database"
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .build()
     }
 
@@ -168,5 +171,16 @@ object DatabaseModule {
     @Provides
     fun provideAutoRunLogDao(database: DetoxyDatabase): AutoRunLogDao {
         return database.autoRunLogDao()
+    }
+
+    /**
+     * ScheduleGroupDao 제공 (v5+)
+     *
+     * @param database DetoxyDatabase 인스턴스
+     * @return ScheduleGroupDao
+     */
+    @Provides
+    fun provideScheduleGroupDao(database: DetoxyDatabase): ScheduleGroupDao {
+        return database.scheduleGroupDao()
     }
 }

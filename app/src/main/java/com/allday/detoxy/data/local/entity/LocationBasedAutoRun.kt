@@ -50,7 +50,8 @@ import java.util.UUID
 @Entity(
     tableName = "location_based_auto_run",
     indices = [
-        Index(value = ["isEnabled"])
+        Index(value = ["isEnabled"]),
+        Index(value = ["linkedScheduleGroupId"])
     ]
 )
 data class LocationBasedAutoRun(
@@ -145,6 +146,25 @@ data class LocationBasedAutoRun(
     /**
      * 생성 시간 (timestamp)
      */
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    // ==================== v5 추가: ScheduleGroup 지원 ====================
+
+    /**
+     * 연결된 ScheduleGroup ID (v5+)
+     *
+     * null: 1회성/주기적 트리거 (기존 동작, 기본값)
+     * UUID: 해당 그룹의 시간표 활성화/비활성화
+     *
+     * ## 동작 방식
+     * - null: 위치 진입 시 단순 트리거 (기존 동작)
+     * - UUID: 위치 진입 시 연결된 ScheduleGroup 활성화 → TimeBasedAutoRun 알람 등록
+     *         위치 이탈 시 연결된 ScheduleGroup 비활성화 → TimeBasedAutoRun 알람 취소
+     *
+     * ## 예시
+     * "회사" 위치 진입 → "업무 시간표" 그룹 활성화 → 오전 10시, 오후 2시, 오후 4시 알람 등록
+     * "회사" 위치 이탈 → "업무 시간표" 그룹 비활성화 → 3개 알람 취소
+     */
+    val linkedScheduleGroupId: String? = null
 )
 

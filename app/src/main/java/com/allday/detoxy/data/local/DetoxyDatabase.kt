@@ -10,6 +10,7 @@ import com.allday.detoxy.data.local.dao.FocusInterruptionDao
 import com.allday.detoxy.data.local.dao.FocusSessionDao
 import com.allday.detoxy.data.local.dao.FocusSettingsDao
 import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
+import com.allday.detoxy.data.local.dao.ScheduleGroupDao
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.UserSettingsDao
 import com.allday.detoxy.data.local.entity.AutoRunLog
@@ -20,6 +21,7 @@ import com.allday.detoxy.data.local.entity.FocusInterruption
 import com.allday.detoxy.data.local.entity.FocusSession
 import com.allday.detoxy.data.local.entity.FocusSettings
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
+import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.local.entity.UserSettings
 
@@ -33,6 +35,7 @@ import com.allday.detoxy.data.local.entity.UserSettings
  * - v2 (1차 고도화 Week 2A): FocusSession 확장 + FocusInterruption 추가
  * - v3 (1차 고도화 Week 2B): FocusDistraction, DetoxyRoutineLog, FocusSettings 추가
  * - v4 (2차 고도화): TimeBasedAutoRun, LocationBasedAutoRun, CustomTimerPreset, AutoRunLog 추가 + UserSettings 확장
+ * - v5 (2.5차 고도화): ScheduleGroup 추가 + TimeBasedAutoRun/LocationBasedAutoRun 확장
  *
  * @property sessionDao FocusSession DAO
  * @property settingsDao UserSettings DAO
@@ -44,6 +47,7 @@ import com.allday.detoxy.data.local.entity.UserSettings
  * @property locationBasedAutoRunDao LocationBasedAutoRun DAO (v4+)
  * @property customTimerPresetDao CustomTimerPreset DAO (v4+)
  * @property autoRunLogDao AutoRunLog DAO (v4+)
+ * @property scheduleGroupDao ScheduleGroup DAO (v5+)
  */
 @Database(
     entities = [
@@ -56,9 +60,10 @@ import com.allday.detoxy.data.local.entity.UserSettings
         TimeBasedAutoRun::class,
         LocationBasedAutoRun::class,
         CustomTimerPreset::class,
-        AutoRunLog::class
+        AutoRunLog::class,
+        ScheduleGroup::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class DetoxyDatabase : RoomDatabase() {
@@ -112,4 +117,9 @@ abstract class DetoxyDatabase : RoomDatabase() {
      * AutoRunLog DAO 반환 (v4+)
      */
     abstract fun autoRunLogDao(): AutoRunLogDao
+
+    /**
+     * ScheduleGroup DAO 반환 (v5+)
+     */
+    abstract fun scheduleGroupDao(): ScheduleGroupDao
 }

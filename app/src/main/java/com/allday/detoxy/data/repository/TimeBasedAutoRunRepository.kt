@@ -91,4 +91,40 @@ class TimeBasedAutoRunRepository @Inject constructor(
     fun getEnabledForDay(dayOfWeek: String): Flow<List<TimeBasedAutoRun>> {
         return dao.getEnabledForDay(dayOfWeek)
     }
+
+    // ==================== v5 추가: ScheduleGroup 지원 ====================
+
+    /**
+     * 특정 스케줄 그룹에 속한 시간 기반 자동 실행 조회 (v5+)
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     * @return 해당 그룹에 속한 TimeBasedAutoRun 리스트
+     */
+    suspend fun getByScheduleGroup(scheduleGroupId: String): List<TimeBasedAutoRun> {
+        return dao.getByScheduleGroup(scheduleGroupId)
+    }
+
+    /**
+     * 특정 스케줄 그룹에서 자동 실행 참조 해제 (v5+)
+     *
+     * scheduleGroupId를 NULL로 설정하여 독립 모드로 전환합니다.
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     */
+    suspend fun unlinkFromGroup(scheduleGroupId: String) {
+        dao.unlinkFromGroup(scheduleGroupId)
+    }
+
+    /**
+     * 특정 스케줄 그룹의 종속 자동 실행 활성화/비활성화 (v5+)
+     *
+     * isIndependent = 0 (종속 모드)인 자동 실행만 활성화/비활성화합니다.
+     * 독립 모드(isIndependent = 1)는 영향 받지 않습니다.
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     * @param isEnabled 활성화 여부
+     */
+    suspend fun setGroupActive(scheduleGroupId: String, isEnabled: Boolean) {
+        dao.setGroupActive(scheduleGroupId, isEnabled)
+    }
 }

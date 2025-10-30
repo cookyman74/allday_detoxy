@@ -42,7 +42,8 @@ import java.util.UUID
     tableName = "time_based_auto_run",
     indices = [
         Index(value = ["hour", "minute"]),
-        Index(value = ["isEnabled"])
+        Index(value = ["isEnabled"]),
+        Index(value = ["scheduleGroupId"])
     ]
 )
 data class TimeBasedAutoRun(
@@ -94,6 +95,32 @@ data class TimeBasedAutoRun(
     /**
      * 생성 시간 (timestamp)
      */
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    // ==================== v5 추가: ScheduleGroup 지원 ====================
+
+    /**
+     * 연결된 ScheduleGroup ID (v5+)
+     *
+     * null: 독립 실행 모드 (기본값, 기존 동작 유지)
+     * UUID: 해당 그룹에 종속
+     *
+     * ## 독립 모드 vs 종속 모드
+     * - 독립 모드: scheduleGroupId가 null이거나 isIndependent=true일 때 항상 실행
+     * - 종속 모드: scheduleGroupId가 있고 isIndependent=false일 때 그룹 활성화 시에만 실행
+     */
+    val scheduleGroupId: String? = null,
+
+    /**
+     * 독립 실행 여부 (v5+)
+     *
+     * true: scheduleGroupId와 무관하게 항상 실행 (기본값)
+     * false: scheduleGroupId 그룹 활성화 시에만 실행 (종속 모드)
+     *
+     * ## 주의사항
+     * - scheduleGroupId가 null이면 이 필드는 무시됨 (항상 독립 실행)
+     * - scheduleGroupId가 있을 때만 의미 있음
+     */
+    val isIndependent: Boolean = true
 )
 

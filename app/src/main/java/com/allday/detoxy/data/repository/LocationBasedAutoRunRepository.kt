@@ -90,5 +90,28 @@ class LocationBasedAutoRunRepository @Inject constructor(
      * @return 활성화된 개수
      */
     suspend fun getEnabledCount(): Int = dao.getEnabledCount()
+
+    // ==================== v5 추가: ScheduleGroup 지원 ====================
+
+    /**
+     * 특정 스케줄 그룹에 연결된 위치 기반 자동 실행 조회 (v5+)
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     * @return 해당 그룹에 연결된 LocationBasedAutoRun 리스트
+     */
+    suspend fun getByLinkedGroup(scheduleGroupId: String): List<LocationBasedAutoRun> {
+        return dao.getByLinkedGroup(scheduleGroupId)
+    }
+
+    /**
+     * 특정 스케줄 그룹에서 위치 참조 해제 (v5+)
+     *
+     * linkedScheduleGroupId를 NULL로 설정하여 단순 트리거 모드로 전환합니다.
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     */
+    suspend fun unlinkFromGroup(scheduleGroupId: String) {
+        dao.unlinkFromGroup(scheduleGroupId)
+    }
 }
 
