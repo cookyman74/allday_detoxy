@@ -52,16 +52,22 @@ class ScheduleGroupViewModel @Inject constructor(
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     /**
-     * 선택된 ScheduleGroup의 연결된 TimeBasedAutoRun 목록
+     * 각 ScheduleGroup의 연결된 TimeBasedAutoRun 개수 (Map 기반 캐싱)
+     * 
+     * Key: ScheduleGroup ID
+     * Value: 연결된 TimeBasedAutoRun 개수
      */
-    private val _linkedTimeBasedAutoRuns = MutableStateFlow<List<TimeBasedAutoRun>>(emptyList())
-    val linkedTimeBasedAutoRuns: StateFlow<List<TimeBasedAutoRun>> = _linkedTimeBasedAutoRuns.asStateFlow()
+    private val _linkedTimeBasedAutoRunCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val linkedTimeBasedAutoRunCounts: StateFlow<Map<String, Int>> = _linkedTimeBasedAutoRunCounts.asStateFlow()
 
     /**
-     * 선택된 ScheduleGroup의 연결된 LocationBasedAutoRun 목록
+     * 각 ScheduleGroup의 연결된 LocationBasedAutoRun 개수 (Map 기반 캐싱)
+     * 
+     * Key: ScheduleGroup ID
+     * Value: 연결된 LocationBasedAutoRun 개수
      */
-    private val _linkedLocations = MutableStateFlow<List<LocationBasedAutoRun>>(emptyList())
-    val linkedLocations: StateFlow<List<LocationBasedAutoRun>> = _linkedLocations.asStateFlow()
+    private val _linkedLocationCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
+    val linkedLocationCounts: StateFlow<Map<String, Int>> = _linkedLocationCounts.asStateFlow()
 
     /**
      * ScheduleGroup 생성
@@ -151,15 +157,15 @@ class ScheduleGroupViewModel @Inject constructor(
     }
 
     /**
-     * 특정 ScheduleGroup의 연결된 TimeBasedAutoRun 목록 로드
+     * 특정 ScheduleGroup의 연결된 TimeBasedAutoRun 개수 로드
      *
      * @param scheduleGroupId ScheduleGroup ID
      */
-    fun loadLinkedTimeBasedAutoRuns(scheduleGroupId: String) {
+    fun loadLinkedTimeBasedAutoRunCount(scheduleGroupId: String) {
         viewModelScope.launch {
             try {
-                val linkedAutoRuns = repository.getLinkedTimeBasedAutoRuns(scheduleGroupId)
-                _linkedTimeBasedAutoRuns.value = linkedAutoRuns
+                val count = repository.getLinkedTimeBasedAutoRunCount(scheduleGroupId)
+                _linkedTimeBasedAutoRunCounts.value = _linkedTimeBasedAutoRunCounts.value + (scheduleGroupId to count)
             } catch (e: Exception) {
                 _errorState.value = "연결된 시간표 조회 실패: ${e.message}"
             }
@@ -167,17 +173,42 @@ class ScheduleGroupViewModel @Inject constructor(
     }
 
     /**
-     * 특정 ScheduleGroup의 연결된 LocationBasedAutoRun 목록 로드
+     * 특정 ScheduleGroup의 연결된 LocationBasedAutoRun 개수 로드
      *
      * @param scheduleGroupId ScheduleGroup ID
      */
-    fun loadLinkedLocations(scheduleGroupId: String) {
+    fun loadLinkedLocationCount(scheduleGroupId: String) {
         viewModelScope.launch {
             try {
-                val linkedLocs = repository.getLinkedLocations(scheduleGroupId)
-                _linkedLocations.value = linkedLocs
+                val count = repository.getLinkedLocationCount(scheduleGroupId)
+                _linkedLocationCounts.value = _linkedLocationCounts.value + (scheduleGroupId to count)
             } catch (e: Exception) {
                 _errorState.value = "연결된 위치 조회 실패: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * 모든 ScheduleGroup의 연결된 설정 개수 로드
+     * 
+     * 화면 초기 로딩 시 호출하여 모든 그룹의 카운트를 한 번에 로드합니다.
+     */
+    fun loadAllLinkedCounts() {
+        viewModelScope.launch {
+            try {
+                val groups = scheduleGroups.value
+                val timeCounts = mutableMapOf<String, Int>()
+                val locationCounts = mutableMapOf<String, Int>()
+                
+                groups.forEach { group ->
+                    timeCounts[group.id] = repository.getLinkedTimeBasedAutoRunCount(group.id)
+                    locationCounts[group.id] = repository.getLinkedLocationCount(group.id)
+                }
+                
+                _linkedTimeBasedAutoRunCounts.value = timeCounts
+                _linkedLocationCounts.value = locationCounts
+            } catch (e: Exception) {
+                _errorState.value = "연결된 설정 조회 실패: ${e.message}"
             }
         }
     }

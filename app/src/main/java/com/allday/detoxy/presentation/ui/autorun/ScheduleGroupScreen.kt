@@ -42,14 +42,21 @@ fun ScheduleGroupScreen(
     val scheduleGroups by viewModel.scheduleGroups.collectAsStateWithLifecycle()
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsStateWithLifecycle()
-    val linkedLocations by viewModel.linkedLocations.collectAsStateWithLifecycle()
+    val linkedTimeBasedAutoRunCounts by viewModel.linkedTimeBasedAutoRunCounts.collectAsStateWithLifecycle()
+    val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsStateWithLifecycle()
     
     var showAddDialog by remember { mutableStateOf(false) }
     var editingGroup by remember { mutableStateOf<ScheduleGroup?>(null) }
     var deletingGroupId by remember { mutableStateOf<String?>(null) }
     
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // 화면 초기 로딩 시 모든 그룹의 연결된 설정 개수 로드
+    LaunchedEffect(scheduleGroups) {
+        if (scheduleGroups.isNotEmpty()) {
+            viewModel.loadAllLinkedCounts()
+        }
+    }
     
     // 에러 표시
     LaunchedEffect(errorState) {
@@ -233,14 +240,9 @@ fun ScheduleGroupScreen(
                         items = scheduleGroups,
                         key = { it.id }
                     ) { group ->
-                        // 연결된 설정 개수 계산
-                        LaunchedEffect(group.id) {
-                            viewModel.loadLinkedTimeBasedAutoRuns(group.id)
-                            viewModel.loadLinkedLocations(group.id)
-                        }
-                        
-                        val timeCount = linkedTimeBasedAutoRuns.count { it.scheduleGroupId == group.id }
-                        val locationCount = linkedLocations.count { it.linkedScheduleGroupId == group.id }
+                        // Map에서 연결된 설정 개수 조회
+                        val timeCount = linkedTimeBasedAutoRunCounts[group.id] ?: 0
+                        val locationCount = linkedLocationCounts[group.id] ?: 0
                         
                         ScheduleGroupCard(
                             scheduleGroup = group,

@@ -109,6 +109,22 @@ interface ScheduleGroupRepository {
     suspend fun getLinkedLocations(scheduleGroupId: String): List<LocationBasedAutoRun>
 
     /**
+     * 특정 그룹에 연결된 시간 기반 자동 실행 개수 조회
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     * @return 연결된 TimeBasedAutoRun 개수
+     */
+    suspend fun getLinkedTimeBasedAutoRunCount(scheduleGroupId: String): Int
+
+    /**
+     * 특정 그룹에 연결된 위치 기반 자동 실행 개수 조회
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     * @return 연결된 LocationBasedAutoRun 개수
+     */
+    suspend fun getLinkedLocationCount(scheduleGroupId: String): Int
+
+    /**
      * 특정 그룹에 연결된 모든 자동 실행의 참조 해제
      *
      * ## 참조 해제 동작

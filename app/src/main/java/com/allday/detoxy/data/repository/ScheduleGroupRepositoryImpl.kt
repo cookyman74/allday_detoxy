@@ -84,6 +84,14 @@ class ScheduleGroupRepositoryImpl @Inject constructor(
         return locationBasedAutoRunDao.getByLinkedGroup(scheduleGroupId)
     }
 
+    override suspend fun getLinkedTimeBasedAutoRunCount(scheduleGroupId: String): Int {
+        return timeBasedAutoRunDao.getByScheduleGroup(scheduleGroupId).size
+    }
+
+    override suspend fun getLinkedLocationCount(scheduleGroupId: String): Int {
+        return locationBasedAutoRunDao.getByLinkedGroup(scheduleGroupId).size
+    }
+
     override suspend fun unlinkAllAutoRuns(scheduleGroupId: String) {
         // TimeBasedAutoRun의 scheduleGroupId를 NULL로 설정
         timeBasedAutoRunDao.unlinkFromGroup(scheduleGroupId)
