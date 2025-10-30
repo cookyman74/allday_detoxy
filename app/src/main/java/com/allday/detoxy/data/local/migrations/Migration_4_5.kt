@@ -9,16 +9,20 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 2.5차 고도화: ScheduleGroup 기능 추가
  *
  * ## 변경 사항
- * 1. **ScheduleGroup 테이블 생성**
+ * 1. **UserSettings 테이블 확장**
+ *    - autoRunMasterEnabled: 자동 실행 마스터 스위치 (기본값: 1)
+ *    - autoRunPauseUntil: 자동 실행 일시정지 종료 시각 (nullable)
+ *
+ * 2. **ScheduleGroup 테이블 생성**
  *    - 스케줄 그룹 (여러 TimeBasedAutoRun을 묶어 위치 기반으로 활성화/비활성화)
  *    - 인덱스: (isActive)
  *
- * 2. **TimeBasedAutoRun 테이블 확장**
+ * 3. **TimeBasedAutoRun 테이블 확장**
  *    - scheduleGroupId: 연결된 ScheduleGroup ID (nullable)
  *    - isIndependent: 독립 실행 여부 (기본값: 1)
  *    - 인덱스: (scheduleGroupId)
  *
- * 3. **LocationBasedAutoRun 테이블 확장**
+ * 4. **LocationBasedAutoRun 테이블 확장**
  *    - linkedScheduleGroupId: 연결된 ScheduleGroup ID (nullable)
  *    - 인덱스: (linkedScheduleGroupId)
  *
@@ -39,7 +43,15 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        // 1. ScheduleGroup 테이블 생성
+        // 1. UserSettings 테이블 확장
+        database.execSQL(
+            "ALTER TABLE user_settings ADD COLUMN autoRunMasterEnabled INTEGER NOT NULL DEFAULT 1"
+        )
+        database.execSQL(
+            "ALTER TABLE user_settings ADD COLUMN autoRunPauseUntil INTEGER"
+        )
+
+        // 2. ScheduleGroup 테이블 생성
         database.execSQL(
             """
             CREATE TABLE IF NOT EXISTS schedule_group (
@@ -52,12 +64,12 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
             """.trimIndent()
         )
 
-        // 2. ScheduleGroup 인덱스 생성
+        // 3. ScheduleGroup 인덱스 생성
         database.execSQL(
             "CREATE INDEX IF NOT EXISTS index_schedule_group_isActive ON schedule_group(isActive)"
         )
 
-        // 3. TimeBasedAutoRun 테이블 확장
+        // 4. TimeBasedAutoRun 테이블 확장
         database.execSQL(
             "ALTER TABLE time_based_auto_run ADD COLUMN scheduleGroupId TEXT"
         )
@@ -65,17 +77,17 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
             "ALTER TABLE time_based_auto_run ADD COLUMN isIndependent INTEGER NOT NULL DEFAULT 1"
         )
 
-        // 4. TimeBasedAutoRun 인덱스 생성
+        // 5. TimeBasedAutoRun 인덱스 생성
         database.execSQL(
             "CREATE INDEX IF NOT EXISTS index_time_based_auto_run_scheduleGroupId ON time_based_auto_run(scheduleGroupId)"
         )
 
-        // 5. LocationBasedAutoRun 테이블 확장
+        // 6. LocationBasedAutoRun 테이블 확장
         database.execSQL(
             "ALTER TABLE location_based_auto_run ADD COLUMN linkedScheduleGroupId TEXT"
         )
 
-        // 6. LocationBasedAutoRun 인덱스 생성
+        // 7. LocationBasedAutoRun 인덱스 생성
         database.execSQL(
             "CREATE INDEX IF NOT EXISTS index_location_based_auto_run_linkedScheduleGroupId ON location_based_auto_run(linkedScheduleGroupId)"
         )
