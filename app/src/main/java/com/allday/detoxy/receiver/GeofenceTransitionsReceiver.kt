@@ -66,7 +66,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         // Geofence 트랜지션 타입 확인
         val geofenceTransition = geofencingEvent.geofenceTransition
         
-        // ENTER 또는 DWELL 이벤트 처리
+        // ENTER, DWELL, EXIT 이벤트 처리
         when (geofenceTransition) {
             Geofence.GEOFENCE_TRANSITION_ENTER -> {
                 Log.i(TAG, "📍 Geofence ENTER detected (즉시 진입)")
@@ -75,6 +75,10 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
             Geofence.GEOFENCE_TRANSITION_DWELL -> {
                 Log.i(TAG, "⏱️ Geofence DWELL detected (체류 시간 도달)")
                 handleGeofenceTrigger(context, intent, geofencingEvent, "DWELL")
+            }
+            Geofence.GEOFENCE_TRANSITION_EXIT -> {
+                Log.i(TAG, "🚪 Geofence EXIT detected (위치 이탈)")
+                handleGeofenceExit(context, intent, geofencingEvent)
             }
             else -> {
                 Log.w(TAG, "⚠️ Unexpected geofence transition: $geofenceTransition")
@@ -134,6 +138,36 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     presetType = presetType ?: "UNKNOWN"
                 )
                 Log.d(TAG, "📊 Analytics: auto_run_triggered (LOCATION)")
+                
+                // TODO: Week 4 작업 - ScheduleGroup 활성화
+                // 1. locationId로 LocationBasedAutoRun 조회
+                // 2. linkedScheduleGroupId 확인
+                // 3. ScheduleGroup이 연결되어 있다면:
+                //    - ScheduleGroup 활성화 (isActive = true)
+                //    - 연결된 모든 TimeBasedAutoRun 조회 (isIndependent = false인 것만)
+                //    - 각 TimeBasedAutoRun의 알람 등록 (AlarmManager)
+                //    - Analytics 로깅
+                //
+                // Example code:
+                // val locationAutoRun = locationBasedAutoRunRepository.getById(locationId)
+                // if (locationAutoRun?.linkedScheduleGroupId != null) {
+                //     scheduleGroupRepository.toggleActive(locationAutoRun.linkedScheduleGroupId, true)
+                //     
+                //     // 연결된 TimeBasedAutoRun 알람 등록 (종속 모드만)
+                //     val linkedAutoRuns = timeBasedAutoRunRepository.getByScheduleGroup(locationAutoRun.linkedScheduleGroupId)
+                //     linkedAutoRuns.filter { !it.isIndependent }.forEach { autoRun ->
+                //         alarmManager.scheduleAlarm(autoRun)
+                //     }
+                //     
+                //     // Analytics
+                //     AnalyticsHelper.logScheduleGroupActivated(
+                //         scheduleGroupId = hashSourceId(locationAutoRun.linkedScheduleGroupId),
+                //         locationId = hashSourceId(locationId),
+                //         timeBasedAutoRunCount = linkedAutoRuns.size
+                //     )
+                //     
+                //     Log.i(TAG, "✅ ScheduleGroup activated: ${locationAutoRun.linkedScheduleGroupId}")
+                // }
                 
                 // TODO: Week 3 작업 - AutoRunNotificationManager 연동
                 // if (requiresConfirmation) {
@@ -208,6 +242,72 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 }
                 
                 Log.i(TAG, "✅ Location-based auto-run triggered for $locationLabel")
+        }
+    }
+    
+    /**
+     * Geofence EXIT 처리 (위치 이탈)
+     *
+     * 위치 이탈 시 연결된 ScheduleGroup을 비활성화하고 관련 알람을 취소합니다.
+     *
+     * @param context Context
+     * @param intent Intent
+     * @param geofencingEvent GeofencingEvent
+     */
+    private fun handleGeofenceExit(
+        context: Context,
+        intent: Intent,
+        geofencingEvent: GeofencingEvent
+    ) {
+        // 트리거된 Geofence 리스트 가져오기
+        val triggeringGeofences = geofencingEvent.triggeringGeofences
+        
+        if (triggeringGeofences.isNullOrEmpty()) {
+            Log.w(TAG, "⚠️ No triggering geofences found for EXIT")
+            return
+        }
+        
+        // 각 Geofence 처리
+        triggeringGeofences.forEach { geofence ->
+            val locationId = geofence.requestId
+            val locationLabel = intent.getStringExtra(AutoRunGeofenceManager.EXTRA_LOCATION_LABEL)
+            
+            Log.i(TAG, """
+                🚪 Geofence EXIT:
+                - ID: $locationId
+                - Label: $locationLabel
+            """.trimIndent())
+            
+            // TODO: Week 4 작업 - ScheduleGroup 비활성화
+            // 1. locationId로 LocationBasedAutoRun 조회
+            // 2. linkedScheduleGroupId 확인
+            // 3. ScheduleGroup이 연결되어 있다면:
+            //    - ScheduleGroup 비활성화 (isActive = false)
+            //    - 연결된 모든 TimeBasedAutoRun의 알람 취소
+            //    - Analytics 로깅
+            //
+            // Example code:
+            // val locationAutoRun = locationBasedAutoRunRepository.getById(locationId)
+            // if (locationAutoRun?.linkedScheduleGroupId != null) {
+            //     scheduleGroupRepository.toggleActive(locationAutoRun.linkedScheduleGroupId, false)
+            //     
+            //     // 연결된 TimeBasedAutoRun 알람 취소
+            //     val linkedAutoRuns = timeBasedAutoRunRepository.getByScheduleGroup(locationAutoRun.linkedScheduleGroupId)
+            //     linkedAutoRuns.forEach { autoRun ->
+            //         alarmManager.cancelAlarm(autoRun.id)
+            //     }
+            //     
+            //     // Analytics
+            //     AnalyticsHelper.logScheduleGroupDeactivated(
+            //         scheduleGroupId = hashSourceId(locationAutoRun.linkedScheduleGroupId),
+            //         locationId = hashSourceId(locationId),
+            //         timeBasedAutoRunCount = linkedAutoRuns.size
+            //     )
+            //     
+            //     Log.i(TAG, "✅ ScheduleGroup deactivated: ${locationAutoRun.linkedScheduleGroupId}")
+            // }
+            
+            Log.i(TAG, "✅ Geofence EXIT processed for $locationLabel")
         }
     }
     
