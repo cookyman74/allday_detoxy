@@ -1433,7 +1433,7 @@
 ### 3.3 TimeBasedAutoRunScreen 확장
 
 #### 3.3.1 그룹 표시 추가
-- [ ] **TimeBasedAutoRunCard.kt** 수정
+- [x] **TimeBasedAutoRunCard.kt** 수정
   ```kotlin
   @Composable
   fun TimeBasedAutoRunCard(

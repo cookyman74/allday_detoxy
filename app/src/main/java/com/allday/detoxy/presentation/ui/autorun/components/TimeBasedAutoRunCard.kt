@@ -8,8 +8,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import org.json.JSONArray
 import java.text.SimpleDateFormat
@@ -21,6 +23,7 @@ import java.util.*
  * 등록된 시간대 정보를 표시하고, 활성화/비활성화, 편집, 삭제 기능을 제공합니다.
  *
  * @param autoRun 표시할 TimeBasedAutoRun 데이터
+ * @param scheduleGroup 연결된 ScheduleGroup (3차 고도화)
  * @param onToggle 활성화/비활성화 토글 콜백 (ID, isEnabled)
  * @param onEdit 편집 버튼 클릭 콜백
  * @param onDelete 삭제 버튼 클릭 콜백 (ID)
@@ -28,6 +31,7 @@ import java.util.*
 @Composable
 fun TimeBasedAutoRunCard(
     autoRun: TimeBasedAutoRun,
+    scheduleGroup: ScheduleGroup? = null,  // 🆕 3차 고도화
     onToggle: (String, Boolean) -> Unit,
     onEdit: (TimeBasedAutoRun) -> Unit,
     onDelete: (String) -> Unit
@@ -115,6 +119,41 @@ fun TimeBasedAutoRunCard(
                     text = formatEnabledDays(autoRun.enabledDays),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // 🆕 3차 고도화: 그룹 배지
+            if (scheduleGroup != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "📋",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = scheduleGroup.name,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    if (!scheduleGroup.isActive) {
+                        Badge {
+                            Text("비활성", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+
+            // 🆕 3차 고도화: 독립 실행 안내
+            if (!autoRun.isIndependent) {
+                Text(
+                    text = "이 시간대는 시간표가 활성화되었을 때만 실행됩니다",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontStyle = FontStyle.Italic
                 )
             }
 

@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
 import com.allday.detoxy.core.utils.AnalyticsHelper
+import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
 import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
+import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,18 +28,24 @@ import javax.inject.Inject
  * @param alarmManager AutoRunAlarmManager 인스턴스
  * @param settingsRepository AutoRunSettingsRepository 인스턴스 (글로벌 옵션)
  * @param userSettingsRepository UserSettingsRepository 인스턴스 (마스터 토글, 일시중지)
+ * @param scheduleGroupRepository ScheduleGroupRepository 인스턴스 (3차 고도화: 시간표 연동)
  */
 @HiltViewModel
 class TimeBasedAutoRunViewModel @Inject constructor(
     private val repository: TimeBasedAutoRunRepository,
     private val alarmManager: AutoRunAlarmManager,
     private val settingsRepository: AutoRunSettingsRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val scheduleGroupRepository: ScheduleGroupRepository  // 🆕 3차 고도화
 ) : ViewModel() {
 
     // 시간 기반 자동 실행 목록
     private val _autoRuns = MutableStateFlow<List<TimeBasedAutoRun>>(emptyList())
     val autoRuns: StateFlow<List<TimeBasedAutoRun>> = _autoRuns.asStateFlow()
+
+    // 🆕 3차 고도화: 스케줄 그룹 맵 (ID -> ScheduleGroup)
+    private val _scheduleGroupMap = MutableStateFlow<Map<String, ScheduleGroup>>(emptyMap())
+    val scheduleGroupMap: StateFlow<Map<String, ScheduleGroup>> = _scheduleGroupMap.asStateFlow()
 
     // 정확 알람 권한 상태 (AlarmManager에서 가져옴)
     val canScheduleExactAlarms: StateFlow<Boolean> = alarmManager.canScheduleExactAlarms
@@ -83,6 +91,7 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     init {
         loadAutoRuns()
         loadAutoRunControlState()
+        loadScheduleGroups()  // 🆕 3차 고도화: 시간표 그룹 로드
     }
 
     /**
@@ -330,6 +339,33 @@ class TimeBasedAutoRunViewModel @Inject constructor(
             } catch (e: Exception) {
                 _errorState.value = "설정 저장 실패: ${e.message}"
             }
+        }
+    }
+
+    // ==================== 3차 고도화: 시간표 그룹 ====================
+
+    /**
+     * 시간표 그룹 로드
+     *
+     * 3차 고도화: TimeBasedAutoRun에 연결된 ScheduleGroup 정보를 가져옵니다.
+     */
+    private fun loadScheduleGroups() {
+        viewModelScope.launch {
+            scheduleGroupRepository.getAll().collect { groups ->
+                _scheduleGroupMap.value = groups.associateBy { it.id }
+            }
+        }
+    }
+
+    /**
+     * 특정 TimeBasedAutoRun의 ScheduleGroup 가져오기
+     *
+     * @param autoRun 조회할 TimeBasedAutoRun
+     * @return 연결된 ScheduleGroup 또는 null
+     */
+    fun getScheduleGroupForAutoRun(autoRun: TimeBasedAutoRun): ScheduleGroup? {
+        return autoRun.scheduleGroupId?.let { groupId ->
+            _scheduleGroupMap.value[groupId]
         }
     }
 }

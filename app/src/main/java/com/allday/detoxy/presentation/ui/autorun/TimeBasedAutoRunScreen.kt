@@ -48,6 +48,9 @@ fun TimeBasedAutoRunScreen(
     val canScheduleExactAlarms by viewModel.canScheduleExactAlarms.collectAsStateWithLifecycle()
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     
+    // 🆕 3차 고도화: 시간표 그룹 맵
+    val scheduleGroupMap by viewModel.scheduleGroupMap.collectAsStateWithLifecycle()
+    
     // 글로벌 옵션 상태
     val excludeWeekends by viewModel.excludeWeekends.collectAsStateWithLifecycle()
     val autoStartDelayMinutes by viewModel.autoStartDelayMinutes.collectAsStateWithLifecycle()
@@ -154,8 +157,12 @@ fun TimeBasedAutoRunScreen(
                 )
 
                 autoRuns.forEach { autoRun ->
+                    // 🆕 3차 고도화: 연결된 시간표 그룹 조회
+                    val scheduleGroup = autoRun.scheduleGroupId?.let { scheduleGroupMap[it] }
+                    
                     TimeBasedAutoRunCard(
                         autoRun = autoRun,
+                        scheduleGroup = scheduleGroup,  // 🆕 3차 고도화
                         onToggle = { id, enabled ->
                             viewModel.toggleAutoRun(id, enabled)
                         },
