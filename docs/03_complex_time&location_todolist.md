@@ -365,23 +365,33 @@
       suspend fun activateGroup(groupId: String): Result<Unit> = runCatching {
           Log.i(TAG, "🔄 Activating schedule group: $groupId")
           
-          // 1. 다른 모든 그룹 비활성화
-          repository.deactivateAll()
-          
-          // 2. 해당 그룹 활성화
-          repository.activate(groupId)
-          
-          // 3. 그룹 내 시간대 알람 재등록
-          val timeBasedAutoRuns = repository.getTimeBasedAutoRuns(groupId).first()
-          val enabledAutoRuns = timeBasedAutoRuns.filter { it.isEnabled }
-          
-          Log.d(TAG, "📅 Rescheduling ${enabledAutoRuns.size} time-based auto-runs")
-          
-          enabledAutoRuns.forEach { autoRun ->
-              alarmManager.scheduleTimeBasedAutoRun(autoRun)
+          // 1. 다른 모든 그룹 비활성화 (개별 순회 방식)
+          val activeGroups = repository.getActive().first()
+          activeGroups.forEach { group ->
+              if (group.id != groupId && group.isActive) {
+                  deactivateGroup(group.id).getOrThrow()
+              }
           }
           
-          Log.i(TAG, "✅ Schedule group activated: $groupId")
+          // 2. 해당 그룹 활성화 (lastActivatedAt 업데이트)
+          val timestamp = System.currentTimeMillis()
+          repository.toggleActiveWithTimestamp(groupId, true, timestamp)
+          
+          // 3. 그룹 내 활성화된 시간대 알람 등록
+          val timeBasedAutoRuns = repository.getLinkedTimeBasedAutoRuns(groupId)
+          val enabledAutoRuns = timeBasedAutoRuns.filter { it.isEnabled }
+          
+          Log.d(TAG, "📅 Scheduling ${enabledAutoRuns.size} time-based auto-runs")
+          
+          var successCount = 0
+          var failCount = 0
+          
+          enabledAutoRuns.forEach { autoRun ->
+              val success = alarmManager.scheduleTimeBasedAutoRun(autoRun)
+              if (success) successCount++ else failCount++
+          }
+          
+          Log.i(TAG, "✅ Schedule group activated: $groupId (Success: $successCount, Failed: $failCount)")
       }
       
       /**
@@ -391,11 +401,11 @@
       suspend fun deactivateGroup(groupId: String): Result<Unit> = runCatching {
           Log.i(TAG, "🔄 Deactivating schedule group: $groupId")
           
-          // 1. 그룹 비활성화
-          repository.deactivate(groupId)
+          // 1. 그룹 비활성화 (lastActivatedAt은 유지)
+          repository.toggleActive(groupId, false)
           
-          // 2. 그룹 내 시간대 알람 취소
-          val timeBasedAutoRuns = repository.getTimeBasedAutoRuns(groupId).first()
+          // 2. 그룹 내 모든 시간대 알람 취소
+          val timeBasedAutoRuns = repository.getLinkedTimeBasedAutoRuns(groupId)
           
           Log.d(TAG, "📅 Cancelling ${timeBasedAutoRuns.size} time-based auto-runs")
           
@@ -403,7 +413,7 @@
               alarmManager.cancelTimeBasedAutoRun(autoRun.id)
           }
           
-          Log.i(TAG, "✅ Schedule group deactivated: $groupId")
+          Log.i(TAG, "✅ Schedule group deactivated: $groupId (${timeBasedAutoRuns.size} alarms cancelled)")
       }
       
       /**
@@ -442,21 +452,23 @@
   ```
   - **참조**: [AutoRunAlarmManager.kt](../app/src/main/java/com/allday/detoxy/core/manager/AutoRunAlarmManager.kt)
 
-#### 2.1.2 Hilt 모듈
-- [x] **ScheduleModule.kt** 생성 ✅ **완료**: 2025-10-31 (주입 자동화, 별도 모듈 불필요)
+#### 2.1.2 Hilt 의존성 주입
+- [x] **Hilt 자동 주입** ✅ **완료**: 2025-10-31
+  - `@Singleton` + `@Inject constructor` 사용으로 별도 모듈 불필요
+  - Hilt가 자동으로 ScheduleGroupManager를 SingletonComponent에 제공
+  - 의존성: ScheduleGroupRepository, AutoRunAlarmManager, Context
+  
+  **실제 구현**:
   ```kotlin
-  @Module
-  @InstallIn(SingletonComponent::class)
-  object ScheduleModule {
-      @Provides
-      @Singleton
-      fun provideScheduleGroupManager(
-          repository: ScheduleGroupRepository,
-          alarmManager: AutoRunAlarmManager,
-          @ApplicationContext context: Context
-      ): ScheduleGroupManager = ScheduleGroupManager(repository, alarmManager, context)
-  }
+  @Singleton
+  class ScheduleGroupManager @Inject constructor(
+      @ApplicationContext private val context: Context,
+      private val repository: ScheduleGroupRepository,
+      private val alarmManager: AutoRunAlarmManager
+  ) { /* ... */ }
   ```
+  
+  **Note**: Repository와 AlarmManager도 이미 Hilt로 관리되므로 추가 모듈 설정 없이 자동 주입됩니다.
 
 ### 2.2 위치 진입/이탈 시 시간표 활성화 로직
 
