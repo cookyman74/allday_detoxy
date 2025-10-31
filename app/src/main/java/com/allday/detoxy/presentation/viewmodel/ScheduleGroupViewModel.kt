@@ -224,18 +224,13 @@ class ScheduleGroupViewModel @Inject constructor(
     }
 
     /**
-     * 특정 ScheduleGroup의 연결된 TimeBasedAutoRun 조회
-     *
-     * 3차 고도화: ScheduleGroupCard에서 시간대 목록 표시 시 사용
-     *
-     * @param scheduleGroupId ScheduleGroup ID
-     * @return Flow<List<TimeBasedAutoRun>>
+     * 각 ScheduleGroup의 연결된 TimeBasedAutoRun 목록 (Map 기반 캐싱)
+     * 
+     * Key: ScheduleGroup ID
+     * Value: 연결된 TimeBasedAutoRun 목록
      */
-    fun getTimeBasedAutoRuns(scheduleGroupId: String): Flow<List<TimeBasedAutoRun>> {
-        return flow {
-            repository.getLinkedTimeBasedAutoRuns(scheduleGroupId).let { emit(it) }
-        }
-    }
+    private val _linkedTimeBasedAutoRuns = MutableStateFlow<Map<String, List<TimeBasedAutoRun>>>(emptyMap())
+    val linkedTimeBasedAutoRuns: StateFlow<Map<String, List<TimeBasedAutoRun>>> = _linkedTimeBasedAutoRuns.asStateFlow()
 
     /**
      * 특정 ScheduleGroup의 연결된 TimeBasedAutoRun 개수 로드
@@ -270,9 +265,13 @@ class ScheduleGroupViewModel @Inject constructor(
     }
 
     /**
-     * 모든 ScheduleGroup의 연결된 설정 개수 로드
+     * 모든 ScheduleGroup의 연결된 설정 개수 및 시간대 목록 로드
      * 
-     * 화면 초기 로딩 시 호출하여 모든 그룹의 카운트를 한 번에 로드합니다.
+     * 화면 초기 로딩 시 호출하여 모든 그룹의 데이터를 한 번에 로드합니다.
+     * 
+     * ## 3차 고도화 개선
+     * - 시간대 목록도 함께 로드하여 Card에서 ViewModel 호출 불필요
+     * - 성능 개선: 불필요한 Flow 재생성 방지
      */
     fun loadAllLinkedCounts() {
         viewModelScope.launch {
@@ -280,12 +279,19 @@ class ScheduleGroupViewModel @Inject constructor(
                 val groups = scheduleGroups.value
                 val timeCounts = mutableMapOf<String, Int>()
                 val locationCounts = mutableMapOf<String, Int>()
+                val timeBasedAutoRuns = mutableMapOf<String, List<TimeBasedAutoRun>>()
                 
                 groups.forEach { group ->
-                    timeCounts[group.id] = repository.getLinkedTimeBasedAutoRunCount(group.id)
+                    // 시간대 목록 로드
+                    val linkedAutoRuns = repository.getLinkedTimeBasedAutoRuns(group.id)
+                    timeBasedAutoRuns[group.id] = linkedAutoRuns
+                    timeCounts[group.id] = linkedAutoRuns.size
+                    
+                    // 위치 개수 로드
                     locationCounts[group.id] = repository.getLinkedLocationCount(group.id)
                 }
                 
+                _linkedTimeBasedAutoRuns.value = timeBasedAutoRuns
                 _linkedTimeBasedAutoRunCounts.value = timeCounts
                 _linkedLocationCounts.value = locationCounts
             } catch (e: Exception) {

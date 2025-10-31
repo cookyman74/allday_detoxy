@@ -15,9 +15,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.data.local.entity.ScheduleGroup
-import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 
 /**
  * ScheduleGroup 카드 컴포넌트 (3차 고도화)
@@ -26,31 +24,34 @@ import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
  *
  * ## 3차 고도화 추가 기능
  * - 연결된 시간대 목록 표시 (확장/축소 가능)
+ * - 연결된 위치 개수 표시
  * - 활성화/비활성화 버튼 (ScheduleGroupManager 사용)
  * - 아이콘 및 색상 표시
  *
+ * ## 성능 개선
+ * - ViewModel 의존성 제거 (Screen에서 데이터 전달)
+ * - 불필요한 Flow 재생성 방지
+ *
  * @param group 표시할 ScheduleGroup
  * @param isActive 활성화 여부
+ * @param timeBasedAutoRuns 연결된 시간대 목록 (Screen에서 전달)
+ * @param linkedLocationCount 연결된 위치 개수 (Screen에서 전달)
  * @param onActivate 활성화/비활성화 콜백
  * @param onEdit 편집 콜백
  * @param onDelete 삭제 콜백
- * @param viewModel ScheduleGroupViewModel
  * @param modifier Modifier
  */
 @Composable
 fun ScheduleGroupCard(
     group: ScheduleGroup,
     isActive: Boolean,
+    timeBasedAutoRuns: List<com.allday.detoxy.data.local.entity.TimeBasedAutoRun>,
+    linkedLocationCount: Int,
     onActivate: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    viewModel: ScheduleGroupViewModel,
     modifier: Modifier = Modifier
 ) {
-    // 연결된 시간대 목록 조회
-    val timeBasedAutoRuns by viewModel.getTimeBasedAutoRuns(group.id)
-        .collectAsStateWithLifecycle(initialValue = emptyList())
-    
     // 확장/축소 상태
     var expanded by remember { mutableStateOf(false) }
     
@@ -120,15 +121,36 @@ fun ScheduleGroupCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // 시간대 요약
-            if (timeBasedAutoRuns.isNotEmpty()) {
+            // 연결된 설정 요약
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (timeBasedAutoRuns.isNotEmpty()) {
+                    AssistChip(
+                        onClick = { expanded = !expanded },
+                        label = { Text("시간표 ${timeBasedAutoRuns.size}개") }
+                    )
+                }
+                if (linkedLocationCount > 0) {
+                    AssistChip(
+                        onClick = { /* 위치 상세 보기 */ },
+                        label = { Text("위치 ${linkedLocationCount}개") }
+                    )
+                }
+            }
+            
+            // 설정이 없는 경우
+            if (timeBasedAutoRuns.isEmpty() && linkedLocationCount == 0) {
                 Text(
-                    text = "${timeBasedAutoRuns.size}개 시간대",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "연결된 설정 없음",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
                 )
-                
-                // 시간대 리스트 (확장 시)
+            }
+            
+            // 시간대 리스트 (확장 시)
+            if (timeBasedAutoRuns.isNotEmpty()) {
                 AnimatedVisibility(
                     visible = expanded,
                     enter = expandVertically(),
@@ -147,12 +169,6 @@ fun ScheduleGroupCard(
                         }
                     }
                 }
-            } else {
-                Text(
-                    text = "시간대 없음",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
             }
             
             Spacer(modifier = Modifier.height(12.dp))

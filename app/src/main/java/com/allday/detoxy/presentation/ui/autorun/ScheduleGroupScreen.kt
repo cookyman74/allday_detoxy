@@ -44,7 +44,7 @@ fun ScheduleGroupScreen(
     val activeGroup by viewModel.activeGroup.collectAsStateWithLifecycle()
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val linkedTimeBasedAutoRunCounts by viewModel.linkedTimeBasedAutoRunCounts.collectAsStateWithLifecycle()
+    val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsStateWithLifecycle()
     val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsStateWithLifecycle()
     
     var showAddDialog by remember { mutableStateOf(false) }
@@ -290,9 +290,15 @@ fun ScheduleGroupScreen(
                         items = scheduleGroups,
                         key = { it.id }
                     ) { group ->
+                        // 🆕 3차 고도화 개선: ViewModel에서 데이터를 미리 준비해서 전달
+                        val timeBasedAutoRunsList = linkedTimeBasedAutoRuns[group.id] ?: emptyList()
+                        val locationCount = linkedLocationCounts[group.id] ?: 0
+                        
                         ScheduleGroupCard(
                             group = group,
                             isActive = group.id == activeGroup?.id,
+                            timeBasedAutoRuns = timeBasedAutoRunsList,
+                            linkedLocationCount = locationCount,
                             onActivate = {
                                 // 🆕 3차 고도화: ScheduleGroupManager 사용
                                 if (group.isActive) {
@@ -306,8 +312,7 @@ fun ScheduleGroupScreen(
                             },
                             onDelete = {
                                 deletingGroupId = group.id
-                            },
-                            viewModel = viewModel
+                            }
                         )
                     }
                     
