@@ -1,9 +1,19 @@
 # Allday Detoxy 3차 고도화 작업 계획
 ## 위치 기반 컨텍스트 + 시간 기반 스케줄 복합 시나리오
 
+> **⚠️ 2.5차 고도화 리뷰 반영 완료 (2025-10-31)**
+> 
+> **주요 변경 사항**:
+> - ✅ 마이그레이션 버전 변경: v4→v5 → **v5→v6** (Migration_5_6)
+> - ✅ 2.5차 완료 항목 명시: ScheduleGroup, scheduleGroupId, linkedScheduleGroupId 등
+> - ✅ Soft Reference 전략 유지 (FK 제거, 애플리케이션 레벨 참조 관리)
+> - ✅ Clean Architecture 패턴 명시 (domain 인터페이스 + data 구현체)
+> - ✅ 선택적 필드 표시: iconType, colorHex, groupPriority (MVP 제외 가능)
+> - ✅ 작업 기록 파일명 통일: `2025-11-XX_3rd_advanced_*.md`
+
 - **기준 문서**: [2차 고도화 PRD §4.4.6](./02_advanced_autosetting_prd.md#446-위치-기반-컨텍스트--시간-기반-스케줄-25차-고도화-)
-- **선행 작업**: 2차 고도화 (v0.6) 완료 필수
-- **버전**: v0.6 → v0.7
+- **선행 작업**: **2.5차 고도화 (v0.7, Room v5) 완료 필수** ✅
+- **버전**: v0.7 (Room v5) → v0.8 (Room v6)
 - **예상 기간**: 2주 (Day 1-14)
 
 ---
@@ -71,308 +81,210 @@
 
 ### 0.3 기술 스택
 
-- **Room Database**: v5 (v4에서 마이그레이션)
+- **Room Database**: v6 (v5에서 마이그레이션)
 - **Geofencing API**: EXIT 트리거 추가
 - **Hilt**: 의존성 주입
-- **Jetpack Compose**: 새로운 UI (ScheduleGroupScreen)
+- **Jetpack Compose**: 기존 ScheduleGroupScreen 확장
 - **Kotlin Coroutines & Flow**: 비동기 처리
+
+### 0.4 2.5차 고도화에서 완료된 선행 작업
+
+**이미 구현 완료** (2025-10-30):
+- ✅ ScheduleGroup 엔티티 생성 (Room v5)
+- ✅ Migration_4_5 구현 (v4→v5)
+- ✅ TimeBasedAutoRun.scheduleGroupId, isIndependent 필드 추가
+- ✅ LocationBasedAutoRun.linkedScheduleGroupId 필드 추가
+- ✅ ScheduleGroupDao, ScheduleGroupRepository (domain + data 레이어)
+- ✅ ScheduleGroupScreen, ScheduleGroupViewModel 기본 UI
+- ✅ ScheduleGroup CRUD 기능
+- ✅ GeofenceTransitionsReceiver EXIT 이벤트 처리 (TODO 주석으로 설계 완료)
+
+**3차 고도화에서 추가할 내용**:
+- 🆕 위치-시간표 연동 세부 옵션 (activateScheduleOnEnter, deactivateScheduleOnExit)
+- 🆕 ScheduleGroupManager 구현 (알람 등록/취소 로직)
+- 🆕 GeofenceTransitionsReceiver TODO 구현 (실제 동작)
+- 🆕 AlarmManager 연동 (시간표 활성화 시 알람 등록)
+- 🆕 UI 확장 (시간표 연결 설정 단계)
 
 ---
 
-## 1. 데이터 모델 설계 (Day 1-2)
+## 1. 데이터 모델 확장 (Day 1-2)
 
-### 1.1 Room 마이그레이션 v4→v5
+### 1.1 Room 마이그레이션 v5→v6
 
-#### 1.1.1 ScheduleGroup 엔티티 생성
-- [ ] **ScheduleGroup.kt** 엔티티 정의
+#### 1.1.1 선행 완료 사항 (2.5차 고도화)
+
+**이미 존재하는 엔티티 및 필드** (Room v5):
+- ✅ ScheduleGroup 엔티티 (id, name, description, isActive, createdAt)
+- ✅ TimeBasedAutoRun.scheduleGroupId, isIndependent
+- ✅ LocationBasedAutoRun.linkedScheduleGroupId
+
+**Note**: Soft Reference 전략 유지 - FK 없이 애플리케이션 레벨에서 참조 무결성 관리
+
+#### 1.1.2 새로 추가할 필드 (v5→v6)
+
+- [ ] **ScheduleGroup.kt** 선택적 UI 필드 추가 (v6)
   ```kotlin
-  @Entity(
-      tableName = "schedule_group",
-      foreignKeys = [
-          ForeignKey(
-              entity = LocationBasedAutoRun::class,
-              parentColumns = ["id"],
-              childColumns = ["linkedLocationId"],
-              onDelete = ForeignKey.SET_NULL
-          )
-      ]
-  )
-  data class ScheduleGroup(
-      @PrimaryKey val id: String = UUID.randomUUID().toString(),
-      val name: String,                    // "업무 시간표", "공부 시간표"
-      val description: String? = null,     // 선택적 설명
-      val isActive: Boolean = false,       // 현재 활성화 상태 (위치 진입 시 true)
-      val linkedLocationId: String? = null, // 연결된 위치 ID
-      val iconType: String = "WORK",       // WORK, STUDY, GYM, etc.
-      val colorHex: String = "#4CAF50",    // UI 표시용 색상
-      val createdAt: Long = System.currentTimeMillis(),
-      val lastActivatedAt: Long? = null    // 마지막 활성화 시각
-  )
+  // 기존 필드는 모두 유지, 아래 필드만 추가
+  val iconType: String = "WORK",       // 🆕 WORK, STUDY, GYM, HOME, etc.
+  val colorHex: String = "#4CAF50",    // 🆕 UI 표시용 색상
+  val lastActivatedAt: Long? = null    // 🆕 마지막 활성화 시각 (통계용)
   ```
-  - **참조**: [기존 엔티티 패턴](../app/src/main/java/com/allday/detoxy/data/local/entity/)
+  - **Note**: 이 필드들은 선택적이며, 3차 고도화 MVP에서 제외 가능
 
-#### 1.1.2 기존 엔티티 확장
-- [ ] **LocationBasedAutoRun.kt** 필드 추가
+- [ ] **LocationBasedAutoRun.kt** 활성화 옵션 필드 추가 (v6)
   ```kotlin
-  data class LocationBasedAutoRun(
-      // ... 기존 필드들
-      
-      // 🆕 시간표 연결 필드
-      val linkedScheduleGroupId: String? = null,      // 연결된 시간표 그룹 ID
-      val activateScheduleOnEnter: Boolean = false,   // 진입 시 시간표 활성화
-      val deactivateScheduleOnExit: Boolean = false,  // 이탈 시 시간표 비활성화
-      val exitActionType: String = "DEACTIVATE"       // DEACTIVATE, ASK_USER, DO_NOTHING
-  )
+  // linkedScheduleGroupId는 이미 v5에 존재, 아래 필드만 추가
+  val activateScheduleOnEnter: Boolean = false,   // 🆕 진입 시 시간표 활성화
+  val deactivateScheduleOnExit: Boolean = false,  // 🆕 이탈 시 시간표 비활성화
+  val exitActionType: String = "DEACTIVATE"       // 🆕 DEACTIVATE, ASK_USER, DO_NOTHING
   ```
+  - **참조**: [기존 LocationBasedAutoRun.kt](../app/src/main/java/com/allday/detoxy/data/local/entity/LocationBasedAutoRun.kt)
 
-- [ ] **TimeBasedAutoRun.kt** 필드 추가
+- [ ] **TimeBasedAutoRun.kt** 우선순위 필드 추가 (v6, 선택적)
   ```kotlin
-  data class TimeBasedAutoRun(
-      // ... 기존 필드들
-      
-      // 🆕 시간표 그룹 소속
-      val scheduleGroupId: String? = null,    // 소속 시간표 그룹 ID (null: 독립 실행)
-      val isIndependent: Boolean = true,      // 독립 실행 여부 (true: 항상 실행)
-      val groupPriority: Int = 0              // 그룹 내 우선순위 (정렬용)
-  )
+  // scheduleGroupId, isIndependent는 이미 v5에 존재
+  val groupPriority: Int = 0    // 🆕 그룹 내 우선순위 (정렬용, 선택적)
   ```
+  - **Note**: 우선순위는 3차 고도화 MVP에서 제외 가능
 
-#### 1.1.3 마이그레이션 스크립트
-- [ ] **Migration_4_5.kt** 작성
+#### 1.1.3 마이그레이션 스크립트 (v5→v6)
+- [ ] **Migration_5_6.kt** 작성 (새로 추가할 필드만)
   ```kotlin
-  val MIGRATION_4_5 = object : Migration(4, 5) {
-      override fun migrate(database: SupportSQLiteDatabase) {
-          // 1. ScheduleGroup 테이블 생성
-          database.execSQL("""
-              CREATE TABLE IF NOT EXISTS schedule_group (
-                  id TEXT PRIMARY KEY NOT NULL,
-                  name TEXT NOT NULL,
-                  description TEXT,
-                  isActive INTEGER NOT NULL DEFAULT 0,
-                  linkedLocationId TEXT,
-                  iconType TEXT NOT NULL DEFAULT 'WORK',
-                  colorHex TEXT NOT NULL DEFAULT '#4CAF50',
-                  createdAt INTEGER NOT NULL,
-                  lastActivatedAt INTEGER,
-                  FOREIGN KEY (linkedLocationId) REFERENCES location_based_auto_run(id) ON DELETE SET NULL
-              )
+  val MIGRATION_5_6 = object : Migration(5, 6) {
+      override fun migrate(db: SupportSQLiteDatabase) {
+          // 1. ScheduleGroup 테이블 확장 (선택적 UI 필드)
+          db.execSQL("""
+              ALTER TABLE schedule_group 
+              ADD COLUMN iconType TEXT NOT NULL DEFAULT 'WORK'
           """)
           
-          // 2. 인덱스 생성
-          database.execSQL("""
-              CREATE INDEX IF NOT EXISTS idx_schedule_group_active 
-              ON schedule_group(isActive)
+          db.execSQL("""
+              ALTER TABLE schedule_group 
+              ADD COLUMN colorHex TEXT NOT NULL DEFAULT '#4CAF50'
           """)
           
-          database.execSQL("""
-              CREATE INDEX IF NOT EXISTS idx_schedule_group_location 
-              ON schedule_group(linkedLocationId)
+          db.execSQL("""
+              ALTER TABLE schedule_group 
+              ADD COLUMN lastActivatedAt INTEGER
           """)
           
-          // 3. LocationBasedAutoRun 확장
-          database.execSQL("""
-              ALTER TABLE location_based_auto_run 
-              ADD COLUMN linkedScheduleGroupId TEXT
-          """)
-          
-          database.execSQL("""
+          // 2. LocationBasedAutoRun 확장 (활성화 옵션)
+          db.execSQL("""
               ALTER TABLE location_based_auto_run 
               ADD COLUMN activateScheduleOnEnter INTEGER NOT NULL DEFAULT 0
           """)
           
-          database.execSQL("""
+          db.execSQL("""
               ALTER TABLE location_based_auto_run 
               ADD COLUMN deactivateScheduleOnExit INTEGER NOT NULL DEFAULT 0
           """)
           
-          database.execSQL("""
+          db.execSQL("""
               ALTER TABLE location_based_auto_run 
               ADD COLUMN exitActionType TEXT NOT NULL DEFAULT 'DEACTIVATE'
           """)
           
-          // 4. TimeBasedAutoRun 확장
-          database.execSQL("""
-              ALTER TABLE time_based_auto_run 
-              ADD COLUMN scheduleGroupId TEXT
-          """)
-          
-          database.execSQL("""
-              ALTER TABLE time_based_auto_run 
-              ADD COLUMN isIndependent INTEGER NOT NULL DEFAULT 1
-          """)
-          
-          database.execSQL("""
+          // 3. TimeBasedAutoRun 확장 (우선순위, 선택적)
+          db.execSQL("""
               ALTER TABLE time_based_auto_run 
               ADD COLUMN groupPriority INTEGER NOT NULL DEFAULT 0
-          """)
-          
-          // 5. 인덱스 추가
-          database.execSQL("""
-              CREATE INDEX IF NOT EXISTS idx_time_based_schedule_group 
-              ON time_based_auto_run(scheduleGroupId)
           """)
       }
   }
   ```
-  - **참조**: [Migration_3_4.kt](../app/src/main/java/com/allday/detoxy/data/local/migration/Migration_3_4.kt)
+  - **참조**: [Migration_4_5.kt](../app/src/main/java/com/allday/detoxy/data/local/migrations/Migration_4_5.kt) - 2.5차에서 완료
+  - **Note**: v5에서 이미 추가된 scheduleGroupId, linkedScheduleGroupId, isIndependent는 제외
 
 - [ ] **DetoxyDatabase.kt** 버전 업데이트
   ```kotlin
   @Database(
       entities = [
-          // ... 기존 엔티티들
-          ScheduleGroup::class  // 🆕 추가
+          // ... 기존 엔티티들 (ScheduleGroup 포함, 이미 v5에 존재)
       ],
-      version = 5,  // 4 → 5
+      version = 6,  // 5 → 6
       exportSchema = true
   )
   ```
 
-- [ ] **DatabaseModule.kt**에 MIGRATION_4_5 추가
-
-#### 1.1.4 DAO 인터페이스 작성
-- [ ] **ScheduleGroupDao.kt** 생성 (15개 메서드)
+- [ ] **DatabaseModule.kt**에 MIGRATION_5_6 추가
   ```kotlin
-  @Dao
-  interface ScheduleGroupDao {
-      // 기본 CRUD
-      @Insert(onConflict = OnConflictStrategy.REPLACE)
-      suspend fun insert(group: ScheduleGroup)
-      
-      @Update
-      suspend fun update(group: ScheduleGroup)
-      
-      @Delete
-      suspend fun delete(group: ScheduleGroup)
-      
-      @Query("DELETE FROM schedule_group WHERE id = :groupId")
-      suspend fun deleteById(groupId: String)
-      
-      // 조회
-      @Query("SELECT * FROM schedule_group ORDER BY createdAt DESC")
-      fun getAll(): Flow<List<ScheduleGroup>>
-      
-      @Query("SELECT * FROM schedule_group WHERE id = :groupId")
-      suspend fun getById(groupId: String): ScheduleGroup?
-      
-      @Query("SELECT * FROM schedule_group WHERE linkedLocationId = :locationId")
-      suspend fun getByLocationId(locationId: String): ScheduleGroup?
-      
-      @Query("SELECT * FROM schedule_group WHERE isActive = 1")
-      fun getActive(): Flow<List<ScheduleGroup>>
-      
-      @Query("SELECT * FROM schedule_group WHERE isActive = 1")
-      suspend fun getActiveSingle(): List<ScheduleGroup>
-      
-      // 활성화/비활성화
-      @Query("UPDATE schedule_group SET isActive = :isActive, lastActivatedAt = :timestamp WHERE id = :groupId")
-      suspend fun setActive(groupId: String, isActive: Boolean, timestamp: Long = System.currentTimeMillis())
-      
-      @Query("UPDATE schedule_group SET isActive = 0")
-      suspend fun deactivateAll()
-      
-      // 위치 연결
-      @Query("UPDATE schedule_group SET linkedLocationId = :locationId WHERE id = :groupId")
-      suspend fun linkToLocation(groupId: String, locationId: String?)
-      
-      // 통계
-      @Query("SELECT COUNT(*) FROM schedule_group")
-      suspend fun getCount(): Int
-      
-      @Query("SELECT COUNT(*) FROM schedule_group WHERE isActive = 1")
-      suspend fun getActiveCount(): Int
-  }
+  addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
   ```
-  - **참조**: [기존 DAO 패턴](../app/src/main/java/com/allday/detoxy/data/local/dao/)
 
-- [ ] **TimeBasedAutoRunDao.kt** 메서드 추가
+#### 1.1.4 DAO 인터페이스 확장
+
+**선행 완료 사항** (2.5차 고도화):
+- ✅ ScheduleGroupDao 기본 CRUD (insert, update, delete, getAll, getById, getActive)
+- ✅ TimeBasedAutoRunDao.getByScheduleGroup, unlinkFromGroup, setGroupActive
+- ✅ LocationBasedAutoRunDao.getByLinkedGroup, unlinkFromGroup
+
+- [ ] **ScheduleGroupDao.kt** 메서드 추가 (선택적)
   ```kotlin
-  // 시간표 그룹 관련 쿼리 추가
-  @Query("SELECT * FROM time_based_auto_run WHERE scheduleGroupId = :groupId ORDER BY hour, minute")
-  fun getByScheduleGroup(groupId: String): Flow<List<TimeBasedAutoRun>>
-  
-  @Query("SELECT * FROM time_based_auto_run WHERE scheduleGroupId = :groupId AND isEnabled = 1")
-  suspend fun getEnabledByScheduleGroup(groupId: String): List<TimeBasedAutoRun>
-  
-  @Query("UPDATE time_based_auto_run SET isEnabled = :isEnabled WHERE scheduleGroupId = :groupId AND isIndependent = 0")
-  suspend fun toggleScheduleGroup(groupId: String, isEnabled: Boolean)
-  
-  @Query("SELECT * FROM time_based_auto_run WHERE isIndependent = 1 OR (scheduleGroupId IS NOT NULL AND EXISTS (SELECT 1 FROM schedule_group WHERE id = scheduleGroupId AND isActive = 1))")
-  fun getActiveAutoRuns(): Flow<List<TimeBasedAutoRun>>
+  // lastActivatedAt 업데이트용 (v6 필드)
+  @Query("UPDATE schedule_group SET isActive = :isActive, lastActivatedAt = :timestamp WHERE id = :groupId")
+  suspend fun setActive(groupId: String, isActive: Boolean, timestamp: Long = System.currentTimeMillis())
   ```
+  - **참조**: [기존 ScheduleGroupDao.kt](../app/src/main/java/com/allday/detoxy/data/local/dao/ScheduleGroupDao.kt)
+  - **Note**: 기존 toggleActive 메서드 대체 또는 병행 사용
 
 - [ ] **LocationBasedAutoRunDao.kt** 메서드 추가
   ```kotlin
-  @Query("SELECT * FROM location_based_auto_run WHERE linkedScheduleGroupId = :groupId")
-  suspend fun getByScheduleGroup(groupId: String): LocationBasedAutoRun?
+  // 활성화 옵션이 설정된 위치 조회 (v6 필드)
+  @Query("SELECT * FROM location_based_auto_run WHERE activateScheduleOnEnter = 1")
+  fun getAutoActivateLocations(): Flow<List<LocationBasedAutoRun>>
   
-  @Query("SELECT * FROM location_based_auto_run WHERE linkedScheduleGroupId IS NOT NULL")
-  fun getLinkedToSchedule(): Flow<List<LocationBasedAutoRun>>
+  @Query("SELECT * FROM location_based_auto_run WHERE deactivateScheduleOnExit = 1")
+  fun getAutoDeactivateLocations(): Flow<List<LocationBasedAutoRun>>
   ```
+  - **참조**: [기존 LocationBasedAutoRunDao.kt](../app/src/main/java/com/allday/detoxy/data/local/dao/LocationBasedAutoRunDao.kt)
 
-#### 1.1.5 Repository 구현
-- [ ] **ScheduleGroupRepository.kt** 생성
+#### 1.1.5 Repository 확장
+
+**선행 완료 사항** (2.5차 고도화):
+- ✅ ScheduleGroupRepository 도메인 인터페이스 (`domain/repository/ScheduleGroupRepository.kt`)
+- ✅ ScheduleGroupRepositoryImpl 데이터 구현체 (`data/repository/ScheduleGroupRepositoryImpl.kt`)
+- ✅ 기본 CRUD 메서드 (getAll, getActive, getById, insert, update, delete)
+- ✅ toggleActive, getLinkedTimeBasedAutoRuns, getLinkedLocations
+- ✅ unlinkAllAutoRuns, getLinkedTimeBasedAutoRunCount, getLinkedLocationCount
+- ✅ Hilt 바인딩 완료 (RepositoryModule)
+
+**Note**: 기존 Clean Architecture 패턴 유지 - domain 인터페이스 + data 구현체 분리
+
+- [ ] **ScheduleGroupRepository.kt** (domain) 메서드 추가 (선택적)
   ```kotlin
-  class ScheduleGroupRepository @Inject constructor(
-      private val dao: ScheduleGroupDao,
-      private val timeBasedDao: TimeBasedAutoRunDao
-  ) {
-      fun getAll(): Flow<List<ScheduleGroup>> = dao.getAll()
+  interface ScheduleGroupRepository {
+      // ... 기존 메서드들
       
-      fun getActive(): Flow<List<ScheduleGroup>> = dao.getActive()
-      
-      suspend fun getById(groupId: String): ScheduleGroup? = dao.getById(groupId)
-      
-      suspend fun insert(group: ScheduleGroup) = dao.insert(group)
-      
-      suspend fun update(group: ScheduleGroup) = dao.update(group)
-      
-      suspend fun delete(groupId: String) {
-          // 시간표 삭제 시 연결된 시간대도 처리
-          timeBasedDao.toggleScheduleGroup(groupId, false)
-          dao.deleteById(groupId)
-      }
-      
-      suspend fun activate(groupId: String) {
-          dao.setActive(groupId, true)
-          timeBasedDao.toggleScheduleGroup(groupId, true)
-      }
-      
-      suspend fun deactivate(groupId: String) {
-          dao.setActive(groupId, false)
-          timeBasedDao.toggleScheduleGroup(groupId, false)
-      }
-      
-      suspend fun deactivateAll() {
-          dao.deactivateAll()
-      }
-      
-      fun getTimeBasedAutoRuns(groupId: String): Flow<List<TimeBasedAutoRun>> =
-          timeBasedDao.getByScheduleGroup(groupId)
+      // 🆕 v6: lastActivatedAt 업데이트용
+      suspend fun activateWithTimestamp(scheduleGroupId: String, timestamp: Long)
   }
   ```
 
-- [ ] **Hilt 모듈 업데이트**
+- [ ] **ScheduleGroupRepositoryImpl.kt** (data) 구현 추가 (선택적)
   ```kotlin
-  @Module
-  @InstallIn(SingletonComponent::class)
-  object RepositoryModule {
-      // ... 기존 리포지토리들
+  @Singleton
+  class ScheduleGroupRepositoryImpl @Inject constructor(
+      private val scheduleGroupDao: ScheduleGroupDao,
+      private val timeBasedAutoRunDao: TimeBasedAutoRunDao,
+      private val locationBasedAutoRunDao: LocationBasedAutoRunDao
+  ) : ScheduleGroupRepository {
+      // ... 기존 메서드들
       
-      @Provides
-      @Singleton
-      fun provideScheduleGroupRepository(
-          dao: ScheduleGroupDao,
-          timeBasedDao: TimeBasedAutoRunDao
-      ): ScheduleGroupRepository = ScheduleGroupRepository(dao, timeBasedDao)
+      override suspend fun activateWithTimestamp(scheduleGroupId: String, timestamp: Long) {
+          scheduleGroupDao.setActive(scheduleGroupId, true, timestamp)
+          timeBasedAutoRunDao.setGroupActive(scheduleGroupId, true)
+      }
   }
   ```
+  - **참조**: [기존 ScheduleGroupRepositoryImpl.kt](../app/src/main/java/com/allday/detoxy/data/repository/ScheduleGroupRepositoryImpl.kt)
+  - **Note**: 기존 toggleActive와 병행 사용 또는 대체
 
-#### 1.1.6 마이그레이션 테스트
-- [ ] **MigrationTest_4_5.kt** 작성
+#### 1.1.6 마이그레이션 테스트 (v5→v6)
+- [ ] **MigrationTest_5_6.kt** 작성
   ```kotlin
   @RunWith(AndroidJUnit4::class)
-  class MigrationTest_4_5 {
+  class MigrationTest_5_6 {
       @get:Rule
       val helper: MigrationTestHelper = MigrationTestHelper(
           InstrumentationRegistry.getInstrumentation(),
@@ -380,49 +292,50 @@
       )
       
       @Test
-      fun migrate4To5_CreatesScheduleGroupTable() {
-          val dbV4 = helper.createDatabase(TEST_DB, 4)
-          dbV4.close()
-          
-          val dbV5 = helper.runMigrationsAndValidate(TEST_DB, 5, true, MIGRATION_4_5)
-          
-          // ScheduleGroup 테이블 존재 확인
-          val cursor = dbV5.query("SELECT name FROM sqlite_master WHERE type='table' AND name='schedule_group'")
-          assertTrue(cursor.count > 0)
-          cursor.close()
-      }
-      
-      @Test
-      fun migrate4To5_AddsColumnsToExistingTables() {
-          val dbV4 = helper.createDatabase(TEST_DB, 4)
-          dbV4.close()
-          
-          val dbV5 = helper.runMigrationsAndValidate(TEST_DB, 5, true, MIGRATION_4_5)
-          
-          // LocationBasedAutoRun 새 컬럼 확인
-          val cursor1 = dbV5.query("PRAGMA table_info(location_based_auto_run)")
-          val columns1 = mutableListOf<String>()
-          while (cursor1.moveToNext()) {
-              columns1.add(cursor1.getString(cursor1.getColumnIndex("name")))
+      fun migrate5To6_AddsNewFields() {
+          // v5 DB 생성 (샘플 데이터 삽입)
+          val dbV5 = helper.createDatabase(TEST_DB, 5).apply {
+              execSQL("INSERT INTO schedule_group (id, name, description, isActive, createdAt) VALUES ('test_group', '테스트', NULL, 0, ${System.currentTimeMillis()})")
+              close()
           }
-          assertTrue(columns1.contains("linkedScheduleGroupId"))
-          assertTrue(columns1.contains("activateScheduleOnEnter"))
-          cursor1.close()
           
-          // TimeBasedAutoRun 새 컬럼 확인
-          val cursor2 = dbV5.query("PRAGMA table_info(time_based_auto_run)")
-          val columns2 = mutableListOf<String>()
-          while (cursor2.moveToNext()) {
-              columns2.add(cursor2.getString(cursor2.getColumnIndex("name")))
+          // v5 → v6 마이그레이션 실행
+          val dbV6 = helper.runMigrationsAndValidate(TEST_DB, 6, true, MIGRATION_5_6)
+          
+          // 1. ScheduleGroup 새 컬럼 확인
+          dbV6.query("PRAGMA table_info(schedule_group)").use { cursor ->
+              val columns = mutableListOf<String>()
+              while (cursor.moveToNext()) {
+                  columns.add(cursor.getString(cursor.getColumnIndex("name")))
+              }
+              assertTrue(columns.contains("iconType"))
+              assertTrue(columns.contains("colorHex"))
+              assertTrue(columns.contains("lastActivatedAt"))
           }
-          assertTrue(columns2.contains("scheduleGroupId"))
-          assertTrue(columns2.contains("isIndependent"))
-          cursor2.close()
+          
+          // 2. LocationBasedAutoRun 새 컬럼 확인
+          dbV6.query("PRAGMA table_info(location_based_auto_run)").use { cursor ->
+              val columns = mutableListOf<String>()
+              while (cursor.moveToNext()) {
+                  columns.add(cursor.getString(cursor.getColumnIndex("name")))
+              }
+              assertTrue(columns.contains("activateScheduleOnEnter"))
+              assertTrue(columns.contains("deactivateScheduleOnExit"))
+              assertTrue(columns.contains("exitActionType"))
+          }
+          
+          // 3. 기본값 확인
+          dbV6.query("SELECT iconType, colorHex FROM schedule_group WHERE id = 'test_group'").use { cursor ->
+              assertTrue(cursor.moveToFirst())
+              assertEquals("WORK", cursor.getString(0))
+              assertEquals("#4CAF50", cursor.getString(1))
+          }
       }
   }
   ```
+  - **참조**: [MigrationTest_4_5.kt](../app/src/androidTest/java/com/allday/detoxy/data/local/migrations/MigrationTest_4_5.kt) - 2.5차에서 완료
 
-**작업 기록**: `working_history/2025-11-XX_2.5_advanced_1.md`
+**작업 기록**: `working_history/2025-11-XX_3rd_advanced_1.md` (실제 일정에 맞춰 작성)
 
 ---
 
@@ -794,7 +707,7 @@
   }
   ```
 
-**작업 기록**: `working_history/2025-11-XX_2.5_advanced_2.md`
+**작업 기록**: `working_history/2025-11-XX_3rd_advanced_2.md` (실제 일정에 맞춰 작성)
 
 ---
 
@@ -1629,7 +1542,7 @@
   )
   ```
 
-**작업 기록**: `working_history/2025-11-XX_2.5_advanced_3.md`
+**작업 기록**: `working_history/2025-11-XX_3rd_advanced_3.md` (실제 일정에 맞춰 작성)
 
 ---
 
@@ -1802,7 +1715,7 @@
 - [ ] 기존 위치 기반 자동 실행 (1회성 트리거)
 - [ ] 2차 고도화 모든 기능
 
-**작업 기록**: `working_history/2025-11-XX_2.5_advanced_4.md`
+**작업 기록**: `working_history/2025-11-XX_3rd_advanced_4.md` (실제 일정에 맞춰 작성)
 
 ---
 
@@ -1892,25 +1805,44 @@
 - [ ] 문서 최신화
 - [ ] 릴리스 노트 작성
 
-**작업 기록**: `working_history/2025-11-XX_2.5_advanced_5.md`
+**작업 기록**: `working_history/2025-11-XX_3rd_advanced_5.md` (실제 일정에 맞춰 작성)
 
 ---
 
 ## 6. 산출물 체크리스트
 
-- [ ] `docs/02.5_complex_time&location_todolist.md` (본 문서)
+**문서**:
+- [x] `docs/03_complex_time&location_todolist.md` (본 문서) - 2.5차 리뷰 반영 완료
 - [ ] `docs/RELEASE_NOTES_v0.7.md`
-- [ ] `docs/02.5_migration_guide.md`
-- [ ] `working_history/2025-11-XX_2.5_advanced_*.md` (5개 예상)
-- [ ] `app/src/main/java/com/allday/detoxy/data/local/entity/ScheduleGroup.kt`
-- [ ] `app/src/main/java/com/allday/detoxy/data/local/dao/ScheduleGroupDao.kt`
-- [ ] `app/src/main/java/com/allday/detoxy/data/repository/ScheduleGroupRepository.kt`
+- [ ] `docs/03_migration_guide_v6.md` (v5→v6 마이그레이션 가이드)
+- [ ] `working_history/2025-11-XX_3rd_advanced_*.md` (5개 예상)
+
+**데이터 레이어** (2.5차에서 완료, 3차에서 확장):
+- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/ScheduleGroup.kt` (2.5차 완료)
+- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/TimeBasedAutoRun.kt` (2.5차 완료)
+- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/LocationBasedAutoRun.kt` (2.5차 완료)
+- [ ] `app/src/main/java/com/allday/detoxy/data/local/migrations/Migration_5_6.kt` (3차 신규)
+- [ ] `app/src/androidTest/java/com/allday/detoxy/data/local/migrations/MigrationTest_5_6.kt` (3차 신규)
+
+**도메인 & 데이터 레이어** (2.5차에서 완료, 3차에서 확장):
+- [x] `app/src/main/java/com/allday/detoxy/domain/repository/ScheduleGroupRepository.kt` (2.5차 완료)
+- [x] `app/src/main/java/com/allday/detoxy/data/repository/ScheduleGroupRepositoryImpl.kt` (2.5차 완료)
+- [ ] 위 파일들에 메서드 추가 (3차 확장)
+
+**비즈니스 로직** (3차 신규):
 - [ ] `app/src/main/java/com/allday/detoxy/core/manager/ScheduleGroupManager.kt`
-- [ ] `app/src/main/java/com/allday/detoxy/presentation/viewmodel/ScheduleGroupViewModel.kt`
-- [ ] `app/src/main/java/com/allday/detoxy/presentation/ui/schedule/ScheduleGroupScreen.kt`
-- [ ] `app/src/main/java/com/allday/detoxy/presentation/ui/schedule/components/*.kt` (5개 컴포넌트)
-- [ ] `app/src/androidTest/java/com/allday/detoxy/data/local/migrations/MigrationTest_4_5.kt`
+- [ ] `app/src/main/java/com/allday/detoxy/receiver/GeofenceTransitionsReceiver.kt` 확장 (TODO 구현)
+- [ ] `app/src/main/java/com/allday/detoxy/receiver/AutoRunAlarmReceiver.kt` 확장
+
+**UI 레이어** (2.5차에서 기본 완료, 3차에서 확장):
+- [x] `app/src/main/java/com/allday/detoxy/presentation/viewmodel/ScheduleGroupViewModel.kt` (2.5차 완료)
+- [x] `app/src/main/java/com/allday/detoxy/presentation/ui/autorun/ScheduleGroupScreen.kt` (2.5차 완료)
+- [ ] `app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/ScheduleLinkSettingsStep.kt` (3차 신규)
+- [ ] `app/src/main/java/com/allday/detoxy/presentation/ui/autorun/AddLocationAutoRunDialog.kt` 확장
+
+**테스트** (3차 신규):
 - [ ] `app/src/test/java/com/allday/detoxy/core/manager/ScheduleGroupManagerTest.kt`
+- [ ] `app/src/androidTest/java/com/allday/detoxy/ScheduleGroupE2ETest.kt`
 
 ---
 
