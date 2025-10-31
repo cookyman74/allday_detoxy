@@ -69,6 +69,17 @@ interface LocationBasedAutoRunDao {
     fun getById(id: String): Flow<LocationBasedAutoRun?>
 
     /**
+     * ID로 위치 기반 자동 실행 조회 (suspend, 일회성)
+     *
+     * GeofenceTransitionsReceiver에서 위치 진입/이탈 시 사용합니다.
+     *
+     * @param id 자동 실행 ID
+     * @return 자동 실행 (nullable)
+     */
+    @Query("SELECT * FROM location_based_auto_run WHERE id = :id")
+    suspend fun getByIdOnce(id: String): LocationBasedAutoRun?
+
+    /**
      * 활성화된 위치 기반 자동 실행 조회
      *
      * @return 활성화된 자동 실행 리스트 (Flow)

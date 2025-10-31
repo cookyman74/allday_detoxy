@@ -8,7 +8,17 @@ import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
+import com.allday.detoxy.core.manager.ScheduleGroupManager
 import com.allday.detoxy.core.utils.AnalyticsHelper
+import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
 /**
@@ -26,6 +36,19 @@ import java.security.MessageDigest
  * @see AutoRunGeofenceManager
  */
 class GeofenceTransitionsReceiver : BroadcastReceiver() {
+    
+    /**
+     * Hilt EntryPoint
+     *
+     * BroadcastReceiver는 @AndroidEntryPoint를 사용할 수 없으므로
+     * EntryPointAccessors를 통해 수동으로 의존성을 가져옵니다.
+     */
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface GeofenceReceiverEntryPoint {
+        fun locationBasedAutoRunDao(): LocationBasedAutoRunDao
+        fun scheduleGroupManager(): ScheduleGroupManager
+    }
     
     companion object {
         private const val TAG = "GeofenceTransitionsReceiver"
@@ -45,6 +68,8 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
             return digest.joinToString("") { "%02x".format(it) }.take(16)
         }
     }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "🔔 Geofence event received")
@@ -139,35 +164,49 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 )
                 Log.d(TAG, "📊 Analytics: auto_run_triggered (LOCATION)")
                 
-                // TODO: Week 4 작업 - ScheduleGroup 활성화
-                // 1. locationId로 LocationBasedAutoRun 조회
-                // 2. linkedScheduleGroupId 확인
-                // 3. ScheduleGroup이 연결되어 있다면:
-                //    - ScheduleGroup 활성화 (isActive = true)
-                //    - 연결된 모든 TimeBasedAutoRun 조회 (isIndependent = false인 것만)
-                //    - 각 TimeBasedAutoRun의 알람 등록 (AlarmManager)
-                //    - Analytics 로깅
-                //
-                // Example code:
-                // val locationAutoRun = locationBasedAutoRunRepository.getById(locationId)
-                // if (locationAutoRun?.linkedScheduleGroupId != null) {
-                //     scheduleGroupRepository.toggleActive(locationAutoRun.linkedScheduleGroupId, true)
-                //     
-                //     // 연결된 TimeBasedAutoRun 알람 등록 (종속 모드만)
-                //     val linkedAutoRuns = timeBasedAutoRunRepository.getByScheduleGroup(locationAutoRun.linkedScheduleGroupId)
-                //     linkedAutoRuns.filter { !it.isIndependent }.forEach { autoRun ->
-                //         alarmManager.scheduleAlarm(autoRun)
-                //     }
-                //     
-                //     // Analytics
-                //     AnalyticsHelper.logScheduleGroupActivated(
-                //         scheduleGroupId = hashSourceId(locationAutoRun.linkedScheduleGroupId),
-                //         locationId = hashSourceId(locationId),
-                //         timeBasedAutoRunCount = linkedAutoRuns.size
-                //     )
-                //     
-                //     Log.i(TAG, "✅ ScheduleGroup activated: ${locationAutoRun.linkedScheduleGroupId}")
-                // }
+                // 🆕 3차 고도화: ScheduleGroup 활성화 (위치 진입 시)
+                // EntryPoint를 통해 필요한 의존성 가져오기
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    GeofenceReceiverEntryPoint::class.java
+                )
+                
+                val locationDao = entryPoint.locationBasedAutoRunDao()
+                val scheduleManager = entryPoint.scheduleGroupManager()
+                
+                // 비동기 작업 (goAsync)
+                val pendingResult = goAsync()
+                
+                scope.launch {
+                    try {
+                        // 1. locationId로 LocationBasedAutoRun 조회
+                        val location = locationDao.getByIdOnce(locationId)
+                        
+                        if (location != null && location.activateScheduleOnEnter && location.linkedScheduleGroupId != null) {
+                            val scheduleGroupId = location.linkedScheduleGroupId
+                            
+                            Log.i(TAG, "📍 Location has linked ScheduleGroup: $scheduleGroupId")
+                            
+                            // 2. ScheduleGroup 활성화 (알람 자동 등록)
+                            val result = scheduleManager.activateGroup(scheduleGroupId)
+                            
+                            if (result.isSuccess) {
+                                Log.i(TAG, "✅ ScheduleGroup activated on ENTER: $scheduleGroupId")
+                                
+                                // TODO: Week 3 - 시간표 활성화 알림 표시
+                                // showScheduleActivatedNotification(context, location.label, scheduleGroupId)
+                            } else {
+                                Log.e(TAG, "⚠️ Failed to activate ScheduleGroup: ${result.exceptionOrNull()?.message}")
+                            }
+                        } else {
+                            Log.d(TAG, "ℹ️ No linked ScheduleGroup or activation disabled for location: $locationId")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Error handling geofence enter (ScheduleGroup activation): ${e.message}", e)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
                 
                 // TODO: Week 3 작업 - AutoRunNotificationManager 연동
                 // if (requiresConfirmation) {
@@ -278,34 +317,49 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 - Label: $locationLabel
             """.trimIndent())
             
-            // TODO: Week 4 작업 - ScheduleGroup 비활성화
-            // 1. locationId로 LocationBasedAutoRun 조회
-            // 2. linkedScheduleGroupId 확인
-            // 3. ScheduleGroup이 연결되어 있다면:
-            //    - ScheduleGroup 비활성화 (isActive = false)
-            //    - 연결된 모든 TimeBasedAutoRun의 알람 취소
-            //    - Analytics 로깅
-            //
-            // Example code:
-            // val locationAutoRun = locationBasedAutoRunRepository.getById(locationId)
-            // if (locationAutoRun?.linkedScheduleGroupId != null) {
-            //     scheduleGroupRepository.toggleActive(locationAutoRun.linkedScheduleGroupId, false)
-            //     
-            //     // 연결된 TimeBasedAutoRun 알람 취소
-            //     val linkedAutoRuns = timeBasedAutoRunRepository.getByScheduleGroup(locationAutoRun.linkedScheduleGroupId)
-            //     linkedAutoRuns.forEach { autoRun ->
-            //         alarmManager.cancelAlarm(autoRun.id)
-            //     }
-            //     
-            //     // Analytics
-            //     AnalyticsHelper.logScheduleGroupDeactivated(
-            //         scheduleGroupId = hashSourceId(locationAutoRun.linkedScheduleGroupId),
-            //         locationId = hashSourceId(locationId),
-            //         timeBasedAutoRunCount = linkedAutoRuns.size
-            //     )
-            //     
-            //     Log.i(TAG, "✅ ScheduleGroup deactivated: ${locationAutoRun.linkedScheduleGroupId}")
-            // }
+            // 🆕 3차 고도화: ScheduleGroup 비활성화 (위치 이탈 시)
+            // EntryPoint를 통해 필요한 의존성 가져오기
+            val entryPoint = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                GeofenceReceiverEntryPoint::class.java
+            )
+            
+            val locationDao = entryPoint.locationBasedAutoRunDao()
+            val scheduleManager = entryPoint.scheduleGroupManager()
+            
+            // 비동기 작업 (goAsync)
+            val pendingResult = goAsync()
+            
+            scope.launch {
+                try {
+                    // 1. locationId로 LocationBasedAutoRun 조회
+                    val location = locationDao.getByIdOnce(locationId)
+                    
+                    if (location != null && location.deactivateScheduleOnExit && location.linkedScheduleGroupId != null) {
+                        val scheduleGroupId = location.linkedScheduleGroupId
+                        
+                        Log.i(TAG, "🚪 Location has linked ScheduleGroup: $scheduleGroupId")
+                        
+                        // 2. ScheduleGroup 비활성화 (알람 자동 취소)
+                        val result = scheduleManager.deactivateGroup(scheduleGroupId)
+                        
+                        if (result.isSuccess) {
+                            Log.i(TAG, "✅ ScheduleGroup deactivated on EXIT: $scheduleGroupId")
+                            
+                            // TODO: Week 3 - 시간표 비활성화 알림 표시
+                            // showScheduleDeactivatedNotification(context, location.label, scheduleGroupId)
+                        } else {
+                            Log.e(TAG, "⚠️ Failed to deactivate ScheduleGroup: ${result.exceptionOrNull()?.message}")
+                        }
+                    } else {
+                        Log.d(TAG, "ℹ️ No linked ScheduleGroup or deactivation disabled for location: $locationId")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Error handling geofence exit (ScheduleGroup deactivation): ${e.message}", e)
+                } finally {
+                    pendingResult.finish()
+                }
+            }
             
             Log.i(TAG, "✅ Geofence EXIT processed for $locationLabel")
         }

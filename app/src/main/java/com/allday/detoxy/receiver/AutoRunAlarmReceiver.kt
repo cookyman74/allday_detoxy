@@ -61,6 +61,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
         fun autoRunSettingsRepository(): AutoRunSettingsRepository
         fun userSettingsRepository(): UserSettingsRepository
         fun workManager(): WorkManager
+        fun scheduleGroupDao(): com.allday.detoxy.data.local.dao.ScheduleGroupDao
     }
 
     companion object {
@@ -194,7 +195,30 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // 2. 이미 타이머 실행 중인지 확인
+                // 2. 🆕 3차 고도화: scheduleGroupId 체크
+                // 시간대가 그룹에 소속되어 있고, 그룹이 비활성화 상태면 실행 건너뛰기
+                val autoRun = entryPoint.timeBasedAutoRunDao().getById(autoRunId).firstOrNull()
+                
+                if (autoRun != null && !autoRun.isIndependent && autoRun.scheduleGroupId != null) {
+                    val scheduleGroup = entryPoint.scheduleGroupDao().getByIdOnce(autoRun.scheduleGroupId)
+                    
+                    if (scheduleGroup == null || !scheduleGroup.isActive) {
+                        Log.w(TAG, "⏭️ Skipping auto-run: ScheduleGroup not active (groupId: ${autoRun.scheduleGroupId})")
+                        logAutoRunSkipped(autoRunId, "SCHEDULE_GROUP_NOT_ACTIVE", entryPoint)
+                        
+                        // Analytics 로깅
+                        AnalyticsHelper.logAutoRunSkipped(
+                            triggerType = "TIME",
+                            reason = "SCHEDULE_GROUP_NOT_ACTIVE"
+                        )
+                        
+                        // 다음 알람 재스케줄링 (그룹이 활성화되면 다시 실행될 수 있도록)
+                        rescheduleNextAlarm(autoRunId, entryPoint)
+                        return@launch
+                    }
+                }
+
+                // 3. 이미 타이머 실행 중인지 확인
                 val currentState = FocusTimerService.state.first()
                 if (currentState != com.allday.detoxy.domain.model.FocusState.IDLE) {
                     Log.w(TAG, "⚠️ Timer already running (state: $currentState), skipping auto-run")
@@ -208,7 +232,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // 3. Analytics - 자동 실행 트리거
+                // 4. Analytics - 자동 실행 트리거
                 AnalyticsHelper.logAutoRunTriggered(
                     triggerType = "TIME",
                     sourceIdHash = autoRunId.hashCode().toString(),
@@ -216,7 +240,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     presetType = presetType ?: "NONE"
                 )
                 
-                // 4. 실행 알림 표시
+                // 5. 실행 알림 표시
                 entryPoint.notificationManager().showStartNotification(
                     autoRunId = autoRunId,
                     durationMinutes = durationMinutes,
@@ -233,10 +257,10 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     minutesBefore = null
                 )
 
-                // 5. AutoRunLog 기록 (알림 표시됨)
+                // 6. AutoRunLog 기록 (알림 표시됨)
                 logAutoRunTriggered(autoRunId, "TIME", "NOTIFICATION_SHOWN", entryPoint)
 
-                // 6. 자동 시작 딜레이 적용 ✅ Fixed
+                // 7. 자동 시작 딜레이 적용 ✅ Fixed
                 val autoStartDelayMinutes = entryPoint.autoRunSettingsRepository().getAutoStartDelayMinutes()
                 
                 if (autoStartDelayMinutes > 0) {
@@ -285,7 +309,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     Log.d(TAG, "✅ Timer started immediately (auto-start delay = 0, sessionId: $sessionId)")
                 }
 
-                // 7. 다음 알람 자동 스케줄링
+                // 8. 다음 알람 자동 스케줄링
                 rescheduleNextAlarm(autoRunId, entryPoint)
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Error processing auto-run alarm: ${e.message}", e)

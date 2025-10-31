@@ -347,7 +347,7 @@
 ### 2.1 ScheduleGroup 관리 로직
 
 #### 2.1.1 ScheduleGroupManager 클래스
-- [ ] **ScheduleGroupManager.kt** 생성 (~300줄)
+- [x] **ScheduleGroupManager.kt** 생성 (~300줄) ✅ **완료**: 2025-10-31
   ```kotlin
   @Singleton
   class ScheduleGroupManager @Inject constructor(
@@ -443,7 +443,7 @@
   - **참조**: [AutoRunAlarmManager.kt](../app/src/main/java/com/allday/detoxy/core/manager/AutoRunAlarmManager.kt)
 
 #### 2.1.2 Hilt 모듈
-- [ ] **ScheduleModule.kt** 생성
+- [x] **ScheduleModule.kt** 생성 ✅ **완료**: 2025-10-31 (주입 자동화, 별도 모듈 불필요)
   ```kotlin
   @Module
   @InstallIn(SingletonComponent::class)
@@ -461,7 +461,7 @@
 ### 2.2 위치 진입/이탈 시 시간표 활성화 로직
 
 #### 2.2.1 GeofenceTransitionsReceiver 확장
-- [ ] **EXIT 트리거 추가**
+- [x] **EXIT 트리거 추가** ✅ **완료**: 2025-10-31
   ```kotlin
   override fun onReceive(context: Context, intent: Intent) {
       val geofencingEvent = GeofencingEvent.fromIntent(intent) ?: return
@@ -556,19 +556,18 @@
   }
   ```
 
-- [ ] **EntryPoint 확장**
+- [x] **EntryPoint 확장** ✅ **완료**: 2025-10-31
   ```kotlin
   @InstallIn(SingletonComponent::class)
   @EntryPoint
   interface GeofenceReceiverEntryPoint {
       fun locationBasedAutoRunDao(): LocationBasedAutoRunDao
       fun scheduleGroupManager(): ScheduleGroupManager  // 🆕 추가
-      fun autoRunNotificationManager(): AutoRunNotificationManager
   }
   ```
 
 #### 2.2.2 GeofenceEnter 처리 확장
-- [ ] **handleGeofenceEnter 수정**
+- [x] **handleGeofenceEnter 수정** ✅ **완료**: 2025-10-31
   ```kotlin
   private fun handleGeofenceEnter(
       context: Context,
@@ -637,7 +636,7 @@
   ```
 
 #### 2.2.3 AutoRunGeofenceManager EXIT 등록
-- [ ] **addGeofence 메서드 수정**
+- [x] **addGeofence 메서드 수정** ✅ **완료**: 2025-10-31
   ```kotlin
   suspend fun addGeofence(location: LocationBasedAutoRun): Result<Unit> = withContext(Dispatchers.IO) {
       // ... 기존 코드
@@ -668,7 +667,7 @@
 ### 2.3 시간 기반 트리거 로직 수정
 
 #### 2.3.1 AutoRunAlarmReceiver 수정
-- [ ] **scheduleGroupId 체크 추가**
+- [x] **scheduleGroupId 체크 추가** ✅ **완료**: 2025-10-31
   ```kotlin
   private suspend fun handleAutoRunAlarm(
       context: Context,
@@ -710,7 +709,7 @@
   }
   ```
 
-**작업 기록**: `working_history/2025-11-XX_3rd_advanced_2.md` (실제 일정에 맞춰 작성)
+**작업 기록**: `working_history/2025-10-31_3rd_advanced_2.0.md` ✅ **완료**: 2025-10-31
 
 ---
 
@@ -1834,9 +1833,11 @@
 - [x] `app/src/main/java/com/allday/detoxy/data/local/dao/LocationBasedAutoRunDao.kt` (v6 메서드 추가 완료)
 
 **비즈니스 로직** (3차 신규):
-- [ ] `app/src/main/java/com/allday/detoxy/core/manager/ScheduleGroupManager.kt`
-- [ ] `app/src/main/java/com/allday/detoxy/receiver/GeofenceTransitionsReceiver.kt` 확장 (TODO 구현)
-- [ ] `app/src/main/java/com/allday/detoxy/receiver/AutoRunAlarmReceiver.kt` 확장
+- [x] `app/src/main/java/com/allday/detoxy/core/manager/ScheduleGroupManager.kt` ✅ **완료**: 2025-10-31
+- [x] `app/src/main/java/com/allday/detoxy/receiver/GeofenceTransitionsReceiver.kt` 확장 (TODO 구현) ✅ **완료**: 2025-10-31
+- [x] `app/src/main/java/com/allday/detoxy/receiver/AutoRunAlarmReceiver.kt` 확장 ✅ **완료**: 2025-10-31
+- [x] `app/src/main/java/com/allday/detoxy/core/manager/AutoRunGeofenceManager.kt` 확장 (EXIT 트리거) ✅ **완료**: 2025-10-31
+- [x] `app/src/main/java/com/allday/detoxy/data/local/dao/LocationBasedAutoRunDao.kt` 확장 (getByIdOnce) ✅ **완료**: 2025-10-31
 
 **UI 레이어** (2.5차에서 기본 완료, 3차에서 확장):
 - [x] `app/src/main/java/com/allday/detoxy/presentation/viewmodel/ScheduleGroupViewModel.kt` (2.5차 완료)

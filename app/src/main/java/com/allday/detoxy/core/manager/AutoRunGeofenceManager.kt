@@ -297,9 +297,19 @@ class AutoRunGeofenceManager @Inject constructor(
     /**
      * Geofence 생성
      *
-     * dwellTimeMinutes에 따라 트랜지션 타입 자동 설정:
-     * - dwellTimeMinutes == 0: ENTER만 사용 (즉시 트리거)
-     * - dwellTimeMinutes > 0: ENTER + DWELL 사용 (체류 시간 후 트리거)
+     * ## 트랜지션 타입 설정 로직 (3차 고도화 확장)
+     * - EXIT 트리거 필요 여부: deactivateScheduleOnExit 옵션 확인
+     * - dwellTimeMinutes에 따라 ENTER/DWELL 트리거 설정
+     *
+     * ### 트랜지션 타입 조합
+     * 1. **deactivateScheduleOnExit = true + dwellTimeMinutes > 0**
+     *    → ENTER | DWELL | EXIT (시간표 자동 활성화/비활성화 + 체류 시간)
+     * 2. **deactivateScheduleOnExit = true + dwellTimeMinutes = 0**
+     *    → ENTER | EXIT (시간표 자동 활성화/비활성화 + 즉시 트리거)
+     * 3. **deactivateScheduleOnExit = false + dwellTimeMinutes > 0**
+     *    → ENTER | DWELL (체류 시간만)
+     * 4. **deactivateScheduleOnExit = false + dwellTimeMinutes = 0**
+     *    → ENTER (즉시 트리거만)
      *
      * @param autoRun 위치 기반 자동 실행 설정
      * @return Geofence
@@ -314,19 +324,31 @@ class AutoRunGeofenceManager @Inject constructor(
             )
             .setExpirationDuration(Geofence.NEVER_EXPIRE)
         
-        // 체류 시간에 따라 트랜지션 타입 설정
+        // 트랜지션 타입 결정 (ENTER, DWELL, EXIT)
+        var transitionTypes = Geofence.GEOFENCE_TRANSITION_ENTER
+        
+        // 체류 시간이 있으면 DWELL 추가
         if (autoRun.dwellTimeMinutes > 0) {
-            // 체류 시간이 있으면 DWELL 사용 (loiteringDelay 필요)
-            builder.setTransitionTypes(
-                Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_DWELL
-            )
+            transitionTypes = transitionTypes or Geofence.GEOFENCE_TRANSITION_DWELL
             builder.setLoiteringDelay(autoRun.dwellTimeMinutes * 60 * 1000) // 분 → 밀리초
-            Log.d(TAG, "Geofence created with DWELL (${autoRun.dwellTimeMinutes}분 체류)")
-        } else {
-            // 체류 시간이 0이면 ENTER만 사용 (즉시 트리거)
-            builder.setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-            Log.d(TAG, "Geofence created with ENTER only (즉시 트리거)")
+            Log.d(TAG, "Geofence: DWELL enabled (${autoRun.dwellTimeMinutes}분 체류)")
         }
+        
+        // 🆕 3차 고도화: 위치 이탈 시 시간표 비활성화 옵션
+        if (autoRun.deactivateScheduleOnExit) {
+            transitionTypes = transitionTypes or Geofence.GEOFENCE_TRANSITION_EXIT
+            Log.d(TAG, "Geofence: EXIT enabled (시간표 자동 비활성화)")
+        }
+        
+        builder.setTransitionTypes(transitionTypes)
+        
+        val transitionTypesStr = buildList {
+            if (transitionTypes and Geofence.GEOFENCE_TRANSITION_ENTER != 0) add("ENTER")
+            if (transitionTypes and Geofence.GEOFENCE_TRANSITION_DWELL != 0) add("DWELL")
+            if (transitionTypes and Geofence.GEOFENCE_TRANSITION_EXIT != 0) add("EXIT")
+        }.joinToString(" | ")
+        
+        Log.d(TAG, "Geofence created: $transitionTypesStr")
         
         return builder.build()
     }
