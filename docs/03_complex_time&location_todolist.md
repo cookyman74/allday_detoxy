@@ -1492,7 +1492,7 @@
 ### 3.4 네비게이션 통합
 
 #### 3.4.1 MainActivity 네비게이션 수정
-- [ ] **AutoRunScreenType enum 확장**
+- [x] **AutoRunScreenType enum 확장**
   ```kotlin
   enum class AutoRunScreenType {
       NONE,
@@ -1502,7 +1502,7 @@
   }
   ```
 
-- [ ] **네비게이션 분기 추가**
+- [x] **네비게이션 분기 추가**
   ```kotlin
   when (showAutoRunScreen) {
       AutoRunScreenType.TIME_BASED -> {
@@ -1534,7 +1534,7 @@
   ```
 
 #### 3.4.2 화면 간 이동 버튼 추가
-- [ ] **TimeBasedAutoRunScreen에 시간표 관리 버튼 추가**
+- [x] **TimeBasedAutoRunScreen에 시간표 관리 버튼 추가**
   ```kotlin
   // TopAppBar에 actions 추가
   TopAppBar(
@@ -1548,7 +1548,7 @@
   )
   ```
 
-- [ ] **LocationBasedAutoRunScreen에 시간표 관리 버튼 추가**
+- [x] **LocationBasedAutoRunScreen에 시간표 관리 버튼 추가**
   ```kotlin
   TopAppBar(
       title = { Text("위치 기반 자동 실행") },
@@ -1561,7 +1561,7 @@
   )
   ```
 
-**작업 기록**: `working_history/2025-11-XX_3rd_advanced_3.md` (실제 일정에 맞춰 작성)
+**작업 기록**: `working_history/2025-10-31_3rd_advanced_3.4.md`
 
 ---
 

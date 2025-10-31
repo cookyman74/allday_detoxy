@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -42,6 +43,7 @@ import com.allday.detoxy.presentation.viewmodel.TimeBasedAutoRunViewModel
 fun TimeBasedAutoRunScreen(
     onBack: () -> Unit = {},
     onNavigateToLocationBased: () -> Unit = {},
+    onNavigateToScheduleGroup: () -> Unit = {},  // 🆕 3차 고도화: 시간표 관리로 이동
     viewModel: TimeBasedAutoRunViewModel = hiltViewModel()
 ) {
     val autoRuns by viewModel.autoRuns.collectAsStateWithLifecycle()
@@ -90,6 +92,15 @@ fun TimeBasedAutoRunScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "뒤로가기"
+                        )
+                    }
+                },
+                actions = {
+                    // 🆕 3차 고도화: 시간표 관리 버튼
+                    IconButton(onClick = onNavigateToScheduleGroup) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "시간표 관리"
                         )
                     }
                 }

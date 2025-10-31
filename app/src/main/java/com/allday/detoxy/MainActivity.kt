@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.allday.detoxy.core.utils.PreferenceManager
 import com.allday.detoxy.presentation.ui.autorun.TimeBasedAutoRunScreen
 import com.allday.detoxy.presentation.ui.autorun.LocationBasedAutoRunScreen
+import com.allday.detoxy.presentation.ui.autorun.ScheduleGroupScreen
 import com.allday.detoxy.presentation.ui.onboarding.WelcomeScreen
 import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
 import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
@@ -120,7 +121,8 @@ fun MainScreen() {
 enum class AutoRunScreenType {
     NONE,           // 자동 실행 화면 없음
     TIME_BASED,     // 시간 기반 자동 실행
-    LOCATION_BASED  // 위치 기반 자동 실행
+    LOCATION_BASED, // 위치 기반 자동 실행
+    SCHEDULE_GROUP  // 🆕 3차 고도화: 시간표 그룹 관리
 }
 
 /**
@@ -190,14 +192,22 @@ fun MainScreenWithNavigation() {
                 AutoRunScreenType.TIME_BASED -> {
                     TimeBasedAutoRunScreen(
                         onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
-                        onNavigateToLocationBased = { showAutoRunScreen = AutoRunScreenType.LOCATION_BASED }
+                        onNavigateToLocationBased = { showAutoRunScreen = AutoRunScreenType.LOCATION_BASED },
+                        onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP }  // 🆕 3차 고도화
                     )
                 }
                 // 위치 기반 자동 실행 화면
                 AutoRunScreenType.LOCATION_BASED -> {
                     LocationBasedAutoRunScreen(
                         onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
-                        onNavigateToTimeBased = { showAutoRunScreen = AutoRunScreenType.TIME_BASED }
+                        onNavigateToTimeBased = { showAutoRunScreen = AutoRunScreenType.TIME_BASED },
+                        onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP }  // 🆕 3차 고도화
+                    )
+                }
+                // 🆕 3차 고도화: 시간표 그룹 관리 화면
+                AutoRunScreenType.SCHEDULE_GROUP -> {
+                    ScheduleGroupScreen(
+                        onBack = { showAutoRunScreen = AutoRunScreenType.NONE }
                     )
                 }
                 // 탭별 화면
