@@ -1077,8 +1077,8 @@
 
 ### 3.2 AddLocationAutoRunDialog 확장
 
-#### 3.2.1 단계 4 추가: 시간표 연결 설정
-- [ ] **AddLocationAutoRunDialog.kt** 수정
+#### 3.2.1 단계 3 추가: 시간표 연결 설정
+- [x] **AddLocationAutoRunDialog.kt** 수정 ✅ **완료**: 2025-10-31
   ```kotlin
   enum class LocationDialogStep {
       SEARCH,      // 위치 검색
@@ -1196,7 +1196,9 @@
   ```
 
 #### 3.2.2 ScheduleLinkSettingsStep 컴포넌트
-- [ ] **ScheduleLinkSettingsStep.kt** 생성
+- [x] **ScheduleLinkSettingsStep.kt** 생성 ✅ **완료**: 2025-10-31
+
+**작업 기록**: `working_history/2025-10-31_3rd_advanced_3.2.md` ✅ **완료**: 2025-10-31
   ```kotlin
   @Composable
   fun ScheduleLinkSettingsStep(

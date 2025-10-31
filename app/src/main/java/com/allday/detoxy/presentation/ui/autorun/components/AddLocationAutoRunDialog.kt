@@ -21,33 +21,58 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
 import com.allday.detoxy.core.utils.GeocoderUtils
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
+import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import kotlinx.coroutines.launch
 import java.util.*
 
 /**
- * 위치 기반 자동 실행 추가/편집 다이얼로그
+ * 위치 다이얼로그 단계
+ * 
+ * 3차 고도화: SCHEDULE 단계 추가
+ */
+enum class LocationDialogStep {
+    SEARCH,      // 위치 검색
+    SETTINGS,    // 상세 설정
+    SCHEDULE     // 🆕 시간표 연결 (3차 고도화)
+}
+
+/**
+ * 위치 기반 자동 실행 추가/편집 다이얼로그 (3차 고도화)
  *
- * 위치 검색, 위치 설정을 통해 LocationBasedAutoRun을 생성합니다.
+ * 위치 검색, 위치 설정, 시간표 연결을 통해 LocationBasedAutoRun을 생성합니다.
+ *
+ * ## 3차 고도화 추가 기능
+ * - SCHEDULE 단계 추가: 시간표 자동 활성화/비활성화 설정
+ * - ScheduleGroupViewModel 주입
  *
  * @param existingLocation 편집할 LocationBasedAutoRun (null이면 추가 모드)
  * @param onDismiss 다이얼로그 닫기 콜백
  * @param onSave 저장 버튼 클릭 콜백 (생성된 LocationBasedAutoRun 전달)
+ * @param scheduleViewModel ScheduleGroupViewModel (3차 고도화)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLocationAutoRunDialog(
     existingLocation: LocationBasedAutoRun? = null,
     onDismiss: () -> Unit,
-    onSave: (LocationBasedAutoRun) -> Unit
+    onSave: (LocationBasedAutoRun) -> Unit,
+    scheduleViewModel: ScheduleGroupViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // 단계 관리 (0: 위치 검색, 1: 상세 설정)
-    var currentStep by remember { mutableStateOf(if (existingLocation != null) 1 else 0) }
+    // 단계 관리
+    var currentStep by remember { 
+        mutableStateOf(
+            if (existingLocation != null) LocationDialogStep.SETTINGS 
+            else LocationDialogStep.SEARCH
+        ) 
+    }
 
     // 위치 검색 상태
     var searchQuery by remember { mutableStateOf("") }
@@ -65,6 +90,15 @@ fun AddLocationAutoRunDialog(
     var triggerType by remember { mutableStateOf(existingLocation?.triggerType ?: "ENTER") }
     var dwellTimeMinutes by remember { mutableStateOf(existingLocation?.dwellTimeMinutes ?: 0) }
     var requiresUserConfirmation by remember { mutableStateOf(existingLocation?.requiresUserConfirmation ?: false) }
+
+    // 🆕 3차 고도화: 시간표 연결 상태
+    var enableScheduleLink by remember { mutableStateOf(existingLocation?.linkedScheduleGroupId != null) }
+    var selectedScheduleGroupId by remember { mutableStateOf(existingLocation?.linkedScheduleGroupId) }
+    var activateOnEnter by remember { mutableStateOf(existingLocation?.activateScheduleOnEnter ?: false) }
+    var deactivateOnExit by remember { mutableStateOf(existingLocation?.deactivateScheduleOnExit ?: false) }
+    
+    // 🆕 3차 고도화: 시간표 목록
+    val scheduleGroups by scheduleViewModel.scheduleGroups.collectAsStateWithLifecycle()
 
     // 위치 검색 함수
     val performSearch: () -> Unit = {
@@ -99,7 +133,7 @@ fun AddLocationAutoRunDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 when (currentStep) {
-                    0 -> {
+                    LocationDialogStep.SEARCH -> {
                         // 단계 1: 위치 검색
                         LocationSearchStep(
                             searchQuery = searchQuery,
@@ -110,11 +144,11 @@ fun AddLocationAutoRunDialog(
                             onLocationSelected = { location ->
                                 selectedLocation = location
                                 label = location.name
-                                currentStep = 1
+                                currentStep = LocationDialogStep.SETTINGS
                             }
                         )
                     }
-                    1 -> {
+                    LocationDialogStep.SETTINGS -> {
                         // 단계 2: 상세 설정
                         LocationSettingsStep(
                             selectedLocation = selectedLocation,
@@ -135,52 +169,95 @@ fun AddLocationAutoRunDialog(
                             onRequiresConfirmationChange = { requiresUserConfirmation = it }
                         )
                     }
+                    LocationDialogStep.SCHEDULE -> {
+                        // 🆕 단계 3: 시간표 연결 (3차 고도화)
+                        ScheduleLinkSettingsStep(
+                            enableScheduleLink = enableScheduleLink,
+                            onEnableScheduleLinkChange = { enableScheduleLink = it },
+                            selectedScheduleGroupId = selectedScheduleGroupId,
+                            onScheduleGroupIdChange = { selectedScheduleGroupId = it },
+                            activateOnEnter = activateOnEnter,
+                            onActivateOnEnterChange = { activateOnEnter = it },
+                            deactivateOnExit = deactivateOnExit,
+                            onDeactivateOnExitChange = { deactivateOnExit = it },
+                            scheduleGroups = scheduleGroups
+                        )
+                    }
                 }
             }
         },
         confirmButton = {
-            if (currentStep == 0) {
-                // 위치 검색 단계: 취소 버튼만
-                TextButton(onClick = onDismiss) {
-                    Text("취소")
-                }
-            } else {
-                // 상세 설정 단계: 이전 & 저장 버튼
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (existingLocation == null) {
-                        TextButton(onClick = { currentStep = 0 }) {
-                            Text("이전")
-                        }
-                    }
-                    Button(
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 이전 버튼 (SEARCH 단계가 아니고, 편집 모드가 아닐 때만 표시)
+                if (currentStep != LocationDialogStep.SEARCH && existingLocation == null) {
+                    TextButton(
                         onClick = {
-                            val location = LocationBasedAutoRun(
-                                id = existingLocation?.id ?: UUID.randomUUID().toString(),
-                                label = label.ifBlank { selectedLocation?.name ?: "위치" },
-                                address = existingLocation?.address ?: selectedLocation?.address,
-                                latitude = existingLocation?.latitude ?: selectedLocation?.latitude ?: 0.0,
-                                longitude = existingLocation?.longitude ?: selectedLocation?.longitude ?: 0.0,
-                                radiusMeters = radiusMeters,
-                                durationMinutes = durationMinutes,
-                                presetType = selectedPreset,
-                                triggerType = triggerType,
-                                dwellTimeMinutes = dwellTimeMinutes,
-                                requiresUserConfirmation = requiresUserConfirmation,
-                                isEnabled = existingLocation?.isEnabled ?: true,
-                                createdAt = existingLocation?.createdAt ?: System.currentTimeMillis()
-                            )
-                            onSave(location)
-                            onDismiss()
-                        },
-                        enabled = label.isNotBlank() && (selectedLocation != null || existingLocation != null)
+                            currentStep = when (currentStep) {
+                                LocationDialogStep.SETTINGS -> LocationDialogStep.SEARCH
+                                LocationDialogStep.SCHEDULE -> LocationDialogStep.SETTINGS
+                                else -> currentStep
+                            }
+                        }
                     ) {
-                        Text("저장")
+                        Text("이전")
                     }
+                }
+                
+                // 다음/저장 버튼
+                Button(
+                    onClick = {
+                        when (currentStep) {
+                            LocationDialogStep.SEARCH -> {
+                                // SEARCH → SETTINGS
+                                currentStep = LocationDialogStep.SETTINGS
+                            }
+                            LocationDialogStep.SETTINGS -> {
+                                // SETTINGS → SCHEDULE
+                                currentStep = LocationDialogStep.SCHEDULE
+                            }
+                            LocationDialogStep.SCHEDULE -> {
+                                // SCHEDULE → 저장
+                                val location = LocationBasedAutoRun(
+                                    id = existingLocation?.id ?: UUID.randomUUID().toString(),
+                                    label = label.ifBlank { selectedLocation?.name ?: "위치" },
+                                    address = existingLocation?.address ?: selectedLocation?.address,
+                                    latitude = existingLocation?.latitude ?: selectedLocation?.latitude ?: 0.0,
+                                    longitude = existingLocation?.longitude ?: selectedLocation?.longitude ?: 0.0,
+                                    radiusMeters = radiusMeters,
+                                    durationMinutes = durationMinutes,
+                                    presetType = selectedPreset,
+                                    triggerType = triggerType,
+                                    dwellTimeMinutes = dwellTimeMinutes,
+                                    requiresUserConfirmation = requiresUserConfirmation,
+                                    isEnabled = existingLocation?.isEnabled ?: true,
+                                    createdAt = existingLocation?.createdAt ?: System.currentTimeMillis(),
+                                    // 🆕 3차 고도화: 시간표 연결 필드
+                                    linkedScheduleGroupId = if (enableScheduleLink) selectedScheduleGroupId else null,
+                                    activateScheduleOnEnter = enableScheduleLink && activateOnEnter,
+                                    deactivateScheduleOnExit = enableScheduleLink && deactivateOnExit
+                                )
+                                onSave(location)
+                                onDismiss()
+                            }
+                        }
+                    },
+                    enabled = when (currentStep) {
+                        LocationDialogStep.SEARCH -> selectedLocation != null
+                        LocationDialogStep.SETTINGS -> label.isNotBlank() && (selectedLocation != null || existingLocation != null)
+                        LocationDialogStep.SCHEDULE -> !enableScheduleLink || selectedScheduleGroupId != null
+                    }
+                ) {
+                    Text(
+                        when (currentStep) {
+                            LocationDialogStep.SCHEDULE -> "저장"
+                            else -> "다음"
+                        }
+                    )
                 }
             }
         },
         dismissButton = {
-            if (currentStep == 1) {
+            if (currentStep != LocationDialogStep.SEARCH) {
                 TextButton(onClick = onDismiss) {
                     Text("취소")
                 }
