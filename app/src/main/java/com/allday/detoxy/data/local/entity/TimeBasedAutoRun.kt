@@ -121,6 +121,21 @@ data class TimeBasedAutoRun(
      * - scheduleGroupId가 null이면 이 필드는 무시됨 (항상 독립 실행)
      * - scheduleGroupId가 있을 때만 의미 있음
      */
-    val isIndependent: Boolean = true
+    val isIndependent: Boolean = true,
+
+    // ==================== v6 추가: 그룹 내 우선순위 ====================
+
+    /**
+     * 그룹 내 우선순위 (v6+)
+     *
+     * scheduleGroupId가 있을 때 그룹 내 시간대 정렬용.
+     * 낮은 숫자가 높은 우선순위 (0이 최우선).
+     * 기본값: 0
+     *
+     * ## 주의사항
+     * - scheduleGroupId가 null이면 의미 없음
+     * - 3차 고도화 MVP에서는 선택적 필드
+     */
+    val groupPriority: Int = 0
 )
 

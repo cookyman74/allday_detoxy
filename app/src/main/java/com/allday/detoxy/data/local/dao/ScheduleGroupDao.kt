@@ -96,6 +96,16 @@ interface ScheduleGroupDao {
     suspend fun setActive(id: String, isActive: Boolean)
 
     /**
+     * 활성화/비활성화 및 마지막 활성화 시각 업데이트 (v6+)
+     *
+     * @param id 스케줄 그룹 ID
+     * @param isActive 활성화 여부
+     * @param timestamp 마지막 활성화 시각 (활성화 시 현재 시간, 비활성화 시 null)
+     */
+    @Query("UPDATE schedule_group SET isActive = :isActive, lastActivatedAt = :timestamp WHERE id = :id")
+    suspend fun setActiveWithTimestamp(id: String, isActive: Boolean, timestamp: Long? = null)
+
+    /**
      * 총 개수 조회
      *
      * @return 총 개수

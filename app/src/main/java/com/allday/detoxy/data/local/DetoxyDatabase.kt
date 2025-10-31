@@ -36,6 +36,7 @@ import com.allday.detoxy.data.local.entity.UserSettings
  * - v3 (1차 고도화 Week 2B): FocusDistraction, DetoxyRoutineLog, FocusSettings 추가
  * - v4 (2차 고도화): TimeBasedAutoRun, LocationBasedAutoRun, CustomTimerPreset, AutoRunLog 추가 + UserSettings 확장
  * - v5 (2.5차 고도화): ScheduleGroup 추가 + TimeBasedAutoRun/LocationBasedAutoRun 확장
+ * - v6 (3차 고도화): ScheduleGroup UI 필드 + LocationBasedAutoRun 연동 옵션 + TimeBasedAutoRun 우선순위
  *
  * @property sessionDao FocusSession DAO
  * @property settingsDao UserSettings DAO
@@ -63,7 +64,7 @@ import com.allday.detoxy.data.local.entity.UserSettings
         AutoRunLog::class,
         ScheduleGroup::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class DetoxyDatabase : RoomDatabase() {

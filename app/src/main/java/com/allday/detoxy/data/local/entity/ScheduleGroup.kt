@@ -68,6 +68,34 @@ data class ScheduleGroup(
     /**
      * 생성 시간 (timestamp)
      */
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    // ==================== v6 추가: UI 및 통계 필드 ====================
+
+    /**
+     * 아이콘 타입 (v6+)
+     *
+     * UI 표시용 아이콘 타입.
+     * 허용값: WORK, STUDY, GYM, HOME, CUSTOM 등
+     * 기본값: "WORK"
+     */
+    val iconType: String = "WORK",
+
+    /**
+     * 색상 코드 (v6+)
+     *
+     * UI 표시용 색상 (HEX 형식).
+     * 기본값: "#4CAF50" (녹색)
+     */
+    val colorHex: String = "#4CAF50",
+
+    /**
+     * 마지막 활성화 시각 (v6+)
+     *
+     * 시간표가 마지막으로 활성화된 시각 (timestamp).
+     * 통계 및 분석 용도.
+     * null: 아직 활성화된 적 없음
+     */
+    val lastActivatedAt: Long? = null
 )
 

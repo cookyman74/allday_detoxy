@@ -1818,16 +1818,17 @@
 - [ ] `working_history/2025-11-XX_3rd_advanced_*.md` (5개 예상)
 
 **데이터 레이어** (2.5차에서 완료, 3차에서 확장):
-- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/ScheduleGroup.kt` (2.5차 완료)
-- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/TimeBasedAutoRun.kt` (2.5차 완료)
-- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/LocationBasedAutoRun.kt` (2.5차 완료)
-- [ ] `app/src/main/java/com/allday/detoxy/data/local/migrations/Migration_5_6.kt` (3차 신규)
-- [ ] `app/src/androidTest/java/com/allday/detoxy/data/local/migrations/MigrationTest_5_6.kt` (3차 신규)
+- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/ScheduleGroup.kt` (2.5차 완료, v6 필드 추가 완료)
+- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/TimeBasedAutoRun.kt` (2.5차 완료, v6 필드 추가 완료)
+- [x] `app/src/main/java/com/allday/detoxy/data/local/entity/LocationBasedAutoRun.kt` (2.5차 완료, v6 필드 추가 완료)
+- [x] `app/src/main/java/com/allday/detoxy/data/local/migrations/Migration_5_6.kt` (3차 신규, 완료)
+- [x] `app/src/androidTest/java/com/allday/detoxy/data/local/migrations/MigrationTest_5_6.kt` (3차 신규, 완료)
 
 **도메인 & 데이터 레이어** (2.5차에서 완료, 3차에서 확장):
 - [x] `app/src/main/java/com/allday/detoxy/domain/repository/ScheduleGroupRepository.kt` (2.5차 완료)
 - [x] `app/src/main/java/com/allday/detoxy/data/repository/ScheduleGroupRepositoryImpl.kt` (2.5차 완료)
-- [ ] 위 파일들에 메서드 추가 (3차 확장)
+- [x] `app/src/main/java/com/allday/detoxy/data/local/dao/ScheduleGroupDao.kt` (v6 메서드 확장 완료)
+- [x] `app/src/main/java/com/allday/detoxy/data/local/dao/LocationBasedAutoRunDao.kt` (v6 메서드 추가 완료)
 
 **비즈니스 로직** (3차 신규):
 - [ ] `app/src/main/java/com/allday/detoxy/core/manager/ScheduleGroupManager.kt`

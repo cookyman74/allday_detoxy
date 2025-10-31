@@ -164,5 +164,29 @@ interface LocationBasedAutoRunDao {
      */
     @Query("UPDATE location_based_auto_run SET linkedScheduleGroupId = NULL WHERE linkedScheduleGroupId = :scheduleGroupId")
     suspend fun unlinkFromGroup(scheduleGroupId: String)
+
+    // ==================== v6 추가: 위치-시간표 연동 조회 ====================
+
+    /**
+     * 진입 시 시간표 자동 활성화 옵션이 설정된 위치 조회 (v6+)
+     *
+     * activateScheduleOnEnter = true인 위치들만 조회합니다.
+     * GeofenceTransitionsReceiver에서 위치 진입 시 시간표 활성화에 사용됩니다.
+     *
+     * @return 자동 활성화 옵션이 설정된 LocationBasedAutoRun 리스트 Flow
+     */
+    @Query("SELECT * FROM location_based_auto_run WHERE activateScheduleOnEnter = 1 AND isEnabled = 1")
+    fun getAutoActivateLocations(): Flow<List<LocationBasedAutoRun>>
+
+    /**
+     * 이탈 시 시간표 자동 비활성화 옵션이 설정된 위치 조회 (v6+)
+     *
+     * deactivateScheduleOnExit = true인 위치들만 조회합니다.
+     * GeofenceTransitionsReceiver에서 위치 이탈 시 시간표 비활성화에 사용됩니다.
+     *
+     * @return 자동 비활성화 옵션이 설정된 LocationBasedAutoRun 리스트 Flow
+     */
+    @Query("SELECT * FROM location_based_auto_run WHERE deactivateScheduleOnExit = 1 AND isEnabled = 1")
+    fun getAutoDeactivateLocations(): Flow<List<LocationBasedAutoRun>>
 }
 

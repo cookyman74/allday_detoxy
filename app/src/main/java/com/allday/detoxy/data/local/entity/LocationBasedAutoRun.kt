@@ -165,6 +165,43 @@ data class LocationBasedAutoRun(
      * "회사" 위치 진입 → "업무 시간표" 그룹 활성화 → 오전 10시, 오후 2시, 오후 4시 알람 등록
      * "회사" 위치 이탈 → "업무 시간표" 그룹 비활성화 → 3개 알람 취소
      */
-    val linkedScheduleGroupId: String? = null
+    val linkedScheduleGroupId: String? = null,
+
+    // ==================== v6 추가: 위치-시간표 연동 옵션 ====================
+
+    /**
+     * 위치 진입 시 시간표 자동 활성화 (v6+)
+     *
+     * true: 위치 진입 시 linkedScheduleGroupId의 시간표 자동 활성화
+     * false: 진입 시 시간표 활성화 안 함 (기본값)
+     *
+     * ## 주의사항
+     * - linkedScheduleGroupId가 null이면 의미 없음
+     */
+    val activateScheduleOnEnter: Boolean = false,
+
+    /**
+     * 위치 이탈 시 시간표 자동 비활성화 (v6+)
+     *
+     * true: 위치 이탈 시 linkedScheduleGroupId의 시간표 자동 비활성화
+     * false: 이탈 시 시간표 비활성화 안 함 (기본값)
+     *
+     * ## 주의사항
+     * - linkedScheduleGroupId가 null이면 의미 없음
+     */
+    val deactivateScheduleOnExit: Boolean = false,
+
+    /**
+     * 위치 이탈 시 액션 타입 (v6+)
+     *
+     * 허용값:
+     * - DEACTIVATE: 자동 비활성화 (기본값)
+     * - ASK_USER: 사용자에게 확인 요청
+     * - DO_NOTHING: 아무 작업 안 함
+     *
+     * ## 주의사항
+     * - deactivateScheduleOnExit이 false이면 의미 없음
+     */
+    val exitActionType: String = "DEACTIVATE"
 )
 
