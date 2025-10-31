@@ -99,6 +99,9 @@ fun AddLocationAutoRunDialog(
     
     // 🆕 3차 고도화: 시간표 목록
     val scheduleGroups by scheduleViewModel.scheduleGroups.collectAsStateWithLifecycle()
+    
+    // 🆕 3차 고도화 개선: 빠른 시간표 생성
+    var showQuickCreateDialog by remember { mutableStateOf(false) }
 
     // 위치 검색 함수
     val performSearch: () -> Unit = {
@@ -178,7 +181,8 @@ fun AddLocationAutoRunDialog(
                             onActivateOnEnterChange = { activateOnEnter = it },
                             deactivateOnExit = deactivateOnExit,
                             onDeactivateOnExitChange = { deactivateOnExit = it },
-                            scheduleGroups = scheduleGroups
+                            scheduleGroups = scheduleGroups,
+                            onCreateNewSchedule = { showQuickCreateDialog = true }
                         )
                     }
                 }
@@ -262,6 +266,28 @@ fun AddLocationAutoRunDialog(
             }
         }
     )
+    
+    // 🆕 3차 고도화 개선: 빠른 시간표 생성 Dialog
+    if (showQuickCreateDialog) {
+        QuickCreateScheduleDialog(
+            onDismiss = { showQuickCreateDialog = false },
+            onConfirm = { scheduleName ->
+                // 시간표 생성
+                scope.launch {
+                    val newGroupId = scheduleViewModel.createScheduleGroup(scheduleName, null)
+                    
+                    // 생성된 시간표 자동 선택
+                    selectedScheduleGroupId = newGroupId
+                    enableScheduleLink = true
+                    activateOnEnter = true  // 기본값: 도착 시 활성화
+                    deactivateOnExit = true  // 기본값: 이탈 시 비활성화
+                    
+                    showQuickCreateDialog = false
+                }
+            },
+            locationLabel = label
+        )
+    }
 }
 
 /**

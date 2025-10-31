@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -28,6 +30,7 @@ import com.allday.detoxy.data.local.entity.ScheduleGroup
  * @param deactivateOnExit 위치 이탈 시 비활성화 여부
  * @param onDeactivateOnExitChange 이탈 시 비활성화 변경 콜백
  * @param scheduleGroups 사용 가능한 시간표 그룹 목록
+ * @param onCreateNewSchedule 새 시간표 만들기 콜백 (3차 고도화 개선)
  */
 @Composable
 fun ScheduleLinkSettingsStep(
@@ -39,7 +42,8 @@ fun ScheduleLinkSettingsStep(
     onActivateOnEnterChange: (Boolean) -> Unit,
     deactivateOnExit: Boolean,
     onDeactivateOnExitChange: (Boolean) -> Unit,
-    scheduleGroups: List<ScheduleGroup>
+    scheduleGroups: List<ScheduleGroup>,
+    onCreateNewSchedule: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -114,29 +118,43 @@ fun ScheduleLinkSettingsStep(
                 )
                 
                 if (scheduleGroups.isEmpty()) {
+                    // 🆕 시간표가 없을 때: 바로 생성할 수 있는 옵션 제공
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
                         )
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "⚠️ 시간표 없음",
+                                text = "💡 시간표 만들기",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "아직 생성된 시간표가 없습니다.\n먼저 '스케줄 그룹' 화면에서 시간표를 만들어주세요.",
+                                text = "이 위치에 도착했을 때 자동으로 실행할 시간표를 만들어보세요.\n예: 회사 → 업무 시간표 (오전 10시, 오후 2시)",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
+                            
+                            FilledTonalButton(
+                                onClick = onCreateNewSchedule,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("새 시간표 만들기")
+                            }
                         }
                     }
                 } else {

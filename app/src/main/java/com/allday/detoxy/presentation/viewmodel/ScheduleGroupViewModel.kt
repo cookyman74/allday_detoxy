@@ -90,26 +90,27 @@ class ScheduleGroupViewModel @Inject constructor(
      *
      * @param name 그룹 이름
      * @param description 그룹 설명 (옵션)
+     * @return 생성된 ScheduleGroup의 ID (3차 고도화 개선: 빠른 시간표 생성 시 자동 선택용)
      */
-    fun createScheduleGroup(name: String, description: String?) {
+    suspend fun createScheduleGroup(name: String, description: String?): String {
         if (name.isBlank()) {
             _errorState.value = "그룹 이름을 입력해주세요"
-            return
+            throw IllegalArgumentException("그룹 이름을 입력해주세요")
         }
 
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                val scheduleGroup = ScheduleGroup(
-                    name = name.trim(),
-                    description = description?.trim()?.takeIf { it.isNotEmpty() }
-                )
-                repository.insert(scheduleGroup)
-            } catch (e: Exception) {
-                _errorState.value = "그룹 생성 실패: ${e.message}"
-            } finally {
-                _isLoading.value = false
-            }
+        try {
+            _isLoading.value = true
+            val scheduleGroup = ScheduleGroup(
+                name = name.trim(),
+                description = description?.trim()?.takeIf { it.isNotEmpty() }
+            )
+            repository.insert(scheduleGroup)
+            return scheduleGroup.id
+        } catch (e: Exception) {
+            _errorState.value = "그룹 생성 실패: ${e.message}"
+            throw e
+        } finally {
+            _isLoading.value = false
         }
     }
 

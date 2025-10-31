@@ -19,6 +19,7 @@ import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleGroupCard
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
+import kotlinx.coroutines.launch
 
 /**
  * 스케줄 그룹 관리 화면
@@ -46,6 +47,8 @@ fun ScheduleGroupScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsStateWithLifecycle()
     val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsStateWithLifecycle()
+    
+    val scope = rememberCoroutineScope()
     
     var showAddDialog by remember { mutableStateOf(false) }
     var editingGroup by remember { mutableStateOf<ScheduleGroup?>(null) }
@@ -124,7 +127,9 @@ fun ScheduleGroupScreen(
                         )
                     )
                 } else {
-                    viewModel.createScheduleGroup(name, description)
+                    scope.launch {
+                        viewModel.createScheduleGroup(name, description)
+                    }
                 }
             },
             existingGroup = editingGroup
