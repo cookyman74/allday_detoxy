@@ -27,6 +27,7 @@ import com.allday.detoxy.data.local.entity.ScheduleGroup
  * - 연결된 위치 개수 표시
  * - 활성화/비활성화 버튼 (ScheduleGroupManager 사용)
  * - 아이콘 및 색상 표시
+ * - 시간표 관리 버튼 (TimeBasedAutoRunScreen으로 이동)
  *
  * ## 성능 개선
  * - ViewModel 의존성 제거 (Screen에서 데이터 전달)
@@ -39,6 +40,7 @@ import com.allday.detoxy.data.local.entity.ScheduleGroup
  * @param onActivate 활성화/비활성화 콜백
  * @param onEdit 편집 콜백
  * @param onDelete 삭제 콜백
+ * @param onManageTimeSlots 시간표 관리 콜백 (TimeBasedAutoRunScreen으로 이동)
  * @param modifier Modifier
  */
 @Composable
@@ -50,6 +52,7 @@ fun ScheduleGroupCard(
     onActivate: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onManageTimeSlots: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // 확장/축소 상태
@@ -174,39 +177,72 @@ fun ScheduleGroupCard(
             Spacer(modifier = Modifier.height(12.dp))
             
             // 액션 버튼
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 활성화/비활성화 버튼
-                if (isActive) {
-                    OutlinedButton(onClick = onActivate) {
-                        Text("비활성화")
-                    }
-                } else {
-                    Button(onClick = onActivate) {
-                        Text("활성화")
-                    }
-                }
-                
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // 확장/축소 버튼 (시간대가 있을 때만)
-                    if (timeBasedAutoRuns.isNotEmpty()) {
-                        IconButton(onClick = { expanded = !expanded }) {
-                            Icon(
-                                imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (expanded) "접기" else "펼치기"
-                            )
+                // 상단: 활성화 버튼 + 시간표 관리 버튼
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // 활성화/비활성화 버튼
+                    if (isActive) {
+                        OutlinedButton(
+                            onClick = onActivate,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("비활성화")
+                        }
+                    } else {
+                        Button(
+                            onClick = onActivate,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("활성화")
                         }
                     }
                     
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, "편집")
+                    // 시간표 관리 버튼 (시간대가 있을 때만 표시)
+                    if (timeBasedAutoRuns.isNotEmpty()) {
+                        OutlinedButton(
+                            onClick = onManageTimeSlots,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("시간표 관리")
+                        }
                     }
-                    
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, "삭제")
+                }
+                
+                // 하단: 아이콘 버튼들
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // 확장/축소 버튼 (시간대가 있을 때만)
+                        if (timeBasedAutoRuns.isNotEmpty()) {
+                            IconButton(onClick = { expanded = !expanded }) {
+                                Icon(
+                                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = if (expanded) "접기" else "펼치기"
+                                )
+                            }
+                        }
+                        
+                        IconButton(onClick = onEdit) {
+                            Icon(Icons.Default.Edit, "편집")
+                        }
+                        
+                        IconButton(onClick = onDelete) {
+                            Icon(Icons.Default.Delete, "삭제")
+                        }
                     }
                 }
             }

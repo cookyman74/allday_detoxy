@@ -31,14 +31,17 @@ import kotlinx.coroutines.launch
  * - ScheduleGroup 생성/수정/삭제
  * - ScheduleGroup 활성화/비활성화
  * - 연결된 시간표 및 위치 개수 표시
+ * - 시간표 관리 버튼을 통해 TimeBasedAutoRunScreen으로 이동
  *
  * @param onBack 뒤로가기 콜백
+ * @param onNavigateToTimeBasedAutoRun 시간 기반 자동 실행 화면으로 이동 콜백
  * @param viewModel ScheduleGroupViewModel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleGroupScreen(
     onBack: () -> Unit = {},
+    onNavigateToTimeBasedAutoRun: () -> Unit = {},
     viewModel: ScheduleGroupViewModel = hiltViewModel()
 ) {
     val scheduleGroups by viewModel.scheduleGroups.collectAsStateWithLifecycle()
@@ -317,6 +320,10 @@ fun ScheduleGroupScreen(
                             },
                             onDelete = {
                                 deletingGroupId = group.id
+                            },
+                            onManageTimeSlots = {
+                                // 시간 기반 자동 실행 화면으로 이동
+                                onNavigateToTimeBasedAutoRun()
                             }
                         )
                     }

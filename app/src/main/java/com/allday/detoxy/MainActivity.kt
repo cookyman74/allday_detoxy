@@ -207,7 +207,8 @@ fun MainScreenWithNavigation() {
                 // 🆕 3차 고도화: 시간표 그룹 관리 화면
                 AutoRunScreenType.SCHEDULE_GROUP -> {
                     ScheduleGroupScreen(
-                        onBack = { showAutoRunScreen = AutoRunScreenType.NONE }
+                        onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
+                        onNavigateToTimeBasedAutoRun = { showAutoRunScreen = AutoRunScreenType.TIME_BASED }
                     )
                 }
                 // 탭별 화면
