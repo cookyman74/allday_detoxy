@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -40,6 +41,7 @@ fun ScheduleGroupScreen(
     viewModel: ScheduleGroupViewModel = hiltViewModel()
 ) {
     val scheduleGroups by viewModel.scheduleGroups.collectAsStateWithLifecycle()
+    val activeGroup by viewModel.activeGroup.collectAsStateWithLifecycle()
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val linkedTimeBasedAutoRunCounts by viewModel.linkedTimeBasedAutoRunCounts.collectAsStateWithLifecycle()
@@ -207,6 +209,54 @@ fun ScheduleGroupScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // 🆕 3차 고도화: 현재 활성화된 시간표 카드
+                    if (activeGroup != null) {
+                        item {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Text(
+                                        text = "⚡ 현재 활성화된 시간표",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = activeGroup!!.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    if (activeGroup!!.description != null) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = activeGroup!!.description!!,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    OutlinedButton(
+                                        onClick = { viewModel.deactivateGroup(activeGroup!!.id) },
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    ) {
+                                        Text("비활성화")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
                     // 안내 카드
                     item {
                         Card(
@@ -240,23 +290,24 @@ fun ScheduleGroupScreen(
                         items = scheduleGroups,
                         key = { it.id }
                     ) { group ->
-                        // Map에서 연결된 설정 개수 조회
-                        val timeCount = linkedTimeBasedAutoRunCounts[group.id] ?: 0
-                        val locationCount = linkedLocationCounts[group.id] ?: 0
-                        
                         ScheduleGroupCard(
-                            scheduleGroup = group,
-                            linkedTimeCount = timeCount,
-                            linkedLocationCount = locationCount,
-                            onToggle = { isActive ->
-                                viewModel.toggleScheduleGroup(group.id, isActive)
+                            group = group,
+                            isActive = group.id == activeGroup?.id,
+                            onActivate = {
+                                // 🆕 3차 고도화: ScheduleGroupManager 사용
+                                if (group.isActive) {
+                                    viewModel.deactivateGroup(group.id)
+                                } else {
+                                    viewModel.activateGroup(group.id)
+                                }
                             },
                             onEdit = {
                                 editingGroup = group
                             },
                             onDelete = {
                                 deletingGroupId = group.id
-                            }
+                            },
+                            viewModel = viewModel
                         )
                     }
                     

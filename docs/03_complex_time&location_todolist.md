@@ -730,7 +730,7 @@
 ### 3.1 ScheduleGroupScreen (신규 화면)
 
 #### 3.1.1 ScheduleGroupViewModel
-- [ ] **ScheduleGroupViewModel.kt** 생성
+- [x] **ScheduleGroupViewModel.kt** 확장 ✅ **완료**: 2025-10-31
   ```kotlin
   @HiltViewModel
   class ScheduleGroupViewModel @Inject constructor(
@@ -808,7 +808,7 @@
   ```
 
 #### 3.1.2 ScheduleGroupScreen 레이아웃
-- [ ] **ScheduleGroupScreen.kt** 생성 (~300줄)
+- [x] **ScheduleGroupScreen.kt** 확장 ✅ **완료**: 2025-10-31
   ```kotlin
   @OptIn(ExperimentalMaterial3Api::class)
   @Composable
@@ -922,7 +922,10 @@
   ```
 
 #### 3.1.3 ScheduleGroupCard 컴포넌트
-- [ ] **ScheduleGroupCard.kt** 생성
+- [x] **ScheduleGroupCard.kt** 확장 ✅ **완료**: 2025-10-31
+
+**작업 기록**: `working_history/2025-10-31_3rd_advanced_3.1.md` ✅ **완료**: 2025-10-31
+
   ```kotlin
   @Composable
   fun ScheduleGroupCard(

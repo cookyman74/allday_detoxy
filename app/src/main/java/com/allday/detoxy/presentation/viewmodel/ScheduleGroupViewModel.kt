@@ -2,6 +2,7 @@ package com.allday.detoxy.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.allday.detoxy.core.manager.ScheduleGroupManager
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
@@ -19,14 +20,16 @@ import javax.inject.Inject
  * ## 주요 기능
  * - ScheduleGroup 목록 조회
  * - ScheduleGroup 생성/수정/삭제
- * - ScheduleGroup 활성화/비활성화
+ * - ScheduleGroup 활성화/비활성화 (ScheduleGroupManager 사용)
  * - 연결된 TimeBasedAutoRun 및 LocationBasedAutoRun 조회
  *
  * @param repository ScheduleGroupRepository
+ * @param scheduleManager ScheduleGroupManager (3차 고도화: 시간표 활성화/비활성화)
  */
 @HiltViewModel
 class ScheduleGroupViewModel @Inject constructor(
-    private val repository: ScheduleGroupRepository
+    private val repository: ScheduleGroupRepository,
+    private val scheduleManager: ScheduleGroupManager
 ) : ViewModel() {
 
     /**
@@ -37,6 +40,19 @@ class ScheduleGroupViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
+        )
+
+    /**
+     * 활성화된 ScheduleGroup (Flow)
+     *
+     * 3차 고도화: 한 번에 하나의 시간표만 활성화 가능 (단일 활성화 원칙)
+     */
+    val activeGroup: StateFlow<ScheduleGroup?> = repository.getActive()
+        .map { it.firstOrNull() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
         )
 
     /**
@@ -143,6 +159,8 @@ class ScheduleGroupViewModel @Inject constructor(
     /**
      * ScheduleGroup 활성화/비활성화 토글
      *
+     * 2.5차 고도화: 단순 toggle (UI에서 직접 사용 시)
+     *
      * @param scheduleGroupId ScheduleGroup ID
      * @param isActive 활성화 여부
      */
@@ -153,6 +171,69 @@ class ScheduleGroupViewModel @Inject constructor(
             } catch (e: Exception) {
                 _errorState.value = "그룹 상태 변경 실패: ${e.message}"
             }
+        }
+    }
+
+    /**
+     * ScheduleGroup 활성화
+     *
+     * 3차 고도화: ScheduleGroupManager를 통한 시간표 활성화
+     * - 다른 모든 그룹 자동 비활성화 (단일 활성화 원칙)
+     * - 그룹 내 활성화된 시간대의 알람 자동 등록
+     *
+     * @param scheduleGroupId ScheduleGroup ID
+     */
+    fun activateGroup(scheduleGroupId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val result = scheduleManager.activateGroup(scheduleGroupId)
+                if (result.isFailure) {
+                    _errorState.value = "시간표 활성화 실패: ${result.exceptionOrNull()?.message}"
+                }
+            } catch (e: Exception) {
+                _errorState.value = "시간표 활성화 실패: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * ScheduleGroup 비활성화
+     *
+     * 3차 고도화: ScheduleGroupManager를 통한 시간표 비활성화
+     * - 그룹 내 모든 시간대의 알람 자동 취소
+     *
+     * @param scheduleGroupId ScheduleGroup ID
+     */
+    fun deactivateGroup(scheduleGroupId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val result = scheduleManager.deactivateGroup(scheduleGroupId)
+                if (result.isFailure) {
+                    _errorState.value = "시간표 비활성화 실패: ${result.exceptionOrNull()?.message}"
+                }
+            } catch (e: Exception) {
+                _errorState.value = "시간표 비활성화 실패: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * 특정 ScheduleGroup의 연결된 TimeBasedAutoRun 조회
+     *
+     * 3차 고도화: ScheduleGroupCard에서 시간대 목록 표시 시 사용
+     *
+     * @param scheduleGroupId ScheduleGroup ID
+     * @return Flow<List<TimeBasedAutoRun>>
+     */
+    fun getTimeBasedAutoRuns(scheduleGroupId: String): Flow<List<TimeBasedAutoRun>> {
+        return flow {
+            repository.getLinkedTimeBasedAutoRuns(scheduleGroupId).let { emit(it) }
         }
     }
 
