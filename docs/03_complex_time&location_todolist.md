@@ -254,17 +254,17 @@
 
 **Note**: 기존 Clean Architecture 패턴 유지 - domain 인터페이스 + data 구현체 분리
 
-- [ ] **ScheduleGroupRepository.kt** (domain) 메서드 추가 (선택적)
+- [x] **ScheduleGroupRepository.kt** (domain) 메서드 추가 ✅ **완료**: 2025-10-30
   ```kotlin
   interface ScheduleGroupRepository {
       // ... 기존 메서드들
       
       // 🆕 v6: lastActivatedAt 업데이트용
-      suspend fun activateWithTimestamp(scheduleGroupId: String, timestamp: Long)
+      suspend fun toggleActiveWithTimestamp(scheduleGroupId: String, isActive: Boolean, timestamp: Long? = null)
   }
   ```
 
-- [ ] **ScheduleGroupRepositoryImpl.kt** (data) 구현 추가 (선택적)
+- [x] **ScheduleGroupRepositoryImpl.kt** (data) 구현 추가 ✅ **완료**: 2025-10-30
   ```kotlin
   @Singleton
   class ScheduleGroupRepositoryImpl @Inject constructor(
@@ -274,14 +274,14 @@
   ) : ScheduleGroupRepository {
       // ... 기존 메서드들
       
-      override suspend fun activateWithTimestamp(scheduleGroupId: String, timestamp: Long) {
-          scheduleGroupDao.setActive(scheduleGroupId, true, timestamp)
-          timeBasedAutoRunDao.setGroupActive(scheduleGroupId, true)
+      override suspend fun toggleActiveWithTimestamp(scheduleGroupId: String, isActive: Boolean, timestamp: Long?) {
+          scheduleGroupDao.setActiveWithTimestamp(scheduleGroupId, isActive, timestamp)
+          timeBasedAutoRunDao.setGroupActive(scheduleGroupId, isActive)
       }
   }
   ```
   - **참조**: [기존 ScheduleGroupRepositoryImpl.kt](../app/src/main/java/com/allday/detoxy/data/repository/ScheduleGroupRepositoryImpl.kt)
-  - **Note**: 기존 toggleActive와 병행 사용 또는 대체
+  - **Note**: 기존 toggleActive와 병행 사용
 
 #### 1.1.6 마이그레이션 테스트 (v5→v6)
 - [x] **MigrationTest_5_6.kt** 작성 ✅ **완료**: 2025-10-30

@@ -74,6 +74,14 @@ class ScheduleGroupRepositoryImpl @Inject constructor(
         timeBasedAutoRunDao.setGroupActive(scheduleGroupId, isActive)
     }
 
+    override suspend fun toggleActiveWithTimestamp(scheduleGroupId: String, isActive: Boolean, timestamp: Long?) {
+        // 1. 스케줄 그룹 활성화/비활성화 및 마지막 활성화 시각 업데이트
+        scheduleGroupDao.setActiveWithTimestamp(scheduleGroupId, isActive, timestamp)
+        
+        // 2. 종속 자동 실행 활성화/비활성화 (isIndependent=false만)
+        timeBasedAutoRunDao.setGroupActive(scheduleGroupId, isActive)
+    }
+
     // ==================== 참조 무결성 관리 ====================
 
     override suspend fun getLinkedTimeBasedAutoRuns(scheduleGroupId: String): List<TimeBasedAutoRun> {

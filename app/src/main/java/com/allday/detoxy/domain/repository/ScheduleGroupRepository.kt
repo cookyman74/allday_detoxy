@@ -90,6 +90,21 @@ interface ScheduleGroupRepository {
      */
     suspend fun toggleActive(scheduleGroupId: String, isActive: Boolean)
 
+    /**
+     * 스케줄 그룹 활성화/비활성화 및 마지막 활성화 시각 업데이트 (v6+)
+     *
+     * ## 동작
+     * - 스케줄 그룹 활성화/비활성화
+     * - 활성화 시: lastActivatedAt을 현재 시각으로 업데이트
+     * - 비활성화 시: lastActivatedAt은 유지 (null로 변경하지 않음)
+     * - 연결된 TimeBasedAutoRun 중 종속 모드(isIndependent=false)만 비활성화
+     *
+     * @param scheduleGroupId 스케줄 그룹 ID
+     * @param isActive 활성화 여부
+     * @param timestamp 마지막 활성화 시각 (활성화 시 현재 시각, 비활성화 시 null)
+     */
+    suspend fun toggleActiveWithTimestamp(scheduleGroupId: String, isActive: Boolean, timestamp: Long? = null)
+
     // ==================== 참조 무결성 관리 ====================
 
     /**
