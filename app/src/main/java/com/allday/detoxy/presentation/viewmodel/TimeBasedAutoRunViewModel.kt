@@ -356,16 +356,4 @@ class TimeBasedAutoRunViewModel @Inject constructor(
             }
         }
     }
-
-    /**
-     * 특정 TimeBasedAutoRun의 ScheduleGroup 가져오기
-     *
-     * @param autoRun 조회할 TimeBasedAutoRun
-     * @return 연결된 ScheduleGroup 또는 null
-     */
-    fun getScheduleGroupForAutoRun(autoRun: TimeBasedAutoRun): ScheduleGroup? {
-        return autoRun.scheduleGroupId?.let { groupId ->
-            _scheduleGroupMap.value[groupId]
-        }
-    }
 }
