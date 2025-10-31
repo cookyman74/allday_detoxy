@@ -11,7 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
+import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import org.json.JSONArray
 import java.util.*
 
@@ -23,13 +26,15 @@ import java.util.*
  * @param existingAutoRun 편집할 TimeBasedAutoRun (null이면 추가 모드)
  * @param onDismiss 다이얼로그 닫기 콜백
  * @param onSave 저장 버튼 클릭 콜백 (생성된 TimeBasedAutoRun 전달)
+ * @param scheduleViewModel ScheduleGroupViewModel (3차 고도화: 시간표 연동)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTimeBasedAutoRunDialog(
     existingAutoRun: TimeBasedAutoRun? = null,
     onDismiss: () -> Unit,
-    onSave: (TimeBasedAutoRun) -> Unit
+    onSave: (TimeBasedAutoRun) -> Unit,
+    scheduleViewModel: ScheduleGroupViewModel = hiltViewModel()  // 🆕 3차 고도화
 ) {
     // 상태 관리
     var selectedHour by remember { mutableStateOf(existingAutoRun?.hour ?: 9) }
@@ -37,6 +42,13 @@ fun AddTimeBasedAutoRunDialog(
     var durationMinutes by remember { mutableStateOf(existingAutoRun?.durationMinutes ?: 25) }
     var selectedPreset by remember { mutableStateOf(existingAutoRun?.presetType ?: "STANDARD") }
     var label by remember { mutableStateOf(existingAutoRun?.label ?: "") }
+    
+    // 🆕 3차 고도화: 시간표 연결 상태
+    var selectedScheduleGroupId by remember { mutableStateOf(existingAutoRun?.scheduleGroupId) }
+    var isIndependent by remember { mutableStateOf(existingAutoRun?.isIndependent ?: true) }
+    
+    // 🆕 3차 고도화: 시간표 목록
+    val scheduleGroups by scheduleViewModel.scheduleGroups.collectAsStateWithLifecycle()
     
     // 요일 선택 상태 (MON, TUE, WED, THU, FRI, SAT, SUN)
     val enabledDays = remember {
@@ -130,6 +142,31 @@ fun AddTimeBasedAutoRunDialog(
                     placeholder = { Text("예: 오전 업무 집중") },
                     singleLine = true
                 )
+                
+                // 🆕 3차 고도화: 시간표 연결 설정
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                
+                Text(
+                    text = "시간표 연결",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                ScheduleLinkSection(
+                    scheduleGroups = scheduleGroups,
+                    selectedScheduleGroupId = selectedScheduleGroupId,
+                    onScheduleGroupSelected = { groupId ->
+                        selectedScheduleGroupId = groupId
+                        isIndependent = groupId == null
+                    },
+                    isIndependent = isIndependent,
+                    onIndependentChange = { independent ->
+                        isIndependent = independent
+                        if (independent) {
+                            selectedScheduleGroupId = null
+                        }
+                    }
+                )
             }
         },
         confirmButton = {
@@ -145,7 +182,10 @@ fun AddTimeBasedAutoRunDialog(
                         enabledDays = JSONArray(selectedDays).toString(),
                         label = label.takeIf { it.isNotBlank() },
                         isEnabled = existingAutoRun?.isEnabled ?: true,
-                        createdAt = existingAutoRun?.createdAt ?: System.currentTimeMillis()
+                        createdAt = existingAutoRun?.createdAt ?: System.currentTimeMillis(),
+                        // 🆕 3차 고도화: 시간표 연결 필드
+                        scheduleGroupId = selectedScheduleGroupId,
+                        isIndependent = isIndependent
                     )
                     onSave(newAutoRun)
                 },
@@ -408,6 +448,114 @@ private fun parseEnabledDays(enabledDaysJson: String): Set<String> {
         days
     } catch (e: Exception) {
         emptySet()
+    }
+}
+
+/**
+ * 🆕 3차 고도화: 시간표 연결 섹션
+ */
+@Composable
+private fun ScheduleLinkSection(
+    scheduleGroups: List<com.allday.detoxy.data.local.entity.ScheduleGroup>,
+    selectedScheduleGroupId: String?,
+    onScheduleGroupSelected: (String?) -> Unit,
+    isIndependent: Boolean,
+    onIndependentChange: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // 독립 실행 옵션
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .toggleable(
+                    value = isIndependent,
+                    role = Role.Checkbox,
+                    onValueChange = onIndependentChange
+                ),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "독립 실행",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "시간표와 관계없이 항상 실행",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Checkbox(
+                checked = isIndependent,
+                onCheckedChange = null
+            )
+        }
+        
+        // 시간표 목록 (독립 실행이 아닐 때만 표시)
+        if (!isIndependent) {
+            if (scheduleGroups.isEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Text(
+                        text = "⚠️ 시간표가 없습니다. '스케줄 그룹' 화면에서 시간표를 만들어주세요.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            } else {
+                Text(
+                    text = "시간표 선택",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                scheduleGroups.forEach { group ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = group.id == selectedScheduleGroupId,
+                                role = Role.RadioButton,
+                                onValueChange = { selected ->
+                                    if (selected) {
+                                        onScheduleGroupSelected(group.id)
+                                    }
+                                }
+                            ),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = group.name,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            if (group.isActive) {
+                                Text(
+                                    text = "⚡ 현재 활성화 중",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        RadioButton(
+                            selected = group.id == selectedScheduleGroupId,
+                            onClick = null
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
