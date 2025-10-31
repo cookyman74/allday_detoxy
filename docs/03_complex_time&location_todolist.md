@@ -123,7 +123,7 @@
 
 #### 1.1.2 새로 추가할 필드 (v5→v6)
 
-- [ ] **ScheduleGroup.kt** 선택적 UI 필드 추가 (v6)
+- [x] **ScheduleGroup.kt** 선택적 UI 필드 추가 (v6)
   ```kotlin
   // 기존 필드는 모두 유지, 아래 필드만 추가
   val iconType: String = "WORK",       // 🆕 WORK, STUDY, GYM, HOME, etc.
@@ -131,8 +131,9 @@
   val lastActivatedAt: Long? = null    // 🆕 마지막 활성화 시각 (통계용)
   ```
   - **Note**: 이 필드들은 선택적이며, 3차 고도화 MVP에서 제외 가능
+  - ✅ **완료**: 2025-10-30
 
-- [ ] **LocationBasedAutoRun.kt** 활성화 옵션 필드 추가 (v6)
+- [x] **LocationBasedAutoRun.kt** 활성화 옵션 필드 추가 (v6)
   ```kotlin
   // linkedScheduleGroupId는 이미 v5에 존재, 아래 필드만 추가
   val activateScheduleOnEnter: Boolean = false,   // 🆕 진입 시 시간표 활성화
@@ -140,16 +141,18 @@
   val exitActionType: String = "DEACTIVATE"       // 🆕 DEACTIVATE, ASK_USER, DO_NOTHING
   ```
   - **참조**: [기존 LocationBasedAutoRun.kt](../app/src/main/java/com/allday/detoxy/data/local/entity/LocationBasedAutoRun.kt)
+  - ✅ **완료**: 2025-10-30
 
-- [ ] **TimeBasedAutoRun.kt** 우선순위 필드 추가 (v6, 선택적)
+- [x] **TimeBasedAutoRun.kt** 우선순위 필드 추가 (v6, 선택적)
   ```kotlin
   // scheduleGroupId, isIndependent는 이미 v5에 존재
   val groupPriority: Int = 0    // 🆕 그룹 내 우선순위 (정렬용, 선택적)
   ```
   - **Note**: 우선순위는 3차 고도화 MVP에서 제외 가능
+  - ✅ **완료**: 2025-10-30
 
 #### 1.1.3 마이그레이션 스크립트 (v5→v6)
-- [ ] **Migration_5_6.kt** 작성 (새로 추가할 필드만)
+- [x] **Migration_5_6.kt** 작성 (새로 추가할 필드만) ✅ **완료**: 2025-10-30
   ```kotlin
   val MIGRATION_5_6 = object : Migration(5, 6) {
       override fun migrate(db: SupportSQLiteDatabase) {
@@ -196,7 +199,7 @@
   - **참조**: [Migration_4_5.kt](../app/src/main/java/com/allday/detoxy/data/local/migrations/Migration_4_5.kt) - 2.5차에서 완료
   - **Note**: v5에서 이미 추가된 scheduleGroupId, linkedScheduleGroupId, isIndependent는 제외
 
-- [ ] **DetoxyDatabase.kt** 버전 업데이트
+- [x] **DetoxyDatabase.kt** 버전 업데이트 ✅ **완료**: 2025-10-30
   ```kotlin
   @Database(
       entities = [
@@ -207,7 +210,7 @@
   )
   ```
 
-- [ ] **DatabaseModule.kt**에 MIGRATION_5_6 추가
+- [x] **DatabaseModule.kt**에 MIGRATION_5_6 추가 ✅ **완료**: 2025-10-30
   ```kotlin
   addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
   ```
@@ -219,22 +222,22 @@
 - ✅ TimeBasedAutoRunDao.getByScheduleGroup, unlinkFromGroup, setGroupActive
 - ✅ LocationBasedAutoRunDao.getByLinkedGroup, unlinkFromGroup
 
-- [ ] **ScheduleGroupDao.kt** 메서드 추가 (선택적)
+- [x] **ScheduleGroupDao.kt** 메서드 추가 ✅ **완료**: 2025-10-30
   ```kotlin
   // lastActivatedAt 업데이트용 (v6 필드)
   @Query("UPDATE schedule_group SET isActive = :isActive, lastActivatedAt = :timestamp WHERE id = :groupId")
-  suspend fun setActive(groupId: String, isActive: Boolean, timestamp: Long = System.currentTimeMillis())
+  suspend fun setActiveWithTimestamp(groupId: String, isActive: Boolean, timestamp: Long? = null)
   ```
   - **참조**: [기존 ScheduleGroupDao.kt](../app/src/main/java/com/allday/detoxy/data/local/dao/ScheduleGroupDao.kt)
-  - **Note**: 기존 toggleActive 메서드 대체 또는 병행 사용
+  - **Note**: 기존 setActive 메서드와 병행 사용
 
-- [ ] **LocationBasedAutoRunDao.kt** 메서드 추가
+- [x] **LocationBasedAutoRunDao.kt** 메서드 추가 ✅ **완료**: 2025-10-30
   ```kotlin
   // 활성화 옵션이 설정된 위치 조회 (v6 필드)
-  @Query("SELECT * FROM location_based_auto_run WHERE activateScheduleOnEnter = 1")
+  @Query("SELECT * FROM location_based_auto_run WHERE activateScheduleOnEnter = 1 AND isEnabled = 1")
   fun getAutoActivateLocations(): Flow<List<LocationBasedAutoRun>>
   
-  @Query("SELECT * FROM location_based_auto_run WHERE deactivateScheduleOnExit = 1")
+  @Query("SELECT * FROM location_based_auto_run WHERE deactivateScheduleOnExit = 1 AND isEnabled = 1")
   fun getAutoDeactivateLocations(): Flow<List<LocationBasedAutoRun>>
   ```
   - **참조**: [기존 LocationBasedAutoRunDao.kt](../app/src/main/java/com/allday/detoxy/data/local/dao/LocationBasedAutoRunDao.kt)
@@ -281,7 +284,7 @@
   - **Note**: 기존 toggleActive와 병행 사용 또는 대체
 
 #### 1.1.6 마이그레이션 테스트 (v5→v6)
-- [ ] **MigrationTest_5_6.kt** 작성
+- [x] **MigrationTest_5_6.kt** 작성 ✅ **완료**: 2025-10-30
   ```kotlin
   @RunWith(AndroidJUnit4::class)
   class MigrationTest_5_6 {
@@ -335,7 +338,7 @@
   ```
   - **참조**: [MigrationTest_4_5.kt](../app/src/androidTest/java/com/allday/detoxy/data/local/migrations/MigrationTest_4_5.kt) - 2.5차에서 완료
 
-**작업 기록**: `working_history/2025-11-XX_3rd_advanced_1.md` (실제 일정에 맞춰 작성)
+**작업 기록**: `working_history/2025-10-30_3rd_advanced_1.0.md` ✅ **완료**: 2025-10-30
 
 ---
 
