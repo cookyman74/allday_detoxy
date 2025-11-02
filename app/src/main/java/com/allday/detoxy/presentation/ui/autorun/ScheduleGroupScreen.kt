@@ -16,7 +16,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.data.local.entity.ScheduleGroup
+import com.allday.detoxy.domain.model.CreationMode
+import com.allday.detoxy.domain.model.ScheduleTemplate
+import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDialog
+import com.allday.detoxy.presentation.ui.autorun.components.QuickCreateScheduleDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleGroupCard
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import kotlinx.coroutines.launch
@@ -114,26 +118,49 @@ fun ScheduleGroupScreen(
         )
     }
     
-    // 추가/편집 다이얼로그
-    if (showAddDialog || editingGroup != null) {
-        AddScheduleGroupDialog(
-            onDismiss = {
-                showAddDialog = false
-                editingGroup = null
-            },
-            onConfirm = { name, description ->
-                if (editingGroup != null) {
-                    viewModel.updateScheduleGroup(
-                        editingGroup!!.copy(
-                            name = name,
-                            description = description
-                        )
-                    )
-                } else {
-                    scope.launch {
-                        viewModel.createScheduleGroup(name, description)
+    // 추가 다이얼로그 (3.5차 고도화: QuickCreateScheduleDialog 사용)
+    if (showAddDialog) {
+        QuickCreateScheduleDialog(
+            onDismiss = { showAddDialog = false },
+            onConfirm = { scheduleName, mode, data ->
+                scope.launch {
+                    when (mode) {
+                        CreationMode.TEMPLATE -> {
+                            // 📋 템플릿으로 생성 (Phase 2)
+                            @Suppress("UNCHECKED_CAST")
+                            val template = data as ScheduleTemplate
+                            viewModel.createFromTemplate(scheduleName, template)
+                        }
+                        CreationMode.CUSTOM -> {
+                            // ✏️ 커스텀 시간대로 생성 (Phase 1)
+                            @Suppress("UNCHECKED_CAST")
+                            val timeSlots = data as List<TimeSlot>
+                            viewModel.createScheduleGroupWithTimeSlots(
+                                name = scheduleName,
+                                description = null,
+                                timeSlots = timeSlots
+                            )
+                        }
                     }
+                    showAddDialog = false
                 }
+            },
+            locationLabel = ""
+        )
+    }
+    
+    // 편집 다이얼로그 (이름/설명만 수정)
+    if (editingGroup != null) {
+        AddScheduleGroupDialog(
+            onDismiss = { editingGroup = null },
+            onConfirm = { name, description ->
+                viewModel.updateScheduleGroup(
+                    editingGroup!!.copy(
+                        name = name,
+                        description = description
+                    )
+                )
+                editingGroup = null
             },
             existingGroup = editingGroup
         )
