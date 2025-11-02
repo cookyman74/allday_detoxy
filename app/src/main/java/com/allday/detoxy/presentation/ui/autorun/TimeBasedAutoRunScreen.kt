@@ -21,8 +21,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.core.utils.ExactAlarmPermissionUtil
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
+import com.allday.detoxy.domain.model.CreationMode
+import com.allday.detoxy.domain.model.ScheduleTemplate
+import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.presentation.ui.autorun.components.*
+import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import com.allday.detoxy.presentation.viewmodel.TimeBasedAutoRunViewModel
+import kotlinx.coroutines.launch
 
 /**
  * 예약설정 화면 (시간 기반 자동 실행)
@@ -44,7 +49,8 @@ fun TimeBasedAutoRunScreen(
     onBack: () -> Unit = {},
     onNavigateToLocationBased: () -> Unit = {},
     onNavigateToScheduleGroup: () -> Unit = {},  // 🆕 3차 고도화: 시간표 관리로 이동
-    viewModel: TimeBasedAutoRunViewModel = hiltViewModel()
+    viewModel: TimeBasedAutoRunViewModel = hiltViewModel(),
+    scheduleGroupViewModel: ScheduleGroupViewModel = hiltViewModel()  // 🆕 3.5차 고도화: 스케줄 그룹 생성
 ) {
     val autoRuns by viewModel.autoRuns.collectAsStateWithLifecycle()
     val canScheduleExactAlarms by viewModel.canScheduleExactAlarms.collectAsStateWithLifecycle()
@@ -63,6 +69,7 @@ fun TimeBasedAutoRunScreen(
     val pauseUntil by viewModel.pauseUntil.collectAsStateWithLifecycle()
     
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()  // 🆕 3.5차 고도화: Coroutine scope
     
     var showAddDialog by remember { mutableStateOf(false) }
     var showTemplateDialog by remember { mutableStateOf(false) }
@@ -259,18 +266,40 @@ fun TimeBasedAutoRunScreen(
         )
     }
 
-    // 템플릿 선택 다이얼로그
+    // 🆕 3.5차 고도화: 새로운 시간표 생성 (QuickCreateScheduleDialog 사용)
     if (showTemplateDialog) {
-        TemplateSelectionDialog(
-            currentCount = autoRuns.size,
-            maxCount = 10,
+        QuickCreateScheduleDialog(
             onDismiss = { showTemplateDialog = false },
-            onTemplateSelected = { templates ->
-                templates.forEach { template ->
-                    viewModel.addAutoRun(template)
+            onConfirm = { scheduleName, mode, data ->
+                scope.launch {
+                    when (mode) {
+                        CreationMode.TEMPLATE -> {
+                            // 📋 템플릿으로 생성 (Phase 2)
+                            @Suppress("UNCHECKED_CAST")
+                            val template = data as ScheduleTemplate
+                            scheduleGroupViewModel.createFromTemplate(scheduleName, template)
+                        }
+                        CreationMode.CUSTOM -> {
+                            // ✏️ 커스텀 시간대로 생성 (Phase 1)
+                            @Suppress("UNCHECKED_CAST")
+                            val timeSlots = data as List<TimeSlot>
+                            scheduleGroupViewModel.createScheduleGroupWithTimeSlots(
+                                name = scheduleName,
+                                description = null,
+                                timeSlots = timeSlots
+                            )
+                        }
+                    }
+                    showTemplateDialog = false
+                    
+                    // 생성 완료 안내
+                    snackbarHostState.showSnackbar(
+                        message = "시간표가 생성되었습니다. '리포트' 탭에서 확인하세요.",
+                        duration = SnackbarDuration.Short
+                    )
                 }
-                showTemplateDialog = false
-            }
+            },
+            locationLabel = ""
         )
     }
 
