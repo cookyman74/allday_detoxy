@@ -154,16 +154,54 @@ fun TimeBasedAutoRunScreen(
                 )
             }
 
-            // 3. 템플릿 선택 버튼 (Empty State일 때 눈에 띄게 표시)
+            // 3. 시간표 생성 버튼 (PRD §3.1: 템플릿 vs 커스텀 분기)
             if (autoRuns.isEmpty()) {
-                EmptyStateWithTemplate(
-                    onTemplateClick = { showTemplateDialog = true }
+                // Empty State: 두 가지 시작 방법 제공
+                EmptyStateWithOptions(
+                    onTemplateClick = { 
+                        showTemplateDialog = true
+                    },
+                    onCustomClick = {
+                        showAddDialog = true
+                    }
                 )
             } else {
-                TemplateSelectionButton(
-                    enabled = autoRuns.size < 10,
-                    onClick = { showTemplateDialog = true }
-                )
+                // 시간대가 있을 때: 두 가지 추가 방법 제공
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // 템플릿으로 추가
+                    OutlinedButton(
+                        onClick = { showTemplateDialog = true },
+                        enabled = autoRuns.size < 10,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.List, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("템플릿")
+                    }
+                    
+                    // 커스텀 추가
+                    OutlinedButton(
+                        onClick = { showAddDialog = true },
+                        enabled = autoRuns.size < 10,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("커스텀")
+                    }
+                }
+                
+                if (autoRuns.size >= 10) {
+                    Text(
+                        text = "최대 10개까지 등록 가능합니다",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
             }
 
             // 4. 시간대 리스트
@@ -244,13 +282,41 @@ fun TimeBasedAutoRunScreen(
     }
 
     // 시간대 추가 다이얼로그
+    // 🆕 3.5차 고도화: 커스텀 시간대 추가 (QuickCreateScheduleDialog 사용)
     if (showAddDialog) {
-        AddTimeBasedAutoRunDialog(
+        QuickCreateScheduleDialog(
             onDismiss = { showAddDialog = false },
-            onSave = { autoRun ->
-                viewModel.addAutoRun(autoRun)
-                showAddDialog = false
-            }
+            onConfirm = { scheduleName, mode, data ->
+                scope.launch {
+                    when (mode) {
+                        CreationMode.TEMPLATE -> {
+                            // 템플릿으로 생성
+                            @Suppress("UNCHECKED_CAST")
+                            val template = data as ScheduleTemplate
+                            scheduleGroupViewModel.createFromTemplate(scheduleName, template)
+                        }
+                        CreationMode.CUSTOM -> {
+                            // 커스텀 시간대로 생성
+                            @Suppress("UNCHECKED_CAST")
+                            val timeSlots = data as List<TimeSlot>
+                            scheduleGroupViewModel.createScheduleGroupWithTimeSlots(
+                                name = scheduleName,
+                                description = null,
+                                timeSlots = timeSlots
+                            )
+                        }
+                    }
+                    showAddDialog = false
+                    
+                    // 생성 완료 안내
+                    snackbarHostState.showSnackbar(
+                        message = "시간표가 생성되었습니다. '리포트' 탭에서 확인하세요.",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+            },
+            locationLabel = "",
+            initialMode = CreationMode.CUSTOM  // 🔑 커스텀 모드로 시작
         )
     }
 
@@ -266,7 +332,7 @@ fun TimeBasedAutoRunScreen(
         )
     }
 
-    // 🆕 3.5차 고도화: 새로운 시간표 생성 (QuickCreateScheduleDialog 사용)
+    // 🆕 3.5차 고도화: 템플릿으로 시간표 생성 (QuickCreateScheduleDialog 사용)
     if (showTemplateDialog) {
         QuickCreateScheduleDialog(
             onDismiss = { showTemplateDialog = false },
@@ -299,7 +365,8 @@ fun TimeBasedAutoRunScreen(
                     )
                 }
             },
-            locationLabel = ""
+            locationLabel = "",
+            initialMode = CreationMode.TEMPLATE  // 🔑 템플릿 모드로 시작
         )
     }
 

@@ -32,12 +32,14 @@ import com.allday.detoxy.domain.model.TimeSlot
  * @param onDismiss 다이얼로그 닫기 콜백
  * @param onConfirm 확인 콜백 (이름, 모드, 데이터 전달)
  * @param locationLabel 위치 라벨 (기본값 제안용)
+ * @param initialMode 초기 생성 모드 (기본값: CUSTOM)
  */
 @Composable
 fun QuickCreateScheduleDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, mode: CreationMode, data: Any) -> Unit,
-    locationLabel: String = ""
+    locationLabel: String = "",
+    initialMode: CreationMode = CreationMode.CUSTOM
 ) {
     var name by remember { 
         mutableStateOf(
@@ -48,7 +50,7 @@ fun QuickCreateScheduleDialog(
             }
         ) 
     }
-    var mode by remember { mutableStateOf(CreationMode.CUSTOM) }  // 기본값: CUSTOM
+    var mode by remember { mutableStateOf(initialMode) }  // 초기 모드 적용
     
     // 커스텀 모드 상태
     var timeSlots by remember { mutableStateOf(listOf<TimeSlot>()) }
