@@ -240,38 +240,6 @@ fun TimeBasedAutoRunScreen(
                 onPreNotificationChange = { viewModel.setPreNotificationMinutes(it) }
             )
 
-            // 6. 위치 기반 자동 실행 안내 카드
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "📍 위치 기반 자동 실행도 사용해보세요",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "특정 장소(회사, 학교 등)에 도착하면 자동으로 집중 모드를 시작할 수 있습니다.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                    Button(
-                        onClick = onNavigateToLocationBased,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("위치 기반 설정 보기")
-                    }
-                }
-            }
-
             // 6. 배터리 영향 안내 카드
             BatteryImpactInfoCard(
                 impactLevel = "최소",
