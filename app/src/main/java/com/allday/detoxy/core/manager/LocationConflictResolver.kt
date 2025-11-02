@@ -1,10 +1,8 @@
 package com.allday.detoxy.core.manager
 
-import android.content.Context
 import android.location.Location
 import android.util.Log
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,13 +23,9 @@ import javax.inject.Singleton
  * - 위치 전환 발생 시: 새 위치로 타이머 리셋 (`recordActivation()` 호출)
  * - 히스테리시스 만료 시: 자동으로 재평가 (거리 우선으로 전환)
  * - 직전 활성 위치가 후보에서 제외 시: 즉시 재평가
- *
- * @param context ApplicationContext
  */
 @Singleton
-class LocationConflictResolver @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+class LocationConflictResolver @Inject constructor() {
     companion object {
         private const val TAG = "ConflictResolver"
         
@@ -63,7 +57,7 @@ class LocationConflictResolver @Inject constructor(
      * @param candidates 반경 내 포함되는 위치 후보들
      * @return 선택된 위치 (후보가 없으면 null)
      */
-    suspend fun resolveConflict(
+    fun resolveConflict(
         currentLocation: Location,
         candidates: List<LocationBasedAutoRun>
     ): LocationBasedAutoRun? {
