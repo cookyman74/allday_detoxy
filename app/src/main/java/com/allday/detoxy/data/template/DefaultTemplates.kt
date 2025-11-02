@@ -74,8 +74,8 @@ object DefaultTemplates {
         id = "daily",
         name = "매일",
         description = "매일 같은 시간에 집중하는 루틴",
-        iconType = ScheduleTemplate.IconType.CALENDAR,
-        colorHex = ScheduleTemplate.Colors.GREEN,
+        iconType = "CALENDAR",
+        colorHex = "#4CAF50",
         hasLocation = false,
         timeSlots = listOf(
             TimeSlot(
@@ -104,8 +104,8 @@ object DefaultTemplates {
         id = "weekday",
         name = "평일",
         description = "평일에만 집중하는 루틴",
-        iconType = ScheduleTemplate.IconType.WORK,
-        colorHex = ScheduleTemplate.Colors.BLUE,
+        iconType = "WORK",
+        colorHex = "#2196F3",
         hasLocation = false,
         timeSlots = listOf(
             TimeSlot(
@@ -140,8 +140,8 @@ object DefaultTemplates {
         id = "weekend",
         name = "주말",
         description = "주말에만 집중하는 루틴",
-        iconType = ScheduleTemplate.IconType.HOME,
-        colorHex = ScheduleTemplate.Colors.ORANGE,
+        iconType = "HOME",
+        colorHex = "#FF9800",
         hasLocation = false,
         timeSlots = listOf(
             TimeSlot(
@@ -174,8 +174,8 @@ object DefaultTemplates {
         id = "home",
         name = "집",
         description = "집에서 저녁 시간 집중",
-        iconType = ScheduleTemplate.IconType.HOME,
-        colorHex = ScheduleTemplate.Colors.PURPLE,
+        iconType = "HOME",
+        colorHex = "#9C27B0",
         hasLocation = true,
         defaultRadius = 100,  // 100m
         timeSlots = listOf(
@@ -200,8 +200,8 @@ object DefaultTemplates {
         id = "school",
         name = "학교",
         description = "학교에서 공부 시간",
-        iconType = ScheduleTemplate.IconType.STUDY,
-        colorHex = ScheduleTemplate.Colors.INDIGO,
+        iconType = "STUDY",
+        colorHex = "#3F51B5",
         hasLocation = true,
         defaultRadius = 150,  // 150m (학교는 넓은 반경)
         timeSlots = listOf(
@@ -239,8 +239,8 @@ object DefaultTemplates {
         id = "office",
         name = "회사",
         description = "회사에서 업무 집중 시간",
-        iconType = ScheduleTemplate.IconType.WORK,
-        colorHex = ScheduleTemplate.Colors.BLUE_GREY,
+        iconType = "WORK",
+        colorHex = "#607D8B",
         hasLocation = true,
         defaultRadius = 100,  // 100m
         timeSlots = listOf(

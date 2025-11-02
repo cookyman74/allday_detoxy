@@ -150,7 +150,7 @@ private fun TemplateCard(
             
             // 화살표
             Icon(
-                imageVector = Icons.Default.ChevronRight,
+                imageVector = Icons.Default.KeyboardArrowRight,
                 contentDescription = "선택",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -168,10 +168,10 @@ private fun TemplateCard(
 private fun getIconForType(iconType: String): ImageVector {
     return when (iconType) {
         "HOME" -> Icons.Default.Home
-        "WORK" -> Icons.Default.Work
-        "STUDY" -> Icons.Default.School
-        "CALENDAR" -> Icons.Default.CalendarToday
-        else -> Icons.Default.Schedule
+        "WORK" -> Icons.Default.Place  // Work 아이콘 대체
+        "STUDY" -> Icons.Default.Star  // School 아이콘 대체  
+        "CALENDAR" -> Icons.Default.DateRange
+        else -> Icons.Default.Settings  // Schedule 아이콘 대체
     }
 }
 
