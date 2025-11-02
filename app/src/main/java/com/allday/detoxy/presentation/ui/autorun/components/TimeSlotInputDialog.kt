@@ -13,6 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.domain.model.TimeSlot
+import com.allday.detoxy.presentation.util.formatDuration
+import com.allday.detoxy.presentation.util.formatEnabledDays
+import com.allday.detoxy.presentation.util.formatStartTime
 import java.time.DayOfWeek
 
 /**

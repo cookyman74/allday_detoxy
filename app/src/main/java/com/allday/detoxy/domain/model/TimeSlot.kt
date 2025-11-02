@@ -8,6 +8,10 @@ import java.time.DayOfWeek
  * 사용자가 QuickCreateScheduleDialog에서 직접 입력하는 시간대 정보를 담습니다.
  * TimeBasedAutoRun 생성 시 이 데이터를 사용합니다.
  *
+ * ## Clean Architecture 준수
+ * - 도메인 모델은 순수 데이터만 담습니다
+ * - UI 포맷팅 로직은 presentation 레이어로 분리 (TimeSlotFormatter.kt 참조)
+ *
  * ## 사용 예시
  * ```kotlin
  * val slot = TimeSlot(
@@ -26,68 +30,15 @@ import java.time.DayOfWeek
  * @property enabledDays 활성화된 요일 목록 (기본: 매일)
  *
  * @see com.allday.detoxy.data.local.entity.TimeBasedAutoRun
+ * @see com.allday.detoxy.presentation.util.TimeSlotFormatter
  */
 data class TimeSlot(
-    val startHour: Int,                  // 0-23
-    val startMinute: Int,                // 0-59
-    val durationMinutes: Int,            // 15-720 (15분~12시간)
-    val presetType: String,              // "STANDARD", "MEDIUM", "COMPLETE"
-    val enabledDays: List<DayOfWeek> = DayOfWeek.values().toList()  // 기본: 매일
+    val startHour: Int,
+    val startMinute: Int,
+    val durationMinutes: Int,
+    val presetType: String,
+    val enabledDays: List<DayOfWeek> = DayOfWeek.values().toList()
 ) {
-    /**
-     * 포맷팅된 시작 시간
-     *
-     * @return "10:00" 형식의 시간 문자열
-     */
-    fun formatStartTime(): String {
-        return String.format("%02d:%02d", startHour, startMinute)
-    }
-    
-    /**
-     * 포맷팅된 기간
-     *
-     * @return "1시간 30분" 또는 "90분" 형식의 기간 문자열
-     */
-    fun formatDuration(): String {
-        val hours = durationMinutes / 60
-        val minutes = durationMinutes % 60
-        
-        return when {
-            hours > 0 && minutes > 0 -> "${hours}시간 ${minutes}분"
-            hours > 0 -> "${hours}시간"
-            else -> "${minutes}분"
-        }
-    }
-    
-    /**
-     * 포맷팅된 요일
-     *
-     * @return "매일", "평일", "주말", "월,수,금" 등의 요일 문자열
-     */
-    fun formatEnabledDays(): String {
-        return when {
-            enabledDays.size == 7 -> "매일"
-            enabledDays.size == 5 && enabledDays.containsAll(listOf(
-                DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
-                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY
-            )) -> "평일"
-            enabledDays.size == 2 && enabledDays.containsAll(listOf(
-                DayOfWeek.SATURDAY, DayOfWeek.SUNDAY
-            )) -> "주말"
-            else -> enabledDays.joinToString(",") { 
-                when (it) {
-                    DayOfWeek.MONDAY -> "월"
-                    DayOfWeek.TUESDAY -> "화"
-                    DayOfWeek.WEDNESDAY -> "수"
-                    DayOfWeek.THURSDAY -> "목"
-                    DayOfWeek.FRIDAY -> "금"
-                    DayOfWeek.SATURDAY -> "토"
-                    DayOfWeek.SUNDAY -> "일"
-                }
-            }
-        }
-    }
-    
     companion object {
         /**
          * 최소 기간 (분)
