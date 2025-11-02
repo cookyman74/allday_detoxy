@@ -267,14 +267,32 @@ fun AddLocationAutoRunDialog(
         }
     )
     
-    // 🆕 3차 고도화 개선: 빠른 시간표 생성 Dialog
+    // 🆕 3.5차 고도화 Phase 1: 시간대 포함 시간표 생성
     if (showQuickCreateDialog) {
         QuickCreateScheduleDialog(
             onDismiss = { showQuickCreateDialog = false },
-            onConfirm = { scheduleName ->
-                // 시간표 생성
+            onConfirm = { scheduleName, mode, data ->
+                // 시간표 생성 (모드에 따라 분기)
                 scope.launch {
-                    val newGroupId = scheduleViewModel.createScheduleGroup(scheduleName, null)
+                    val newGroupId = when (mode) {
+                        com.allday.detoxy.domain.model.CreationMode.TEMPLATE -> {
+                            // 📋 템플릿으로 생성 (Phase 2에서 구현)
+                            // @Suppress("UNCHECKED_CAST")
+                            // val template = data as ScheduleTemplate
+                            // scheduleViewModel.createFromTemplate(scheduleName, template)
+                            scheduleViewModel.createScheduleGroup(scheduleName, null)  // Placeholder
+                        }
+                        com.allday.detoxy.domain.model.CreationMode.CUSTOM -> {
+                            // ✏️ 커스텀 시간대로 생성
+                            @Suppress("UNCHECKED_CAST")
+                            val timeSlots = data as List<com.allday.detoxy.domain.model.TimeSlot>
+                            scheduleViewModel.createScheduleGroupWithTimeSlots(
+                                name = scheduleName,
+                                description = null,
+                                timeSlots = timeSlots
+                            )
+                        }
+                    }
                     
                     // 생성된 시간표 자동 선택
                     selectedScheduleGroupId = newGroupId

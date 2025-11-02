@@ -6,10 +6,13 @@ import com.allday.detoxy.core.manager.ScheduleGroupManager
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
+import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
+import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import javax.inject.Inject
 
 /**
@@ -25,11 +28,13 @@ import javax.inject.Inject
  *
  * @param repository ScheduleGroupRepository
  * @param scheduleManager ScheduleGroupManager (3차 고도화: 시간표 활성화/비활성화)
+ * @param timeBasedRepository TimeBasedAutoRunRepository (3.5차 고도화 Phase 1: 시간대 생성)
  */
 @HiltViewModel
 class ScheduleGroupViewModel @Inject constructor(
     private val repository: ScheduleGroupRepository,
-    private val scheduleManager: ScheduleGroupManager
+    private val scheduleManager: ScheduleGroupManager,
+    private val timeBasedRepository: TimeBasedAutoRunRepository
 ) : ViewModel() {
 
     /**
@@ -299,6 +304,94 @@ class ScheduleGroupViewModel @Inject constructor(
                 _errorState.value = "연결된 설정 조회 실패: ${e.message}"
             }
         }
+    }
+
+    /**
+     * 시간대를 포함한 시간표 생성 (Phase 1)
+     *
+     * QuickCreateScheduleDialog의 커스텀 모드에서 사용됩니다.
+     * TimeSlot 목록을 받아 ScheduleGroup과 TimeBasedAutoRun들을 생성합니다.
+     *
+     * ## 동작 방식
+     * 1. ScheduleGroup 생성
+     * 2. 각 TimeSlot에 대해 TimeBasedAutoRun 생성
+     * 3. TimeBasedAutoRun을 ScheduleGroup에 연결 (scheduleGroupId 설정)
+     *
+     * @param name 시간표 이름
+     * @param description 시간표 설명 (옵션)
+     * @param timeSlots 시간대 목록
+     * @return 생성된 ScheduleGroup의 ID
+     * @throws IllegalArgumentException 이름이 비어있거나 시간대가 없을 때
+     */
+    suspend fun createScheduleGroupWithTimeSlots(
+        name: String,
+        description: String?,
+        timeSlots: List<TimeSlot>
+    ): String {
+        if (name.isBlank()) {
+            _errorState.value = "그룹 이름을 입력해주세요"
+            throw IllegalArgumentException("그룹 이름을 입력해주세요")
+        }
+        
+        if (timeSlots.isEmpty()) {
+            _errorState.value = "최소 1개 이상의 시간대를 추가해주세요"
+            throw IllegalArgumentException("최소 1개 이상의 시간대를 추가해주세요")
+        }
+        
+        try {
+            _isLoading.value = true
+            
+            // 1. ScheduleGroup 생성
+            val scheduleGroup = ScheduleGroup(
+                name = name.trim(),
+                description = description?.trim()?.takeIf { it.isNotEmpty() }
+            )
+            repository.insert(scheduleGroup)
+            
+            // 2. TimeBasedAutoRun 생성 (각 시간대마다)
+            timeSlots.forEach { slot ->
+                val autoRun = TimeBasedAutoRun(
+                    hour = slot.startHour,
+                    minute = slot.startMinute,
+                    durationMinutes = slot.durationMinutes,
+                    presetType = slot.presetType,
+                    enabledDays = formatEnabledDays(slot.enabledDays),  // List<DayOfWeek> → JSON 문자열
+                    scheduleGroupId = scheduleGroup.id,  // 그룹 연결
+                    isIndependent = false,  // 그룹에 종속
+                    isEnabled = true,
+                    createdAt = System.currentTimeMillis()
+                )
+                timeBasedRepository.insert(autoRun)
+            }
+            
+            return scheduleGroup.id
+        } catch (e: Exception) {
+            _errorState.value = "그룹 생성 실패: ${e.message}"
+            throw e
+        } finally {
+            _isLoading.value = false
+        }
+    }
+    
+    /**
+     * List<DayOfWeek>를 JSON 문자열로 변환
+     *
+     * @param days 요일 목록
+     * @return JSON 문자열 (예: "[\"MON\",\"TUE\",\"WED\",\"THU\",\"FRI\"]")
+     */
+    private fun formatEnabledDays(days: List<DayOfWeek>): String {
+        val dayStrings = days.map { day ->
+            when (day) {
+                DayOfWeek.MONDAY -> "MON"
+                DayOfWeek.TUESDAY -> "TUE"
+                DayOfWeek.WEDNESDAY -> "WED"
+                DayOfWeek.THURSDAY -> "THU"
+                DayOfWeek.FRIDAY -> "FRI"
+                DayOfWeek.SATURDAY -> "SAT"
+                DayOfWeek.SUNDAY -> "SUN"
+            }
+        }
+        return "[${dayStrings.joinToString(",") { "\"$it\"" }}]"
     }
 
     /**
