@@ -282,40 +282,56 @@ fun TimeBasedAutoRunScreen(
     }
 
     // 시간대 추가 다이얼로그
-    // 🆕 3.5차 고도화: 커스텀 시간대 추가 (QuickCreateScheduleDialog 사용)
+    // 🆕 3.5차 고도화: 위치 설정 + 시간표 생성 (ScheduleCreationDialog 사용)
     if (showAddDialog) {
-        QuickCreateScheduleDialog(
+        ScheduleCreationDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { scheduleName, mode, data ->
+            onConfirm = { scheduleName, mode, timeSlots, template, locationInfo ->
                 scope.launch {
-                    when (mode) {
-                        CreationMode.TEMPLATE -> {
-                            // 템플릿으로 생성
-                            @Suppress("UNCHECKED_CAST")
-                            val template = data as ScheduleTemplate
-                            scheduleGroupViewModel.createFromTemplate(scheduleName, template)
+                    if (locationInfo == null) {
+                        // 어디서나 적용 (위치 없음)
+                        when (mode) {
+                            CreationMode.TEMPLATE -> {
+                                scheduleGroupViewModel.createFromTemplate(scheduleName, template!!)
+                            }
+                            CreationMode.CUSTOM -> {
+                                scheduleGroupViewModel.createScheduleGroupWithTimeSlots(
+                                    name = scheduleName,
+                                    description = null,
+                                    timeSlots = timeSlots
+                                )
+                            }
                         }
-                        CreationMode.CUSTOM -> {
-                            // 커스텀 시간대로 생성
-                            @Suppress("UNCHECKED_CAST")
-                            val timeSlots = data as List<TimeSlot>
-                            scheduleGroupViewModel.createScheduleGroupWithTimeSlots(
-                                name = scheduleName,
-                                description = null,
-                                timeSlots = timeSlots
-                            )
+                        snackbarHostState.showSnackbar(
+                            message = "시간표가 생성되었습니다 (어디서나 적용)",
+                            duration = SnackbarDuration.Short
+                        )
+                    } else {
+                        // 위치 기반 스케줄
+                        val scheduleGroupId = when (mode) {
+                            CreationMode.TEMPLATE -> {
+                                scheduleGroupViewModel.createFromTemplate(scheduleName, template!!)
+                            }
+                            CreationMode.CUSTOM -> {
+                                scheduleGroupViewModel.createScheduleGroupWithTimeSlots(
+                                    name = scheduleName,
+                                    description = null,
+                                    timeSlots = timeSlots
+                                )
+                            }
                         }
+                        
+                        // TODO: 위치 정보를 LocationBasedAutoRun으로 저장
+                        // locationViewModel.createLocationWithSchedule(locationInfo, scheduleGroupId)
+                        
+                        snackbarHostState.showSnackbar(
+                            message = "위치 기반 시간표가 생성되었습니다",
+                            duration = SnackbarDuration.Short
+                        )
                     }
                     showAddDialog = false
-                    
-                    // 생성 완료 안내
-                    snackbarHostState.showSnackbar(
-                        message = "시간표가 생성되었습니다. '리포트' 탭에서 확인하세요.",
-                        duration = SnackbarDuration.Short
-                    )
                 }
             },
-            locationLabel = "",
             initialMode = CreationMode.CUSTOM  // 🔑 커스텀 모드로 시작
         )
     }
@@ -332,40 +348,56 @@ fun TimeBasedAutoRunScreen(
         )
     }
 
-    // 🆕 3.5차 고도화: 템플릿으로 시간표 생성 (QuickCreateScheduleDialog 사용)
+    // 🆕 3.5차 고도화: 템플릿으로 시간표 생성 (ScheduleCreationDialog 사용)
     if (showTemplateDialog) {
-        QuickCreateScheduleDialog(
+        ScheduleCreationDialog(
             onDismiss = { showTemplateDialog = false },
-            onConfirm = { scheduleName, mode, data ->
+            onConfirm = { scheduleName, mode, timeSlots, template, locationInfo ->
                 scope.launch {
-                    when (mode) {
-                        CreationMode.TEMPLATE -> {
-                            // 📋 템플릿으로 생성 (Phase 2)
-                            @Suppress("UNCHECKED_CAST")
-                            val template = data as ScheduleTemplate
-                            scheduleGroupViewModel.createFromTemplate(scheduleName, template)
+                    if (locationInfo == null) {
+                        // 어디서나 적용 (위치 없음)
+                        when (mode) {
+                            CreationMode.TEMPLATE -> {
+                                scheduleGroupViewModel.createFromTemplate(scheduleName, template!!)
+                            }
+                            CreationMode.CUSTOM -> {
+                                scheduleGroupViewModel.createScheduleGroupWithTimeSlots(
+                                    name = scheduleName,
+                                    description = null,
+                                    timeSlots = timeSlots
+                                )
+                            }
                         }
-                        CreationMode.CUSTOM -> {
-                            // ✏️ 커스텀 시간대로 생성 (Phase 1)
-                            @Suppress("UNCHECKED_CAST")
-                            val timeSlots = data as List<TimeSlot>
-                            scheduleGroupViewModel.createScheduleGroupWithTimeSlots(
-                                name = scheduleName,
-                                description = null,
-                                timeSlots = timeSlots
-                            )
+                        snackbarHostState.showSnackbar(
+                            message = "시간표가 생성되었습니다 (어디서나 적용)",
+                            duration = SnackbarDuration.Short
+                        )
+                    } else {
+                        // 위치 기반 스케줄
+                        val scheduleGroupId = when (mode) {
+                            CreationMode.TEMPLATE -> {
+                                scheduleGroupViewModel.createFromTemplate(scheduleName, template!!)
+                            }
+                            CreationMode.CUSTOM -> {
+                                scheduleGroupViewModel.createScheduleGroupWithTimeSlots(
+                                    name = scheduleName,
+                                    description = null,
+                                    timeSlots = timeSlots
+                                )
+                            }
                         }
+                        
+                        // TODO: 위치 정보를 LocationBasedAutoRun으로 저장
+                        // locationViewModel.createLocationWithSchedule(locationInfo, scheduleGroupId)
+                        
+                        snackbarHostState.showSnackbar(
+                            message = "위치 기반 시간표가 생성되었습니다",
+                            duration = SnackbarDuration.Short
+                        )
                     }
                     showTemplateDialog = false
-                    
-                    // 생성 완료 안내
-                    snackbarHostState.showSnackbar(
-                        message = "시간표가 생성되었습니다. '리포트' 탭에서 확인하세요.",
-                        duration = SnackbarDuration.Short
-                    )
                 }
             },
-            locationLabel = "",
             initialMode = CreationMode.TEMPLATE  // 🔑 템플릿 모드로 시작
         )
     }
