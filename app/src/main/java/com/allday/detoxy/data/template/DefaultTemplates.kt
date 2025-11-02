@@ -43,6 +43,12 @@ import java.time.DayOfWeek
  *    - 요일: 월~금 (5일)
  *    - 위치: 필요 (반경 100m)
  *
+ * ## 중요: 요일 설정 방식 (Phase 2.1 Review)
+ * - **TimeSlot의 enabledDays는 명시하지 않음** (기본값 사용)
+ * - **ScheduleTemplate.defaultDays가 단일 소스** 역할
+ * - createFromTemplate() 메서드에서 defaultDays를 TimeSlot.enabledDays에 자동 적용
+ * - 이 방식으로 요일 정보의 중복과 불일치를 방지합니다
+ *
  * ## 사용 예시
  * ```kotlin
  * val template = DefaultTemplates.WEEKDAY
@@ -50,9 +56,11 @@ import java.time.DayOfWeek
  *     name = "평일 업무",
  *     template = template
  * )
+ * // 결과: 모든 TimeSlot이 월~금으로 설정됨 (template.defaultDays 적용)
  * ```
  *
  * @see com.allday.detoxy.domain.model.ScheduleTemplate
+ * @see com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel.createFromTemplate
  */
 object DefaultTemplates {
     

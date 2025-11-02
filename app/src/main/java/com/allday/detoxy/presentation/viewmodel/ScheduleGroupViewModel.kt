@@ -381,8 +381,14 @@ class ScheduleGroupViewModel @Inject constructor(
      * createScheduleGroupWithTimeSlots를 재사용하여 구현합니다.
      *
      * ## 동작 방식
-     * 1. 템플릿의 timeSlots를 사용하여 createScheduleGroupWithTimeSlots 호출
+     * 1. 템플릿의 timeSlots를 복사하면서 각 TimeSlot의 enabledDays를 template.defaultDays로 덮어씀
      * 2. 템플릿의 description을 시간표 설명으로 사용
+     * 3. 수정된 timeSlots로 createScheduleGroupWithTimeSlots 호출
+     *
+     * ## 중요: 요일 불일치 방지 (Phase 2.1 Review)
+     * - ScheduleTemplate.defaultDays가 단일 소스 역할
+     * - TimeSlot의 기본 enabledDays(매일)를 템플릿의 defaultDays로 덮어씀
+     * - 예: 평일 템플릿 선택 시 모든 TimeSlot이 월~금만 활성화됨
      *
      * @param name 시간표 이름 (사용자 입력)
      * @param template 선택한 템플릿
@@ -393,10 +399,15 @@ class ScheduleGroupViewModel @Inject constructor(
         name: String,
         template: ScheduleTemplate
     ): String {
+        // 템플릿의 defaultDays를 각 TimeSlot의 enabledDays로 적용
+        val timeSlotsWithDays = template.timeSlots.map { slot ->
+            slot.copy(enabledDays = template.defaultDays)
+        }
+        
         return createScheduleGroupWithTimeSlots(
             name = name,
             description = template.description,
-            timeSlots = template.timeSlots
+            timeSlots = timeSlotsWithDays
         )
     }
     
