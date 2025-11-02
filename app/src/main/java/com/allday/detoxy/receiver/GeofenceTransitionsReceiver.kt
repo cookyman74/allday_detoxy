@@ -8,6 +8,7 @@ import android.util.Log
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
+import com.allday.detoxy.core.manager.NonLocationScheduleManager
 import com.allday.detoxy.core.manager.ScheduleGroupManager
 import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
@@ -48,6 +49,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
     interface GeofenceReceiverEntryPoint {
         fun locationBasedAutoRunDao(): LocationBasedAutoRunDao
         fun scheduleGroupManager(): ScheduleGroupManager
+        fun nonLocationScheduleManager(): NonLocationScheduleManager  // 🆕 Phase 4: "어디서나 적용" 스케줄
     }
     
     companion object {
@@ -237,7 +239,13 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
     /**
      * Geofence EXIT 처리 (위치 이탈)
      *
-     * 위치 이탈 시 연결된 ScheduleGroup을 비활성화하고 관련 알람을 취소합니다.
+     * ## Phase 4: "어디서나 적용" 스케줄 전환
+     * 위치 이탈 시 연결된 ScheduleGroup을 비활성화하고,
+     * "어디서나 적용" 스케줄을 자동으로 활성화합니다.
+     *
+     * ## 처리 흐름
+     * 1. ScheduleGroup 비활성화 (위치 연결된 경우)
+     * 2. "어디서나 적용" 스케줄 평가 및 활성화
      *
      * @param context Context
      * @param intent Intent
@@ -256,32 +264,36 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
             return
         }
         
-        // 각 Geofence 처리
-        triggeringGeofences.forEach { geofence ->
-            val locationId = geofence.requestId
-            val locationLabel = intent.getStringExtra(AutoRunGeofenceManager.EXTRA_LOCATION_LABEL)
-            
-            Log.i(TAG, """
-                🚪 Geofence EXIT:
-                - ID: $locationId
-                - Label: $locationLabel
-            """.trimIndent())
-            
-            // 🆕 3차 고도화: ScheduleGroup 비활성화 (위치 이탈 시)
-            // EntryPoint를 통해 필요한 의존성 가져오기
-            val entryPoint = EntryPointAccessors.fromApplication(
-                context.applicationContext,
-                GeofenceReceiverEntryPoint::class.java
-            )
-            
-            val locationDao = entryPoint.locationBasedAutoRunDao()
-            val scheduleManager = entryPoint.scheduleGroupManager()
-            
-            // 비동기 작업 (goAsync)
-            val pendingResult = goAsync()
-            
-            scope.launch {
-                try {
+        Log.i(TAG, "🚪 Geofence EXIT detected: ${triggeringGeofences.size} location(s)")
+        
+        // EntryPoint를 통해 필요한 의존성 가져오기
+        val entryPoint = EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            GeofenceReceiverEntryPoint::class.java
+        )
+        
+        val locationDao = entryPoint.locationBasedAutoRunDao()
+        val scheduleManager = entryPoint.scheduleGroupManager()
+        val nonLocationScheduleManager = entryPoint.nonLocationScheduleManager()  // 🆕 Phase 4
+        
+        // 비동기 작업 (goAsync)
+        val pendingResult = goAsync()
+        
+        scope.launch {
+            try {
+                var anyScheduleDeactivated = false
+                
+                // 각 Geofence 처리
+                triggeringGeofences.forEach { geofence ->
+                    val locationId = geofence.requestId
+                    val locationLabel = intent.getStringExtra(AutoRunGeofenceManager.EXTRA_LOCATION_LABEL)
+                    
+                    Log.d(TAG, """
+                        🚪 Processing EXIT:
+                        - ID: $locationId
+                        - Label: $locationLabel
+                    """.trimIndent())
+                    
                     // 1. locationId로 LocationBasedAutoRun 조회
                     val location = locationDao.getByIdOnce(locationId)
                     
@@ -295,6 +307,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                         
                         if (result.isSuccess) {
                             Log.i(TAG, "✅ ScheduleGroup deactivated on EXIT: $scheduleGroupId")
+                            anyScheduleDeactivated = true
                             
                             // TODO: Week 3 - 시간표 비활성화 알림 표시
                             // showScheduleDeactivatedNotification(context, location.label, scheduleGroupId)
@@ -304,14 +317,29 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     } else {
                         Log.d(TAG, "ℹ️ No linked ScheduleGroup or deactivation disabled for location: $locationId")
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ Error handling geofence exit (ScheduleGroup deactivation): ${e.message}", e)
-                } finally {
-                    pendingResult.finish()
                 }
+                
+                // 🆕 Phase 4: "어디서나 적용" 스케줄 활성화
+                // 위치 기반 스케줄이 비활성화된 경우에만 평가
+                if (anyScheduleDeactivated) {
+                    Log.i(TAG, "🔄 Evaluating 'anywhere' schedule after location exit")
+                    
+                    val activationResult = nonLocationScheduleManager.activateDefaultPolicy()
+                    
+                    if (activationResult.isSuccess) {
+                        Log.i(TAG, "✅ 'Anywhere' schedule activated after location exit")
+                    } else {
+                        Log.w(TAG, "ℹ️ No applicable 'anywhere' schedule: ${activationResult.exceptionOrNull()?.message}")
+                    }
+                } else {
+                    Log.d(TAG, "ℹ️ No schedule deactivated, skipping 'anywhere' schedule evaluation")
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error handling geofence exit: ${e.message}", e)
+            } finally {
+                pendingResult.finish()
             }
-            
-            Log.i(TAG, "✅ Geofence EXIT processed for $locationLabel")
         }
     }
     
