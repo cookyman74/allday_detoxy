@@ -113,6 +113,11 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
     
     /**
      * Geofence 트리거 처리 (ENTER 또는 DWELL)
+     * 
+     * ## Phase 3.5 고도화 (위치 충돌 해소 통합)
+     * - 모든 트리거된 geofence의 위치를 수집
+     * - activateGroupByLocation()을 통해 충돌 해소 후 시간표 활성화
+     * - 4단계 우선순위 규칙 자동 적용
      */
     private fun handleGeofenceTrigger(
         context: Context,
@@ -128,159 +133,104 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
             return
         }
         
-        // GPS 정확도 추출 (AutoRunLog에 기록용)
-        val gpsAccuracyMeters = geofencingEvent.triggeringLocation?.accuracy
-        Log.i(TAG, "📡 GPS Accuracy: ${gpsAccuracyMeters ?: "Unknown"}m")
+        // 🆕 사용자 현재 위치 (충돌 해소용)
+        val userLocation = geofencingEvent.triggeringLocation
+        if (userLocation == null) {
+            Log.e(TAG, "❌ Triggering location is null, cannot resolve conflicts")
+            return
+        }
         
-        // 각 Geofence 처리
-        triggeringGeofences.forEach { geofence ->
-                val locationId = geofence.requestId
+        // GPS 정확도 추출 (AutoRunLog에 기록용)
+        val gpsAccuracyMeters = userLocation.accuracy
+        Log.i(TAG, "📡 GPS Accuracy: ${gpsAccuracyMeters}m")
+        Log.i(TAG, "📍 User location: (${userLocation.latitude}, ${userLocation.longitude})")
+        
+        // EntryPoint를 통해 필요한 의존성 가져오기
+        val entryPoint = EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            GeofenceReceiverEntryPoint::class.java
+        )
+        
+        val locationDao = entryPoint.locationBasedAutoRunDao()
+        val scheduleManager = entryPoint.scheduleGroupManager()
+        
+        // 비동기 작업 (goAsync)
+        val pendingResult = goAsync()
+        
+        scope.launch {
+            try {
+                // 🆕 Phase 3: 반경 내 모든 위치 수집 (충돌 해소를 위해)
+                val locationIds = triggeringGeofences.map { it.requestId }
+                val candidates = mutableListOf<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>()
                 
-                // Intent에서 위치 기반 자동 실행 정보 추출
-                val locationLabel = intent.getStringExtra(AutoRunGeofenceManager.EXTRA_LOCATION_LABEL)
-                val durationMinutes = intent.getIntExtra(AutoRunGeofenceManager.EXTRA_DURATION_MINUTES, 0)
-                val presetType = intent.getStringExtra(AutoRunGeofenceManager.EXTRA_PRESET_TYPE)
-                val requiresConfirmation = intent.getBooleanExtra(AutoRunGeofenceManager.EXTRA_REQUIRES_CONFIRMATION, false)
-                val dwellTimeMinutes = intent.getIntExtra(AutoRunGeofenceManager.EXTRA_DWELL_TIME_MINUTES, 0)
+                Log.i(TAG, "🔍 Collecting location candidates: ${locationIds.size} geofences triggered")
                 
-                Log.i(TAG, """
-                    📍 Geofence triggered ($transitionType):
-                    - ID: $locationId
-                    - Label: $locationLabel
-                    - Duration: ${durationMinutes}min
-                    - Preset: $presetType
-                    - Requires Confirmation: $requiresConfirmation
-                    - Dwell Time: ${dwellTimeMinutes}min
-                    - GPS Accuracy: ${gpsAccuracyMeters ?: "Unknown"}m
-                    - Transition Type: $transitionType
-                """.trimIndent())
-                
-                // Analytics: auto_run_triggered
-                AnalyticsHelper.logAutoRunTriggered(
-                    triggerType = "LOCATION",
-                    sourceIdHash = hashSourceId(locationId),
-                    durationMinutes = durationMinutes,
-                    presetType = presetType ?: "UNKNOWN"
-                )
-                Log.d(TAG, "📊 Analytics: auto_run_triggered (LOCATION)")
-                
-                // 🆕 3차 고도화: ScheduleGroup 활성화 (위치 진입 시)
-                // EntryPoint를 통해 필요한 의존성 가져오기
-                val entryPoint = EntryPointAccessors.fromApplication(
-                    context.applicationContext,
-                    GeofenceReceiverEntryPoint::class.java
-                )
-                
-                val locationDao = entryPoint.locationBasedAutoRunDao()
-                val scheduleManager = entryPoint.scheduleGroupManager()
-                
-                // 비동기 작업 (goAsync)
-                val pendingResult = goAsync()
-                
-                scope.launch {
-                    try {
-                        // 1. locationId로 LocationBasedAutoRun 조회
-                        val location = locationDao.getByIdOnce(locationId)
+                locationIds.forEach { id ->
+                    val location = locationDao.getByIdOnce(id)
+                    if (location != null) {
+                        Log.d(TAG, "  - ${location.label} (activateOnEnter: ${location.activateScheduleOnEnter}, scheduleGroup: ${location.linkedScheduleGroupId})")
                         
-                        if (location != null && location.activateScheduleOnEnter && location.linkedScheduleGroupId != null) {
-                            val scheduleGroupId = location.linkedScheduleGroupId
+                        // activateScheduleOnEnter가 true이고, 시간표가 연결된 위치만 후보에 추가
+                        if (location.activateScheduleOnEnter && location.linkedScheduleGroupId != null) {
+                            candidates.add(location)
                             
-                            Log.i(TAG, "📍 Location has linked ScheduleGroup: $scheduleGroupId")
-                            
-                            // 2. ScheduleGroup 활성화 (알람 자동 등록)
-                            val result = scheduleManager.activateGroup(scheduleGroupId)
-                            
-                            if (result.isSuccess) {
-                                Log.i(TAG, "✅ ScheduleGroup activated on ENTER: $scheduleGroupId")
-                                
-                                // TODO: Week 3 - 시간표 활성화 알림 표시
-                                // showScheduleActivatedNotification(context, location.label, scheduleGroupId)
-                            } else {
-                                Log.e(TAG, "⚠️ Failed to activate ScheduleGroup: ${result.exceptionOrNull()?.message}")
-                            }
-                        } else {
-                            Log.d(TAG, "ℹ️ No linked ScheduleGroup or activation disabled for location: $locationId")
+                            // Analytics: auto_run_triggered (각 위치마다)
+                            AnalyticsHelper.logAutoRunTriggered(
+                                triggerType = "LOCATION",
+                                sourceIdHash = hashSourceId(id),
+                                durationMinutes = 0,  // ScheduleGroup이므로 개별 duration 없음
+                                presetType = "SCHEDULE_GROUP"
+                            )
                         }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "❌ Error handling geofence enter (ScheduleGroup activation): ${e.message}", e)
-                    } finally {
-                        pendingResult.finish()
                     }
                 }
                 
-                // TODO: Week 3 작업 - AutoRunNotificationManager 연동
-                // if (requiresConfirmation) {
-                //     autoRunNotificationManager.showConfirmationNotification(locationId, locationLabel, durationMinutes)
-                //     
-                //     // Analytics: auto_run_notification_shown (알림 표시 후)
-                //     AnalyticsHelper.logAutoRunNotificationShown(
-                //         triggerType = "LOCATION",
-                //         isPreNotification = false,
-                //         minutesBefore = null
-                //     )
-                //     Log.d(TAG, "📊 Analytics: auto_run_notification_shown (LOCATION)")
-                // } else {
-                //     autoRunNotificationManager.showStartNotification(locationId, locationLabel, durationMinutes)
-                //     
-                //     // Analytics: auto_run_notification_shown (알림 표시 후)
-                //     AnalyticsHelper.logAutoRunNotificationShown(
-                //         triggerType = "LOCATION",
-                //         isPreNotification = false,
-                //         minutesBefore = null
-                //     )
-                //     Log.d(TAG, "📊 Analytics: auto_run_notification_shown (LOCATION)")
-                // }
+                Log.i(TAG, "📊 Location candidates collected: ${candidates.size} eligible")
                 
-                // TODO: Week 3 작업 - AutoRunLog 기록
-                // val log = AutoRunLog(
-                //     triggerType = "LOCATION",
-                //     triggerSourceId = locationId,
-                //     triggerTime = System.currentTimeMillis(),
-                //     result = "STARTED", // 또는 "SKIPPED" (이미 타이머 실행 중일 때)
-                //     failureReason = null,
-                //     sessionId = null, // 세션 시작 후 업데이트
-                //     gpsAccuracyMeters = gpsAccuracyMeters,
-                //     dwellSeconds = dwellTimeMinutes * 60, // 체류 시간 (초)
-                //     metaJson = null
-                // )
-                // autoRunLogDao.insert(log)
-                
-                // TODO: Week 3 작업 - 이미 타이머 실행 중인지 확인
-                // if (timerViewModel.isTimerRunning()) {
-                //     Log.w(TAG, "⚠️ Timer is already running, skipping auto-run")
-                //     
-                //     // Analytics: auto_run_skipped
-                //     AnalyticsHelper.logAutoRunSkipped(
-                //         triggerType = "LOCATION",
-                //         reason = "timer_already_running"
-                //     )
-                //     return
-                // }
-                
-                // Analytics: auto_run_started (타이머 시작 시)
-                // TODO: Week 3 작업 - 실제 타이머 시작 후 호출
-                // AnalyticsHelper.logAutoRunStarted(
-                //     triggerType = "LOCATION",
-                //     durationMinutes = durationMinutes,
-                //     isAutoStart = !requiresConfirmation,
-                //     delaySeconds = 0,
-                //     gpsAccuracyMeters = gpsAccuracyMeters,
-                //     dwellSeconds = dwellTimeMinutes * 60
-                // )
-                // Log.d(TAG, "📊 Analytics: auto_run_started (LOCATION)")
-                
-                // Analytics: auto_run_failed (GPS 정확도 낮을 때)
-                if (gpsAccuracyMeters != null && gpsAccuracyMeters > 100f) {
-                    Log.w(TAG, "⚠️ GPS accuracy is low (${gpsAccuracyMeters}m), might cause issues")
-                    // TODO: Week 3 작업 - 정확도 낮음 처리 로직
-                    // AnalyticsHelper.logAutoRunFailed(
-                    //     triggerType = "LOCATION",
-                    //     failureReason = "low_gps_accuracy",
-                    //     gpsAccuracyMeters = gpsAccuracyMeters
-                    // )
+                if (candidates.isEmpty()) {
+                    Log.w(TAG, "⚠️ No eligible locations (all disabled or no linked schedule group)")
+                    return@launch
                 }
                 
-                Log.i(TAG, "✅ Location-based auto-run triggered for $locationLabel")
+                // 🆕 Phase 3: 충돌 해소 후 시간표 활성화
+                val result = scheduleManager.activateGroupByLocation(
+                    currentLocation = userLocation,
+                    candidates = candidates
+                )
+                
+                if (result.isSuccess) {
+                    Log.i(TAG, "✅ Location-based schedule activated (with conflict resolution)")
+                    
+                    // TODO: Week 3 - 시간표 활성화 알림 표시
+                    // showScheduleActivatedNotification(context, winnerLocation.label, scheduleGroupId)
+                } else {
+                    Log.e(TAG, "⚠️ Failed to activate schedule", result.exceptionOrNull())
+                    
+                    // Analytics: auto_run_failed
+                    AnalyticsHelper.logAutoRunFailed(
+                        triggerType = "LOCATION",
+                        failureReason = result.exceptionOrNull()?.message ?: "unknown",
+                        gpsAccuracyMeters = gpsAccuracyMeters
+                    )
+                }
+                
+                // Analytics: GPS 정확도 낮을 때 경고
+                if (gpsAccuracyMeters > 100f) {
+                    Log.w(TAG, "⚠️ GPS accuracy is low (${gpsAccuracyMeters}m), might cause issues")
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error handling geofence enter (location conflict resolution): ${e.message}", e)
+                
+                // Analytics: auto_run_failed
+                AnalyticsHelper.logAutoRunFailed(
+                    triggerType = "LOCATION",
+                    failureReason = e.message ?: "exception",
+                    gpsAccuracyMeters = gpsAccuracyMeters
+                )
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
     

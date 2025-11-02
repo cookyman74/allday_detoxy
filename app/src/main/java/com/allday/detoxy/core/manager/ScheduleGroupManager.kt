@@ -1,7 +1,9 @@
 package com.allday.detoxy.core.manager
 
 import android.content.Context
+import android.location.Location
 import android.util.Log
+import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -22,19 +24,27 @@ import javax.inject.Singleton
  * - 위치 진입 시 시간표 활성화 → 시간대 알람 자동 등록
  * - 위치 이탈 시 시간표 비활성화 → 시간대 알람 자동 취소
  *
+ * ## 3.5차 고도화 핵심 로직 (Phase 3)
+ * - 위치 충돌 해소: LocationConflictResolver를 통한 우선순위 규칙 적용
+ * - 히스테리시스 타이머: 120초간 기존 위치 유지
+ *
  * @param context Application Context
  * @param repository ScheduleGroupRepository
  * @param alarmManager AutoRunAlarmManager (시간대 알람 관리)
+ * @param conflictResolver LocationConflictResolver (위치 충돌 해소)
  *
  * @see com.allday.detoxy.domain.repository.ScheduleGroupRepository
  * @see com.allday.detoxy.core.manager.AutoRunAlarmManager
+ * @see com.allday.detoxy.core.manager.LocationConflictResolver
  * @see docs/03_complex_time&location_todolist.md §2.1
+ * @see docs/03.5_스케쥴가동프로세스.md
  */
 @Singleton
 class ScheduleGroupManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: ScheduleGroupRepository,
-    private val alarmManager: AutoRunAlarmManager
+    private val alarmManager: AutoRunAlarmManager,
+    private val conflictResolver: LocationConflictResolver  // 🆕 Phase 3: 위치 충돌 해소
 ) {
     companion object {
         private const val TAG = "ScheduleGroupManager"
@@ -133,6 +143,67 @@ class ScheduleGroupManager @Inject constructor(
      */
     suspend fun getActiveGroup(): com.allday.detoxy.data.local.entity.ScheduleGroup? {
         return repository.getActive().first().firstOrNull()
+    }
+
+    /**
+     * 위치 기반 시간표 활성화 (충돌 해소 포함) (Phase 3)
+     *
+     * 여러 위치 반경이 겹칠 때 LocationConflictResolver를 통해 우선순위 규칙을 적용하여
+     * 단일 위치를 선택하고, 해당 위치에 연결된 시간표 그룹을 활성화합니다.
+     *
+     * ## 처리 흐름
+     * 1. LocationConflictResolver를 통해 충돌 해소 (4단계 우선순위 규칙 적용)
+     * 2. 선택된 위치에 연결된 시간표 그룹 확인
+     * 3. 시간표 그룹 활성화 (activateGroup 호출)
+     * 4. 히스테리시스 타이머 기록 (conflictResolver.recordActivation)
+     *
+     * ## 우선순위 규칙 (LocationConflictResolver)
+     * 1. 면적(반경) 우선: 반경이 작을수록 구체적
+     * 2. 히스테리시스 (120초): 직전 활성 위치 유지
+     * 3. 거리 우선: 사용자에게 가장 가까운 위치
+     * 4. 최근 수정(updatedAt) 우선: 최신 의도 반영
+     *
+     * ## 에러 처리
+     * - 후보 위치 없음: IllegalStateException
+     * - 연결된 시간표 없음: IllegalStateException
+     * - 시간표 활성화 실패: 예외 전파
+     *
+     * @param currentLocation 사용자의 현재 위치
+     * @param candidates 반경 내 포함되는 위치 후보들 (activateScheduleOnEnter == true)
+     * @return Result<Unit> 성공 시 Success, 실패 시 Failure
+     *
+     * @see LocationConflictResolver.resolveConflict
+     * @see activateGroup
+     */
+    suspend fun activateGroupByLocation(
+        currentLocation: Location,
+        candidates: List<LocationBasedAutoRun>
+    ): Result<Unit> = runCatching {
+        Log.i(TAG, "🌍 Activating group by location")
+        Log.d(TAG, "  Candidates: ${candidates.size}")
+        candidates.forEach { 
+            Log.d(TAG, "    - ${it.label} (radius: ${it.radiusMeters}m, scheduleGroupId: ${it.linkedScheduleGroupId})")
+        }
+
+        // 1. 충돌 해소 (4단계 우선순위 규칙 적용)
+        val winner = conflictResolver.resolveConflict(currentLocation, candidates)
+            ?: throw IllegalStateException("No suitable location found after conflict resolution")
+
+        Log.i(TAG, "🏆 Winner location: ${winner.label} (ID: ${winner.id})")
+
+        // 2. 연결된 시간표 그룹 확인
+        val scheduleGroupId = winner.linkedScheduleGroupId
+            ?: throw IllegalStateException("Location has no linked schedule group: ${winner.label}")
+
+        Log.d(TAG, "📋 Linked schedule group: $scheduleGroupId")
+
+        // 3. 시간표 그룹 활성화
+        activateGroup(scheduleGroupId).getOrThrow()
+
+        // 4. 히스테리시스 타이머 기록 (위치 전환 추적)
+        conflictResolver.recordActivation(winner.id)
+
+        Log.i(TAG, "✅ Schedule group activated by location: $scheduleGroupId (location: ${winner.label})")
     }
 }
 
