@@ -7,6 +7,7 @@ import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
+import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -371,6 +372,32 @@ class ScheduleGroupViewModel @Inject constructor(
         } finally {
             _isLoading.value = false
         }
+    }
+    
+    /**
+     * 템플릿으로 시간표 생성 (Phase 2)
+     *
+     * ScheduleTemplate을 기반으로 ScheduleGroup과 TimeBasedAutoRun들을 생성합니다.
+     * createScheduleGroupWithTimeSlots를 재사용하여 구현합니다.
+     *
+     * ## 동작 방식
+     * 1. 템플릿의 timeSlots를 사용하여 createScheduleGroupWithTimeSlots 호출
+     * 2. 템플릿의 description을 시간표 설명으로 사용
+     *
+     * @param name 시간표 이름 (사용자 입력)
+     * @param template 선택한 템플릿
+     * @return 생성된 ScheduleGroup의 ID
+     * @throws IllegalArgumentException 이름이 비어있거나 템플릿에 시간대가 없을 때
+     */
+    suspend fun createFromTemplate(
+        name: String,
+        template: ScheduleTemplate
+    ): String {
+        return createScheduleGroupWithTimeSlots(
+            name = name,
+            description = template.description,
+            timeSlots = template.timeSlots
+        )
     }
     
     /**

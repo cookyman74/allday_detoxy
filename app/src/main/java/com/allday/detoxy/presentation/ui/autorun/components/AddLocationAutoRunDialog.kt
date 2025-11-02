@@ -276,11 +276,10 @@ fun AddLocationAutoRunDialog(
                 scope.launch {
                     val newGroupId = when (mode) {
                         com.allday.detoxy.domain.model.CreationMode.TEMPLATE -> {
-                            // 📋 템플릿으로 생성 (Phase 2에서 구현)
-                            // @Suppress("UNCHECKED_CAST")
-                            // val template = data as ScheduleTemplate
-                            // scheduleViewModel.createFromTemplate(scheduleName, template)
-                            scheduleViewModel.createScheduleGroup(scheduleName, null)  // Placeholder
+                            // 📋 템플릿으로 생성 (Phase 2)
+                            @Suppress("UNCHECKED_CAST")
+                            val template = data as com.allday.detoxy.domain.model.ScheduleTemplate
+                            scheduleViewModel.createFromTemplate(scheduleName, template)
                         }
                         com.allday.detoxy.domain.model.CreationMode.CUSTOM -> {
                             // ✏️ 커스텀 시간대로 생성

@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.domain.model.CreationMode
+import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
 
 /**
@@ -54,9 +55,9 @@ fun QuickCreateScheduleDialog(
     var showTimeSlotInput by remember { mutableStateOf(false) }
     var editingSlot by remember { mutableStateOf<TimeSlot?>(null) }
     
-    // 템플릿 모드 상태 (Phase 2에서 구현)
-    // var selectedTemplate by remember { mutableStateOf<ScheduleTemplate?>(null) }
-    // var showTemplateSelector by remember { mutableStateOf(false) }
+    // 템플릿 모드 상태 (Phase 2)
+    var selectedTemplate by remember { mutableStateOf<ScheduleTemplate?>(null) }
+    var showTemplateSelector by remember { mutableStateOf(false) }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -109,10 +110,10 @@ fun QuickCreateScheduleDialog(
                 
                 RadioButtonRow(
                     text = "📋 템플릿으로 시작",
-                    description = "기본 시간대가 포함된 템플릿 사용 (Phase 2)",
+                    description = "기본 시간대가 포함된 템플릿 사용",
                     selected = mode == CreationMode.TEMPLATE,
                     onClick = { mode = CreationMode.TEMPLATE },
-                    enabled = false  // Phase 2에서 활성화
+                    enabled = true  // Phase 2에서 활성화 ✅
                 )
                 
                 RadioButtonRow(
@@ -127,17 +128,43 @@ fun QuickCreateScheduleDialog(
                 // 모드별 UI
                 when (mode) {
                     CreationMode.TEMPLATE -> {
-                        // 템플릿 선택 UI (Phase 2에서 구현)
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                            )
-                        ) {
-                            Text(
-                                text = "📋 템플릿 기능은 Phase 2에서 구현됩니다.\n현재는 '시간대 직접 추가'를 사용해주세요.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                modifier = Modifier.padding(12.dp)
+                        // 템플릿 선택 UI (Phase 2)
+                        Text(
+                            text = "템플릿 선택",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        if (selectedTemplate == null) {
+                            // 템플릿 미선택 상태
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+                                Text(
+                                    text = "템플릿을 선택하세요.\n기본 시간대가 포함된 템플릿을 사용할 수 있습니다.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                            
+                            Spacer(Modifier.height(8.dp))
+                            
+                            OutlinedButton(
+                                onClick = { showTemplateSelector = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(Modifier.width(4.dp))
+                                Text("템플릿 선택")
+                            }
+                        } else {
+                            // 템플릿 선택 완료 상태
+                            SelectedTemplateCard(
+                                template = selectedTemplate!!,
+                                onClear = { selectedTemplate = null }
                             )
                         }
                     }
@@ -198,7 +225,7 @@ fun QuickCreateScheduleDialog(
                     when (mode) {
                         CreationMode.TEMPLATE -> {
                             // 템플릿으로 생성 (Phase 2)
-                            // onConfirm(name, mode, selectedTemplate!!)
+                            onConfirm(name, mode, selectedTemplate!!)
                         }
                         CreationMode.CUSTOM -> {
                             // 커스텀 시간대로 생성
@@ -207,8 +234,8 @@ fun QuickCreateScheduleDialog(
                     }
                 },
                 enabled = name.isNotBlank() && when (mode) {
-                    CreationMode.TEMPLATE -> false  // Phase 2에서 활성화
-                    CreationMode.CUSTOM -> timeSlots.isNotEmpty()
+                    CreationMode.TEMPLATE -> selectedTemplate != null  // 템플릿 선택 필요
+                    CreationMode.CUSTOM -> timeSlots.isNotEmpty()     // 시간대 추가 필요
                 }
             ) {
                 Text("만들기")
@@ -241,6 +268,17 @@ fun QuickCreateScheduleDialog(
                 }
                 showTimeSlotInput = false
                 editingSlot = null
+            }
+        )
+    }
+    
+    // 템플릿 선택 BottomSheet (Phase 2)
+    if (showTemplateSelector) {
+        TemplateSelectionBottomSheet(
+            onDismiss = { showTemplateSelector = false },
+            onTemplateSelected = { template ->
+                selectedTemplate = template
+                showTemplateSelector = false
             }
         )
     }
