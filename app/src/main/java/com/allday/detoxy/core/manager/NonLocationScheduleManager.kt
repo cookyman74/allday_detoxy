@@ -39,7 +39,7 @@ import javax.inject.Singleton
  * 3. **앱 시작 시**: 현재 위치가 어떤 geofence에도 속하지 않을 때
  *
  * @param repository ScheduleGroup 및 연결된 자동 실행 조회
- * @param alarmManager 시간 기반 알람 등록
+ * @param scheduleGroupManager 스케줄 그룹 활성화/비활성화 관리 (단일 활성화 원칙)
  * @param context Application Context (DI)
  *
  * @see com.allday.detoxy.core.manager.ScheduleGroupManager
@@ -49,7 +49,7 @@ import javax.inject.Singleton
 @Singleton
 class NonLocationScheduleManager @Inject constructor(
     private val repository: ScheduleGroupRepository,
-    private val alarmManager: AutoRunAlarmManager,
+    private val scheduleGroupManager: ScheduleGroupManager,
     @ApplicationContext private val context: Context
 ) {
     companion object {
@@ -72,7 +72,7 @@ class NonLocationScheduleManager @Inject constructor(
      * 2. "어디서나 적용" 스케줄만 필터링 (위치 연결 없음)
      * 3. 현재 시각/요일에 맞는 스케줄 필터링
      * 4. 우선순위 규칙 적용 (구체성 → updatedAt → createdAt)
-     * 5. 선택된 스케줄 활성화 및 알람 등록
+     * 5. ScheduleGroupManager.activateGroup()으로 활성화 (단일 활성화 원칙)
      *
      * ## 우선순위 규칙 (기반: 스케줄가동프로세스.md)
      * 1. **더 구체적인 스케줄 우선**
@@ -97,9 +97,13 @@ class NonLocationScheduleManager @Inject constructor(
         Log.d(TAG, "Total schedule groups: ${allGroups.size}")
 
         // 2. "어디서나 적용" 스케줄만 필터링 (linkedScheduleGroupId == null)
-        val nonLocationGroups = allGroups.filter { group ->
+        // ⚠️ getLinkedLocations는 suspend 함수이므로 filter 블록 안에서 호출 불가
+        val nonLocationGroups = mutableListOf<ScheduleGroup>()
+        for (group in allGroups) {
             val linkedLocations = repository.getLinkedLocations(group.id)
-            linkedLocations.isEmpty()
+            if (linkedLocations.isEmpty()) {
+                nonLocationGroups.add(group)
+            }
         }
 
         Log.d(TAG, "'Anywhere' schedule candidates: ${nonLocationGroups.size}")
@@ -116,7 +120,9 @@ class NonLocationScheduleManager @Inject constructor(
 
         Log.d(TAG, "Current time: $currentTime, day: $currentDay")
 
-        val applicableCandidates = nonLocationGroups.filter { group ->
+        // ⚠️ getLinkedTimeBasedAutoRuns는 suspend 함수이므로 filter 블록 안에서 호출 불가
+        val applicableCandidates = mutableListOf<ScheduleGroup>()
+        for (group in nonLocationGroups) {
             val timeSlots = repository.getLinkedTimeBasedAutoRuns(group.id)
             val hasApplicableSlot = timeSlots.any { slot ->
                 // 요일 체크
@@ -137,7 +143,10 @@ class NonLocationScheduleManager @Inject constructor(
                 
                 applicable
             }
-            hasApplicableSlot
+            
+            if (hasApplicableSlot) {
+                applicableCandidates.add(group)
+            }
         }
 
         Log.d(TAG, "Applicable 'anywhere' schedules: ${applicableCandidates.size}")
@@ -157,18 +166,8 @@ class NonLocationScheduleManager @Inject constructor(
         }
 
         // 5. "어디서나 적용" 스케줄 활성화
-        repository.toggleActiveWithTimestamp(selectedPolicy.id, true, System.currentTimeMillis())
-
-        // 6. 알람 등록
-        val timeSlots = repository.getLinkedTimeBasedAutoRuns(selectedPolicy.id)
-        val enabledSlots = timeSlots.filter { it.isEnabled }
-        
-        Log.d(TAG, "Registering ${enabledSlots.size} enabled time slots")
-        
-        enabledSlots.forEach { slot ->
-            alarmManager.scheduleTimeBasedAutoRun(slot)
-            Log.d(TAG, "  ✓ Alarm registered: ${slot.hour}:${slot.minute} (${slot.durationMinutes}min)")
-        }
+        // ⚠️ ScheduleGroupManager.activateGroup()을 사용하여 단일 활성화 원칙 준수
+        scheduleGroupManager.activateGroup(selectedPolicy.id).getOrThrow()
 
         Log.i(TAG, "✅ 'Anywhere' schedule activated: ${selectedPolicy.name}")
     }
