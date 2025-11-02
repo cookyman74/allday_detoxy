@@ -80,6 +80,70 @@ fun TemplateSelectionBottomSheet(
 }
 
 /**
+ * 템플릿 선택 Dialog (중첩 AlertDialog용)
+ *
+ * AlertDialog 내부에서 호출 가능한 템플릿 선택 다이얼로그입니다.
+ * ModalBottomSheet 대신 AlertDialog를 사용하여 레이어링 문제를 해결합니다.
+ *
+ * @param onDismiss Dialog 닫기 콜백
+ * @param onTemplateSelected 템플릿 선택 콜백
+ */
+@Composable
+fun TemplateSelectionDialog(
+    onDismiss: () -> Unit,
+    onTemplateSelected: (ScheduleTemplate) -> Unit
+) {
+    val templates = remember { DefaultTemplates.ALL_TEMPLATES }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "템플릿 선택",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 설명
+                Text(
+                    text = "기본 시간대가 포함된 템플릿을 선택하세요",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                HorizontalDivider()
+                
+                // 템플릿 목록
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)  // 최대 높이 제한
+                ) {
+                    items(templates) { template ->
+                        TemplateCard(
+                            template = template,
+                            onClick = { onTemplateSelected(template) }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("취소")
+            }
+        }
+    )
+}
+
+/**
  * 템플릿 카드 컴포넌트
  *
  * 개별 템플릿을 표시하는 카드입니다.

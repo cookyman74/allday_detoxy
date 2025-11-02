@@ -272,9 +272,10 @@ fun QuickCreateScheduleDialog(
         )
     }
     
-    // 템플릿 선택 BottomSheet (Phase 2)
+    // 템플릿 선택 Dialog (Phase 2)
+    // ModalBottomSheet 대신 AlertDialog 사용 (중첩 다이얼로그 레이어링 문제 해결)
     if (showTemplateSelector) {
-        TemplateSelectionBottomSheet(
+        TemplateSelectionDialog(
             onDismiss = { showTemplateSelector = false },
             onTemplateSelected = { template ->
                 selectedTemplate = template
