@@ -14,6 +14,7 @@ import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.ScheduleGroupDao
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.UserSettingsDao
+import com.allday.detoxy.data.local.migration.MIGRATION_6_7
 import com.allday.detoxy.data.local.migrations.MIGRATION_1_2
 import com.allday.detoxy.data.local.migrations.MIGRATION_2_3
 import com.allday.detoxy.data.local.migrations.MIGRATION_3_4
@@ -38,6 +39,7 @@ import javax.inject.Singleton
  * - v3 → v4 (2차 고도화): TimeBasedAutoRun, LocationBasedAutoRun, CustomTimerPreset, AutoRunLog 추가 + UserSettings 확장 (MIGRATION_3_4)
  * - v4 → v5 (2.5차 고도화): ScheduleGroup 추가 + TimeBasedAutoRun/LocationBasedAutoRun 확장 (MIGRATION_4_5)
  * - v5 → v6 (3차 고도화): ScheduleGroup UI 필드 + LocationBasedAutoRun 연동 옵션 + TimeBasedAutoRun 우선순위 (MIGRATION_5_6)
+ * - v6 → v7 (3.5차 고도화 Phase 0): updatedAt 필드 추가 (MIGRATION_6_7)
  *
  * @InstallIn(SingletonComponent::class)로 앱 전체 생명주기 동안 싱글톤 유지
  */
@@ -61,7 +63,14 @@ object DatabaseModule {
             DetoxyDatabase::class.java,
             "detoxy_database"
         )
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+            .addMigrations(
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7
+            )
             .build()
     }
 

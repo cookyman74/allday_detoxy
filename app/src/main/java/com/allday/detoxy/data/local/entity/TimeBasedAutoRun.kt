@@ -136,6 +136,16 @@ data class TimeBasedAutoRun(
      * - scheduleGroupId가 null이면 의미 없음
      * - 3차 고도화 MVP에서는 선택적 필드
      */
-    val groupPriority: Int = 0
+    val groupPriority: Int = 0,
+
+    // ==================== v7 추가: 수정 시각 ====================
+
+    /**
+     * 마지막 수정 시각 (v7+)
+     *
+     * 우선순위 규칙 적용을 위한 필드.
+     * "어디서나 적용" 스케줄 충돌 시 "최근 수정" 기준으로 사용.
+     */
+    val updatedAt: Long = createdAt
 )
 

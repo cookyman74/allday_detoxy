@@ -52,10 +52,13 @@ class LocationBasedAutoRunRepository @Inject constructor(
     /**
      * 위치 기반 자동 실행 업데이트
      *
+     * v7: updatedAt 자동 갱신
+     *
      * @param autoRun 업데이트할 자동 실행
      */
     suspend fun update(autoRun: LocationBasedAutoRun) {
-        dao.update(autoRun)
+        // v7: updatedAt 자동 갱신
+        dao.update(autoRun.copy(updatedAt = System.currentTimeMillis()))
     }
 
     /**

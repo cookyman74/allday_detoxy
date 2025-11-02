@@ -202,6 +202,16 @@ data class LocationBasedAutoRun(
      * ## 주의사항
      * - deactivateScheduleOnExit이 false이면 의미 없음
      */
-    val exitActionType: String = "DEACTIVATE"
+    val exitActionType: String = "DEACTIVATE",
+
+    // ==================== v7 추가: 수정 시각 ====================
+
+    /**
+     * 마지막 수정 시각 (v7+)
+     *
+     * 위치 충돌 해소를 위한 필드.
+     * 우선순위 규칙 적용 시 "최근 수정" 기준으로 사용.
+     */
+    val updatedAt: Long = createdAt
 )
 

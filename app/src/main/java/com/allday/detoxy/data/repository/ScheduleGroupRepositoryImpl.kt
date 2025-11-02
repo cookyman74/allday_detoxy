@@ -55,7 +55,8 @@ class ScheduleGroupRepositoryImpl @Inject constructor(
     }
 
     override suspend fun update(scheduleGroup: ScheduleGroup) {
-        scheduleGroupDao.update(scheduleGroup)
+        // v7: updatedAt 자동 갱신
+        scheduleGroupDao.update(scheduleGroup.copy(updatedAt = System.currentTimeMillis()))
     }
 
     override suspend fun delete(scheduleGroupId: String) {

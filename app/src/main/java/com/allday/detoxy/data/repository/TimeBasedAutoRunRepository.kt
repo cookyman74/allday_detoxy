@@ -57,10 +57,13 @@ class TimeBasedAutoRunRepository @Inject constructor(
     /**
      * 시간 기반 자동 실행 업데이트
      *
+     * v7: updatedAt 자동 갱신
+     *
      * @param autoRun 업데이트할 TimeBasedAutoRun
      */
     suspend fun update(autoRun: TimeBasedAutoRun) {
-        dao.update(autoRun)
+        // v7: updatedAt 자동 갱신
+        dao.update(autoRun.copy(updatedAt = System.currentTimeMillis()))
     }
 
     /**

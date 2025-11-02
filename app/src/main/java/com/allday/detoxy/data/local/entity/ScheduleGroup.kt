@@ -96,6 +96,16 @@ data class ScheduleGroup(
      * 통계 및 분석 용도.
      * null: 아직 활성화된 적 없음
      */
-    val lastActivatedAt: Long? = null
+    val lastActivatedAt: Long? = null,
+
+    // ==================== v7 추가: 수정 시각 ====================
+
+    /**
+     * 마지막 수정 시각 (v7+)
+     *
+     * 우선순위 규칙 적용을 위한 필드.
+     * 충돌 해소 시 "최근 수정" 기준으로 사용.
+     */
+    val updatedAt: Long = System.currentTimeMillis()
 )
 
