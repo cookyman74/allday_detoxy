@@ -23,6 +23,7 @@ import android.util.Log
 import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleCreationDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleGroupCard
+import com.allday.detoxy.presentation.ui.autorun.components.LocationEditDialog  // 🆕
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel  // 🆕
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun  // 🆕
@@ -65,6 +66,10 @@ fun ScheduleGroupScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var editingGroup by remember { mutableStateOf<ScheduleGroup?>(null) }
     var deletingGroupId by remember { mutableStateOf<String?>(null) }
+    
+    // 🆕 위치 정보 수정 다이얼로그 상태
+    var showLocationEditDialog by remember { mutableStateOf(false) }
+    var editingLocation by remember { mutableStateOf<LocationBasedAutoRun?>(null) }
     
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -204,6 +209,31 @@ fun ScheduleGroupScreen(
         )
     }
     
+    // 🆕 위치 정보 수정 다이얼로그
+    if (showLocationEditDialog && editingLocation != null) {
+        LocationEditDialog(
+            location = editingLocation!!,
+            onDismiss = {
+                showLocationEditDialog = false
+                editingLocation = null
+            },
+            onSave = { updatedLocation ->
+                // LocationBasedAutoRun 업데이트
+                locationViewModel.updateLocation(updatedLocation)
+                
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = "위치 정보가 수정되었습니다",
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                
+                showLocationEditDialog = false
+                editingLocation = null
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -344,8 +374,12 @@ fun ScheduleGroupScreen(
                                 deletingGroupId = group.id
                             },
                             onLocationClick = {
-                                // TODO: 위치 정보 상세/수정 다이얼로그 표시
-                                Log.d("ScheduleGroupScreen", "Location clicked: ${group.name}")
+                                // 🆕 위치 정보 수정 다이얼로그 표시
+                                val location = linkedLocationsList.firstOrNull()
+                                if (location != null) {
+                                    editingLocation = location
+                                    showLocationEditDialog = true
+                                }
                             },
                             onTimeClick = {
                                 // TODO: 시간 정보 상세/수정 화면으로 이동
