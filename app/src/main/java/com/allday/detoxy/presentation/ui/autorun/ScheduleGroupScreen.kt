@@ -220,14 +220,23 @@ fun ScheduleGroupScreen(
                 editingLocation = null
             },
             onSave = { updatedLocation ->
+                Log.d("ScheduleGroupScreen", "📍 onSave called for location: ${updatedLocation.label}")
+                
+                // 🆕 즉시 다이얼로그 닫기 (비동기 작업 전)
+                showLocationEditDialog = false
+                editingLocation = null
+                
+                // 비동기 작업 시작
                 scope.launch {
                     try {
                         // 1. 🆕 LocationBasedAutoRun 업데이트 (완료될 때까지 대기)
                         locationViewModel.updateLocation(updatedLocation)
+                        Log.d("ScheduleGroupScreen", "✅ Location updated successfully")
                         
                         // 2. 🆕 연결된 스케줄 그룹의 위치 정보 갱신 (업데이트 완료 후!)
                         updatedLocation.linkedScheduleGroupId?.let { groupId ->
                             viewModel.loadLinkedLocations(groupId)
+                            Log.d("ScheduleGroupScreen", "✅ Linked locations reloaded")
                         }
                         
                         // 3. 성공 메시지 표시
@@ -241,11 +250,7 @@ fun ScheduleGroupScreen(
                             message = "위치 정보 수정 실패: ${e.message}",
                             duration = SnackbarDuration.Long
                         )
-                        Log.e("ScheduleGroupScreen", "Failed to update location", e)
-                    } finally {
-                        // 4. 다이얼로그 닫기 (성공/실패 관계없이)
-                        showLocationEditDialog = false
-                        editingLocation = null
+                        Log.e("ScheduleGroupScreen", "❌ Failed to update location", e)
                     }
                 }
             }
