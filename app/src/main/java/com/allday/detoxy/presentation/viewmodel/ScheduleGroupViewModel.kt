@@ -319,6 +319,35 @@ class ScheduleGroupViewModel @Inject constructor(
             }
         }
     }
+    
+    /**
+     * 🆕 특정 스케줄 그룹의 위치 정보 갱신
+     * 
+     * LocationEditDialog에서 위치 정보 수정 후 호출하여
+     * 해당 그룹의 위치 정보를 다시 로드합니다.
+     * 
+     * @param groupId 갱신할 스케줄 그룹 ID
+     */
+    fun loadLinkedLocations(groupId: String) {
+        viewModelScope.launch {
+            try {
+                // 해당 그룹의 위치 정보 갱신
+                val linkedLocations = repository.getLinkedLocations(groupId)
+                
+                // 현재 Map을 복사하여 해당 그룹만 업데이트
+                val updatedLocations = _linkedLocations.value.toMutableMap()
+                updatedLocations[groupId] = linkedLocations
+                _linkedLocations.value = updatedLocations
+                
+                // 위치 개수도 갱신
+                val updatedCounts = _linkedLocationCounts.value.toMutableMap()
+                updatedCounts[groupId] = linkedLocations.size
+                _linkedLocationCounts.value = updatedCounts
+            } catch (e: Exception) {
+                _errorState.value = "위치 정보 갱신 실패: ${e.message}"
+            }
+        }
+    }
 
     /**
      * 시간대를 포함한 시간표 생성 (Phase 1)

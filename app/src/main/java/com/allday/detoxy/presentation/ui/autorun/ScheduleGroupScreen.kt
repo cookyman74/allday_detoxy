@@ -218,18 +218,25 @@ fun ScheduleGroupScreen(
                 editingLocation = null
             },
             onSave = { updatedLocation ->
-                // LocationBasedAutoRun 업데이트
-                locationViewModel.updateLocation(updatedLocation)
-                
                 scope.launch {
+                    // 1. 🆕 LocationBasedAutoRun 업데이트 (완료될 때까지 대기)
+                    locationViewModel.updateLocation(updatedLocation)
+                    
+                    // 2. 🆕 연결된 스케줄 그룹의 위치 정보 갱신 (업데이트 완료 후!)
+                    updatedLocation.linkedScheduleGroupId?.let { groupId ->
+                        viewModel.loadLinkedLocations(groupId)
+                    }
+                    
+                    // 3. 성공 메시지 표시
                     snackbarHostState.showSnackbar(
                         message = "위치 정보가 수정되었습니다",
                         duration = SnackbarDuration.Short
                     )
+                    
+                    // 4. 다이얼로그 닫기
+                    showLocationEditDialog = false
+                    editingLocation = null
                 }
-                
-                showLocationEditDialog = false
-                editingLocation = null
             }
         )
     }

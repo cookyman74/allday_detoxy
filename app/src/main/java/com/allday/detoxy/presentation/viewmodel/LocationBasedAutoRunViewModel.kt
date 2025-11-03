@@ -218,43 +218,44 @@ class LocationBasedAutoRunViewModel @Inject constructor(
     }
 
     /**
-     * 위치 기반 자동 실행 업데이트
+     * 위치 정보 업데이트 (suspend 함수)
      *
+     * Geofence 재등록 및 DB 업데이트를 순차적으로 처리합니다.
+     * suspend 함수로 구현되어 호출자가 완료를 기다릴 수 있습니다.
+     * 
      * 트랜잭션 순서:
      * 1. 기존 Geofence 제거
      * 2. 새 Geofence 등록 (활성화된 경우만) - 실패 시 DB 업데이트 안 함
-     * 3. DB 업데이트 - 실패 시 원래 Geofence 복구 시도
+     * 3. DB 업데이트 - 실패 시 Geofence 롤백
      *
      * @param location 업데이트할 위치 기반 자동 실행
      */
-    fun updateLocation(location: LocationBasedAutoRun) {
-        viewModelScope.launch {
-            try {
-                // 1. 기존 Geofence 제거
-                geofenceManager.removeGeofence(location.id)
+    suspend fun updateLocation(location: LocationBasedAutoRun) {
+        try {
+            // 1. 기존 Geofence 제거
+            geofenceManager.removeGeofence(location.id)
 
-                // 2. 새 Geofence 등록 (활성화된 경우만)
-                if (location.isEnabled) {
-                    val result = geofenceManager.addGeofence(location)
-                    if (result.isFailure) {
-                        val exception = result.exceptionOrNull()
-                        _errorState.value = LocationError.GeofenceError(
-                            exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
-                        )
-                        return@launch  // 실패 시 DB 업데이트 안 함
-                    }
+            // 2. 새 Geofence 등록 (활성화된 경우만)
+            if (location.isEnabled) {
+                val result = geofenceManager.addGeofence(location)
+                if (result.isFailure) {
+                    val exception = result.exceptionOrNull()
+                    _errorState.value = LocationError.GeofenceError(
+                        exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
+                    )
+                    return  // 실패 시 DB 업데이트 안 함
                 }
-
-                // 3. Geofence 성공 후 DB 업데이트
-                repository.update(location)
-
-            } catch (e: Exception) {
-                // DB 업데이트 실패 → Geofence 롤백 (제거)
-                geofenceManager.removeGeofence(location.id)
-                _errorState.value = LocationError.DatabaseError(
-                    "업데이트 실패: ${e.message ?: "알 수 없는 오류"}"
-                )
             }
+
+            // 3. Geofence 성공 후 DB 업데이트
+            repository.update(location)
+
+        } catch (e: Exception) {
+            // DB 업데이트 실패 → Geofence 롤백 (제거)
+            geofenceManager.removeGeofence(location.id)
+            _errorState.value = LocationError.DatabaseError(
+                "업데이트 실패: ${e.message ?: "알 수 없는 오류"}"
+            )
         }
     }
 

@@ -27,6 +27,7 @@ import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.presentation.ui.autorun.components.*
 import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
 import com.allday.detoxy.presentation.viewmodel.LocationError
+import kotlinx.coroutines.launch  // 🆕
 
 /**
  * 위치 기반 자동 실행 설정 화면
@@ -65,6 +66,9 @@ fun LocationBasedAutoRunScreen(
 
     // Snackbar 상태
     val snackbarHostState = remember { SnackbarHostState() }
+    
+    // 🆕 Coroutine scope
+    val scope = rememberCoroutineScope()
 
     // 에러 표시
     LaunchedEffect(errorState) {
@@ -275,10 +279,13 @@ fun LocationBasedAutoRunScreen(
                 locationToEdit = null
             },
             onSave = { location ->
-                if (locationToEdit != null) {
-                    viewModel.updateLocation(location)
-                } else {
-                    viewModel.addLocation(location)
+                scope.launch {
+                    if (locationToEdit != null) {
+                        // 🆕 suspend 함수이므로 coroutine scope에서 호출
+                        viewModel.updateLocation(location)
+                    } else {
+                        viewModel.addLocation(location)
+                    }
                 }
             }
         )
