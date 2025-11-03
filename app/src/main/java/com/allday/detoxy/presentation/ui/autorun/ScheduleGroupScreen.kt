@@ -19,10 +19,13 @@ import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.domain.model.CreationMode
 import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
+import android.util.Log
 import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleCreationDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleGroupCard
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
+import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel  // 🆕
+import com.allday.detoxy.data.local.entity.LocationBasedAutoRun  // 🆕
 import kotlinx.coroutines.launch
 
 /**
@@ -46,7 +49,8 @@ import kotlinx.coroutines.launch
 fun ScheduleGroupScreen(
     onBack: () -> Unit = {},
     onNavigateToTimeBasedAutoRun: () -> Unit = {},
-    viewModel: ScheduleGroupViewModel = hiltViewModel()
+    viewModel: ScheduleGroupViewModel = hiltViewModel(),
+    locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()  // 🆕
 ) {
     val scheduleGroups by viewModel.scheduleGroups.collectAsStateWithLifecycle()
     val activeGroup by viewModel.activeGroup.collectAsStateWithLifecycle()
@@ -154,8 +158,27 @@ fun ScheduleGroupScreen(
                             }
                         }
                         
-                        // TODO: 위치 정보를 LocationBasedAutoRun으로 저장
-                        // locationViewModel.createLocationWithSchedule(locationInfo, scheduleGroupId)
+                        // 🆕 위치 정보를 LocationBasedAutoRun으로 저장
+                        // locationInfo.address의 첫 부분을 label로 사용
+                        val locationLabel = locationInfo.address.split(",").firstOrNull()?.trim() ?: "위치"
+                        
+                        val location = LocationBasedAutoRun(
+                            label = locationLabel,
+                            address = locationInfo.address,
+                            latitude = locationInfo.latitude,
+                            longitude = locationInfo.longitude,
+                            radiusMeters = locationInfo.radiusMeters,
+                            durationMinutes = 90,  // 기본값 (ScheduleGroup 연결 시 무시됨)
+                            presetType = "STANDARD",  // 기본값 (ScheduleGroup 연결 시 무시됨)
+                            triggerType = "ENTER",  // ScheduleGroup 연결 시 activateScheduleOnEnter로 제어
+                            linkedScheduleGroupId = scheduleGroupId,
+                            activateScheduleOnEnter = true,
+                            deactivateScheduleOnExit = true,
+                            isEnabled = true
+                        )
+                        locationViewModel.addLocation(location)
+                        
+                        Log.d("ScheduleGroupScreen", "✅ Location saved: ${location.label} (${location.address}) → ScheduleGroup: $scheduleGroupId")
                     }
                     showAddDialog = false
                 }
@@ -320,8 +343,13 @@ fun ScheduleGroupScreen(
                             onDelete = {
                                 deletingGroupId = group.id
                             },
-                            onManageTimeSlots = {
-                                // 시간 기반 자동 실행 화면으로 이동
+                            onLocationClick = {
+                                // TODO: 위치 정보 상세/수정 다이얼로그 표시
+                                Log.d("ScheduleGroupScreen", "Location clicked: ${group.name}")
+                            },
+                            onTimeClick = {
+                                // TODO: 시간 정보 상세/수정 화면으로 이동
+                                Log.d("ScheduleGroupScreen", "Time clicked: ${group.name}")
                                 onNavigateToTimeBasedAutoRun()
                             }
                         )
