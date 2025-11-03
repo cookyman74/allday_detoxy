@@ -49,6 +49,8 @@ fun TimeBasedAutoRunScreen(
     onBack: () -> Unit = {},
     onNavigateToLocationBased: () -> Unit = {},
     onNavigateToScheduleGroup: () -> Unit = {},  // 🆕 3차 고도화: 시간표 관리로 이동
+    scheduleGroupId: String? = null,  // 🆕 스케줄 그룹 ID (특정 그룹의 시간표 수정 시)
+    scheduleGroupName: String? = null,  // 🆕 스케줄 그룹 이름 (타이틀 표시용)
     viewModel: TimeBasedAutoRunViewModel = hiltViewModel(),
     scheduleGroupViewModel: ScheduleGroupViewModel = hiltViewModel()  // 🆕 3.5차 고도화: 스케줄 그룹 생성
 ) {
@@ -93,7 +95,16 @@ fun TimeBasedAutoRunScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("예약설정") },
+                title = {
+                    // 🆕 스케줄 그룹 이름이 있으면 "{그룹명} 예약설정", 없으면 "예약설정"
+                    Text(
+                        text = if (scheduleGroupName != null) {
+                            "$scheduleGroupName 예약설정"
+                        } else {
+                            "예약설정"
+                        }
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(

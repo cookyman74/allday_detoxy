@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ScheduleGroupScreen(
     onBack: () -> Unit = {},
-    onNavigateToTimeBasedAutoRun: () -> Unit = {},
+    onNavigateToTimeBasedAutoRun: (scheduleGroupId: String, scheduleGroupName: String) -> Unit = { _, _ -> },  // 🆕 스케줄 그룹 정보 전달
     viewModel: ScheduleGroupViewModel = hiltViewModel(),
     locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()  // 🆕
 ) {
@@ -382,9 +382,9 @@ fun ScheduleGroupScreen(
                                 }
                             },
                             onTimeClick = {
-                                // TODO: 시간 정보 상세/수정 화면으로 이동
-                                Log.d("ScheduleGroupScreen", "Time clicked: ${group.name}")
-                                onNavigateToTimeBasedAutoRun()
+                                // 🆕 스케줄 그룹 정보와 함께 TimeBasedAutoRunScreen으로 이동
+                                Log.d("ScheduleGroupScreen", "Time clicked: ${group.name} (ID: ${group.id})")
+                                onNavigateToTimeBasedAutoRun(group.id, group.name)
                             }
                         )
                     }

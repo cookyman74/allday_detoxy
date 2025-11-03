@@ -138,6 +138,10 @@ enum class AutoRunScreenType {
 fun MainScreenWithNavigation() {
     var selectedTab by remember { mutableStateOf(0) }
     var showAutoRunScreen by remember { mutableStateOf(AutoRunScreenType.NONE) }
+    
+    // 🆕 스케줄 그룹 정보 (TimeBasedAutoRunScreen으로 전달용)
+    var selectedScheduleGroupId by remember { mutableStateOf<String?>(null) }
+    var selectedScheduleGroupName by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -191,9 +195,20 @@ fun MainScreenWithNavigation() {
                 // 시간 기반 자동 실행 화면
                 AutoRunScreenType.TIME_BASED -> {
                     TimeBasedAutoRunScreen(
-                        onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
+                        onBack = {
+                            // 🆕 스케줄 그룹에서 온 경우 다시 스케줄 그룹으로, 아니면 설정으로
+                            if (selectedScheduleGroupId != null) {
+                                showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP
+                                selectedScheduleGroupId = null
+                                selectedScheduleGroupName = null
+                            } else {
+                                showAutoRunScreen = AutoRunScreenType.NONE
+                            }
+                        },
                         onNavigateToLocationBased = { showAutoRunScreen = AutoRunScreenType.LOCATION_BASED },
-                        onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP }  // 🆕 3차 고도화
+                        onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP },
+                        scheduleGroupId = selectedScheduleGroupId,  // 🆕 스케줄 그룹 ID 전달
+                        scheduleGroupName = selectedScheduleGroupName  // 🆕 스케줄 그룹 이름 전달
                     )
                 }
                 // 위치 기반 자동 실행 화면
@@ -208,7 +223,12 @@ fun MainScreenWithNavigation() {
                 AutoRunScreenType.SCHEDULE_GROUP -> {
                     ScheduleGroupScreen(
                         onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
-                        onNavigateToTimeBasedAutoRun = { showAutoRunScreen = AutoRunScreenType.TIME_BASED }
+                        onNavigateToTimeBasedAutoRun = { scheduleGroupId, scheduleGroupName ->
+                            // 🆕 스케줄 그룹 정보 저장 후 TimeBasedAutoRunScreen으로 이동
+                            selectedScheduleGroupId = scheduleGroupId
+                            selectedScheduleGroupName = scheduleGroupName
+                            showAutoRunScreen = AutoRunScreenType.TIME_BASED
+                        }
                     )
                 }
                 // 탭별 화면
