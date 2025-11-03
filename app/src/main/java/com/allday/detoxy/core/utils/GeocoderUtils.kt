@@ -133,37 +133,61 @@ object GeocoderUtils {
     }
 
     /**
-     * Address에서 위치 이름 추출
+     * Address에서 위치 이름 추출 (간략한 이름)
      *
-     * 우선순위: featureName > thoroughfare > subLocality > locality
+     * 우선순위: locality (시/구) > subLocality (동) > featureName (건물명)
+     * 예: "고양시", "일산동구", "일산라페스"
      */
     private fun getLocationName(address: Address): String {
-        return address.featureName
-            ?: address.thoroughfare
-            ?: address.subLocality
-            ?: address.locality
-            ?: "알 수 없는 위치"
+        // 1. 시/구 레벨 이름 우선 (예: "고양시")
+        address.locality?.let { return it }
+        
+        // 2. 동 레벨 이름 (예: "장항동")
+        address.subLocality?.let { return it }
+        
+        // 3. 건물명이나 랜드마크 (예: "일산라페스")
+        address.featureName?.let { 
+            // featureName이 너무 길면 사용하지 않음 (주소 형태인 경우)
+            if (it.length <= 20) return it
+        }
+        
+        // 4. 도로명 (예: "장항대로")
+        address.thoroughfare?.let { return it }
+        
+        return "알 수 없는 위치"
     }
 
     /**
      * Address에서 전체 주소 추출
+     *
+     * 한국 주소 형태: "시/도 시/구 동 도로명 번지 건물명"
+     * 예: "경기도 고양시 일산동구 장항동 장항대로 761번지 일산라페스"
      */
     private fun getFullAddress(address: Address): String {
         val parts = mutableListOf<String>()
 
-        // 상세 주소
-        address.thoroughfare?.let { parts.add(it) }
-        address.subThoroughfare?.let { parts.add(it) }
-
-        // 지역
-        address.subLocality?.let { parts.add(it) }
-        address.locality?.let { parts.add(it) }
-
-        // 시/도
+        // 1. 시/도 (예: "경기도")
         address.adminArea?.let { parts.add(it) }
 
-        // 국가
-        address.countryName?.let { parts.add(it) }
+        // 2. 시/구 (예: "고양시")
+        address.locality?.let { parts.add(it) }
+
+        // 3. 동 (예: "일산동구", "장항동")
+        address.subLocality?.let { parts.add(it) }
+
+        // 4. 도로명 (예: "장항대로")
+        address.thoroughfare?.let { parts.add(it) }
+
+        // 5. 번지 (예: "761번지")
+        address.subThoroughfare?.let { parts.add(it) }
+
+        // 6. 건물명/상세주소 (예: "일산라페스")
+        address.featureName?.let { 
+            // featureName이 이미 다른 필드와 중복되지 않으면 추가
+            if (!parts.any { part -> part.contains(it) }) {
+                parts.add(it)
+            }
+        }
 
         return parts.joinToString(" ")
     }
