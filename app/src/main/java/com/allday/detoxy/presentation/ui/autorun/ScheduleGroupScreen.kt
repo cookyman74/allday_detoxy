@@ -259,53 +259,8 @@ fun ScheduleGroupScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // 🆕 3차 고도화: 현재 활성화된 시간표 카드
-                    if (activeGroup != null) {
-                        item {
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        text = "⚡ 현재 활성화된 시간표",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = activeGroup!!.name,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                    if (activeGroup!!.description != null) {
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = activeGroup!!.description!!,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    OutlinedButton(
-                                        onClick = { viewModel.deactivateGroup(activeGroup!!.id) },
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    ) {
-                                        Text("비활성화")
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    // 🆕 3.5차 고도화: 다중 활성화 지원 - 각 카드에 활성화 상태 표시
+                    // (이전의 "현재 활성화된 시간표" 카드는 단일 활성화 가정으로 제거)
                     
                     // 안내 카드
                     item {
@@ -347,7 +302,7 @@ fun ScheduleGroupScreen(
                         
                         ScheduleGroupCard(
                             group = group,
-                            isActive = group.id == activeGroup?.id,
+                            isActive = group.isActive,  // 🆕 다중 활성화 지원: 각 그룹의 isActive 직접 사용
                             timeBasedAutoRuns = timeBasedAutoRunsList,
                             linkedLocations = linkedLocationsList,  // 🆕
                             linkedLocationCount = locationCount,

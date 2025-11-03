@@ -18,15 +18,19 @@ import javax.inject.Singleton
  * ## 주요 기능
  * - 시간표 그룹 활성화: 그룹 내 모든 시간대의 알람 등록
  * - 시간표 그룹 비활성화: 그룹 내 모든 시간대의 알람 취소
- * - 단일 활성화 원칙: 한 번에 하나의 시간표 그룹만 활성화
+ * - 🆕 다중 활성화 지원: 여러 그룹이 동시에 활성화 가능 (위치/시간에 따라 자동 실행)
  *
  * ## 3차 고도화 핵심 로직
- * - 위치 진입 시 시간표 활성화 → 시간대 알람 자동 등록
+ * - 위치 진입 시 시간표 자동 실행 선택 → 시간대 알람 자동 등록
  * - 위치 이탈 시 시간표 비활성화 → 시간대 알람 자동 취소
  *
  * ## 3.5차 고도화 핵심 로직 (Phase 3)
  * - 위치 충돌 해소: LocationConflictResolver를 통한 우선순위 규칙 적용
  * - 히스테리시스 타이머: 120초간 기존 위치 유지
+ *
+ * ## 활성화 vs 실행
+ * - **활성화(isActive)**: 이 스케줄을 사용할지 말지의 on/off (여러 그룹 동시 활성화 가능)
+ * - **실행**: 활성화된 그룹 중 현재 위치/시간에 맞는 것을 자동 선택
  *
  * @param context Application Context
  * @param repository ScheduleGroupRepository
@@ -54,14 +58,13 @@ class ScheduleGroupManager @Inject constructor(
      * 시간표 그룹 활성화
      *
      * ## 처리 흐름
-     * 1. 다른 모든 그룹 비활성화 (단일 활성화 원칙)
-     * 2. 해당 그룹 활성화 (lastActivatedAt 업데이트)
-     * 3. 그룹 내 활성화된 시간대의 알람 재등록
+     * 1. 해당 그룹 활성화 (lastActivatedAt 업데이트)
+     * 2. 그룹 내 활성화된 시간대의 알람 등록
      *
-     * ## 단일 활성화 원칙
-     * - 한 번에 하나의 시간표만 활성화 가능
-     * - 새로운 시간표 활성화 시 기존 활성화된 시간표는 자동 비활성화
-     * - 이유: 사용자 혼란 방지, 위치별 명확한 시간표 매핑
+     * ## 🆕 다중 활성화 지원
+     * - 여러 그룹이 동시에 활성화 가능 (독립적 on/off 스위치)
+     * - 실제 실행은 위치/시간에 따라 자동 결정 (LocationConflictResolver, NonLocationScheduleManager)
+     * - 사용자가 필요에 따라 원하는 그룹을 자유롭게 활성화/비활성화
      *
      * @param groupId 활성화할 시간표 그룹 ID
      * @return Result<Unit> 성공 시 Success, 실패 시 Failure
@@ -69,21 +72,12 @@ class ScheduleGroupManager @Inject constructor(
     suspend fun activateGroup(groupId: String): Result<Unit> = runCatching {
         Log.i(TAG, "🔄 Activating schedule group: $groupId")
 
-        // 1. 다른 모든 그룹 비활성화
-        val activeGroups = repository.getActive().first()
-        activeGroups.forEach { group ->
-            if (group.id != groupId && group.isActive) {
-                Log.d(TAG, "🔻 Deactivating other group: ${group.name} (${group.id})")
-                deactivateGroup(group.id).getOrThrow()
-            }
-        }
-
-        // 2. 해당 그룹 활성화 (lastActivatedAt 업데이트)
+        // 1. 해당 그룹 활성화 (lastActivatedAt 업데이트)
         val timestamp = System.currentTimeMillis()
         repository.toggleActiveWithTimestamp(groupId, true, timestamp)
         Log.d(TAG, "✅ ScheduleGroup activated: $groupId (timestamp: $timestamp)")
 
-        // 3. 그룹 내 활성화된 시간대 알람 등록
+        // 2. 그룹 내 활성화된 시간대 알람 등록
         val timeBasedAutoRuns = repository.getLinkedTimeBasedAutoRuns(groupId)
         val enabledAutoRuns = timeBasedAutoRuns.filter { it.isEnabled }
 
