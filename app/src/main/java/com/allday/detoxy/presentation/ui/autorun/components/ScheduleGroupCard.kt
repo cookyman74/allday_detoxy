@@ -24,7 +24,7 @@ import com.allday.detoxy.data.local.entity.ScheduleGroup
  *
  * ## 3차 고도화 추가 기능
  * - 연결된 시간대 목록 표시 (확장/축소 가능)
- * - 연결된 위치 개수 표시
+ * - 연결된 위치 정보 표시 (주소)
  * - 활성화/비활성화 버튼 (ScheduleGroupManager 사용)
  * - 아이콘 및 색상 표시
  * - 시간표 관리 버튼 (TimeBasedAutoRunScreen으로 이동)
@@ -36,7 +36,7 @@ import com.allday.detoxy.data.local.entity.ScheduleGroup
  * @param group 표시할 ScheduleGroup
  * @param isActive 활성화 여부
  * @param timeBasedAutoRuns 연결된 시간대 목록 (Screen에서 전달)
- * @param linkedLocationCount 연결된 위치 개수 (Screen에서 전달)
+ * @param linkedLocations 연결된 위치 목록 (Screen에서 전달)
  * @param onActivate 활성화/비활성화 콜백
  * @param onEdit 편집 콜백
  * @param onDelete 삭제 콜백
@@ -48,7 +48,8 @@ fun ScheduleGroupCard(
     group: ScheduleGroup,
     isActive: Boolean,
     timeBasedAutoRuns: List<com.allday.detoxy.data.local.entity.TimeBasedAutoRun>,
-    linkedLocationCount: Int,
+    linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun> = emptyList(),  // 🆕 위치 정보
+    linkedLocationCount: Int = linkedLocations.size,
     onActivate: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -124,54 +125,91 @@ fun ScheduleGroupCard(
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // 연결된 설정 요약
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (timeBasedAutoRuns.isNotEmpty()) {
-                    AssistChip(
-                        onClick = { expanded = !expanded },
-                        label = { Text("시간표 ${timeBasedAutoRuns.size}개") }
-                    )
-                }
-                if (linkedLocationCount > 0) {
-                    AssistChip(
-                        onClick = { /* 위치 상세 보기 */ },
-                        label = { Text("위치 ${linkedLocationCount}개") }
-                    )
-                }
-            }
-            
-            // 설정이 없는 경우
-            if (timeBasedAutoRuns.isEmpty() && linkedLocationCount == 0) {
-                Text(
-                    text = "연결된 설정 없음",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-            
-            // 시간대 리스트 (확장 시)
-            if (timeBasedAutoRuns.isNotEmpty()) {
-                AnimatedVisibility(
-                    visible = expanded,
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
+            // 🆕 위치 정보 표시 (있는 경우)
+            if (linkedLocations.isNotEmpty()) {
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Column(
-                        modifier = Modifier.padding(top = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        timeBasedAutoRuns.forEach { autoRun ->
+                    Icon(
+                        imageVector = Icons.Default.Place,
+                        contentDescription = "위치",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column {
+                        linkedLocations.forEach { location ->
                             Text(
-                                text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
+                                text = location.label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "${location.address} (${location.radiusMeters}m)",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            // 설정이 없는 경우
+            if (timeBasedAutoRuns.isEmpty() && linkedLocations.isEmpty()) {
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "⚪ 어디서나 적용 (위치 없음, 시간대 없음)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            } else if (linkedLocations.isEmpty()) {
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "⚪ 어디서나 적용 (위치 없음)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            // 시간대 리스트
+            if (timeBasedAutoRuns.isNotEmpty()) {
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    timeBasedAutoRuns.forEach { autoRun ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "시간",
+                                tint = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
             }
             
             Spacer(modifier = Modifier.height(12.dp))

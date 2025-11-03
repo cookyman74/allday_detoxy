@@ -90,6 +90,15 @@ class ScheduleGroupViewModel @Inject constructor(
      */
     private val _linkedLocationCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val linkedLocationCounts: StateFlow<Map<String, Int>> = _linkedLocationCounts.asStateFlow()
+    
+    /**
+     * 🆕 각 ScheduleGroup의 연결된 LocationBasedAutoRun 목록 (Map 기반 캐싱)
+     * 
+     * Key: ScheduleGroup ID
+     * Value: 연결된 LocationBasedAutoRun 목록
+     */
+    private val _linkedLocations = MutableStateFlow<Map<String, List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>>>(emptyMap())
+    val linkedLocations: StateFlow<Map<String, List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>>> = _linkedLocations.asStateFlow()
 
     /**
      * ScheduleGroup 생성
@@ -287,6 +296,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 val timeCounts = mutableMapOf<String, Int>()
                 val locationCounts = mutableMapOf<String, Int>()
                 val timeBasedAutoRuns = mutableMapOf<String, List<TimeBasedAutoRun>>()
+                val locations = mutableMapOf<String, List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>>()  // 🆕
                 
                 groups.forEach { group ->
                     // 시간대 목록 로드
@@ -294,12 +304,15 @@ class ScheduleGroupViewModel @Inject constructor(
                     timeBasedAutoRuns[group.id] = linkedAutoRuns
                     timeCounts[group.id] = linkedAutoRuns.size
                     
-                    // 위치 개수 로드
-                    locationCounts[group.id] = repository.getLinkedLocationCount(group.id)
+                    // 🆕 위치 목록 로드
+                    val linkedLocations = repository.getLinkedLocations(group.id)
+                    locations[group.id] = linkedLocations
+                    locationCounts[group.id] = linkedLocations.size
                 }
                 
                 _linkedTimeBasedAutoRuns.value = timeBasedAutoRuns
                 _linkedTimeBasedAutoRunCounts.value = timeCounts
+                _linkedLocations.value = locations  // 🆕
                 _linkedLocationCounts.value = locationCounts
             } catch (e: Exception) {
                 _errorState.value = "연결된 설정 조회 실패: ${e.message}"

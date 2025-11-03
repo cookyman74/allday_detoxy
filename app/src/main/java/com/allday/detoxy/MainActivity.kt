@@ -218,7 +218,7 @@ fun MainScreenWithNavigation() {
                         1 -> ReportScreen()
                         2 -> DetoxyControlSettingsScreen(
                             onBack = { selectedTab = 0 },  // 뒤로 가기 시 타이머로
-                            onNavigateToAutoRun = { showAutoRunScreen = AutoRunScreenType.TIME_BASED }  // 예약설정으로
+                            onNavigateToAutoRun = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP }  // 🆕 예약설정 → 스케줄 그룹 (장소 기준)
                         )
                     }
                 }

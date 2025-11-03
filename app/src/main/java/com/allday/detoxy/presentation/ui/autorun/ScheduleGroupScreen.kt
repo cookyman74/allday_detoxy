@@ -20,7 +20,7 @@ import com.allday.detoxy.domain.model.CreationMode
 import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDialog
-import com.allday.detoxy.presentation.ui.autorun.components.QuickCreateScheduleDialog
+import com.allday.detoxy.presentation.ui.autorun.components.ScheduleCreationDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleGroupCard
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import kotlinx.coroutines.launch
@@ -53,6 +53,7 @@ fun ScheduleGroupScreen(
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsStateWithLifecycle()
+    val linkedLocations by viewModel.linkedLocations.collectAsStateWithLifecycle()  // 🆕
     val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsStateWithLifecycle()
     
     val scope = rememberCoroutineScope()
@@ -118,34 +119,48 @@ fun ScheduleGroupScreen(
         )
     }
     
-    // 추가 다이얼로그 (3.5차 고도화: QuickCreateScheduleDialog 사용)
+    // 추가 다이얼로그 (3.5차 고도화: ScheduleCreationDialog 사용 - 위치 설정 포함)
     if (showAddDialog) {
-        QuickCreateScheduleDialog(
+        ScheduleCreationDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { scheduleName, mode, data ->
+            onConfirm = { scheduleName, mode, timeSlots, template, locationInfo ->
                 scope.launch {
-                    when (mode) {
-                        CreationMode.TEMPLATE -> {
-                            // 📋 템플릿으로 생성 (Phase 2)
-                            @Suppress("UNCHECKED_CAST")
-                            val template = data as ScheduleTemplate
-                            viewModel.createFromTemplate(scheduleName, template)
+                    if (locationInfo == null) {
+                        // 어디서나 적용 (위치 없음)
+                        when (mode) {
+                            CreationMode.TEMPLATE -> {
+                                viewModel.createFromTemplate(scheduleName, template!!)
+                            }
+                            CreationMode.CUSTOM -> {
+                                viewModel.createScheduleGroupWithTimeSlots(
+                                    name = scheduleName,
+                                    description = null,
+                                    timeSlots = timeSlots
+                                )
+                            }
                         }
-                        CreationMode.CUSTOM -> {
-                            // ✏️ 커스텀 시간대로 생성 (Phase 1)
-                            @Suppress("UNCHECKED_CAST")
-                            val timeSlots = data as List<TimeSlot>
-                            viewModel.createScheduleGroupWithTimeSlots(
-                                name = scheduleName,
-                                description = null,
-                                timeSlots = timeSlots
-                            )
+                    } else {
+                        // 위치 기반 스케줄
+                        val scheduleGroupId = when (mode) {
+                            CreationMode.TEMPLATE -> {
+                                viewModel.createFromTemplate(scheduleName, template!!)
+                            }
+                            CreationMode.CUSTOM -> {
+                                viewModel.createScheduleGroupWithTimeSlots(
+                                    name = scheduleName,
+                                    description = null,
+                                    timeSlots = timeSlots
+                                )
+                            }
                         }
+                        
+                        // TODO: 위치 정보를 LocationBasedAutoRun으로 저장
+                        // locationViewModel.createLocationWithSchedule(locationInfo, scheduleGroupId)
                     }
                     showAddDialog = false
                 }
             },
-            locationLabel = ""
+            initialMode = CreationMode.CUSTOM  // 기본: 커스텀 모드
         )
     }
     
@@ -327,12 +342,14 @@ fun ScheduleGroupScreen(
                     ) { group ->
                         // 🆕 3차 고도화 개선: ViewModel에서 데이터를 미리 준비해서 전달
                         val timeBasedAutoRunsList = linkedTimeBasedAutoRuns[group.id] ?: emptyList()
+                        val linkedLocationsList = linkedLocations[group.id] ?: emptyList()  // 🆕
                         val locationCount = linkedLocationCounts[group.id] ?: 0
                         
                         ScheduleGroupCard(
                             group = group,
                             isActive = group.id == activeGroup?.id,
                             timeBasedAutoRuns = timeBasedAutoRunsList,
+                            linkedLocations = linkedLocationsList,  // 🆕
                             linkedLocationCount = locationCount,
                             onActivate = {
                                 // 🆕 3차 고도화: ScheduleGroupManager 사용

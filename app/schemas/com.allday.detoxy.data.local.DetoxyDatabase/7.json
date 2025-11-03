@@ -1,0 +1,906 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 7,
+    "identityHash": "fbd0077bbe81c54d61759c5112e5668b",
+    "entities": [
+      {
+        "tableName": "focus_sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `startTime` INTEGER NOT NULL, `endTime` INTEGER, `durationMinutes` INTEGER NOT NULL, `success` INTEGER NOT NULL, `interruptedSeconds` INTEGER NOT NULL, `primaryDistractionCategory` TEXT, `giveUpReason` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startTime",
+            "columnName": "startTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endTime",
+            "columnName": "endTime",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "durationMinutes",
+            "columnName": "durationMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "success",
+            "columnName": "success",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "interruptedSeconds",
+            "columnName": "interruptedSeconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "primaryDistractionCategory",
+            "columnName": "primaryDistractionCategory",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "giveUpReason",
+            "columnName": "giveUpReason",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "user_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `totalPoints` INTEGER NOT NULL, `currentStreak` INTEGER NOT NULL, `lastSuccessDate` TEXT, `autoRunMasterEnabled` INTEGER NOT NULL, `autoRunPauseUntil` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalPoints",
+            "columnName": "totalPoints",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currentStreak",
+            "columnName": "currentStreak",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSuccessDate",
+            "columnName": "lastSuccessDate",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "autoRunMasterEnabled",
+            "columnName": "autoRunMasterEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "autoRunPauseUntil",
+            "columnName": "autoRunPauseUntil",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "focus_interruptions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `packageName` TEXT NOT NULL, `category` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`sessionId`) REFERENCES `focus_sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageName",
+            "columnName": "packageName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_focus_interruptions_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_focus_interruptions_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "focus_sessions",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "focus_distractions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sessionId` TEXT, `timestamp` INTEGER NOT NULL, `packageName` TEXT NOT NULL, `category` TEXT NOT NULL, `wasBlocked` INTEGER NOT NULL, `dwellTimeSeconds` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`sessionId`) REFERENCES `focus_sessions`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packageName",
+            "columnName": "packageName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wasBlocked",
+            "columnName": "wasBlocked",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dwellTimeSeconds",
+            "columnName": "dwellTimeSeconds",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_focus_distractions_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_focus_distractions_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          },
+          {
+            "name": "index_focus_distractions_timestamp",
+            "unique": false,
+            "columnNames": [
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_focus_distractions_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "focus_sessions",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "detoxy_routine_logs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `scheduledTime` INTEGER NOT NULL, `executedTime` INTEGER, `success` INTEGER NOT NULL, `failureReason` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduledTime",
+            "columnName": "scheduledTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "executedTime",
+            "columnName": "executedTime",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "success",
+            "columnName": "success",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failureReason",
+            "columnName": "failureReason",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "focus_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `snsEnabled` INTEGER NOT NULL, `messengerEnabled` INTEGER NOT NULL, `webEnabled` INTEGER NOT NULL, `videoEnabled` INTEGER NOT NULL, `otherEnabled` INTEGER NOT NULL, `lastUpdated` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snsEnabled",
+            "columnName": "snsEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "messengerEnabled",
+            "columnName": "messengerEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "webEnabled",
+            "columnName": "webEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "videoEnabled",
+            "columnName": "videoEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "otherEnabled",
+            "columnName": "otherEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastUpdated",
+            "columnName": "lastUpdated",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "time_based_auto_run",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `hour` INTEGER NOT NULL, `minute` INTEGER NOT NULL, `durationMinutes` INTEGER NOT NULL, `presetType` TEXT NOT NULL, `enabledDays` TEXT NOT NULL, `label` TEXT, `isEnabled` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `scheduleGroupId` TEXT, `isIndependent` INTEGER NOT NULL, `groupPriority` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hour",
+            "columnName": "hour",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minute",
+            "columnName": "minute",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMinutes",
+            "columnName": "durationMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "presetType",
+            "columnName": "presetType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enabledDays",
+            "columnName": "enabledDays",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isEnabled",
+            "columnName": "isEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduleGroupId",
+            "columnName": "scheduleGroupId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isIndependent",
+            "columnName": "isIndependent",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupPriority",
+            "columnName": "groupPriority",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_time_based_auto_run_hour_minute",
+            "unique": false,
+            "columnNames": [
+              "hour",
+              "minute"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_time_based_auto_run_hour_minute` ON `${TABLE_NAME}` (`hour`, `minute`)"
+          },
+          {
+            "name": "index_time_based_auto_run_isEnabled",
+            "unique": false,
+            "columnNames": [
+              "isEnabled"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_time_based_auto_run_isEnabled` ON `${TABLE_NAME}` (`isEnabled`)"
+          },
+          {
+            "name": "index_time_based_auto_run_scheduleGroupId",
+            "unique": false,
+            "columnNames": [
+              "scheduleGroupId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_time_based_auto_run_scheduleGroupId` ON `${TABLE_NAME}` (`scheduleGroupId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "location_based_auto_run",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `label` TEXT NOT NULL, `address` TEXT, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `radiusMeters` INTEGER NOT NULL, `durationMinutes` INTEGER NOT NULL, `presetType` TEXT NOT NULL, `triggerType` TEXT NOT NULL, `periodicIntervalMinutes` INTEGER, `dwellTimeMinutes` INTEGER NOT NULL, `requiresUserConfirmation` INTEGER NOT NULL, `isEnabled` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `linkedScheduleGroupId` TEXT, `activateScheduleOnEnter` INTEGER NOT NULL, `deactivateScheduleOnExit` INTEGER NOT NULL, `exitActionType` TEXT NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "radiusMeters",
+            "columnName": "radiusMeters",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMinutes",
+            "columnName": "durationMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "presetType",
+            "columnName": "presetType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "triggerType",
+            "columnName": "triggerType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "periodicIntervalMinutes",
+            "columnName": "periodicIntervalMinutes",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dwellTimeMinutes",
+            "columnName": "dwellTimeMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "requiresUserConfirmation",
+            "columnName": "requiresUserConfirmation",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isEnabled",
+            "columnName": "isEnabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "linkedScheduleGroupId",
+            "columnName": "linkedScheduleGroupId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "activateScheduleOnEnter",
+            "columnName": "activateScheduleOnEnter",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deactivateScheduleOnExit",
+            "columnName": "deactivateScheduleOnExit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exitActionType",
+            "columnName": "exitActionType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_location_based_auto_run_isEnabled",
+            "unique": false,
+            "columnNames": [
+              "isEnabled"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_location_based_auto_run_isEnabled` ON `${TABLE_NAME}` (`isEnabled`)"
+          },
+          {
+            "name": "index_location_based_auto_run_linkedScheduleGroupId",
+            "unique": false,
+            "columnNames": [
+              "linkedScheduleGroupId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_location_based_auto_run_linkedScheduleGroupId` ON `${TABLE_NAME}` (`linkedScheduleGroupId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "custom_timer_preset",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `durationMinutes` INTEGER NOT NULL, `presetType` TEXT, `usageCount` INTEGER NOT NULL, `displayOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "durationMinutes",
+            "columnName": "durationMinutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "presetType",
+            "columnName": "presetType",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "usageCount",
+            "columnName": "usageCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayOrder",
+            "columnName": "displayOrder",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_custom_timer_preset_displayOrder",
+            "unique": false,
+            "columnNames": [
+              "displayOrder"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_custom_timer_preset_displayOrder` ON `${TABLE_NAME}` (`displayOrder`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "auto_run_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `triggerType` TEXT NOT NULL, `triggerSourceId` TEXT NOT NULL, `triggerTime` INTEGER NOT NULL, `result` TEXT NOT NULL, `failureReason` TEXT, `sessionId` TEXT, `gpsAccuracyMeters` REAL, `dwellSeconds` INTEGER, `metaJson` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`sessionId`) REFERENCES `focus_sessions`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "triggerType",
+            "columnName": "triggerType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "triggerSourceId",
+            "columnName": "triggerSourceId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "triggerTime",
+            "columnName": "triggerTime",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "result",
+            "columnName": "result",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failureReason",
+            "columnName": "failureReason",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "gpsAccuracyMeters",
+            "columnName": "gpsAccuracyMeters",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "dwellSeconds",
+            "columnName": "dwellSeconds",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "metaJson",
+            "columnName": "metaJson",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_auto_run_log_triggerTime",
+            "unique": false,
+            "columnNames": [
+              "triggerTime"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_auto_run_log_triggerTime` ON `${TABLE_NAME}` (`triggerTime`)"
+          },
+          {
+            "name": "index_auto_run_log_triggerType_triggerTime",
+            "unique": false,
+            "columnNames": [
+              "triggerType",
+              "triggerTime"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_auto_run_log_triggerType_triggerTime` ON `${TABLE_NAME}` (`triggerType`, `triggerTime`)"
+          },
+          {
+            "name": "index_auto_run_log_sessionId",
+            "unique": false,
+            "columnNames": [
+              "sessionId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_auto_run_log_sessionId` ON `${TABLE_NAME}` (`sessionId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "focus_sessions",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "sessionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "schedule_group",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `iconType` TEXT NOT NULL, `colorHex` TEXT NOT NULL, `lastActivatedAt` INTEGER, `updatedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iconType",
+            "columnName": "iconType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorHex",
+            "columnName": "colorHex",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastActivatedAt",
+            "columnName": "lastActivatedAt",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_schedule_group_isActive",
+            "unique": false,
+            "columnNames": [
+              "isActive"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_schedule_group_isActive` ON `${TABLE_NAME}` (`isActive`)"
+          }
+        ],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'fbd0077bbe81c54d61759c5112e5668b')"
+    ]
+  }
+}
