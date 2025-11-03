@@ -141,6 +141,7 @@ fun ScheduleCreationDialog(
                         ScheduleCreationStep.SCHEDULE_SETUP -> {
                             val locationInfo = if (hasLocation && selectedLocation != null) {
                                 LocationInfo(
+                                    name = selectedLocation!!.name,  // 🆕 위치 이름 전달
                                     address = selectedLocation!!.address,
                                     latitude = selectedLocation!!.latitude,
                                     longitude = selectedLocation!!.longitude,
@@ -262,6 +263,7 @@ enum class ScheduleCreationStep {
  * 위치 정보
  */
 data class LocationInfo(
+    val name: String,  // 🆕 위치 이름 (예: "내곡중학교")
     val address: String,
     val latitude: Double,
     val longitude: Double,

@@ -164,11 +164,8 @@ fun ScheduleGroupScreen(
                         }
                         
                         // 🆕 위치 정보를 LocationBasedAutoRun으로 저장
-                        // locationInfo.address의 첫 부분을 label로 사용
-                        val locationLabel = locationInfo.address.split(",").firstOrNull()?.trim() ?: "위치"
-                        
                         val location = LocationBasedAutoRun(
-                            label = locationLabel,
+                            label = locationInfo.name,  // 🆕 name 필드 사용
                             address = locationInfo.address,
                             latitude = locationInfo.latitude,
                             longitude = locationInfo.longitude,
@@ -181,7 +178,12 @@ fun ScheduleGroupScreen(
                             deactivateScheduleOnExit = true,
                             isEnabled = true
                         )
+                        
+                        // 위치 정보 저장 (완료까지 대기)
                         locationViewModel.addLocation(location)
+                        
+                        // 🆕 저장 완료 후 해당 그룹의 위치 정보 갱신
+                        viewModel.loadLinkedLocations(scheduleGroupId)
                         
                         Log.d("ScheduleGroupScreen", "✅ Location saved: ${location.label} (${location.address}) → ScheduleGroup: $scheduleGroupId")
                     }
