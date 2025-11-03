@@ -221,23 +221,32 @@ fun ScheduleGroupScreen(
             },
             onSave = { updatedLocation ->
                 scope.launch {
-                    // 1. 🆕 LocationBasedAutoRun 업데이트 (완료될 때까지 대기)
-                    locationViewModel.updateLocation(updatedLocation)
-                    
-                    // 2. 🆕 연결된 스케줄 그룹의 위치 정보 갱신 (업데이트 완료 후!)
-                    updatedLocation.linkedScheduleGroupId?.let { groupId ->
-                        viewModel.loadLinkedLocations(groupId)
+                    try {
+                        // 1. 🆕 LocationBasedAutoRun 업데이트 (완료될 때까지 대기)
+                        locationViewModel.updateLocation(updatedLocation)
+                        
+                        // 2. 🆕 연결된 스케줄 그룹의 위치 정보 갱신 (업데이트 완료 후!)
+                        updatedLocation.linkedScheduleGroupId?.let { groupId ->
+                            viewModel.loadLinkedLocations(groupId)
+                        }
+                        
+                        // 3. 성공 메시지 표시
+                        snackbarHostState.showSnackbar(
+                            message = "위치 정보가 수정되었습니다",
+                            duration = SnackbarDuration.Short
+                        )
+                    } catch (e: Exception) {
+                        // 오류 발생 시 오류 메시지 표시
+                        snackbarHostState.showSnackbar(
+                            message = "위치 정보 수정 실패: ${e.message}",
+                            duration = SnackbarDuration.Long
+                        )
+                        Log.e("ScheduleGroupScreen", "Failed to update location", e)
+                    } finally {
+                        // 4. 다이얼로그 닫기 (성공/실패 관계없이)
+                        showLocationEditDialog = false
+                        editingLocation = null
                     }
-                    
-                    // 3. 성공 메시지 표시
-                    snackbarHostState.showSnackbar(
-                        message = "위치 정보가 수정되었습니다",
-                        duration = SnackbarDuration.Short
-                    )
-                    
-                    // 4. 다이얼로그 닫기
-                    showLocationEditDialog = false
-                    editingLocation = null
                 }
             }
         )
