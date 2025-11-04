@@ -203,13 +203,18 @@ class FocusAccessibilityService : AccessibilityService() {
      * 2. 홈 화면으로 이동하여 차단된 앱 종료
      */
     private fun navigateToHome() {
-        // 1. 먼저 LockOverlayScreen 표시
-        LockOverlayService.showOverlay(
-            context = applicationContext,
-            remainingSeconds = remainingSeconds,
-            totalSeconds = totalSeconds
-        )
-        Log.d(TAG, "🔒 Lock overlay display requested: $remainingSeconds / $totalSeconds seconds")
+        // 1. 먼저 LockOverlayScreen 표시 (🔥 v0.10.1.4: 예외 처리 추가)
+        try {
+            LockOverlayService.showOverlay(
+                context = applicationContext,
+                remainingSeconds = remainingSeconds,
+                totalSeconds = totalSeconds
+            )
+            Log.d(TAG, "🔒 Lock overlay display requested: $remainingSeconds / $totalSeconds seconds")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to show lock overlay: ${e.message}", e)
+            // 오버레이 표시 실패해도 홈 화면 이동은 계속 진행
+        }
 
         // 2. 홈 화면으로 이동 (차단된 앱 종료)
         val homeIntent = Intent(Intent.ACTION_MAIN).apply {

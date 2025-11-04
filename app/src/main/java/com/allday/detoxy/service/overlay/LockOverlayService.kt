@@ -54,12 +54,13 @@ class LockOverlayService : LifecycleService() {
         fun showOverlay(context: Context, remainingSeconds: Int, totalSeconds: Int) {
             Log.d(TAG, "📞 showOverlay() called - remainingSeconds: $remainingSeconds, totalSeconds: $totalSeconds")
 
-            // 권한 확인
+            // 🔥 v0.10.1.4: 권한 확인 후 권한 없으면 return
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val hasPermission = android.provider.Settings.canDrawOverlays(context)
                 Log.d(TAG, "🔐 Overlay permission check: ${if (hasPermission) "✅ GRANTED" else "❌ DENIED"}")
                 if (!hasPermission) {
-                    Log.e(TAG, "Cannot show overlay - permission not granted!")
+                    Log.e(TAG, "❌ Cannot show overlay - permission not granted!")
+                    return  // ⭐ 권한 없으면 서비스 시작 안 함
                 }
             }
 
@@ -70,7 +71,20 @@ class LockOverlayService : LifecycleService() {
             }
 
             Log.d(TAG, "🚀 Starting LockOverlayService with ACTION_SHOW_OVERLAY")
-            context.startService(intent)
+            
+            // 🔥 v0.10.1.4: Android 8.0+ 백그라운드 서비스 제한 대응
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                    Log.d(TAG, "✅ Started as foreground service (Android 8.0+)")
+                } else {
+                    context.startService(intent)
+                    Log.d(TAG, "✅ Started as background service")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to start LockOverlayService: ${e.message}", e)
+                throw e  // 상위에서 catch하도록 예외 전파
+            }
         }
 
         /**
@@ -108,6 +122,12 @@ class LockOverlayService : LifecycleService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "🔔 onStartCommand() - action: ${intent?.action}")
 
+        // 🔥 v0.10.1.4: Android 8.0+ Foreground Service 요구사항 충족
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && intent?.action == ACTION_SHOW_OVERLAY) {
+            startForeground(NOTIFICATION_ID, createNotification())
+            Log.d(TAG, "✅ Started as foreground service")
+        }
+
         when (intent?.action) {
             ACTION_SHOW_OVERLAY -> {
                 val remainingSeconds = intent.getIntExtra(EXTRA_REMAINING_SECONDS, 0)
@@ -128,9 +148,6 @@ class LockOverlayService : LifecycleService() {
                 Log.w(TAG, "⚠️ Unknown action: ${intent?.action}")
             }
         }
-
-        // 포그라운드 서비스 시작
-        startForeground(NOTIFICATION_ID, createNotification())
 
         // super 호출 (lint MissingSuperCall 해결)
         super.onStartCommand(intent, flags, startId)

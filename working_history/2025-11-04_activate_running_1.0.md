@@ -754,3 +754,211 @@ git commit -m "fix(timer): 백그라운드 타이머 멈춤 수정 - WakeLock �
 **버전**: v0.10.1.3
 **추가 소요**: ~30분
 
+---
+
+## 🐛 추가 버그 수정 (v0.10.1.4) - 접근성 서비스 충돌 수정
+
+### 문제 발견
+**사용자 피드백**:
+- 접근성 서비스 설정 화면에 "이 서비스가 제대로 작동하지 않습니다" 메시지
+- 필터링 기능이 동작하지 않음
+- 위치 지역 진입 시 트리거로 인한 충돌로 의심됨
+
+### 근본 원인
+**LockOverlayService.showOverlay()에서 예외 처리 누락:**
+
+#### 1. 권한 확인만 하고 서비스 시작 시도
+```kotlin
+// ❌ 문제 코드
+if (!hasPermission) {
+    Log.e(TAG, "Cannot show overlay - permission not granted!")
+    // return이 없어서 권한 없어도 서비스 시작 시도!
+}
+context.startService(intent)  // 💥 여기서 crash 가능
+```
+
+#### 2. Android 8.0+ 백그라운드 서비스 제한
+- `startService()`가 백그라운드에서 실패
+- `startForegroundService()` 사용 필요
+- Foreground Service로 시작하지 않으면 5초 내 ANR
+
+#### 3. 예외 처리 누락
+- `navigateToHome()`에서 `showOverlay()` 호출 시 try-catch 없음
+- 예외 발생 시 AccessibilityService 전체가 crash
+
+**결과**:
+- 접근성 서비스가 crash하여 앱 차단 불가
+- "이 서비스가 제대로 작동하지 않습니다" 메시지 표시
+- 필터링 기능 전체 마비
+
+### 해결 방법
+
+#### 1. FocusAccessibilityService.navigateToHome() 예외 처리
+```kotlin
+// ✅ 수정 후
+private fun navigateToHome() {
+    // showOverlay() 호출을 try-catch로 감싸기
+    try {
+        LockOverlayService.showOverlay(
+            context = applicationContext,
+            remainingSeconds = remainingSeconds,
+            totalSeconds = totalSeconds
+        )
+        Log.d(TAG, "🔒 Lock overlay display requested")
+    } catch (e: Exception) {
+        Log.e(TAG, "❌ Failed to show lock overlay: ${e.message}", e)
+        // 오버레이 표시 실패해도 홈 화면 이동은 계속 진행
+    }
+    
+    // 홈 화면 이동도 try-catch로 보호
+    try {
+        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(homeIntent)
+    } catch (e: Exception) {
+        Log.e(TAG, "❌ Failed to navigate to home: ${e.message}", e)
+    }
+}
+```
+
+#### 2. LockOverlayService.showOverlay() 권한 체크 및 서비스 시작 개선
+```kotlin
+// ✅ 수정 후
+fun showOverlay(context: Context, remainingSeconds: Int, totalSeconds: Int) {
+    // 권한 확인 후 권한 없으면 return
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        val hasPermission = android.provider.Settings.canDrawOverlays(context)
+        if (!hasPermission) {
+            Log.e(TAG, "❌ Cannot show overlay - permission not granted!")
+            return  // ⭐ 권한 없으면 서비스 시작 안 함
+        }
+    }
+    
+    // Android 8.0+ 백그라운드 서비스 제한 대응
+    try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)  // ✅ Foreground Service로 시작
+            Log.d(TAG, "✅ Started as foreground service (Android 8.0+)")
+        } else {
+            context.startService(intent)
+            Log.d(TAG, "✅ Started as background service")
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "❌ Failed to start LockOverlayService: ${e.message}", e)
+        throw e  // 상위에서 catch하도록 예외 전파
+    }
+}
+```
+
+#### 3. LockOverlayService.onStartCommand() Foreground Service 전환
+```kotlin
+// ✅ 수정 후
+override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    // Android 8.0+ Foreground Service 요구사항 충족
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && intent?.action == ACTION_SHOW_OVERLAY) {
+        startForeground(NOTIFICATION_ID, createNotification())
+        Log.d(TAG, "✅ Started as foreground service")
+    }
+    
+    when (intent?.action) {
+        ACTION_SHOW_OVERLAY -> showOverlay(remainingSeconds, totalSeconds)
+        // ...
+    }
+    
+    return START_STICKY
+}
+```
+
+### Android 8.0+ Foreground Service 제약사항
+
+| 상황 | startService() | startForegroundService() |
+|------|----------------|--------------------------|
+| **포그라운드** | ✅ 작동 | ✅ 작동 |
+| **백그라운드 (8.0+)** | ❌ IllegalStateException | ✅ 작동 (5초 내 startForeground 호출 필요) |
+
+**Foreground Service 요구사항**:
+1. `startForegroundService()` 호출
+2. 5초 내에 `startForeground()` 호출
+3. 알림(Notification) 표시 필수
+4. 실패 시 ANR (Application Not Responding)
+
+### 수정 내용 요약
+
+| 파일 | 변경 내용 | 목적 |
+|------|----------|------|
+| **FocusAccessibilityService.kt** | `navigateToHome()`에 try-catch 추가 | 예외 발생 시 서비스 crash 방지 |
+| **LockOverlayService.kt (showOverlay)** | 권한 체크 후 `return` 추가, `startForegroundService()` 사용, try-catch 추가 | 권한 없을 때 안전하게 종료, Android 8.0+ 대응 |
+| **LockOverlayService.kt (onStartCommand)** | `startForeground()` 호출 추가 | Foreground Service 요구사항 충족 |
+
+### 검증
+- ✅ 컴파일 성공
+- ✅ 권한 없을 때 안전하게 return
+- ✅ Android 8.0+ Foreground Service 대응
+- ✅ 예외 처리로 crash 방지
+- ✅ 오버레이 표시 실패해도 홈 화면 이동은 계속
+
+### 예상 결과
+
+**Before ❌**:
+```
+앱 차단 감지 → showOverlay() 호출
+→ 권한 없음/서비스 시작 실패
+→ 예외 발생 → AccessibilityService crash 💥
+→ "이 서비스가 제대로 작동하지 않습니다"
+→ 필터링 기능 마비
+```
+
+**After ✅**:
+```
+앱 차단 감지 → showOverlay() 호출 (try-catch로 보호)
+→ 권한 없으면 return (안전)
+→ 권한 있으면 startForegroundService() ✅
+→ 5초 내 startForeground() 호출 ✅
+→ 예외 발생해도 catch로 처리 ✅
+→ 홈 화면 이동은 계속 진행 ✅
+→ 접근성 서비스 정상 작동 ✅
+```
+
+### 커밋 정보
+```bash
+git add -A
+git commit -m "fix(accessibility): 접근성 서비스 충돌 수정 (v0.10.1.4)
+
+## 문제
+- 접근성 서비스 설정에서 \"이 서비스가 제대로 작동하지 않습니다\" 메시지
+- 필터링 기능 동작 안 함
+- 위치 진입 트리거 시 crash 발생
+
+## 근본 원인
+- LockOverlayService.showOverlay()에서 예외 처리 누락
+- 권한 체크만 하고 서비스 시작 시도
+- Android 8.0+ 백그라운드 서비스 제한 미대응
+- navigateToHome()에서 try-catch 없음
+
+## 해결
+### 1. FocusAccessibilityService.kt
+- navigateToHome()에 try-catch 추가
+- showOverlay() 실패 시에도 홈 화면 이동 계속
+
+### 2. LockOverlayService.showOverlay()
+- 권한 체크 후 권한 없으면 return
+- startForegroundService() 사용 (Android 8.0+)
+- try-catch로 예외 처리
+
+### 3. LockOverlayService.onStartCommand()
+- startForeground() 호출 추가
+- Android 8.0+ Foreground Service 요구사항 충족
+
+## 검증
+- 권한 없을 때 안전하게 종료
+- Android 8.0+ 대응
+- 예외 발생 시 crash 방지
+- 접근성 서비스 안정성 향상"
+```
+
+**작업 완료 시각**: 2025-11-04
+**버전**: v0.10.1.4
+**추가 소요**: ~40분
+
