@@ -8,6 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,7 +41,6 @@ import com.allday.detoxy.presentation.viewmodel.FocusSettingsUiState
 @Composable
 fun DetoxyControlSettingsScreen(
     onBack: () -> Unit = {},
-    onNavigateToAutoRun: () -> Unit = {},
     viewModel: FocusSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -119,12 +119,10 @@ fun DetoxyControlSettingsScreen(
                 overlayEnabled = uiState.overlayEnabled
             )
 
-            // Section 5: 예약설정 (2차 고도화)
-            TimeBasedAutoRunSection(
-                onNavigateToAutoRun = onNavigateToAutoRun
-            )
+            // 🆕 스케줄 탭 안내 (v0.10 UI/UX 개선)
+            ScheduleTabInfoCard()
 
-            // Section 6: 디톡시 루틴 (향후 구현)
+            // Section 5: 디톡시 루틴 (향후 구현)
             DetoxyRoutineSection(
                 routineEnabled = uiState.routineEnabled,
                 onRoutineToggle = { enabled ->
@@ -645,6 +643,50 @@ fun DetoxyRoutineSection(
                 checked = routineEnabled,
                 onCheckedChange = onRoutineToggle,
                 enabled = false // 향후 구현 예정
+            )
+        }
+    }
+}
+
+/**
+ * 스케줄 탭 안내 카드 (v0.10 UI/UX 개선)
+ * 
+ * 하단 네비게이션의 "스케줄" 탭으로 안내하는 카드입니다.
+ * 기존 예약설정 기능은 이제 별도 스케줄 탭에서 관리됩니다.
+ */
+@Composable
+fun ScheduleTabInfoCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "💡 스케줄 관리는 이제 별도 탭에서",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "하단의 [스케줄] 탭에서 시간표를 관리하세요",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.Schedule,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(32.dp)
             )
         }
     }

@@ -14,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
+import java.time.LocalTime
 import javax.inject.Inject
 
 /**
@@ -472,6 +473,83 @@ class ScheduleGroupViewModel @Inject constructor(
             }
         }
         return "[${dayStrings.joinToString(",") { "\"$it\"" }}]"
+    }
+
+    /**
+     * 오늘 예정된 다음 스케줄 조회 (v0.10 UI/UX 개선)
+     *
+     * 현재 활성화된 스케줄 그룹에서 현재 시각 이후의 가장 가까운 시간대를 반환합니다.
+     * 스케줄 탭의 "다음 예약" 카드에 표시됩니다.
+     *
+     * ## 동작 방식
+     * 1. 활성화된 스케줄 그룹 ID 조회
+     * 2. 해당 그룹의 모든 시간대 조회
+     * 3. 현재 시각 이후의 시간대만 필터링
+     * 4. 시작 시간 순으로 정렬
+     * 5. 가장 가까운 시간대 반환
+     *
+     * @return 다음 예약 시간대 (없으면 null)
+     */
+    fun getNextScheduleToday(): Flow<TimeBasedAutoRun?> = flow {
+        val now = LocalTime.now()
+        val currentActiveGroup = activeGroup.value
+        
+        if (currentActiveGroup != null) {
+            val timeSlots = repository.getLinkedTimeBasedAutoRuns(currentActiveGroup.id)
+            
+            val nextSlot = timeSlots
+                .filter { slot ->
+                    // "HH:mm" 형식의 시간 문자열을 파싱
+                    val slotTime = parseTime(slot.hour, slot.minute)
+                    slotTime > now
+                }
+                .sortedBy { slot -> slot.hour * 60 + slot.minute }
+                .firstOrNull()
+            
+            emit(nextSlot)
+        } else {
+            emit(null)
+        }
+    }
+    
+    /**
+     * 시간표의 시간대 개수 조회 (v0.10 UI/UX 개선)
+     *
+     * 스케줄 탭의 ScheduleSummaryCard에서 사용됩니다.
+     * 실제로는 linkedTimeBasedAutoRuns StateFlow를 사용하는 것이 더 효율적입니다.
+     *
+     * @param groupId 스케줄 그룹 ID
+     * @return 시간대 개수
+     */
+    fun getTimeSlotCount(groupId: String): Flow<Int> = 
+        flow {
+            val timeSlots = linkedTimeBasedAutoRuns.value[groupId] ?: emptyList()
+            emit(timeSlots.size)
+        }
+    
+    /**
+     * 연결된 위치 이름 조회 (v0.10 UI/UX 개선)
+     *
+     * 스케줄 탭의 ScheduleSummaryCard에서 사용됩니다.
+     * 실제로는 linkedLocations StateFlow를 사용하는 것이 더 효율적입니다.
+     *
+     * @param groupId 스케줄 그룹 ID
+     * @return 첫 번째 연결된 위치 이름 (없으면 null)
+     */
+    fun getLinkedLocationName(groupId: String): Flow<String?> = flow {
+        val locations = linkedLocations.value[groupId] ?: emptyList()
+        emit(locations.firstOrNull()?.name)
+    }
+    
+    /**
+     * 시간 파싱 헬퍼 함수
+     *
+     * @param hour 시 (0-23)
+     * @param minute 분 (0-59)
+     * @return LocalTime 객체
+     */
+    private fun parseTime(hour: Int, minute: Int): LocalTime {
+        return LocalTime.of(hour, minute)
     }
 
     /**
