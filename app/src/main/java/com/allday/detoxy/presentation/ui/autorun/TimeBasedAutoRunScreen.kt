@@ -54,12 +54,21 @@ fun TimeBasedAutoRunScreen(
     viewModel: TimeBasedAutoRunViewModel = hiltViewModel(),
     scheduleGroupViewModel: ScheduleGroupViewModel = hiltViewModel()  // 🆕 3.5차 고도화: 스케줄 그룹 생성
 ) {
-    val autoRuns by viewModel.autoRuns.collectAsStateWithLifecycle()
+    val allAutoRuns by viewModel.autoRuns.collectAsStateWithLifecycle()
     val canScheduleExactAlarms by viewModel.canScheduleExactAlarms.collectAsStateWithLifecycle()
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     
     // 🆕 3차 고도화: 시간표 그룹 맵
     val scheduleGroupMap by viewModel.scheduleGroupMap.collectAsStateWithLifecycle()
+    
+    // 🆕 v0.10.1: 특정 스케줄 그룹의 시간대만 필터링
+    val autoRuns = remember(allAutoRuns, scheduleGroupId) {
+        if (scheduleGroupId != null) {
+            allAutoRuns.filter { it.scheduleGroupId == scheduleGroupId }
+        } else {
+            allAutoRuns
+        }
+    }
     
     // 글로벌 옵션 상태
     val excludeWeekends by viewModel.excludeWeekends.collectAsStateWithLifecycle()

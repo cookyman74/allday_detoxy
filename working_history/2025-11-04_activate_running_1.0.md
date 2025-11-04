@@ -349,3 +349,68 @@ git commit -m "feat(schedule): 멀티 활성화 지원 및 UI 개선 (v0.10.1)
 **버전**: v0.10.1
 **작업 소요**: ~1시간
 
+---
+
+## 🐛 추가 버그 수정 (v0.10.1.1)
+
+### 문제 발견
+**사용자 피드백**:
+- "회사" 스케줄 그룹의 시간대를 수정하려고 시간 섹션 클릭
+- → "회사 예약설정" 화면에 **"집"의 시간대까지 모두 표시됨**
+- → "등록된 시간대 (5/10)"에 "집"의 오전 9:00 시간대가 포함됨
+
+### 근본 원인
+`TimeBasedAutoRunScreen.kt`가 `scheduleGroupId` 파라미터를 받지만, **필터링하지 않고 모든 시간대를 표시**:
+
+```kotlin
+// ❌ 문제 코드
+val autoRuns by viewModel.autoRuns.collectAsStateWithLifecycle()  // 모든 시간대
+```
+
+### 해결 방법
+특정 스케줄 그룹의 시간대만 필터링하도록 수정:
+
+```kotlin
+// ✅ 수정 후
+val allAutoRuns by viewModel.autoRuns.collectAsStateWithLifecycle()
+
+// 특정 스케줄 그룹의 시간대만 필터링
+val autoRuns = remember(allAutoRuns, scheduleGroupId) {
+    if (scheduleGroupId != null) {
+        allAutoRuns.filter { it.scheduleGroupId == scheduleGroupId }
+    } else {
+        allAutoRuns
+    }
+}
+```
+
+### 검증
+- ✅ 컴파일 성공
+- ✅ "회사" 스케줄 클릭 시 "회사"의 시간대만 표시
+- ✅ "집" 스케줄 클릭 시 "집"의 시간대만 표시
+- ✅ 일반 "예약설정"에서는 모든 시간대 표시 (scheduleGroupId = null)
+
+### 커밋 정보
+```bash
+git add -A
+git commit -m "fix(schedule): 스케줄 그룹별 시간대 필터링 수정 (v0.10.1.1)
+
+## 문제
+- \"회사\" 예약설정 화면에 \"집\"의 시간대까지 표시됨
+- TimeBasedAutoRunScreen이 scheduleGroupId를 받지만 필터링 안 함
+
+## 해결
+- allAutoRuns를 scheduleGroupId로 필터링
+- scheduleGroupId가 null이면 모든 시간대 표시 (기존 동작 유지)
+- scheduleGroupId가 있으면 해당 그룹의 시간대만 표시
+
+## 영향
+- \"회사\" 클릭 → \"회사\"의 시간대만
+- \"집\" 클릭 → \"집\"의 시간대만
+- 일반 예약설정 → 모든 시간대"
+```
+
+**작업 완료 시각**: 2025-11-04
+**버전**: v0.10.1.1
+**추가 소요**: ~15분
+
