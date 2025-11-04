@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
@@ -180,7 +180,7 @@ fun MainScreenWithNavigation() {
                         onClick = { selectedTab = 1 },
                         icon = {
                             Icon(
-                                imageVector = Icons.Default.Schedule,
+                                imageVector = Icons.Filled.DateRange,
                                 contentDescription = "스케줄"
                             )
                         },

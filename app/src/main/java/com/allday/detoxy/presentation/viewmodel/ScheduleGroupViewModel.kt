@@ -538,7 +538,7 @@ class ScheduleGroupViewModel @Inject constructor(
      */
     fun getLinkedLocationName(groupId: String): Flow<String?> = flow {
         val locations = linkedLocations.value[groupId] ?: emptyList()
-        emit(locations.firstOrNull()?.name)
+        emit(locations.firstOrNull()?.label)
     }
     
     /**

@@ -5,7 +5,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -253,7 +259,7 @@ fun NextScheduleSummaryCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Default.Schedule,
+                    imageVector = Icons.Default.DateRange,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(32.dp)
@@ -362,7 +368,7 @@ fun ScheduleSummaryCard(
                 )
             } else {
                 Icon(
-                    imageVector = Icons.Default.ChevronRight,
+                    imageVector = Icons.Default.KeyboardArrowRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -396,7 +402,7 @@ fun EmptyScheduleCard(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Schedule,
+                imageVector = Icons.Default.DateRange,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
@@ -431,11 +437,11 @@ fun EmptyScheduleCard(
 fun getIconForType(iconType: String): ImageVector {
     return when (iconType) {
         "HOME" -> Icons.Default.Home
-        "WORK" -> Icons.Default.Work
-        "STUDY" -> Icons.Default.School
-        "CALENDAR" -> Icons.Default.CalendarToday
+        "WORK" -> Icons.Default.Star
+        "STUDY" -> Icons.Default.Place
+        "CALENDAR" -> Icons.Default.DateRange
         "PLACE" -> Icons.Default.Place
-        else -> Icons.Default.Schedule
+        else -> Icons.Default.DateRange
     }
 }
 
