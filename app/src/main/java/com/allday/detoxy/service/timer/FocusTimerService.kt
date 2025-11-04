@@ -37,6 +37,9 @@ class FocusTimerService : Service() {
     @Inject
     lateinit var settingsRepository: FocusSettingsRepository
 
+    @Inject
+    lateinit var timeBasedAutoRunDao: com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao  // 🆕 v0.10.1
+
     companion object {
         private const val TAG = "FocusTimerService"
         private const val NOTIFICATION_ID = 1001
@@ -68,6 +71,14 @@ class FocusTimerService : Service() {
 
         private val _currentSessionId = MutableStateFlow<String?>(null)
         val currentSessionId: StateFlow<String?> = _currentSessionId.asStateFlow()
+
+        // 🆕 현재 작동 중인 AutoRun ID (v0.10.1 - 작동/활성 구분)
+        private val _currentAutoRunId = MutableStateFlow<String?>(null)
+        val currentAutoRunId: StateFlow<String?> = _currentAutoRunId.asStateFlow()
+
+        // 🆕 현재 작동 중인 ScheduleGroup ID (v0.10.1 - 작동/활성 구분)
+        private val _currentScheduleGroupId = MutableStateFlow<String?>(null)
+        val currentScheduleGroupId: StateFlow<String?> = _currentScheduleGroupId.asStateFlow()
 
         /**
          * 타이머 시작
@@ -124,7 +135,24 @@ class FocusTimerService : Service() {
                 val autoRunId = intent.getStringExtra(EXTRA_AUTO_RUN_ID) // 🆕
                 val autoRunLabel = intent.getStringExtra(EXTRA_AUTO_RUN_LABEL) // 🆕
                 Log.d(TAG, "Starting timer: $durationMinutes minutes, sessionId: $sessionId, autoRunId: $autoRunId")
-                startTimerInternal(durationMinutes, sessionId)
+                
+                // 🆕 v0.10.1: autoRunId로부터 scheduleGroupId 조회
+                serviceScope?.launch {
+                    val scheduleGroupId = if (autoRunId != null) {
+                        try {
+                            val autoRun = timeBasedAutoRunDao.getById(autoRunId).first()
+                            autoRun?.scheduleGroupId
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to get scheduleGroupId from autoRunId: ${e.message}")
+                            null
+                        }
+                    } else null
+                    
+                    // 메인 스레드에서 startTimerInternal 호출
+                    withContext(Dispatchers.Main) {
+                        startTimerInternal(durationMinutes, sessionId, autoRunId, scheduleGroupId)
+                    }
+                }
             }
             ACTION_STOP_TIMER -> {
                 Log.d(TAG, "Stopping timer")
@@ -144,8 +172,18 @@ class FocusTimerService : Service() {
 
     /**
      * 타이머 내부 시작 로직
+     * 
+     * @param durationMinutes 타이머 기간 (분)
+     * @param sessionId 세션 ID
+     * @param autoRunId 자동 실행 ID (v0.10.1)
+     * @param scheduleGroupId 스케줄 그룹 ID (v0.10.1)
      */
-    private fun startTimerInternal(durationMinutes: Int, sessionId: String?) {
+    private fun startTimerInternal(
+        durationMinutes: Int,
+        sessionId: String?,
+        autoRunId: String? = null,        // 🆕 v0.10.1
+        scheduleGroupId: String? = null   // 🆕 v0.10.1
+    ) {
         // 이미 실행 중이면 무시
         if (_state.value == FocusState.RUNNING) {
             Log.w(TAG, "Timer already running, ignoring start request")
@@ -157,8 +195,12 @@ class FocusTimerService : Service() {
         _remainingSeconds.value = totalSec
         _state.value = FocusState.RUNNING
         _currentSessionId.value = sessionId
-
-        Log.d(TAG, "Timer started: $totalSec seconds")
+        
+        // 🆕 v0.10.1: 작동 중인 AutoRun/ScheduleGroup 정보 저장
+        _currentAutoRunId.value = autoRunId
+        _currentScheduleGroupId.value = scheduleGroupId
+        
+        Log.d(TAG, "Timer started: $totalSec seconds, autoRunId=$autoRunId, scheduleGroupId=$scheduleGroupId")
 
         // ⭐ Critical: AccessibilityService 설정 먼저 동기적으로 활성화
         // 타이머 정보 전달을 먼저 하여 앱 차단이 즉시 동작하도록 함
@@ -266,6 +308,8 @@ class FocusTimerService : Service() {
         // 상태 초기화
         _remainingSeconds.value = 0
         _currentSessionId.value = null
+        _currentAutoRunId.value = null         // 🆕 v0.10.1
+        _currentScheduleGroupId.value = null   // 🆕 v0.10.1
 
         // 브로드캐스트가 전달될 시간을 주기 위해 지연 후 Service 종료
         serviceScope?.launch {

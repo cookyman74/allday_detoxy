@@ -50,16 +50,17 @@ class ScheduleGroupViewModel @Inject constructor(
         )
 
     /**
-     * 활성화된 ScheduleGroup (Flow)
+     * 활성화된 ScheduleGroup 목록 (Flow)
      *
-     * 3차 고도화: 한 번에 하나의 시간표만 활성화 가능 (단일 활성화 원칙)
+     * v0.10.1: 여러 스케줄 그룹이 동시에 활성화될 수 있음
+     * - 위치 기반 스케줄: 각 위치마다 별도의 스케줄 활성화 가능
+     * - 시간 기반 스케줄: 여러 시간표 동시 활성화 가능
      */
-    val activeGroup: StateFlow<ScheduleGroup?> = repository.getActive()
-        .map { it.firstOrNull() }
+    val activeGroups: StateFlow<List<ScheduleGroup>> = repository.getActive()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
+            initialValue = emptyList()
         )
 
     /**
@@ -476,14 +477,14 @@ class ScheduleGroupViewModel @Inject constructor(
     }
 
     /**
-     * 오늘 예정된 다음 스케줄 조회 (v0.10 UI/UX 개선)
+     * 오늘 예정된 다음 스케줄 조회 (v0.10 UI/UX 개선, v0.10.1 멀티 그룹 지원)
      *
-     * 현재 활성화된 스케줄 그룹에서 현재 시각 이후의 가장 가까운 시간대를 반환합니다.
+     * 모든 활성화된 스케줄 그룹에서 현재 시각 이후의 가장 가까운 시간대를 반환합니다.
      * 스케줄 탭의 "다음 예약" 카드에 표시됩니다.
      *
      * ## 동작 방식
-     * 1. 활성화된 스케줄 그룹 ID 조회
-     * 2. 해당 그룹의 모든 시간대 조회
+     * 1. 활성화된 모든 스케줄 그룹 조회
+     * 2. 각 그룹의 모든 시간대 조회
      * 3. 현재 시각 이후의 시간대만 필터링
      * 4. 시작 시간 순으로 정렬
      * 5. 가장 가까운 시간대 반환
@@ -492,14 +493,19 @@ class ScheduleGroupViewModel @Inject constructor(
      */
     fun getNextScheduleToday(): Flow<TimeBasedAutoRun?> = flow {
         val now = LocalTime.now()
-        val currentActiveGroup = activeGroup.value
+        val currentActiveGroups = activeGroups.value
         
-        if (currentActiveGroup != null) {
-            val timeSlots = repository.getLinkedTimeBasedAutoRuns(currentActiveGroup.id)
+        if (currentActiveGroups.isNotEmpty()) {
+            // 모든 활성화된 그룹의 시간대를 수집
+            val allTimeSlots = mutableListOf<TimeBasedAutoRun>()
+            currentActiveGroups.forEach { group ->
+                val timeSlots = repository.getLinkedTimeBasedAutoRuns(group.id)
+                allTimeSlots.addAll(timeSlots)
+            }
             
-            val nextSlot = timeSlots
+            // 현재 시각 이후의 가장 가까운 시간대 찾기
+            val nextSlot = allTimeSlots
                 .filter { slot ->
-                    // "HH:mm" 형식의 시간 문자열을 파싱
                     val slotTime = parseTime(slot.hour, slot.minute)
                     slotTime > now
                 }

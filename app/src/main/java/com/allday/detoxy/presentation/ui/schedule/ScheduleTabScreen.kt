@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -54,9 +55,16 @@ fun ScheduleTabScreen(
     viewModel: ScheduleGroupViewModel = hiltViewModel()
 ) {
     val scheduleGroups by viewModel.scheduleGroups.collectAsState()
-    val activeGroup by viewModel.activeGroup.collectAsState()
+    val activeGroups by viewModel.activeGroups.collectAsState()  // 🆕 v0.10.1: 복수형으로 변경
     val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsState()
     val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsState()
+    val linkedLocations by viewModel.linkedLocations.collectAsState()  // 🆕 v0.10.1
+    
+    // 🆕 v0.10.1: 타이머 작동 상태 및 작동 중인 스케줄 그룹
+    val timerState by com.allday.detoxy.service.timer.FocusTimerService.state.collectAsState()
+    val runningScheduleGroupId by com.allday.detoxy.service.timer.FocusTimerService.currentScheduleGroupId.collectAsState()
+    val runningScheduleGroup = scheduleGroups.find { it.id == runningScheduleGroupId }
+    val remainingSeconds by com.allday.detoxy.service.timer.FocusTimerService.remainingSeconds.collectAsState()
     
     var showCreateDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -91,20 +99,31 @@ fun ScheduleTabScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            // 활성 스케줄 카드
-            if (activeGroup != null) {
+            // 🆕 v0.10.1: 1. 작동 중인 스케줄 카드 (타이머 실행 중)
+            if (timerState == com.allday.detoxy.domain.model.FocusState.RUNNING && runningScheduleGroup != null) {
                 item {
-                    ActiveScheduleSummaryCard(
-                        activeSchedule = activeGroup!!
+                    RunningScheduleCard(
+                        schedule = runningScheduleGroup,
+                        remainingSeconds = remainingSeconds,
+                        linkedLocations = linkedLocations[runningScheduleGroup.id] ?: emptyList()
                     )
                 }
             }
             
-            // 다음 예약 카드
+            // 2. 활성화된 스케줄 카드들 (대기 상태) - 작동 중인 것 제외
+            val waitingGroups = activeGroups.filter { it.id != runningScheduleGroupId }
+            items(waitingGroups) { group ->
+                ActiveScheduleSummaryCard(
+                    activeSchedule = group,
+                    linkedLocations = linkedLocations[group.id] ?: emptyList()
+                )
+            }
+            
+            // 3. 다음 예약 카드
             item {
                 NextScheduleSummaryCard(
                     scheduleGroups = scheduleGroups,
-                    activeGroupId = activeGroup?.id
+                    activeGroupId = activeGroups.firstOrNull()?.id  // 첫 번째 활성화 그룹 (호환성 유지)
                 )
             }
             
@@ -133,7 +152,7 @@ fun ScheduleTabScreen(
                     
                     ScheduleSummaryCard(
                         group = group,
-                        isActive = group.id == activeGroup?.id,
+                        isActive = activeGroups.any { it.id == group.id },  // 🆕 v0.10.1: 여러 활성화 그룹 지원
                         timeSlotCount = timeSlots.size,
                         linkedLocationCount = locationCount,
                         onClick = { onNavigateToDetail(group.id) }
@@ -179,18 +198,106 @@ fun ScheduleTabScreen(
 }
 
 /**
- * 활성 스케줄 요약 카드
+ * 🔴 작동 중 스케줄 카드 (v0.10.1)
  *
- * 현재 활성화된 스케줄 그룹을 표시합니다.
+ * 타이머가 실제로 실행 중인 스케줄 그룹을 표시합니다.
+ * "작동 중" = 지금 이 순간 타이머가 돌고 있는 상태
+ *
+ * @param schedule 작동 중인 스케줄 그룹
+ * @param remainingSeconds 남은 시간 (초)
+ * @param linkedLocations 연결된 위치 목록
  */
 @Composable
-fun ActiveScheduleSummaryCard(
-    activeSchedule: ScheduleGroup
+fun RunningScheduleCard(
+    schedule: ScheduleGroup,
+    remainingSeconds: Int,
+    linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 작동 인디케이터 (재생 아이콘)
+            Icon(
+                imageVector = Icons.Default.PlayArrow,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(32.dp)
+            )
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "🔴 작동 중",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = schedule.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                // 남은 시간 표시
+                val hours = remainingSeconds / 3600
+                val minutes = (remainingSeconds % 3600) / 60
+                val timeText = when {
+                    hours > 0 -> "${hours}시간 ${minutes}분 남음"
+                    minutes > 0 -> "${minutes}분 남음"
+                    else -> "${remainingSeconds}초 남음"
+                }
+                Text(
+                    text = timeText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                
+                // 위치 정보 (있는 경우)
+                if (linkedLocations.isNotEmpty()) {
+                    Text(
+                        text = "📍 ${linkedLocations.first().label}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            
+            Icon(
+                imageVector = getIconForType(schedule.iconType),
+                contentDescription = null,
+                tint = Color(android.graphics.Color.parseColor(schedule.colorHex)),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+/**
+ * 🟢 활성화된 스케줄 카드 (v0.10.1 개선)
+ *
+ * 활성화되어 대기 중인 스케줄 그룹을 표시합니다.
+ * "활성화됨" = 스케줄이 켜져있어서 조건이 맞으면 자동으로 작동할 준비가 된 상태
+ *
+ * @param activeSchedule 활성화된 스케줄 그룹
+ * @param linkedLocations 연결된 위치 목록
+ */
+@Composable
+fun ActiveScheduleSummaryCard(
+    activeSchedule: ScheduleGroup,
+    linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
         )
     ) {
         Row(
@@ -210,15 +317,31 @@ fun ActiveScheduleSummaryCard(
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "활성화 중",
+                    text = "🟢 활성화됨 (대기 중)",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = activeSchedule.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
+                
+                // 위치 기반인 경우 트리거 조건 표시
+                if (linkedLocations.isNotEmpty()) {
+                    Text(
+                        text = "📍 ${linkedLocations.first().label}에 진입하면 작동",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                } else {
+                    Text(
+                        text = "⏰ 예정된 시간에 자동 작동",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
             
             Icon(
