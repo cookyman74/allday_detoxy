@@ -13,6 +13,7 @@ import android.util.Log
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
 import com.allday.detoxy.core.manager.DndManager
+import com.allday.detoxy.core.utils.AppCategoryMapper
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
@@ -132,9 +133,10 @@ class FocusTimerService : Service() {
             ACTION_START, ACTION_START_TIMER -> { // 🔄 ACTION_START 지원 추가
                 val durationMinutes = intent.getIntExtra(EXTRA_DURATION_MINUTES, 0)
                 val sessionId = intent.getStringExtra(EXTRA_SESSION_ID)
+                val presetType = intent.getStringExtra(EXTRA_PRESET_TYPE) // 🔥 프리셋 타입
                 val autoRunId = intent.getStringExtra(EXTRA_AUTO_RUN_ID) // 🆕
                 val autoRunLabel = intent.getStringExtra(EXTRA_AUTO_RUN_LABEL) // 🆕
-                Log.d(TAG, "Starting timer: $durationMinutes minutes, sessionId: $sessionId, autoRunId: $autoRunId")
+                Log.d(TAG, "Starting timer: $durationMinutes minutes, sessionId: $sessionId, presetType: $presetType, autoRunId: $autoRunId")
                 
                 // 🆕 v0.10.1: autoRunId로부터 scheduleGroupId 조회
                 serviceScope?.launch {
@@ -150,7 +152,7 @@ class FocusTimerService : Service() {
                     
                     // 메인 스레드에서 startTimerInternal 호출
                     withContext(Dispatchers.Main) {
-                        startTimerInternal(durationMinutes, sessionId, autoRunId, scheduleGroupId)
+                        startTimerInternal(durationMinutes, sessionId, presetType, autoRunId, scheduleGroupId)
                     }
                 }
             }
@@ -175,12 +177,14 @@ class FocusTimerService : Service() {
      * 
      * @param durationMinutes 타이머 기간 (분)
      * @param sessionId 세션 ID
+     * @param presetType 차단 프리셋 타입 (v0.10.1.1)
      * @param autoRunId 자동 실행 ID (v0.10.1)
      * @param scheduleGroupId 스케줄 그룹 ID (v0.10.1)
      */
     private fun startTimerInternal(
         durationMinutes: Int,
         sessionId: String?,
+        presetType: String? = null,       // 🔥 v0.10.1.1: 차단 프리셋
         autoRunId: String? = null,        // 🆕 v0.10.1
         scheduleGroupId: String? = null   // 🆕 v0.10.1
     ) {
@@ -210,16 +214,38 @@ class FocusTimerService : Service() {
         FocusAccessibilityService.currentSessionId = sessionId
         Log.i(TAG, "✅ [1/2] AccessibilityService activated (isTimerRunning=true, sessionId=$sessionId)")
 
-        // 디톡시 제어 설정 로드 및 AccessibilityService에 전달
+        // 🔥 v0.10.1.1: 디톡시 제어 설정 로드 및 AccessibilityService에 전달
         serviceScope?.launch {
             try {
-                val (categories, otherApps) = settingsRepository.getCurrentSettings()
-                FocusAccessibilityService.updateBlockSettings(categories, otherApps)
-                Log.i(TAG, "✅ [2/2] Block settings loaded: ${categories.joinToString(", ") { it.name }}, otherApps=$otherApps")
+                if (presetType != null) {
+                    // presetType이 지정된 경우 (자동 실행 시) 해당 프리셋 적용
+                    Log.i(TAG, "🎯 Applying preset from AutoRun: $presetType")
+                    val preset = when (presetType) {
+                        "STANDARD" -> AppCategoryMapper.DetoxyPreset.STANDARD_DETOXY
+                        "RELAXED" -> AppCategoryMapper.DetoxyPreset.RELAXED
+                        "FULL_BLOCK" -> AppCategoryMapper.DetoxyPreset.COMPLETE_BLOCK
+                        "CUSTOM" -> {
+                            // CUSTOM인 경우 저장된 설정 사용
+                            val (categories, otherApps) = settingsRepository.getCurrentSettings()
+                            FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+                            Log.i(TAG, "✅ [2/2] Block settings loaded (CUSTOM): ${categories.joinToString(", ") { it.name }}, otherApps=$otherApps")
+                            return@launch
+                        }
+                        else -> AppCategoryMapper.DetoxyPreset.STANDARD_DETOXY
+                    }
+                    FocusAccessibilityService.applyPreset(preset)
+                    Log.i(TAG, "✅ [2/2] Preset applied: $presetType")
+                } else {
+                    // presetType이 없는 경우 (수동 실행 시) 저장된 설정 사용
+                    val (categories, otherApps) = settingsRepository.getCurrentSettings()
+                    FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+                    Log.i(TAG, "✅ [2/2] Block settings loaded: ${categories.joinToString(", ") { it.name }}, otherApps=$otherApps")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to load block settings: ${e.message}", e)
                 // 실패 시 기본 프리셋 사용
-                Log.w(TAG, "⚠️ Using default preset (SNS, WEB, VIDEO_SHORTS)")
+                FocusAccessibilityService.applyPreset(AppCategoryMapper.DetoxyPreset.STANDARD_DETOXY)
+                Log.w(TAG, "⚠️ Using default preset (STANDARD_DETOXY)")
             }
         }
 

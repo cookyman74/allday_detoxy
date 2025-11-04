@@ -414,3 +414,155 @@ git commit -m "fix(schedule): 스케줄 그룹별 시간대 필터링 수정 (v0
 **버전**: v0.10.1.1
 **추가 소요**: ~15분
 
+---
+
+## 🐛 추가 버그 수정 (v0.10.1.2) - 앱 필터링 미작동
+
+### 문제 발견
+**사용자 피드백**:
+- 스케줄이 가동 상태인데 크롬 브라우저가 차단되지 않음
+- 오버레이 화면이 출력되지 않음
+- 앱 필터링이 전혀 작동하지 않음
+
+### 근본 원인
+**`FocusTimerService`가 자동 실행 시 `presetType`을 받지만 무시하고 있었습니다:**
+
+```kotlin
+// ❌ 문제 코드 (FocusTimerService.kt)
+override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    val durationMinutes = intent.getIntExtra(EXTRA_DURATION_MINUTES, 0)
+    val sessionId = intent.getStringExtra(EXTRA_SESSION_ID)
+    val autoRunId = intent.getStringExtra(EXTRA_AUTO_RUN_ID)
+    // ❌ presetType을 받지 않음!
+    
+    startTimerInternal(durationMinutes, sessionId, autoRunId, scheduleGroupId)
+    // ❌ presetType 전달 안 함!
+}
+```
+
+**결과**:
+- `AutoRunAlarmReceiver`가 `presetType`을 Intent에 넣어서 전달
+- `FocusTimerService`가 `presetType`을 읽지 않고 무시
+- `startTimerInternal`에서 `presetType = null`로 처리
+- `FocusAccessibilityService`에 차단 설정이 전달되지 않음
+- **앱 차단이 전혀 작동하지 않음**
+
+### 해결 방법
+
+#### 1. `FocusTimerService.kt` 수정
+
+**presetType 파라미터 추가**:
+```kotlin
+// ✅ 수정 후
+override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    val presetType = intent.getStringExtra(EXTRA_PRESET_TYPE) // 🔥 프리셋 타입 추가
+    
+    startTimerInternal(durationMinutes, sessionId, presetType, autoRunId, scheduleGroupId)
+    // ✅ presetType 전달!
+}
+
+private fun startTimerInternal(
+    durationMinutes: Int,
+    sessionId: String?,
+    presetType: String? = null,  // 🔥 추가
+    autoRunId: String? = null,
+    scheduleGroupId: String? = null
+) {
+    // ...
+}
+```
+
+**presetType 기반 차단 설정 적용**:
+```kotlin
+// ✅ 수정 후
+serviceScope?.launch {
+    try {
+        if (presetType != null) {
+            // presetType이 지정된 경우 (자동 실행 시) 해당 프리셋 적용
+            Log.i(TAG, "🎯 Applying preset from AutoRun: $presetType")
+            val preset = when (presetType) {
+                "STANDARD" -> AppCategoryMapper.DetoxyPreset.STANDARD_DETOXY
+                "RELAXED" -> AppCategoryMapper.DetoxyPreset.RELAXED
+                "FULL_BLOCK" -> AppCategoryMapper.DetoxyPreset.COMPLETE_BLOCK
+                "CUSTOM" -> {
+                    // CUSTOM인 경우 저장된 설정 사용
+                    val (categories, otherApps) = settingsRepository.getCurrentSettings()
+                    FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+                    Log.i(TAG, "✅ Block settings loaded (CUSTOM)")
+                    return@launch
+                }
+                else -> AppCategoryMapper.DetoxyPreset.STANDARD_DETOXY
+            }
+            FocusAccessibilityService.applyPreset(preset)
+            Log.i(TAG, "✅ [2/2] Preset applied: $presetType")
+        } else {
+            // presetType이 없는 경우 (수동 실행 시) 저장된 설정 사용
+            val (categories, otherApps) = settingsRepository.getCurrentSettings()
+            FocusAccessibilityService.updateBlockSettings(categories, otherApps)
+            Log.i(TAG, "✅ [2/2] Block settings loaded")
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "❌ Failed to load block settings: ${e.message}", e)
+        // 실패 시 기본 프리셋 사용
+        FocusAccessibilityService.applyPreset(AppCategoryMapper.DetoxyPreset.STANDARD_DETOXY)
+        Log.w(TAG, "⚠️ Using default preset (STANDARD_DETOXY)")
+    }
+}
+```
+
+#### 2. AppCategoryMapper import 추가
+```kotlin
+import com.allday.detoxy.core.utils.AppCategoryMapper
+```
+
+### 프리셋 매핑
+| TimeBasedAutoRun | AppCategoryMapper | 차단 내용 |
+|------------------|-------------------|-----------|
+| `STANDARD` | `STANDARD_DETOXY` | SNS, WEB, VIDEO_SHORTS 차단 |
+| `RELAXED` | `RELAXED` | VIDEO_SHORTS만 차단 |
+| `FULL_BLOCK` | `COMPLETE_BLOCK` | 모든 카테고리 + 기타 앱 차단 |
+| `CUSTOM` | (저장된 설정) | 사용자 커스텀 설정 |
+
+### 검증
+- ✅ 컴파일 성공
+- ✅ 자동 실행 시 presetType 전달 확인
+- ✅ FocusAccessibilityService에 차단 설정 적용
+- ✅ 크롬 브라우저 차단 작동 예상
+
+### 커밋 정보
+```bash
+git add -A
+git commit -m "fix(timer): 자동 실행 시 앱 필터링 미작동 수정 (v0.10.1.2)
+
+## 문제
+- 스케줄 가동 중 크롬 브라우저가 차단되지 않음
+- FocusTimerService가 presetType을 받지만 무시
+- FocusAccessibilityService에 차단 설정이 전달되지 않음
+
+## 근본 원인
+- onStartCommand에서 EXTRA_PRESET_TYPE을 읽지 않음
+- startTimerInternal에 presetType 전달 안 함
+- 차단 설정 로직이 실행되지 않음
+
+## 해결
+- onStartCommand에서 presetType 추출
+- startTimerInternal에 presetType 파라미터 추가
+- presetType 기반으로 AppCategoryMapper.DetoxyPreset 적용
+- FocusAccessibilityService.applyPreset() 호출
+
+## 프리셋 매핑
+- STANDARD → STANDARD_DETOXY (SNS, WEB, VIDEO_SHORTS)
+- RELAXED → RELAXED (VIDEO_SHORTS만)
+- FULL_BLOCK → COMPLETE_BLOCK (전체)
+- CUSTOM → 저장된 사용자 설정
+
+## 영향
+- 자동 실행 시 차단 설정 정상 적용
+- 수동 실행 시 저장된 설정 사용 (기존 동작)
+- 크롬, YouTube 등 정상 차단 예상"
+```
+
+**작업 완료 시각**: 2025-11-04
+**버전**: v0.10.1.2
+**추가 소요**: ~30분
+
