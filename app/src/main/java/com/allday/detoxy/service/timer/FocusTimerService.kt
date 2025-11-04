@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
@@ -117,13 +118,24 @@ class FocusTimerService : Service() {
     private var serviceScope: CoroutineScope? = null
     private var timerJob: Job? = null
     private lateinit var dndManager: DndManager
+    private var wakeLock: PowerManager.WakeLock? = null  // 🔥 v0.10.1.3: WakeLock
 
     override fun onCreate() {
         super.onCreate()
         serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         dndManager = DndManager(applicationContext)
+        
+        // 🔥 v0.10.1.3: WakeLock 초기화 (CPU를 깨어있게 유지)
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "AllDayDetoxy::FocusTimerWakeLock"
+        ).apply {
+            setReferenceCounted(false) // 여러 번 acquire/release 해도 한 번만 해제되도록
+        }
+        
         createNotificationChannel()
-        Log.d(TAG, "FocusTimerService created")
+        Log.d(TAG, "FocusTimerService created (WakeLock initialized)")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -205,6 +217,14 @@ class FocusTimerService : Service() {
         _currentScheduleGroupId.value = scheduleGroupId
         
         Log.d(TAG, "Timer started: $totalSec seconds, autoRunId=$autoRunId, scheduleGroupId=$scheduleGroupId")
+
+        // 🔥 v0.10.1.3: WakeLock 획득 (CPU를 깨어있게 유지하여 타이머 정확성 보장)
+        try {
+            wakeLock?.acquire(totalSec * 1000L + 10000L) // 타이머 시간 + 10초 여유
+            Log.i(TAG, "✅ WakeLock acquired (${totalSec}s + 10s)")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to acquire WakeLock: ${e.message}", e)
+        }
 
         // ⭐ Critical: AccessibilityService 설정 먼저 동기적으로 활성화
         // 타이머 정보 전달을 먼저 하여 앱 차단이 즉시 동작하도록 함
@@ -313,6 +333,16 @@ class FocusTimerService : Service() {
         
         Log.d(TAG, "Timer stopped: success=$success, previousState=$previousState")
 
+        // 🔥 v0.10.1.3: WakeLock 해제
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+                Log.i(TAG, "✅ WakeLock released")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to release WakeLock: ${e.message}", e)
+        }
+
         // AccessibilityService 비활성화
         FocusAccessibilityService.isTimerRunning = false
         FocusAccessibilityService.remainingSeconds = 0
@@ -419,6 +449,16 @@ class FocusTimerService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "FocusTimerService destroyed")
+        
+        // 🔥 v0.10.1.3: WakeLock 해제 (안전장치)
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+                Log.w(TAG, "⚠️ WakeLock released in onDestroy (unexpected)")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to release WakeLock in onDestroy: ${e.message}", e)
+        }
         
         // 타이머 Job 취소
         timerJob?.cancel()
