@@ -22,14 +22,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import android.util.Log
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
-import com.allday.detoxy.presentation.ui.autorun.components.QuickCreateScheduleDialog
+import com.allday.detoxy.presentation.ui.autorun.components.ScheduleCreationDialog
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
+import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
 import com.allday.detoxy.domain.model.CreationMode
 import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
+import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import kotlinx.coroutines.launch
 
 /**
@@ -52,7 +55,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ScheduleTabScreen(
     onNavigateToDetail: (String) -> Unit,
-    viewModel: ScheduleGroupViewModel = hiltViewModel()
+    viewModel: ScheduleGroupViewModel = hiltViewModel(),
+    locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()
 ) {
     val scheduleGroups by viewModel.scheduleGroups.collectAsState()
     val activeGroups by viewModel.activeGroups.collectAsState()  // 🆕 v0.10.1: 복수형으로 변경
@@ -162,37 +166,105 @@ fun ScheduleTabScreen(
         }
     }
     
-    // 시간표 생성 다이얼로그 (기존 재사용)
+    // 🆕 시간표 생성 다이얼로그 (위치 정보 등록 포함)
     if (showCreateDialog) {
-        QuickCreateScheduleDialog(
+        ScheduleCreationDialog(
             onDismiss = { showCreateDialog = false },
-            onConfirm = { name, mode, data ->
+            onConfirm = { scheduleName, mode, timeSlots, template, locationInfo ->
                 scope.launch {
-                    val newGroupId = when (mode) {
+                    try {
+                        Log.d("ScheduleTabScreen", "📥 onConfirm called: name=$scheduleName, mode=$mode, locationInfo=$locationInfo")
+                        Log.d("ScheduleTabScreen", "   template=$template, timeSlots=${timeSlots.size}")
+                        
+                        if (locationInfo == null) {
+                            // 어디서나 적용 (위치 없음)
+                            Log.d("ScheduleTabScreen", "🌐 Creating schedule without location")
+                            when (mode) {
                         CreationMode.TEMPLATE -> {
-                            @Suppress("UNCHECKED_CAST")
-                            val template = data as ScheduleTemplate
-                            viewModel.createFromTemplate(
-                                name = name,
-                                template = template
-                            )
+                                    if (template == null) {
+                                        Log.e("ScheduleTabScreen", "❌ ERROR: template is null but mode is TEMPLATE!")
+                                        return@launch
+                                    }
+                                    viewModel.createFromTemplate(scheduleName, template)
+                                }
+                                CreationMode.CUSTOM -> {
+                                    viewModel.createScheduleGroupWithTimeSlots(
+                                        name = scheduleName,
+                                        description = null,
+                                        timeSlots = timeSlots
+                                    )
+                                }
+                            }
+                        } else {
+                            // 위치 기반 스케줄
+                            Log.d("ScheduleTabScreen", "🔵 Creating location-based schedule: $scheduleName")
+                            Log.d("ScheduleTabScreen", "📍 Location: ${locationInfo.name} (${locationInfo.address})")
+                            
+                            val scheduleGroupId = when (mode) {
+                                CreationMode.TEMPLATE -> {
+                                    if (template == null) {
+                                        Log.e("ScheduleTabScreen", "❌ ERROR: template is null but mode is TEMPLATE!")
+                                        return@launch
+                                    }
+                                    viewModel.createFromTemplate(scheduleName, template)
                         }
                         CreationMode.CUSTOM -> {
-                            @Suppress("UNCHECKED_CAST")
-                            val timeSlots = data as List<TimeSlot>
                             viewModel.createScheduleGroupWithTimeSlots(
-                                name = name,
+                                        name = scheduleName,
                                 description = null,
                                 timeSlots = timeSlots
                             )
                         }
+                            }
+                            
+                            Log.d("ScheduleTabScreen", "✅ ScheduleGroup created: $scheduleGroupId")
+                            
+                            // 🆕 위치 정보를 LocationBasedAutoRun으로 저장
+                            val location = LocationBasedAutoRun(
+                                label = locationInfo.name,
+                                address = locationInfo.address,
+                                latitude = locationInfo.latitude,
+                                longitude = locationInfo.longitude,
+                                radiusMeters = locationInfo.radiusMeters,
+                                durationMinutes = 90,  // 기본값 (ScheduleGroup 연결 시 무시됨)
+                                presetType = "STANDARD",  // 기본값 (ScheduleGroup 연결 시 무시됨)
+                                triggerType = "ENTER",  // ScheduleGroup 연결 시 activateScheduleOnEnter로 제어
+                                linkedScheduleGroupId = scheduleGroupId,
+                                activateScheduleOnEnter = true,
+                                deactivateScheduleOnExit = true,
+                                isEnabled = true
+                            )
+                            
+                            Log.d("ScheduleTabScreen", "💾 Saving location: ${location.label} → $scheduleGroupId")
+                            Log.d("ScheduleTabScreen", "   Location details: id=${location.id}, linkedScheduleGroupId=${location.linkedScheduleGroupId}")
+                            
+                            // 위치 정보 저장 (완료까지 대기)
+                            locationViewModel.addLocation(location)
+                            
+                            Log.d("ScheduleTabScreen", "✅ addLocation call completed")
+                            
+                            // 🆕 저장 확인: 실제로 DB에 저장되었는지 확인
+                            kotlinx.coroutines.delay(500) // DB 저장 완료 대기
+                            
+                            // 🆕 위치 데이터 갱신 (저장 완료 후)
+                            viewModel.loadLinkedLocations(scheduleGroupId)
+                            
+                            // 🆕 전체 데이터 새로고침
+                            viewModel.loadAllLinkedCounts()
+                            
+                            Log.d("ScheduleTabScreen", "🔄 UI refresh triggered")
                     }
                     
                     showCreateDialog = false
                     // 생성 후 상세 화면으로 이동 (선택적)
                     // onNavigateToDetail(newGroupId)
+                    } catch (e: Exception) {
+                        Log.e("ScheduleTabScreen", "❌ Exception in onConfirm: ${e.message}", e)
+                        e.printStackTrace()
+                    }
                 }
-            }
+            },
+            initialMode = CreationMode.CUSTOM  // 🔑 커스텀 모드로 시작
         )
     }
 }

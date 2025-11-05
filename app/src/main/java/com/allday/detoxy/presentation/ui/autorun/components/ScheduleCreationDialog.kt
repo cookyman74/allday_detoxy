@@ -1,5 +1,6 @@
 package com.allday.detoxy.presentation.ui.autorun.components
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -127,18 +128,31 @@ fun ScheduleCreationDialog(
                 onClick = {
                     when (currentStep) {
                         ScheduleCreationStep.LOCATION_CHOICE -> {
+                            Log.d("ScheduleCreationDialog", "📍 Location choice: hasLocation=$hasLocation")
                             if (hasLocation) {
+                                Log.d("ScheduleCreationDialog", "→ Moving to LOCATION_SEARCH step")
                                 currentStep = ScheduleCreationStep.LOCATION_SEARCH
                             } else {
+                                Log.d("ScheduleCreationDialog", "→ Moving to SCHEDULE_SETUP step (no location)")
                                 currentStep = ScheduleCreationStep.SCHEDULE_SETUP
                             }
                         }
                         ScheduleCreationStep.LOCATION_SEARCH -> {
+                            Log.d("ScheduleCreationDialog", "📍 Location search step: selectedLocation=$selectedLocation")
                             if (selectedLocation != null) {
+                                Log.d("ScheduleCreationDialog", "→ Moving to SCHEDULE_SETUP step with location: ${selectedLocation!!.name}")
                                 currentStep = ScheduleCreationStep.SCHEDULE_SETUP
                             }
                         }
                         ScheduleCreationStep.SCHEDULE_SETUP -> {
+                            Log.d("ScheduleCreationDialog", "=== 🔍 Schedule Creation Debug ===")
+                            Log.d("ScheduleCreationDialog", "hasLocation: $hasLocation")
+                            Log.d("ScheduleCreationDialog", "selectedLocation: $selectedLocation")
+                            Log.d("ScheduleCreationDialog", "name: $name")
+                            Log.d("ScheduleCreationDialog", "mode: $mode")
+                            Log.d("ScheduleCreationDialog", "selectedTemplate: $selectedTemplate")
+                            Log.d("ScheduleCreationDialog", "timeSlots: ${timeSlots.size}")
+                            
                             val locationInfo = if (hasLocation && selectedLocation != null) {
                                 LocationInfo(
                                     name = selectedLocation!!.name,  // 🆕 위치 이름 전달
@@ -146,8 +160,15 @@ fun ScheduleCreationDialog(
                                     latitude = selectedLocation!!.latitude,
                                     longitude = selectedLocation!!.longitude,
                                     radiusMeters = radiusMeters
-                                )
-                            } else null
+                                ).also {
+                                    Log.d("ScheduleCreationDialog", "✅ LocationInfo created: ${it.name} (${it.address})")
+                                }
+                            } else {
+                                Log.d("ScheduleCreationDialog", "❌ LocationInfo is NULL (hasLocation=$hasLocation, selectedLocation=$selectedLocation)")
+                                null
+                            }
+                            
+                            Log.d("ScheduleCreationDialog", "📤 Calling onConfirm with locationInfo: $locationInfo")
                             
                             onConfirm(
                                 name,
@@ -208,8 +229,12 @@ fun ScheduleCreationDialog(
     // 위치 검색 다이얼로그
     if (showLocationSearch) {
         LocationSearchDialog(
-            onDismiss = { showLocationSearch = false },
+            onDismiss = { 
+                Log.d("ScheduleCreationDialog", "❌ Location search dismissed without selection")
+                showLocationSearch = false 
+            },
             onLocationSelected = { location ->
+                Log.d("ScheduleCreationDialog", "📍 Location selected: ${location.name} (${location.address})")
                 selectedLocation = location
                 showLocationSearch = false
             }

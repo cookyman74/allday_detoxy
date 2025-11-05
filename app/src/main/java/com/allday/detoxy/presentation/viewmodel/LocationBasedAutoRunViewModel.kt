@@ -177,20 +177,36 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      */
     suspend fun addLocation(location: LocationBasedAutoRun) {
         try {
+            Log.d(TAG, "🔵 addLocation called: label=${location.label}, linkedScheduleGroupId=${location.linkedScheduleGroupId}")
+            Log.d(TAG, "   isEnabled=${location.isEnabled}, latitude=${location.latitude}, longitude=${location.longitude}")
+            
             // 1. Geofence 등록 먼저 시도 (활성화된 경우만)
             if (location.isEnabled) {
+                Log.d(TAG, "📍 Attempting to add Geofence...")
                 val result = geofenceManager.addGeofence(location)
                 if (result.isFailure) {
                     val exception = result.exceptionOrNull()
+                    Log.e(TAG, "❌ Geofence registration FAILED: ${exception?.message}", exception)
                     _errorState.value = LocationError.GeofenceError(
                         exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
                     )
-                    return  // 실패 시 DB 저장 안 함
+                    
+                    // 🆕 Geofence 실패해도 DB에는 저장 (비활성화 상태로)
+                    Log.w(TAG, "⚠️ Saving to DB with isEnabled=false due to Geofence failure")
+                    val disabledLocation = location.copy(isEnabled = false)
+                    repository.insert(disabledLocation)
+                    Log.d(TAG, "✅ Location saved to DB (disabled): ${disabledLocation.id}")
+                    return
                 }
+                Log.d(TAG, "✅ Geofence registered successfully")
+            } else {
+                Log.d(TAG, "ℹ️ Skipping Geofence registration (isEnabled=false)")
             }
 
             // 2. Geofence 성공 후 DB 저장
+            Log.d(TAG, "💾 Saving location to DB...")
             repository.insert(location)
+            Log.d(TAG, "✅ Location saved to DB successfully: ${location.id}")
 
             // 3. Analytics 로깅
             AnalyticsHelper.logLocationBasedAutoRunCreated(
@@ -205,6 +221,7 @@ class LocationBasedAutoRunViewModel @Inject constructor(
             Log.d(TAG, "📊 Analytics: location_created (label_hash: ${hashLocationLabel(location.label).take(8)}...)")
 
         } catch (e: Exception) {
+            Log.e(TAG, "❌ Exception in addLocation: ${e.message}", e)
             // Geofence는 등록되었지만 DB 저장 실패 → Geofence 롤백
             if (location.isEnabled) {
                 geofenceManager.removeGeofence(location.id)
