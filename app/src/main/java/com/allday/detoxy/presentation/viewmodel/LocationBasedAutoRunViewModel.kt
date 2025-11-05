@@ -175,45 +175,43 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      *
      * @param location 추가할 위치 기반 자동 실행
      */
-    fun addLocation(location: LocationBasedAutoRun) {
-        viewModelScope.launch {
-            try {
-                // 1. Geofence 등록 먼저 시도 (활성화된 경우만)
-                if (location.isEnabled) {
-                    val result = geofenceManager.addGeofence(location)
-                    if (result.isFailure) {
-                        val exception = result.exceptionOrNull()
-                        _errorState.value = LocationError.GeofenceError(
-                            exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
-                        )
-                        return@launch  // 실패 시 DB 저장 안 함
-                    }
+    suspend fun addLocation(location: LocationBasedAutoRun) {
+        try {
+            // 1. Geofence 등록 먼저 시도 (활성화된 경우만)
+            if (location.isEnabled) {
+                val result = geofenceManager.addGeofence(location)
+                if (result.isFailure) {
+                    val exception = result.exceptionOrNull()
+                    _errorState.value = LocationError.GeofenceError(
+                        exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
+                    )
+                    return  // 실패 시 DB 저장 안 함
                 }
-
-                // 2. Geofence 성공 후 DB 저장
-                repository.insert(location)
-
-                // 3. Analytics 로깅
-                AnalyticsHelper.logLocationBasedAutoRunCreated(
-                    locationLabelHash = hashLocationLabel(location.label),
-                    radiusMeters = location.radiusMeters,
-                    durationMinutes = location.durationMinutes,
-                    presetType = location.presetType,
-                    triggerType = location.triggerType,
-                    dwellTimeMinutes = location.dwellTimeMinutes,
-                    requiresConfirmation = location.requiresUserConfirmation
-                )
-                Log.d(TAG, "📊 Analytics: location_created (label_hash: ${hashLocationLabel(location.label).take(8)}...)")
-
-            } catch (e: Exception) {
-                // Geofence는 등록되었지만 DB 저장 실패 → Geofence 롤백
-                if (location.isEnabled) {
-                    geofenceManager.removeGeofence(location.id)
-                }
-                _errorState.value = LocationError.DatabaseError(
-                    "저장 실패: ${e.message ?: "알 수 없는 오류"}"
-                )
             }
+
+            // 2. Geofence 성공 후 DB 저장
+            repository.insert(location)
+
+            // 3. Analytics 로깅
+            AnalyticsHelper.logLocationBasedAutoRunCreated(
+                locationLabelHash = hashLocationLabel(location.label),
+                radiusMeters = location.radiusMeters,
+                durationMinutes = location.durationMinutes,
+                presetType = location.presetType,
+                triggerType = location.triggerType,
+                dwellTimeMinutes = location.dwellTimeMinutes,
+                requiresConfirmation = location.requiresUserConfirmation
+            )
+            Log.d(TAG, "📊 Analytics: location_created (label_hash: ${hashLocationLabel(location.label).take(8)}...)")
+
+        } catch (e: Exception) {
+            // Geofence는 등록되었지만 DB 저장 실패 → Geofence 롤백
+            if (location.isEnabled) {
+                geofenceManager.removeGeofence(location.id)
+            }
+            _errorState.value = LocationError.DatabaseError(
+                "저장 실패: ${e.message ?: "알 수 없는 오류"}"
+            )
         }
     }
 

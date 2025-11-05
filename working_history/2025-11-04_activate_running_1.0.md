@@ -962,3 +962,146 @@ git commit -m "fix(accessibility): 접근성 서비스 충돌 수정 (v0.10.1.4)
 **버전**: v0.10.1.4
 **추가 소요**: ~40분
 
+---
+
+## 🐛 추가 버그 수정 (v0.10.1.5) - 위치 정보 저장 미작동
+
+### 문제 상황
+사용자가 위치 기반 스케줄을 등록할 때 주소 검색을 통한 위치 정보가 저장되지 않아, 스케줄 상세 화면에서 "어디서나 적용 (위치 없음)"으로 표시되는 문제가 발생했습니다.
+
+### 🔍 원인 분석
+
+#### 1️⃣ **비동기 실행 문제**
+```kotlin
+// ScheduleGroupScreen.kt (Line 183-186)
+locationViewModel.addLocation(location)  // ❌ 비동기 시작, 즉시 반환
+viewModel.loadLinkedLocations(scheduleGroupId)  // ❌ 위치 저장 전에 실행!
+```
+
+#### 2️⃣ **`addLocation` 함수 구조**
+```kotlin
+// 기존: LocationBasedAutoRunViewModel.kt
+fun addLocation(location: LocationBasedAutoRun) {  // ❌ 일반 함수
+    viewModelScope.launch {  // 내부에서 비동기 실행
+        // Geofence 등록 및 DB 저장
+        repository.insert(location)
+    }
+}  // 즉시 반환
+```
+
+**실행 순서**:
+1. `addLocation()` 호출 → `viewModelScope.launch` 시작 → **즉시 반환**
+2. `loadLinkedLocations()` 실행 → **위치 저장 전!**
+3. 빈 목록 반환 → "어디서나 적용" 표시
+
+### ✅ 해결 방법
+
+`addLocation`을 **suspend 함수**로 변경하여 완료를 대기하도록 수정:
+
+```kotlin
+// LocationBasedAutoRunViewModel.kt
+suspend fun addLocation(location: LocationBasedAutoRun) {  // ✅ suspend 함수
+    try {
+        // 1. Geofence 등록
+        if (location.isEnabled) {
+            val result = geofenceManager.addGeofence(location)
+            if (result.isFailure) {
+                _errorState.value = LocationError.GeofenceError(...)
+                return  // 실패 시 DB 저장 안 함
+            }
+        }
+
+        // 2. DB 저장 (완료까지 대기)
+        repository.insert(location)
+
+        // 3. Analytics 로깅
+        AnalyticsHelper.logLocationBasedAutoRunCreated(...)
+        
+    } catch (e: Exception) {
+        // 롤백 처리
+        if (location.isEnabled) {
+            geofenceManager.removeGeofence(location.id)
+        }
+        _errorState.value = LocationError.DatabaseError(...)
+    }
+}
+```
+
+### 📝 수정 파일
+
+#### 1. `LocationBasedAutoRunViewModel.kt`
+- **변경**: `fun addLocation` → `suspend fun addLocation`
+- **제거**: `viewModelScope.launch { }` 래퍼
+- **수정**: `return@launch` → `return`
+
+#### 2. 호출부 확인
+- `ScheduleGroupScreen.kt`: ✅ `scope.launch` 블록 안에서 호출 (문제 없음)
+- `LocationBasedAutoRunScreen.kt`: ✅ coroutine scope 안에서 호출 (문제 없음)
+
+### 🎯 수정 후 실행 순서
+
+```kotlin
+scope.launch {
+    // 1. 스케줄 그룹 생성
+    val scheduleGroupId = viewModel.createScheduleGroupWithTimeSlots(...)
+    
+    // 2. 위치 정보 저장 (완료까지 대기) ✅
+    locationViewModel.addLocation(location)  
+    
+    // 3. 저장 완료 후 위치 정보 갱신 ✅
+    viewModel.loadLinkedLocations(scheduleGroupId)
+}
+```
+
+### 📊 검증 방법
+
+```bash
+# 1. 빌드 및 설치
+./gradlew assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+
+# 2. 테스트 시나리오
+1. 스케줄 탭 → "+" 버튼 클릭
+2. 위치 기반 스케줄 선택
+3. 주소 검색 (예: "구로구")
+4. 시간대 추가 후 저장
+5. 스케줄 상세 화면 확인
+   ✅ "구로구" 위치 정보가 표시되어야 함
+   ❌ "어디서나 적용 (위치 없음)"이 표시되면 안 됨
+
+# 3. 로그 확인
+adb logcat | grep "ScheduleGroupScreen"
+# 예상 로그:
+# ✅ Location saved: 구로구 (서울특별시 구로구) → ScheduleGroup: xxx
+```
+
+### 🔧 기술적 세부사항
+
+**Kotlin Coroutine 실행 모델**:
+- **일반 함수 + `launch`**: 비동기 시작, 즉시 반환
+- **suspend 함수**: 완료까지 대기, 순차 실행 보장
+
+**Before**:
+```
+addLocation() [시작] → [즉시 반환]
+                  ↓ (백그라운드)
+              [DB 저장 중...]
+loadLinkedLocations() [실행] ❌ 너무 빠름!
+```
+
+**After**:
+```
+addLocation() [시작] → [DB 저장] → [완료] ✅
+                                    ↓
+                      loadLinkedLocations() [실행] ✅
+```
+
+### 📦 커밋 정보
+- **파일**: `LocationBasedAutoRunViewModel.kt`
+- **변경**: `addLocation`을 suspend 함수로 변경
+- **영향**: 위치 저장 완료를 보장하여 UI에 정확한 위치 정보 표시
+
+**작업 완료 시각**: 2025-11-05
+**버전**: v0.10.1.5
+**추가 소요**: ~15분
+
