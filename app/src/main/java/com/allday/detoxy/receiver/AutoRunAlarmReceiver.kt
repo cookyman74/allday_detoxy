@@ -6,8 +6,12 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
 import com.allday.detoxy.core.manager.AutoRunNotificationManager
 import com.allday.detoxy.core.utils.AnalyticsHelper
@@ -271,29 +275,37 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     // 0분이면 즉시 타이머 시작 (알림 표시 후 바로 실행)
                     Log.i(TAG, "🚀 Auto-start delay is 0, starting timer immediately")
                     
-                    // 고유 세션 ID 생성
-                    val sessionId = java.util.UUID.randomUUID().toString()
+                    // 🆕 Android 12+ 대응: WorkManager 사용
+                    // BroadcastReceiver에서 직접 startForegroundService() 호출 불가
+                    Log.d(TAG, "📦 Using WorkManager to start timer (Android 12+ compatibility)")
                     
-                    // FocusTimerService 즉시 시작
-                    val startIntent = Intent(context, com.allday.detoxy.service.timer.FocusTimerService::class.java).apply {
-                        action = com.allday.detoxy.service.timer.FocusTimerService.ACTION_START
-                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_DURATION_MINUTES, durationMinutes)
-                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_SESSION_ID, sessionId)
-                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_PRESET_TYPE, presetType)
-                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_AUTO_RUN_ID, autoRunId)
-                        putExtra(com.allday.detoxy.service.timer.FocusTimerService.EXTRA_AUTO_RUN_LABEL, label)
-                    }
+                    val workRequest = OneTimeWorkRequestBuilder<com.allday.detoxy.worker.AutoStartTimerWorker>()
+                        .setInputData(
+                            workDataOf(
+                                "autoRunId" to autoRunId,
+                                "durationMinutes" to durationMinutes,
+                                "presetType" to presetType,
+                                "label" to label,
+                                "triggerType" to "TIME",
+                                "isSnooze" to false
+                            )
+                        )
+                        .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                        .build()
                     
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        context.startForegroundService(startIntent)
-                    } else {
-                        context.startService(startIntent)
-                    }
+                    entryPoint.workManager().enqueueUniqueWork(
+                        "auto_start_timer_immediate_$autoRunId",
+                        ExistingWorkPolicy.REPLACE,
+                        workRequest
+                    )
+                    
+                    Log.d(TAG, "✅ WorkManager job enqueued for immediate timer start")
                     
                     // 알림 즉시 해제 (타이머가 시작되면 알림 불필요)
                     entryPoint.notificationManager().dismissNotification(autoRunId, isPreNotification = false)
                     
                     // AutoRunLog 기록 (자동 시작됨)
+                    val sessionId = java.util.UUID.randomUUID().toString()
                     scope.launch {
                         logAutoRunStarted(autoRunId, "TIME", sessionId, entryPoint)
                     }

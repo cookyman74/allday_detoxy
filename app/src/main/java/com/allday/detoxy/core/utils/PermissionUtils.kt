@@ -411,4 +411,70 @@ object PermissionUtils {
             Log.e(TAG, "Failed to open notification settings", e)
         }
     }
+    
+    // ==================== 배터리 최적화 예외 (Battery Optimization) ====================
+    
+    /**
+     * 배터리 최적화 예외 여부 확인
+     *
+     * 앱이 배터리 최적화에서 제외되어 있는지 확인합니다.
+     * 배터리 최적화가 활성화되어 있으면 백그라운드 실행이 제한될 수 있습니다.
+     *
+     * @param context Context
+     * @return true: 배터리 최적화 예외됨, false: 배터리 최적화 적용됨
+     */
+    fun isIgnoringBatteryOptimizations(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+            powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+        } else {
+            // Android 6.0 미만에서는 배터리 최적화 기능이 없음
+            true
+        }
+    }
+    
+    /**
+     * 배터리 최적화 예외 요청 화면 열기
+     *
+     * 사용자가 배터리 최적화에서 앱을 제외할 수 있는 설정 화면으로 이동합니다.
+     * 앱이 백그라운드에서 정상적으로 작동하려면 배터리 최적화 예외가 필요합니다.
+     *
+     * @param context Context
+     */
+    fun requestBatteryOptimizationExemption(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            try {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = android.net.Uri.parse("package:${context.packageName}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to open battery optimization settings", e)
+                // 대체 방법: 앱 상세 설정 화면으로 이동
+                openAppDetailsSettings(context)
+            }
+        }
+    }
+    
+    /**
+     * 앱 상세 설정 화면 열기
+     *
+     * 사용자가 앱의 모든 설정을 변경할 수 있는 화면으로 이동합니다.
+     *
+     * @param context Context
+     */
+    fun openAppDetailsSettings(context: Context) {
+        try {
+            val intent = Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.fromParts("package", context.packageName, null)
+            ).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open app details settings", e)
+        }
+    }
 }

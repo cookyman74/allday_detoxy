@@ -4,9 +4,11 @@ import android.content.Context
 import android.location.Location
 import android.util.Log
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
+import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
+import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -87,19 +89,97 @@ class ScheduleGroupManager @Inject constructor(
         var failCount = 0
 
         enabledAutoRuns.forEach { autoRun ->
-            val success = alarmManager.scheduleTimeBasedAutoRun(autoRun)
-            if (success) {
-                successCount++
-                Log.d(TAG, "✅ Alarm scheduled: ${autoRun.label ?: autoRun.id}")
+            // 🆕 현재 시간이 시간표 범위 내에 있으면 즉시 실행
+            if (isCurrentTimeWithinTimeSlot(autoRun)) {
+                Log.i(TAG, "⏰ Current time is within time slot, starting timer immediately: ${autoRun.label ?: autoRun.id}")
+                val immediateStarted = alarmManager.startTimerImmediatelyIfInRange(autoRun)
+                if (immediateStarted) {
+                    Log.i(TAG, "✅ Timer started immediately: ${autoRun.label ?: autoRun.id}")
+                    successCount++
+                    // 다음 알람도 정상적으로 등록 (내일 같은 시간)
+                    alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                } else {
+                    Log.w(TAG, "⚠️ Failed to start timer immediately, falling back to normal scheduling: ${autoRun.label ?: autoRun.id}")
+                    // 즉시 실행 실패 시 정상 알람 등록
+                    val success = alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                    if (success) {
+                        successCount++
+                    } else {
+                        failCount++
+                    }
+                }
             } else {
-                failCount++
-                Log.w(TAG, "⚠️ Failed to schedule alarm: ${autoRun.label ?: autoRun.id}")
+                // 현재 시간이 범위 밖이면 정상 알람 등록
+                val success = alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                if (success) {
+                    successCount++
+                    Log.d(TAG, "✅ Alarm scheduled: ${autoRun.label ?: autoRun.id}")
+                } else {
+                    failCount++
+                    Log.w(TAG, "⚠️ Failed to schedule alarm: ${autoRun.label ?: autoRun.id}")
+                }
             }
         }
 
         Log.i(TAG, "✅ Schedule group activated: $groupId (Success: $successCount, Failed: $failCount)")
     }
 
+    /**
+     * 현재 시간이 시간표 범위 내에 있는지 확인
+     * 
+     * 시간표 시작 시간( hour:minute)부터 종료 시간(시작 시간 + durationMinutes)까지의 범위 내에 현재 시간이 있는지 확인합니다.
+     * 
+     * @param autoRun 시간 기반 자동 실행 설정
+     * @return true: 현재 시간이 범위 내, false: 범위 밖
+     */
+    private fun isCurrentTimeWithinTimeSlot(autoRun: TimeBasedAutoRun): Boolean {
+        val now = Calendar.getInstance()
+        val currentDay = now.get(Calendar.DAY_OF_WEEK)
+        val currentHour = now.get(Calendar.HOUR_OF_DAY)
+        val currentMinute = now.get(Calendar.MINUTE)
+        val currentTimeMinutes = currentHour * 60 + currentMinute
+        
+        // 요일 확인
+        val enabledDays = parseEnabledDays(autoRun.enabledDays)
+        val dayCode = when (currentDay) {
+            Calendar.SUNDAY -> "SUN"
+            Calendar.MONDAY -> "MON"
+            Calendar.TUESDAY -> "TUE"
+            Calendar.WEDNESDAY -> "WED"
+            Calendar.THURSDAY -> "THU"
+            Calendar.FRIDAY -> "FRI"
+            Calendar.SATURDAY -> "SAT"
+            else -> return false
+        }
+        
+        if (!enabledDays.contains(dayCode)) {
+            return false
+        }
+        
+        // 시간표 범위 계산
+        val startTimeMinutes = autoRun.hour * 60 + autoRun.minute
+        val endTimeMinutes = startTimeMinutes + autoRun.durationMinutes
+        
+        // 현재 시간이 범위 내에 있는지 확인
+        val isWithinRange = currentTimeMinutes >= startTimeMinutes && currentTimeMinutes < endTimeMinutes
+        
+        Log.d(TAG, "⏰ Time slot check: current=$currentTimeMinutes (${currentHour}:${currentMinute}), range=$startTimeMinutes~$endTimeMinutes (${autoRun.hour}:${autoRun.minute} + ${autoRun.durationMinutes}분), within=$isWithinRange")
+        
+        return isWithinRange
+    }
+    
+    /**
+     * 요일 문자열 파싱 (JSON 배열)
+     */
+    private fun parseEnabledDays(enabledDaysJson: String): Set<String> {
+        return try {
+            val json = org.json.JSONArray(enabledDaysJson)
+            (0 until json.length()).map { json.getString(it) }.toSet()
+        } catch (e: Exception) {
+            emptySet()
+        }
+    }
+    
     /**
      * 시간표 그룹 비활성화
      *

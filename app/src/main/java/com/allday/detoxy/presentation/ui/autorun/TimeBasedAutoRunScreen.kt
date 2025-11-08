@@ -270,8 +270,25 @@ fun TimeBasedAutoRunScreen(
     }
 
     // 시간대 추가 다이얼로그
-    // 🆕 3.5차 고도화: 위치 설정 + 시간표 생성 (ScheduleCreationDialog 사용)
+    // 🆕 특정 스케줄 그룹 화면에서는 AddTimeBasedAutoRunDialog 사용
+    // 🆕 일반 화면에서는 ScheduleCreationDialog 사용 (3.5차 고도화)
     if (showAddDialog) {
+        if (scheduleGroupId != null) {
+            // 특정 스케줄 그룹에 시간대 추가
+            AddTimeBasedAutoRunDialog(
+                existingAutoRun = null,
+                onDismiss = { showAddDialog = false },
+                onSave = { newAutoRun ->
+                    scope.launch {
+                        viewModel.addAutoRun(newAutoRun)
+                        showAddDialog = false
+                    }
+                },
+                scheduleViewModel = scheduleGroupViewModel,
+                initialScheduleGroupId = scheduleGroupId  // 🆕 특정 스케줄 그룹 ID 전달
+            )
+        } else {
+            // 일반 화면: 위치 설정 + 시간표 생성 (ScheduleCreationDialog 사용)
         ScheduleCreationDialog(
             onDismiss = { showAddDialog = false },
             onConfirm = { scheduleName, mode, timeSlots, template, locationInfo ->
@@ -322,6 +339,7 @@ fun TimeBasedAutoRunScreen(
             },
             initialMode = CreationMode.CUSTOM  // 🔑 커스텀 모드로 시작
         )
+        }
     }
 
     // 시간대 편집 다이얼로그

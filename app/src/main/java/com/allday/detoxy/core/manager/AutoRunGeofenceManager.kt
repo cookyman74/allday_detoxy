@@ -255,10 +255,11 @@ class AutoRunGeofenceManager @Inject constructor(
     /**
      * 모든 활성화된 Geofence 재등록
      *
-     * 앱 재시작(BOOT_COMPLETED) 시 호출되어 모든 활성화된 위치 기반 자동 실행의 Geofence를 재등록합니다.
+     * 앱 재시작(BOOT_COMPLETED) 또는 앱 시작 시 호출되어 모든 활성화된 위치 기반 자동 실행의 Geofence를 재등록합니다.
      *
      * 처리 방식:
      * - 사전 조건 체크 (Play Services, 위치 서비스, 권한) 수행
+     * - 기존 Geofence를 먼저 제거한 후 재등록 (중복 등록 방지)
      * - 실패한 항목은 로그에 기록하고 계속 진행 (일부 실패해도 나머지 등록)
      *
      * @param enabledLocations 활성화된 위치 기반 자동 실행 리스트
@@ -270,6 +271,17 @@ class AutoRunGeofenceManager @Inject constructor(
         }
         
         Log.i(TAG, "🔄 Rescheduling ${enabledLocations.size} geofences")
+        
+        // 🆕 기존 Geofence를 먼저 제거 (중복 등록 방지)
+        val locationIds = enabledLocations.map { it.id }
+        try {
+            Log.d(TAG, "🗑️ Removing existing geofences before rescheduling: ${locationIds.size} locations")
+            geofencingClient.removeGeofences(locationIds).await()
+            Log.d(TAG, "✅ Existing geofences removed")
+        } catch (e: Exception) {
+            // 제거 실패해도 계속 진행 (이미 제거되었거나 등록되지 않았을 수 있음)
+            Log.w(TAG, "⚠️ Failed to remove existing geofences (may not exist): ${e.message}")
+        }
         
         var successCount = 0
         var failureCount = 0

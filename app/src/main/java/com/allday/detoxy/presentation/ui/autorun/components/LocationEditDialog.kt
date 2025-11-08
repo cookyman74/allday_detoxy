@@ -1,5 +1,6 @@
 package com.allday.detoxy.presentation.ui.autorun.components
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,6 +49,16 @@ fun LocationEditDialog(
     var isEnabled by remember { mutableStateOf(location.isEnabled) }
     var activateOnEnter by remember { mutableStateOf(location.activateScheduleOnEnter) }
     var deactivateOnExit by remember { mutableStateOf(location.deactivateScheduleOnExit) }
+    
+    // 🔍 초기값 로깅
+    LaunchedEffect(location.id) {
+        Log.d("LocationEditDialog", "=== 🔍 Initial Values ===")
+        Log.d("LocationEditDialog", "location.id: ${location.id}")
+        Log.d("LocationEditDialog", "location.activateScheduleOnEnter: ${location.activateScheduleOnEnter}")
+        Log.d("LocationEditDialog", "location.deactivateScheduleOnExit: ${location.deactivateScheduleOnExit}")
+        Log.d("LocationEditDialog", "activateOnEnter (UI state): $activateOnEnter")
+        Log.d("LocationEditDialog", "deactivateOnExit (UI state): $deactivateOnExit")
+    }
     
     // 🆕 위치 검색 다이얼로그 상태
     var showLocationSearch by remember { mutableStateOf(false) }
@@ -248,6 +259,11 @@ fun LocationEditDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    Log.d("LocationEditDialog", "=== 💾 Saving Location ===")
+                    Log.d("LocationEditDialog", "isEnabled: $isEnabled")
+                    Log.d("LocationEditDialog", "activateOnEnter: $activateOnEnter")
+                    Log.d("LocationEditDialog", "deactivateOnExit: $deactivateOnExit")
+                    
                     val updatedLocation = location.copy(
                         label = label.trim(),
                         address = address.trim().ifBlank { null },  // 🆕 주소 업데이트
@@ -258,6 +274,10 @@ fun LocationEditDialog(
                         activateScheduleOnEnter = activateOnEnter,
                         deactivateScheduleOnExit = deactivateOnExit
                     )
+                    
+                    Log.d("LocationEditDialog", "📤 updatedLocation.activateScheduleOnEnter: ${updatedLocation.activateScheduleOnEnter}")
+                    Log.d("LocationEditDialog", "📤 updatedLocation.deactivateScheduleOnExit: ${updatedLocation.deactivateScheduleOnExit}")
+                    
                     onSave(updatedLocation)
                 },
                 enabled = label.isNotBlank()

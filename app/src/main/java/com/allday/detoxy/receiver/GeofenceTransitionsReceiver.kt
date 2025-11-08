@@ -12,6 +12,7 @@ import com.allday.detoxy.core.manager.NonLocationScheduleManager
 import com.allday.detoxy.core.manager.ScheduleGroupManager
 import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
+import com.allday.detoxy.data.local.entity.AutoRunLog
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -50,6 +51,8 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         fun locationBasedAutoRunDao(): LocationBasedAutoRunDao
         fun scheduleGroupManager(): ScheduleGroupManager
         fun nonLocationScheduleManager(): NonLocationScheduleManager  // 🆕 Phase 4: "어디서나 적용" 스케줄
+        fun autoRunLogDao(): com.allday.detoxy.data.local.dao.AutoRunLogDao  // 🆕 AutoRunLog 기록용
+        fun locationConflictResolver(): com.allday.detoxy.core.manager.LocationConflictResolver  // 🆕 충돌 해소용
     }
     
     companion object {
@@ -153,12 +156,14 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
             GeofenceReceiverEntryPoint::class.java
         )
         
-        val locationDao = entryPoint.locationBasedAutoRunDao()
-        val scheduleManager = entryPoint.scheduleGroupManager()
-        
-        // 비동기 작업 (goAsync)
-        val pendingResult = goAsync()
-        
+                val locationDao = entryPoint.locationBasedAutoRunDao()
+                val scheduleManager = entryPoint.scheduleGroupManager()
+                val autoRunLogDao = entryPoint.autoRunLogDao()
+                val conflictResolver = entryPoint.locationConflictResolver()
+                
+                // 비동기 작업 (goAsync)
+                val pendingResult = goAsync()
+                
         scope.launch {
             try {
                 // 🆕 Phase 3: 반경 내 모든 위치 수집 (충돌 해소를 위해)
@@ -194,6 +199,37 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     return@launch
                 }
                 
+                // 🔧 Critical Fix: 충돌 해소를 먼저 수행하여 winner 위치 확인
+                val triggerTime = System.currentTimeMillis()
+                val winner = conflictResolver.resolveConflict(userLocation, candidates)
+                
+                if (winner == null) {
+                    Log.e(TAG, "⚠️ No winner location found after conflict resolution")
+                    
+                    // 실패 로그 기록
+                    val firstCandidateId = candidates.firstOrNull()?.id
+                    if (firstCandidateId != null) {
+                        try {
+                            val log = AutoRunLog(
+                                triggerType = "LOCATION",
+                                triggerSourceId = firstCandidateId,
+                                triggerTime = triggerTime,
+                                result = "FAILED",
+                                failureReason = "No winner location found",
+                                sessionId = null,
+                                gpsAccuracyMeters = gpsAccuracyMeters
+                            )
+                            autoRunLogDao.insert(log)
+                            Log.i(TAG, "✅ AutoRunLog recorded: LOCATION FAILED (no winner)")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
+                        }
+                    }
+                    return@launch
+                }
+                
+                Log.i(TAG, "🏆 Winner location: ${winner.label} (ID: ${winner.id})")
+                
                 // 🆕 Phase 3: 충돌 해소 후 시간표 활성화
                 val result = scheduleManager.activateGroupByLocation(
                     currentLocation = userLocation,
@@ -203,10 +239,45 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 if (result.isSuccess) {
                     Log.i(TAG, "✅ Location-based schedule activated (with conflict resolution)")
                     
+                    // 🔧 Critical Fix: 위치 기반 자동 실행 AutoRunLog 기록 (winner 위치 사용)
+                    try {
+                        val log = AutoRunLog(
+                            triggerType = "LOCATION",
+                            triggerSourceId = winner.id,
+                            triggerTime = triggerTime,
+                            result = "STARTED",  // 스케줄 활성화 성공
+                            failureReason = null,
+                            sessionId = null,  // 타이머 시작 후 sessionId로 업데이트됨
+                            gpsAccuracyMeters = gpsAccuracyMeters,
+                            dwellSeconds = null  // 체류 시간은 타이머 완료 시 계산
+                        )
+                        autoRunLogDao.insert(log)
+                        Log.i(TAG, "✅ AutoRunLog recorded: LOCATION STARTED (locationId=${winner.id}, locationLabel=${winner.label}, gpsAccuracy=${gpsAccuracyMeters}m)")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
+                    }
+                    
                     // TODO: Week 3 - 시간표 활성화 알림 표시
-                    // showScheduleActivatedNotification(context, winnerLocation.label, scheduleGroupId)
+                    // showScheduleActivatedNotification(context, winner.label, scheduleGroupId)
                 } else {
                     Log.e(TAG, "⚠️ Failed to activate schedule", result.exceptionOrNull())
+                    
+                    // 🔧 Critical Fix: 실패 시 AutoRunLog 기록 (winner 위치 사용)
+                    try {
+                        val log = AutoRunLog(
+                            triggerType = "LOCATION",
+                            triggerSourceId = winner.id,
+                            triggerTime = triggerTime,
+                            result = "FAILED",
+                            failureReason = result.exceptionOrNull()?.message ?: "unknown",
+                            sessionId = null,
+                            gpsAccuracyMeters = gpsAccuracyMeters
+                        )
+                        autoRunLogDao.insert(log)
+                        Log.i(TAG, "✅ AutoRunLog recorded: LOCATION FAILED (locationId=${winner.id}, locationLabel=${winner.label})")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
+                    }
                     
                     // Analytics: auto_run_failed
                     AnalyticsHelper.logAutoRunFailed(

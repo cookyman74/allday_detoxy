@@ -1,5 +1,6 @@
 package com.allday.detoxy.presentation.ui.schedule
 
+import android.Manifest
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,16 +24,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleCreationDialog
+import com.allday.detoxy.presentation.ui.autorun.components.LocationInfo
+import com.allday.detoxy.presentation.ui.autorun.components.BackgroundLocationRationaleDialog
+import com.allday.detoxy.presentation.ui.autorun.components.LocationPermissionDeniedDialog
+import com.allday.detoxy.presentation.ui.autorun.components.OpenSettingsDialog
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
 import com.allday.detoxy.domain.model.CreationMode
 import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
+import com.allday.detoxy.core.utils.PermissionUtils
 import kotlinx.coroutines.launch
 
 /**
@@ -70,12 +78,167 @@ fun ScheduleTabScreen(
     val runningScheduleGroup = scheduleGroups.find { it.id == runningScheduleGroupId }
     val remainingSeconds by com.allday.detoxy.service.timer.FocusTimerService.remainingSeconds.collectAsState()
     
+    // 🆕 위치 권한 상태
+    val locationPermissionGranted by locationViewModel.locationPermissionGranted.collectAsState()
+    val backgroundLocationPermissionGranted by locationViewModel.backgroundLocationPermissionGranted.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    
     var showCreateDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    
+    // 🆕 권한 요청 관련 상태
+    var pendingLocationInfo by remember { mutableStateOf<LocationInfo?>(null) }
+    var pendingScheduleName by remember { mutableStateOf<String?>(null) }
+    var pendingMode by remember { mutableStateOf<CreationMode?>(null) }
+    var pendingTimeSlots by remember { mutableStateOf<List<TimeSlot>?>(null) }
+    var pendingTemplate by remember { mutableStateOf<ScheduleTemplate?>(null) }
+    var showBackgroundLocationRationaleDialog by remember { mutableStateOf(false) }
+    var showLocationDeniedDialog by remember { mutableStateOf(false) }
+    var showOpenSettingsDialog by remember { mutableStateOf(false) }
+    
+    // 🆕 Pending 데이터 초기화 (함수들을 먼저 정의)
+    val clearPendingData: () -> Unit = {
+        pendingLocationInfo = null
+        pendingScheduleName = null
+        pendingMode = null
+        pendingTimeSlots = null
+        pendingTemplate = null
+    }
+    
+    // 🆕 스케줄 생성 진행
+    val proceedWithScheduleCreation: () -> Unit = {
+        val locationInfo = pendingLocationInfo
+        val scheduleName = pendingScheduleName
+        val mode = pendingMode
+        val timeSlots = pendingTimeSlots
+        val template = pendingTemplate
+        
+        if (locationInfo != null && scheduleName != null && mode != null && timeSlots != null) {
+            scope.launch {
+                try {
+                    Log.d("ScheduleTabScreen", "🔵 Creating location-based schedule: $scheduleName")
+                    Log.d("ScheduleTabScreen", "📍 Location: ${locationInfo.name} (${locationInfo.address})")
+                    
+                    val scheduleGroupId = when (mode) {
+                        CreationMode.TEMPLATE -> {
+                            if (template == null) {
+                                Log.e("ScheduleTabScreen", "❌ ERROR: template is null but mode is TEMPLATE!")
+                                return@launch
+                            }
+                            viewModel.createFromTemplate(scheduleName, template)
+                        }
+                        CreationMode.CUSTOM -> {
+                            viewModel.createScheduleGroupWithTimeSlots(
+                                name = scheduleName,
+                                description = null,
+                                timeSlots = timeSlots
+                            )
+                        }
+                    }
+                    
+                    Log.d("ScheduleTabScreen", "✅ ScheduleGroup created: $scheduleGroupId")
+                    
+                    // 위치 정보를 LocationBasedAutoRun으로 저장
+                    val location = LocationBasedAutoRun(
+                        label = locationInfo.name,
+                        address = locationInfo.address,
+                        latitude = locationInfo.latitude,
+                        longitude = locationInfo.longitude,
+                        radiusMeters = locationInfo.radiusMeters,
+                        durationMinutes = 90,
+                        presetType = "STANDARD",
+                        triggerType = "ENTER",
+                        linkedScheduleGroupId = scheduleGroupId,
+                        activateScheduleOnEnter = true,
+                        deactivateScheduleOnExit = true,
+                        isEnabled = true
+                    )
+                    
+                    Log.d("ScheduleTabScreen", "💾 Saving location: ${location.label} → $scheduleGroupId")
+                    
+                    // 위치 정보 저장
+                    locationViewModel.addLocation(location)
+                    
+                    Log.d("ScheduleTabScreen", "✅ Location-based schedule created successfully")
+                    
+                    // 저장 확인
+                    kotlinx.coroutines.delay(500)
+                    viewModel.loadLinkedLocations(scheduleGroupId)
+                    viewModel.loadAllLinkedCounts()
+                    
+                    // Pending 데이터 초기화
+                    clearPendingData()
+                    
+                } catch (e: Exception) {
+                    Log.e("ScheduleTabScreen", "❌ Exception in proceedWithScheduleCreation: ${e.message}", e)
+                    clearPendingData()
+                }
+            }
+        }
+    }
+    
+    // 🆕 위치 권한 요청 런처
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Log.d("ScheduleTabScreen", "✅ Location permission granted")
+            locationViewModel.checkPermissions()
+            // 백그라운드 위치 권한 설명 다이얼로그 표시
+            showBackgroundLocationRationaleDialog = true
+        } else {
+            Log.w("ScheduleTabScreen", "❌ Location permission denied")
+            // 권한 거부 다이얼로그 표시
+            showLocationDeniedDialog = true
+            // Pending 데이터 초기화
+            clearPendingData()
+        }
+    }
+    
+    // 🆕 백그라운드 위치 권한 요청 런처
+    val backgroundLocationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        locationViewModel.checkPermissions()
+        if (isGranted) {
+            Log.d("ScheduleTabScreen", "✅ Background location permission granted")
+            // 모든 권한 획득 → 스케줄 생성 진행
+            proceedWithScheduleCreation()
+        } else {
+            Log.w("ScheduleTabScreen", "❌ Background location permission denied")
+            // 설정 화면으로 이동 안내
+            showOpenSettingsDialog = true
+        }
+    }
+    
+    // 🆕 권한 요청 핸들러
+    val requestLocationPermission: () -> Unit = {
+        when {
+            !locationPermissionGranted -> {
+                Log.d("ScheduleTabScreen", "📍 Requesting ACCESS_FINE_LOCATION")
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+            !backgroundLocationPermissionGranted -> {
+                Log.d("ScheduleTabScreen", "📍 Requesting ACCESS_BACKGROUND_LOCATION")
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    showBackgroundLocationRationaleDialog = true
+                } else {
+                    // Android 10 미만에서는 백그라운드 권한 불필요
+                    proceedWithScheduleCreation()
+                }
+            }
+            else -> {
+                // 모든 권한 있음
+                Log.d("ScheduleTabScreen", "✅ All permissions granted")
+                proceedWithScheduleCreation()
+            }
+        }
+    }
     
     // 화면 진입 시 데이터 로드
     LaunchedEffect(Unit) {
         viewModel.loadAllLinkedCounts()
+        locationViewModel.checkPermissions()
     }
 
     Scaffold(
@@ -171,16 +334,16 @@ fun ScheduleTabScreen(
         ScheduleCreationDialog(
             onDismiss = { showCreateDialog = false },
             onConfirm = { scheduleName, mode, timeSlots, template, locationInfo ->
-                scope.launch {
-                    try {
-                        Log.d("ScheduleTabScreen", "📥 onConfirm called: name=$scheduleName, mode=$mode, locationInfo=$locationInfo")
-                        Log.d("ScheduleTabScreen", "   template=$template, timeSlots=${timeSlots.size}")
-                        
-                        if (locationInfo == null) {
-                            // 어디서나 적용 (위치 없음)
+                Log.d("ScheduleTabScreen", "📥 onConfirm called: name=$scheduleName, mode=$mode, locationInfo=$locationInfo")
+                Log.d("ScheduleTabScreen", "   template=$template, timeSlots=${timeSlots.size}")
+                
+                if (locationInfo == null) {
+                    // 어디서나 적용 (위치 없음) → 바로 생성
+                    scope.launch {
+                        try {
                             Log.d("ScheduleTabScreen", "🌐 Creating schedule without location")
                             when (mode) {
-                        CreationMode.TEMPLATE -> {
+                                CreationMode.TEMPLATE -> {
                                     if (template == null) {
                                         Log.e("ScheduleTabScreen", "❌ ERROR: template is null but mode is TEMPLATE!")
                                         return@launch
@@ -195,76 +358,95 @@ fun ScheduleTabScreen(
                                     )
                                 }
                             }
-                        } else {
-                            // 위치 기반 스케줄
-                            Log.d("ScheduleTabScreen", "🔵 Creating location-based schedule: $scheduleName")
-                            Log.d("ScheduleTabScreen", "📍 Location: ${locationInfo.name} (${locationInfo.address})")
-                            
-                            val scheduleGroupId = when (mode) {
-                                CreationMode.TEMPLATE -> {
-                                    if (template == null) {
-                                        Log.e("ScheduleTabScreen", "❌ ERROR: template is null but mode is TEMPLATE!")
-                                        return@launch
-                                    }
-                                    viewModel.createFromTemplate(scheduleName, template)
+                            showCreateDialog = false
+                        } catch (e: Exception) {
+                            Log.e("ScheduleTabScreen", "❌ Exception in onConfirm: ${e.message}", e)
                         }
-                        CreationMode.CUSTOM -> {
-                            viewModel.createScheduleGroupWithTimeSlots(
-                                        name = scheduleName,
-                                description = null,
-                                timeSlots = timeSlots
-                            )
-                        }
-                            }
-                            
-                            Log.d("ScheduleTabScreen", "✅ ScheduleGroup created: $scheduleGroupId")
-                            
-                            // 🆕 위치 정보를 LocationBasedAutoRun으로 저장
-                            val location = LocationBasedAutoRun(
-                                label = locationInfo.name,
-                                address = locationInfo.address,
-                                latitude = locationInfo.latitude,
-                                longitude = locationInfo.longitude,
-                                radiusMeters = locationInfo.radiusMeters,
-                                durationMinutes = 90,  // 기본값 (ScheduleGroup 연결 시 무시됨)
-                                presetType = "STANDARD",  // 기본값 (ScheduleGroup 연결 시 무시됨)
-                                triggerType = "ENTER",  // ScheduleGroup 연결 시 activateScheduleOnEnter로 제어
-                                linkedScheduleGroupId = scheduleGroupId,
-                                activateScheduleOnEnter = true,
-                                deactivateScheduleOnExit = true,
-                                isEnabled = true
-                            )
-                            
-                            Log.d("ScheduleTabScreen", "💾 Saving location: ${location.label} → $scheduleGroupId")
-                            Log.d("ScheduleTabScreen", "   Location details: id=${location.id}, linkedScheduleGroupId=${location.linkedScheduleGroupId}")
-                            
-                            // 위치 정보 저장 (완료까지 대기)
-                            locationViewModel.addLocation(location)
-                            
-                            Log.d("ScheduleTabScreen", "✅ addLocation call completed")
-                            
-                            // 🆕 저장 확인: 실제로 DB에 저장되었는지 확인
-                            kotlinx.coroutines.delay(500) // DB 저장 완료 대기
-                            
-                            // 🆕 위치 데이터 갱신 (저장 완료 후)
-                            viewModel.loadLinkedLocations(scheduleGroupId)
-                            
-                            // 🆕 전체 데이터 새로고침
-                            viewModel.loadAllLinkedCounts()
-                            
-                            Log.d("ScheduleTabScreen", "🔄 UI refresh triggered")
                     }
+                } else {
+                    // 🆕 위치 기반 스케줄 → 권한 체크
+                    Log.d("ScheduleTabScreen", "📍 Location-based schedule requested")
+                    Log.d("ScheduleTabScreen", "   Location: ${locationInfo.name} (${locationInfo.address})")
+                    Log.d("ScheduleTabScreen", "   Permission status: fine=$locationPermissionGranted, background=$backgroundLocationPermissionGranted")
                     
-                    showCreateDialog = false
-                    // 생성 후 상세 화면으로 이동 (선택적)
-                    // onNavigateToDetail(newGroupId)
-                    } catch (e: Exception) {
-                        Log.e("ScheduleTabScreen", "❌ Exception in onConfirm: ${e.message}", e)
-                        e.printStackTrace()
+                    if (locationPermissionGranted && backgroundLocationPermissionGranted) {
+                        // 권한 있음 → 바로 생성
+                        Log.d("ScheduleTabScreen", "✅ All permissions granted, proceeding with creation")
+                        pendingLocationInfo = locationInfo
+                        pendingScheduleName = scheduleName
+                        pendingMode = mode
+                        pendingTimeSlots = timeSlots
+                        pendingTemplate = template
+                        showCreateDialog = false
+                        proceedWithScheduleCreation()
+                    } else {
+                        // 권한 없음 → Pending 데이터 저장 후 권한 요청
+                        Log.d("ScheduleTabScreen", "⚠️ Permissions missing, requesting permissions")
+                        pendingLocationInfo = locationInfo
+                        pendingScheduleName = scheduleName
+                        pendingMode = mode
+                        pendingTimeSlots = timeSlots
+                        pendingTemplate = template
+                        showCreateDialog = false
+                        requestLocationPermission()
                     }
                 }
             },
             initialMode = CreationMode.CUSTOM  // 🔑 커스텀 모드로 시작
+        )
+    }
+    
+    // 🆕 백그라운드 위치 권한 설명 다이얼로그
+    if (showBackgroundLocationRationaleDialog) {
+        BackgroundLocationRationaleDialog(
+            onProceed = {
+                showBackgroundLocationRationaleDialog = false
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    backgroundLocationPermissionLauncher.launch(
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    )
+                } else {
+                    // Android 10 미만에서는 백그라운드 권한 불필요
+                    proceedWithScheduleCreation()
+                }
+            },
+            onDismiss = {
+                showBackgroundLocationRationaleDialog = false
+                clearPendingData()
+            }
+        )
+    }
+    
+    // 🆕 위치 권한 거부 다이얼로그
+    if (showLocationDeniedDialog) {
+        LocationPermissionDeniedDialog(
+            onRetry = {
+                showLocationDeniedDialog = false
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            },
+            onNavigateToTimeBased = {
+                showLocationDeniedDialog = false
+                clearPendingData()
+                // 시간 기반 자동 실행으로 이동 (향후 구현)
+            },
+            onDismiss = {
+                showLocationDeniedDialog = false
+                clearPendingData()
+            }
+        )
+    }
+    
+    // 🆕 설정 화면 이동 안내 다이얼로그
+    if (showOpenSettingsDialog) {
+        OpenSettingsDialog(
+            onOpenSettings = {
+                showOpenSettingsDialog = false
+                PermissionUtils.openAppLocationSettings(context)
+            },
+            onDismiss = {
+                showOpenSettingsDialog = false
+                clearPendingData()
+            }
         )
     }
 }

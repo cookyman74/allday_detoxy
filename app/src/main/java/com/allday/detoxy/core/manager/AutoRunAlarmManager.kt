@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
@@ -171,6 +172,80 @@ class AutoRunAlarmManager @Inject constructor(
         }
         
         return true
+    }
+    
+    /**
+     * 현재 시간이 시간표 범위 내에 있을 때 즉시 타이머 시작
+     * 
+     * 스케줄 그룹 활성화 시 현재 시간이 시간표 범위 내에 있으면 즉시 타이머를 시작합니다.
+     * WorkManager를 사용하여 Android 12+ 제한을 우회합니다.
+     * 
+     * 🔧 Critical Fix: 중간 진입 시 남은 시간만큼만 타이머 시작
+     * - 예: 2시~6시 스케줄에서 4시 50분 진입 시 → 70분(1시간 10분)만 실행
+     * - 전체 durationMinutes가 아닌 종료 시간까지의 남은 시간을 계산하여 사용
+     * 
+     * @param autoRun 시간 기반 자동 실행 설정
+     * @return true: 타이머 시작 성공, false: 실패
+     */
+    fun startTimerImmediatelyIfInRange(autoRun: TimeBasedAutoRun): Boolean {
+        return try {
+            Log.i(TAG, "🚀 Starting timer immediately for: ${autoRun.label ?: autoRun.id}")
+            
+            // 🔧 남은 시간 계산 (중간 진입 시 종료 시간까지의 남은 시간만큼만 실행)
+            val now = Calendar.getInstance()
+            val currentHour = now.get(Calendar.HOUR_OF_DAY)
+            val currentMinute = now.get(Calendar.MINUTE)
+            val currentTimeMinutes = currentHour * 60 + currentMinute
+            
+            val startTimeMinutes = autoRun.hour * 60 + autoRun.minute
+            val endTimeMinutes = startTimeMinutes + autoRun.durationMinutes
+            val remainingMinutes = endTimeMinutes - currentTimeMinutes
+            
+            // 남은 시간이 1분 미만이면 시작하지 않음
+            if (remainingMinutes < 1) {
+                Log.w(TAG, "⚠️ Remaining time is less than 1 minute (${remainingMinutes}분), skipping timer start")
+                return false
+            }
+            
+            // 남은 시간이 전체 시간보다 크면 전체 시간 사용 (예외 상황 대비)
+            val actualDurationMinutes = if (remainingMinutes > autoRun.durationMinutes) {
+                Log.w(TAG, "⚠️ Remaining time (${remainingMinutes}분) is greater than total duration (${autoRun.durationMinutes}분), using total duration")
+                autoRun.durationMinutes
+            } else {
+                remainingMinutes
+            }
+            
+            Log.i(TAG, "⏰ Time slot: ${autoRun.hour}:${String.format("%02d", autoRun.minute)} ~ ${endTimeMinutes / 60}:${String.format("%02d", endTimeMinutes % 60)} (${autoRun.durationMinutes}분)")
+            Log.i(TAG, "⏰ Current time: ${currentHour}:${String.format("%02d", currentMinute)}")
+            Log.i(TAG, "⏰ Remaining time: ${actualDurationMinutes}분 (${actualDurationMinutes / 60}시간 ${actualDurationMinutes % 60}분)")
+            
+            // WorkManager를 사용하여 즉시 타이머 시작 (남은 시간만큼만)
+            val workRequest = OneTimeWorkRequestBuilder<com.allday.detoxy.worker.AutoStartTimerWorker>()
+                .setInputData(
+                    workDataOf(
+                        "autoRunId" to autoRun.id,
+                        "durationMinutes" to actualDurationMinutes,  // 🔧 남은 시간 사용
+                        "presetType" to autoRun.presetType,
+                        "label" to (autoRun.label ?: ""),
+                        "triggerType" to "LOCATION_IMMEDIATE",  // 위치 기반 즉시 실행
+                        "isSnooze" to false
+                    )
+                )
+                .setExpedited(androidx.work.OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                .build()
+            
+            workManager.enqueueUniqueWork(
+                "auto_start_timer_immediate_${autoRun.id}",
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                workRequest
+            )
+            
+            Log.i(TAG, "✅ WorkManager job enqueued for immediate timer start: ${autoRun.label ?: autoRun.id} (${actualDurationMinutes}분)")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to start timer immediately: ${e.message}", e)
+            false
+        }
     }
     
     /**

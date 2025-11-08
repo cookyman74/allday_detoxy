@@ -27,6 +27,7 @@ import java.util.*
  * @param onDismiss 다이얼로그 닫기 콜백
  * @param onSave 저장 버튼 클릭 콜백 (생성된 TimeBasedAutoRun 전달)
  * @param scheduleViewModel ScheduleGroupViewModel (3차 고도화: 시간표 연동)
+ * @param initialScheduleGroupId 초기 스케줄 그룹 ID (특정 스케줄 그룹에 시간대 추가 시 사용)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +35,8 @@ fun AddTimeBasedAutoRunDialog(
     existingAutoRun: TimeBasedAutoRun? = null,
     onDismiss: () -> Unit,
     onSave: (TimeBasedAutoRun) -> Unit,
-    scheduleViewModel: ScheduleGroupViewModel = hiltViewModel()  // 🆕 3차 고도화
+    scheduleViewModel: ScheduleGroupViewModel = hiltViewModel(),  // 🆕 3차 고도화
+    initialScheduleGroupId: String? = null  // 🆕 특정 스케줄 그룹에 시간대 추가 시 사용
 ) {
     // 상태 관리
     var selectedHour by remember { mutableStateOf(existingAutoRun?.hour ?: 9) }
@@ -44,8 +46,13 @@ fun AddTimeBasedAutoRunDialog(
     var label by remember { mutableStateOf(existingAutoRun?.label ?: "") }
     
     // 🆕 3차 고도화: 시간표 연결 상태
-    var selectedScheduleGroupId by remember { mutableStateOf(existingAutoRun?.scheduleGroupId) }
-    var isIndependent by remember { mutableStateOf(existingAutoRun?.isIndependent ?: true) }
+    // 🆕 특정 스케줄 그룹에서 호출된 경우 해당 그룹 ID로 초기화
+    var selectedScheduleGroupId by remember { 
+        mutableStateOf(existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId) 
+    }
+    var isIndependent by remember { 
+        mutableStateOf(existingAutoRun?.isIndependent ?: (initialScheduleGroupId == null)) 
+    }
     
     // 🆕 3차 고도화: 시간표 목록
     val scheduleGroups by scheduleViewModel.scheduleGroups.collectAsStateWithLifecycle()

@@ -4,8 +4,20 @@ import android.app.Application
 import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.allday.detoxy.core.manager.AutoRunAlarmManager
+import com.allday.detoxy.core.manager.AutoRunGeofenceManager
 import com.allday.detoxy.core.utils.AnalyticsHelper
+import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
+import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import dagger.hilt.android.HiltAndroidApp
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -22,12 +34,33 @@ import javax.inject.Inject
  * - Configuration.Provider 구현으로 HiltWorkerFactory 제공
  * - WorkManager는 자동 초기화되며 이 설정을 사용함
  * - @HiltWorker 어노테이션을 통한 Worker 의존성 주입 지원
+ *
+ * 🆕 앱 시작 시 자동 실행 재등록:
+ * - 앱이 종료된 후 다시 시작될 때 자동 실행(알람, Geofence) 재등록
+ * - 배터리 최적화로 인한 알람/Geofence 손실 대응
  */
 @HiltAndroidApp
 class DetoxyApplication : Application(), Configuration.Provider {
     
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
+    
+    /**
+     * Hilt EntryPoint for manual dependency injection
+     *
+     * Application.onCreate()에서는 @Inject가 작동하지 않으므로
+     * EntryPoint를 사용하여 수동으로 의존성을 가져옵니다.
+     */
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface DetoxyApplicationEntryPoint {
+        fun alarmManager(): AutoRunAlarmManager
+        fun geofenceManager(): AutoRunGeofenceManager
+        fun timeBasedAutoRunDao(): TimeBasedAutoRunDao
+        fun locationBasedAutoRunDao(): LocationBasedAutoRunDao
+    }
+    
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     companion object {
         private const val TAG = "DetoxyApplication"
@@ -47,6 +80,72 @@ class DetoxyApplication : Application(), Configuration.Provider {
         
         // WorkManager는 자동으로 초기화되며 workManagerConfiguration을 사용함
         Log.i(TAG, "✅ WorkManager with HiltWorkerFactory will be initialized automatically")
+        
+        // 🆕 앱 시작 시 자동 실행 재등록 (앱이 종료된 후 다시 시작될 때)
+        rescheduleAutoRunsOnAppStart()
+    }
+    
+    /**
+     * 앱 시작 시 자동 실행 재등록
+     *
+     * 앱이 종료된 후 다시 시작될 때 자동 실행(알람, Geofence)을 재등록합니다.
+     * 배터리 최적화나 시스템에 의한 프로세스 종료로 인한 알람/Geofence 손실을 방지합니다.
+     *
+     * 주의: 이 메서드는 Application.onCreate()에서 호출되므로
+     * EntryPoint를 사용하여 수동으로 의존성을 주입해야 합니다.
+     * Hilt 초기화를 기다리기 위해 지연 실행합니다.
+     */
+    private fun rescheduleAutoRunsOnAppStart() {
+        Log.d(TAG, "🔄 rescheduleAutoRunsOnAppStart() called")
+        applicationScope.launch {
+            try {
+                // 🆕 Hilt 초기화를 기다리기 위해 짧은 지연 (EntryPoint 사용 가능할 때까지)
+                kotlinx.coroutines.delay(500)
+                
+                Log.d(TAG, "🔄 Attempting to get EntryPoint...")
+                // EntryPoint를 통해 의존성 가져오기
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    this@DetoxyApplication,
+                    DetoxyApplicationEntryPoint::class.java
+                )
+                Log.d(TAG, "✅ EntryPoint obtained successfully")
+                
+                val alarmManager = entryPoint.alarmManager()
+                val geofenceManager = entryPoint.geofenceManager()
+                val timeBasedAutoRunDao = entryPoint.timeBasedAutoRunDao()
+                val locationBasedAutoRunDao = entryPoint.locationBasedAutoRunDao()
+                
+                Log.d(TAG, "🔄 Checking auto-runs on app start...")
+                
+                // 1. 시간 기반 자동 실행 재등록
+                val enabledTimeBasedAutoRuns = timeBasedAutoRunDao.getAllEnabled()
+                Log.d(TAG, "   Found ${enabledTimeBasedAutoRuns.size} enabled time-based auto-runs")
+                if (enabledTimeBasedAutoRuns.isNotEmpty()) {
+                    Log.d(TAG, "🔄 Rescheduling ${enabledTimeBasedAutoRuns.size} time-based auto-runs on app start")
+                    alarmManager.rescheduleAll(enabledTimeBasedAutoRuns)
+                    Log.i(TAG, "✅ Time-based auto-runs rescheduled on app start")
+                } else {
+                    Log.d(TAG, "ℹ️ No enabled time-based auto-runs to reschedule")
+                }
+                
+                // 2. 위치 기반 자동 실행 재등록
+                val enabledLocationBasedAutoRuns = locationBasedAutoRunDao.getAllEnabled()
+                Log.d(TAG, "   Found ${enabledLocationBasedAutoRuns.size} enabled location-based auto-runs")
+                if (enabledLocationBasedAutoRuns.isNotEmpty()) {
+                    Log.d(TAG, "🔄 Rescheduling ${enabledLocationBasedAutoRuns.size} location-based auto-runs on app start")
+                    geofenceManager.rescheduleAll(enabledLocationBasedAutoRuns)
+                    Log.i(TAG, "✅ Location-based auto-runs rescheduled on app start")
+                } else {
+                    Log.d(TAG, "ℹ️ No enabled location-based auto-runs to reschedule")
+                }
+                
+                Log.i(TAG, "✅ Auto-runs rescheduled on app start completed")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to reschedule auto-runs on app start: ${e.message}", e)
+                e.printStackTrace()
+                // 실패해도 앱은 정상 작동 (다음 부팅 시 BootCompletedReceiver가 재등록)
+            }
+        }
     }
     
     /**

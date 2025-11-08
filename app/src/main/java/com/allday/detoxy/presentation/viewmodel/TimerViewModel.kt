@@ -133,16 +133,22 @@ class TimerViewModel @Inject constructor(
         viewModelScope.launch {
             timerState.collect { currentState ->
                 Log.d(TAG, "🔔 Timer state changed: $previousTimerState → $currentState")
+                Log.d(TAG, "   - previousTimerState: $previousTimerState")
+                Log.d(TAG, "   - currentState: $currentState")
                 
                 // RUNNING → FINISHED: 정상 완료
                 if (previousTimerState == FocusState.RUNNING && currentState == FocusState.FINISHED) {
-                    Log.d(TAG, "✅ Timer finished successfully (detected via StateFlow)")
+                    Log.d(TAG, "✅ Timer finished successfully (detected via StateFlow) - will call onTimerFinish(success = true)")
                     onTimerFinish(success = true)
                 }
                 // RUNNING → FAILED: 포기
                 else if (previousTimerState == FocusState.RUNNING && currentState == FocusState.FAILED) {
-                    Log.d(TAG, "❌ Timer failed (detected via StateFlow)")
+                    Log.d(TAG, "❌ Timer failed (detected via StateFlow) - will call onTimerFinish(success = false)")
                     onTimerFinish(success = false)
+                }
+                // 다른 상태 전환은 무시 (예: IDLE → RUNNING)
+                else {
+                    Log.d(TAG, "ℹ️ State transition ignored: $previousTimerState → $currentState")
                 }
                 
                 previousTimerState = currentState
@@ -154,6 +160,17 @@ class TimerViewModel @Inject constructor(
         viewModelScope.launch {
             remainingSeconds.collect { seconds ->
                 FocusAccessibilityService.remainingSeconds = seconds
+            }
+        }
+
+        // 🆕 FocusTimerService의 currentSessionId를 관찰하여 동기화
+        // (자동 실행으로 시작된 타이머의 경우 TimerViewModel.currentSessionId가 설정되지 않으므로)
+        viewModelScope.launch {
+            FocusTimerService.currentSessionId.collect { serviceSessionId ->
+                if (serviceSessionId != null && currentSessionId != serviceSessionId) {
+                    Log.d(TAG, "🔄 Syncing currentSessionId from FocusTimerService: $serviceSessionId")
+                    currentSessionId = serviceSessionId
+                }
             }
         }
         
@@ -287,6 +304,17 @@ class TimerViewModel @Inject constructor(
      */
     private fun onTimerFinish(success: Boolean) {
         Log.d(TAG, "⏰ Timer finished callback: success=$success")
+        Log.d(TAG, "🔍 Current sessionId: $currentSessionId")
+        
+        // 🆕 currentSessionId가 null인 경우 FocusTimerService에서 가져오기 시도
+        val sessionIdToUse = currentSessionId ?: run {
+            val serviceSessionId = FocusTimerService.currentSessionId.value
+            Log.d(TAG, "⚠️ currentSessionId is null, trying FocusTimerService.currentSessionId: $serviceSessionId")
+            if (serviceSessionId != null) {
+                currentSessionId = serviceSessionId
+            }
+            serviceSessionId
+        }
         
         // 1. LockOverlayService 명시적 종료 (오버레이 깜빡임 방지)
         LockOverlayService.hideOverlay(application)
@@ -306,9 +334,10 @@ class TimerViewModel @Inject constructor(
         }
 
         // 4. 세션 종료 및 포인트/스트릭 업데이트 (Week 3)
-        currentSessionId?.let { sessionId ->
+        sessionIdToUse?.let { sessionId ->
             viewModelScope.launch {
                 // 세션 종료
+                Log.d(TAG, "💾 Ending session: sessionId=$sessionId, success=$success")
                 repository.endSession(
                     sessionId = sessionId,
                     success = success,
@@ -340,7 +369,7 @@ class TimerViewModel @Inject constructor(
                 currentSessionId = null
                 Log.d(TAG, "✅ Timer finish processing completed")
             }
-        } ?: Log.w(TAG, "⚠️ currentSessionId is null, cannot end session")
+        } ?: Log.w(TAG, "⚠️ sessionId is null, cannot end session. currentSessionId=$currentSessionId, FocusTimerService.currentSessionId=${FocusTimerService.currentSessionId.value}")
     }
 
     /**

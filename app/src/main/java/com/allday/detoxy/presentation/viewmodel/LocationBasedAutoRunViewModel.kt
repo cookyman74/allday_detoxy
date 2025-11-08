@@ -1,18 +1,28 @@
 package com.allday.detoxy.presentation.viewmodel
 
 import android.content.Context
+import android.location.Location
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
+import com.allday.detoxy.core.manager.ScheduleGroupManager
 import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.data.repository.LocationBasedAutoRunRepository
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
 import java.security.MessageDigest
 import javax.inject.Inject
 
@@ -47,8 +57,11 @@ sealed class LocationError {
 class LocationBasedAutoRunViewModel @Inject constructor(
     private val repository: LocationBasedAutoRunRepository,
     private val geofenceManager: AutoRunGeofenceManager,
+    private val scheduleGroupManager: ScheduleGroupManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
+    
+    private val fusedLocationClient: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
 
     companion object {
         private const val TAG = "LocationBasedAutoRunViewModel"
@@ -193,7 +206,11 @@ class LocationBasedAutoRunViewModel @Inject constructor(
                     
                     // 🆕 Geofence 실패해도 DB에는 저장 (비활성화 상태로)
                     Log.w(TAG, "⚠️ Saving to DB with isEnabled=false due to Geofence failure")
-                    val disabledLocation = location.copy(isEnabled = false)
+                    val disabledLocation = location.copy(
+                        isEnabled = false,
+                        activateScheduleOnEnter = false,  // Geofence 없으면 의미 없음
+                        deactivateScheduleOnExit = false  // Geofence 없으면 의미 없음
+                    )
                     repository.insert(disabledLocation)
                     Log.d(TAG, "✅ Location saved to DB (disabled): ${disabledLocation.id}")
                     return
@@ -207,6 +224,16 @@ class LocationBasedAutoRunViewModel @Inject constructor(
             Log.d(TAG, "💾 Saving location to DB...")
             repository.insert(location)
             Log.d(TAG, "✅ Location saved to DB successfully: ${location.id}")
+            
+            // 🆕 Geofence 등록 후 현재 위치 확인 및 즉시 활성화 (DB 저장 완료 후 지연 실행)
+            // 위치 접근이 백그라운드 포그라운드 서비스 시작과 충돌하지 않도록 지연 처리
+            if (location.isEnabled && location.activateScheduleOnEnter && location.linkedScheduleGroupId != null) {
+                viewModelScope.launch {
+                    // 2초 지연하여 포그라운드 서비스가 완전히 시작된 후 위치 접근
+                    delay(2000)
+                    checkAndActivateLocationIfInside(location)
+                }
+            }
 
             // 3. Analytics 로깅
             AnalyticsHelper.logLocationBasedAutoRunCreated(
@@ -247,25 +274,57 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      */
     suspend fun updateLocation(location: LocationBasedAutoRun) {
         try {
+            Log.d(TAG, "🔵 updateLocation called: id=${location.id}, isEnabled=${location.isEnabled}")
+            Log.d(TAG, "   activateScheduleOnEnter=${location.activateScheduleOnEnter}, deactivateScheduleOnExit=${location.deactivateScheduleOnExit}")
+            
             // 1. 기존 Geofence 제거
             geofenceManager.removeGeofence(location.id)
 
             // 2. 새 Geofence 등록 (활성화된 경우만)
             if (location.isEnabled) {
+                Log.d(TAG, "📍 Attempting to add Geofence...")
                 val result = geofenceManager.addGeofence(location)
                 if (result.isFailure) {
                     val exception = result.exceptionOrNull()
+                    Log.e(TAG, "❌ Geofence registration FAILED: ${exception?.message}", exception)
                     _errorState.value = LocationError.GeofenceError(
                         exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
                     )
-                    return  // 실패 시 DB 업데이트 안 함
+                    
+                    // 🆕 Geofence 실패해도 DB에는 업데이트 (비활성화 상태로)
+                    Log.w(TAG, "⚠️ Updating DB with isEnabled=false due to Geofence failure")
+                    val disabledLocation = location.copy(
+                        isEnabled = false,
+                        activateScheduleOnEnter = false,
+                        deactivateScheduleOnExit = false
+                    )
+                    repository.update(disabledLocation)
+                    Log.d(TAG, "✅ Location updated in DB (disabled): ${disabledLocation.id}")
+                    return
                 }
+                Log.d(TAG, "✅ Geofence registered successfully")
+            } else {
+                Log.d(TAG, "ℹ️ Skipping Geofence registration (isEnabled=false)")
             }
 
             // 3. Geofence 성공 후 DB 업데이트
+            Log.d(TAG, "💾 Updating location in DB...")
             repository.update(location)
+            Log.d(TAG, "✅ Location updated in DB successfully: ${location.id}")
+            Log.d(TAG, "   Final state: activateScheduleOnEnter=${location.activateScheduleOnEnter}, deactivateScheduleOnExit=${location.deactivateScheduleOnExit}")
+            
+            // 🆕 Geofence 등록 후 현재 위치 확인 및 즉시 활성화 (DB 업데이트 완료 후 지연 실행)
+            // 위치 접근이 백그라운드 포그라운드 서비스 시작과 충돌하지 않도록 지연 처리
+            if (location.isEnabled && location.activateScheduleOnEnter && location.linkedScheduleGroupId != null) {
+                viewModelScope.launch {
+                    // 2초 지연하여 포그라운드 서비스가 완전히 시작된 후 위치 접근
+                    delay(2000)
+                    checkAndActivateLocationIfInside(location)
+                }
+            }
 
         } catch (e: Exception) {
+            Log.e(TAG, "❌ Exception in updateLocation: ${e.message}", e)
             // DB 업데이트 실패 → Geofence 롤백 (제거)
             geofenceManager.removeGeofence(location.id)
             _errorState.value = LocationError.DatabaseError(
@@ -321,6 +380,84 @@ class LocationBasedAutoRunViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 현재 위치 확인 및 Geofence 내부에 있으면 즉시 스케줄 활성화
+     * 
+     * Geofence 등록 후 호출되어, 현재 위치가 Geofence 반경 내부에 있으면
+     * setInitialTrigger가 작동하지 않는 경우를 대비해 수동으로 활성화합니다.
+     * 
+     * ⚠️ 위치 접근은 메인 스레드에서 처리하여 백그라운드 포그라운드 서비스와의 충돌을 방지합니다.
+     * 
+     * @param location 위치 기반 자동 실행 설정
+     */
+    private fun checkAndActivateLocationIfInside(location: LocationBasedAutoRun) {
+        viewModelScope.launch {
+            try {
+                if (!geofenceManager.hasLocationPermission()) {
+                    Log.d(TAG, "⚠️ No location permission, skipping position check")
+                    return@launch
+                }
+                
+                Log.d(TAG, "📍 Checking current location for immediate activation...")
+                
+                // 🆕 메인 스레드에서 위치 접근하여 백그라운드 포그라운드 서비스와의 충돌 방지
+                val currentLocation = withContext(Dispatchers.Main) {
+                    val cancellationTokenSource = CancellationTokenSource()
+                    fusedLocationClient.getCurrentLocation(
+                        Priority.PRIORITY_HIGH_ACCURACY,
+                        cancellationTokenSource.token
+                    ).await()
+                }
+                
+                if (currentLocation == null) {
+                    Log.w(TAG, "⚠️ Current location is null, cannot check geofence")
+                    return@launch
+                }
+                
+                Log.d(TAG, "📍 Current location: (${currentLocation.latitude}, ${currentLocation.longitude}), accuracy: ${currentLocation.accuracy}m")
+                Log.d(TAG, "📍 Geofence center: (${location.latitude}, ${location.longitude}), radius: ${location.radiusMeters}m")
+                
+                // Geofence 반경 내부인지 확인
+                val distance = FloatArray(1)
+                Location.distanceBetween(
+                    currentLocation.latitude,
+                    currentLocation.longitude,
+                    location.latitude,
+                    location.longitude,
+                    distance
+                )
+                
+                val distanceMeters = distance[0].toInt()
+                Log.d(TAG, "📏 Distance from geofence center: ${distanceMeters}m")
+                
+                // GPS 정확도를 고려한 여유분 추가 (정확도 + 50m)
+                val effectiveRadius = location.radiusMeters + currentLocation.accuracy.toInt() + 50
+                
+                if (distanceMeters <= effectiveRadius) {
+                    Log.i(TAG, "✅ Current location is INSIDE geofence! Activating schedule immediately...")
+                    
+                    // ScheduleGroup 활성화
+                    val result = scheduleGroupManager.activateGroupByLocation(
+                        currentLocation = currentLocation,
+                        candidates = listOf(location)
+                    )
+                    
+                    if (result.isSuccess) {
+                        Log.i(TAG, "✅ Location-based schedule activated immediately (current location inside geofence)")
+                    } else {
+                        Log.e(TAG, "⚠️ Failed to activate schedule: ${result.exceptionOrNull()?.message}")
+                    }
+                } else {
+                    Log.d(TAG, "ℹ️ Current location is OUTSIDE geofence (distance: ${distanceMeters}m > effective radius: ${effectiveRadius}m)")
+                }
+                
+            } catch (e: Exception) {
+                // 위치 확인 실패는 치명적이지 않음 (Geofence는 정상 작동)
+                Log.w(TAG, "⚠️ Failed to check current location for immediate activation: ${e.message}")
+            }
+        }
+    }
+    
     /**
      * 위치 기반 자동 실행 활성화/비활성화 토글
      *

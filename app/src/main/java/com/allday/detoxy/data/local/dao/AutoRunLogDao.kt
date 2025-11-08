@@ -186,5 +186,64 @@ interface AutoRunLogDao {
      */
     @Query("SELECT * FROM auto_run_log WHERE triggerTime >= :startTime AND triggerTime <= :endTime ORDER BY triggerTime DESC")
     suspend fun getLogsInRangeList(startTime: Long, endTime: Long): List<AutoRunLog>
+
+    /**
+     * AutoRunLog 업데이트
+     *
+     * sessionId를 업데이트하거나 결과를 업데이트할 때 사용합니다.
+     *
+     * @param logId 업데이트할 로그 ID
+     * @param sessionId 세션 ID (null 가능)
+     * @param result 결과 (STARTED, FAILED, SKIPPED)
+     * @param failureReason 실패 사유 (null 가능)
+     */
+    @Query("""
+        UPDATE auto_run_log 
+        SET sessionId = :sessionId, 
+            result = :result, 
+            failureReason = :failureReason
+        WHERE id = :logId
+    """)
+    suspend fun update(
+        logId: String,
+        sessionId: String?,
+        result: String,
+        failureReason: String?
+    )
+
+    /**
+     * 최근 로그 ID로 조회 (단일)
+     *
+     * 특정 triggerSourceId와 triggerTime으로 로그를 찾을 때 사용합니다.
+     *
+     * @param triggerSourceId 트리거 소스 ID
+     * @param triggerTime 트리거 시간 (timestamp)
+     * @return 로그 또는 null
+     */
+    @Query("SELECT * FROM auto_run_log WHERE triggerSourceId = :triggerSourceId AND triggerTime = :triggerTime LIMIT 1")
+    suspend fun getBySourceAndTime(triggerSourceId: String, triggerTime: Long): AutoRunLog?
+
+    /**
+     * 위치 기반 자동 실행 로그 중 최근 STARTED 상태 로그 조회
+     *
+     * 특정 위치 ID들 중에서 가장 최근에 STARTED 상태로 기록된 로그를 찾습니다.
+     * sessionId가 null인 로그만 대상으로 합니다 (타이머 시작 전 로그).
+     * 최근 10분 내의 로그만 대상으로 합니다 (Geofence 진입 후 즉시 시작된 타이머에 연결).
+     *
+     * @param locationIds 위치 ID 리스트
+     * @param currentTime 현재 시간 (timestamp, millis)
+     * @return 가장 최근 STARTED 로그 또는 null
+     */
+    @Query("""
+        SELECT * FROM auto_run_log 
+        WHERE triggerType = 'LOCATION' 
+          AND triggerSourceId IN (:locationIds)
+          AND result = 'STARTED'
+          AND sessionId IS NULL
+          AND triggerTime >= :currentTime - 600000
+        ORDER BY triggerTime DESC
+        LIMIT 1
+    """)
+    suspend fun getRecentLocationStartedLog(locationIds: List<String>, currentTime: Long): AutoRunLog?
 }
 

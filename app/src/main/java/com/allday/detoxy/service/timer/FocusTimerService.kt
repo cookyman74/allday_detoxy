@@ -42,6 +42,12 @@ class FocusTimerService : Service() {
     @Inject
     lateinit var timeBasedAutoRunDao: com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao  // 🆕 v0.10.1
 
+    @Inject
+    lateinit var autoRunLogDao: com.allday.detoxy.data.local.dao.AutoRunLogDao  // 🆕 위치 기반 AutoRunLog 업데이트용
+
+    @Inject
+    lateinit var locationBasedAutoRunDao: com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao  // 🆕 위치 기반 AutoRunLog 업데이트용
+
     companion object {
         private const val TAG = "FocusTimerService"
         private const val NOTIFICATION_ID = 1001
@@ -119,9 +125,13 @@ class FocusTimerService : Service() {
     private var timerJob: Job? = null
     private lateinit var dndManager: DndManager
     private var wakeLock: PowerManager.WakeLock? = null  // 🔥 v0.10.1.3: WakeLock
+    
+    // 🆕 onCreate()에서 미리 생성한 간단한 알림 (startForeground() 즉시 호출용)
+    private var preCreatedNotification: Notification? = null
 
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "🔵 onCreate() called - Service instance created")
         serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         dndManager = DndManager(applicationContext)
         
@@ -135,11 +145,47 @@ class FocusTimerService : Service() {
         }
         
         createNotificationChannel()
-        Log.d(TAG, "FocusTimerService created (WakeLock initialized)")
+        
+        // 🆕 onCreate()에서 미리 간단한 알림 생성 (onStartCommand에서 즉시 사용)
+        preCreatedNotification = createSimpleNotification()
+        
+        Log.d(TAG, "✅ onCreate() completed - WakeLock initialized, notification pre-created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "onStartCommand() - action: ${intent?.action}")
+        Log.d(TAG, "🟢 onStartCommand() ENTERED - action: ${intent?.action}, startId: $startId")
+        
+        // ⚠️ CRITICAL: startForeground()를 첫 줄에서 즉시 호출하여 서비스가 종료되지 않도록 보호
+        // Android 시스템은 startForeground() 호출 전에 서비스를 종료할 수 있습니다.
+        // onCreate()에서 미리 생성한 알림을 사용하여 최대한 빠르게 호출합니다.
+        val notification = preCreatedNotification ?: run {
+            Log.w(TAG, "⚠️ preCreatedNotification is null, creating simple notification on the fly")
+            createSimpleNotification()
+        }
+        
+        Log.d(TAG, "📢 About to call startForeground()...")
+        
+        // 🆕 Android 14+ (API 34+): 서비스 타입 지정 필수
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            @Suppress("NewApi")
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+        
+        Log.d(TAG, "✅ startForeground() called successfully - action: ${intent?.action}")
+        
+        // 상세 알림으로 즉시 업데이트 (비동기로 처리하여 블로킹 방지)
+        serviceScope?.launch {
+            updateNotification()
+        } ?: run {
+            // serviceScope가 null이면 동기적으로 업데이트
+            updateNotification()
+        }
 
         when (intent?.action) {
             ACTION_START, ACTION_START_TIMER -> { // 🔄 ACTION_START 지원 추가
@@ -151,20 +197,35 @@ class FocusTimerService : Service() {
                 Log.d(TAG, "Starting timer: $durationMinutes minutes, sessionId: $sessionId, presetType: $presetType, autoRunId: $autoRunId")
                 
                 // 🆕 v0.10.1: autoRunId로부터 scheduleGroupId 조회
-                serviceScope?.launch {
-                    val scheduleGroupId = if (autoRunId != null) {
-                        try {
-                            val autoRun = timeBasedAutoRunDao.getById(autoRunId).first()
-                            autoRun?.scheduleGroupId
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Failed to get scheduleGroupId from autoRunId: ${e.message}")
+                val scope = serviceScope
+                if (scope == null) {
+                    Log.e(TAG, "❌ serviceScope is null, cannot start timer!")
+                    // serviceScope가 null이면 직접 시작 (fallback)
+                    startTimerInternal(durationMinutes, sessionId, presetType, autoRunId, null)
+                } else {
+                    scope.launch {
+                        Log.d(TAG, "🔍 Looking up scheduleGroupId for autoRunId: $autoRunId")
+                        val scheduleGroupId = if (autoRunId != null) {
+                            try {
+                                val autoRun = withContext(Dispatchers.IO) {
+                                    timeBasedAutoRunDao.getById(autoRunId).first()
+                                }
+                                Log.d(TAG, "✅ Found autoRun: ${autoRun?.id}, scheduleGroupId: ${autoRun?.scheduleGroupId}")
+                                autoRun?.scheduleGroupId
+                            } catch (e: Exception) {
+                                Log.e(TAG, "❌ Failed to get scheduleGroupId from autoRunId: ${e.message}", e)
+                                null
+                            }
+                        } else {
+                            Log.d(TAG, "ℹ️ autoRunId is null, skipping scheduleGroupId lookup")
                             null
                         }
-                    } else null
-                    
-                    // 메인 스레드에서 startTimerInternal 호출
-                    withContext(Dispatchers.Main) {
-                        startTimerInternal(durationMinutes, sessionId, presetType, autoRunId, scheduleGroupId)
+                        
+                        // 메인 스레드에서 startTimerInternal 호출
+                        Log.d(TAG, "🚀 Calling startTimerInternal with scheduleGroupId: $scheduleGroupId")
+                        withContext(Dispatchers.Main) {
+                            startTimerInternal(durationMinutes, sessionId, presetType, autoRunId, scheduleGroupId)
+                        }
                     }
                 }
             }
@@ -177,9 +238,6 @@ class FocusTimerService : Service() {
                 stopTimerInternal(success = false)
             }
         }
-
-        // Foreground Service 시작
-        startForeground(NOTIFICATION_ID, createNotification())
 
         return START_STICKY // 시스템에 의해 종료되어도 재시작
     }
@@ -200,9 +258,11 @@ class FocusTimerService : Service() {
         autoRunId: String? = null,        // 🆕 v0.10.1
         scheduleGroupId: String? = null   // 🆕 v0.10.1
     ) {
+        Log.d(TAG, "🎯 startTimerInternal called: duration=$durationMinutes, sessionId=$sessionId, autoRunId=$autoRunId, scheduleGroupId=$scheduleGroupId")
+        
         // 이미 실행 중이면 무시
         if (_state.value == FocusState.RUNNING) {
-            Log.w(TAG, "Timer already running, ignoring start request")
+            Log.w(TAG, "⚠️ Timer already running (state: ${_state.value}), ignoring start request")
             return
         }
 
@@ -217,6 +277,20 @@ class FocusTimerService : Service() {
         _currentScheduleGroupId.value = scheduleGroupId
         
         Log.d(TAG, "Timer started: $totalSec seconds, autoRunId=$autoRunId, scheduleGroupId=$scheduleGroupId")
+
+        // 🆕 위치 기반 자동 실행 AutoRunLog sessionId 업데이트
+        // scheduleGroupId가 있는 경우 (위치 기반으로 활성화된 시간표일 수 있음)
+        // 해당 scheduleGroupId에 연결된 위치의 최근 AutoRunLog를 찾아서 sessionId 업데이트
+        // 최근 10분 내의 LOCATION 타입 STARTED 로그를 찾아 연결
+        if (sessionId != null && scheduleGroupId != null) {
+            serviceScope?.launch {
+                try {
+                    updateLocationBasedAutoRunLog(sessionId, scheduleGroupId)
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Failed to update location-based AutoRunLog: ${e.message}", e)
+                }
+            }
+        }
 
         // 🔥 v0.10.1.3: WakeLock 획득 (CPU를 깨어있게 유지하여 타이머 정확성 보장)
         try {
@@ -405,6 +479,28 @@ class FocusTimerService : Service() {
     }
 
     /**
+     * 간단한 Foreground Service 알림 생성 (빠른 시작용)
+     * 
+     * startForeground() 호출을 빠르게 하기 위해 최소한의 작업만 수행합니다.
+     * 나중에 createNotification()으로 상세 알림으로 업데이트됩니다.
+     */
+    private fun createSimpleNotification(): Notification {
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, CHANNEL_ID)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+        }
+
+        return builder
+            .setContentTitle("집중 모드")
+            .setContentText("타이머 시작 중...")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .build()
+    }
+    
+    /**
      * Foreground Service 알림 생성
      */
     private fun createNotification(): Notification {
@@ -486,6 +582,74 @@ class FocusTimerService : Service() {
         _remainingSeconds.value = 0
         _totalSeconds.value = 0
         _currentSessionId.value = null
+    }
+
+    /**
+     * 위치 기반 자동 실행 AutoRunLog의 sessionId 업데이트
+     *
+     * 위치 기반 이벤트로 시작된 타이머의 경우, Geofence 진입 시점에 기록된 AutoRunLog의
+     * sessionId가 null이었으므로, 타이머 시작 시점에 sessionId를 업데이트합니다.
+     *
+     * @param sessionId 생성된 세션 ID
+     * @param scheduleGroupId 활성화된 스케줄 그룹 ID
+     */
+    private suspend fun updateLocationBasedAutoRunLog(
+        sessionId: String,
+        scheduleGroupId: String
+    ) {
+        try {
+            Log.d(TAG, "🔍 Updating location-based AutoRunLog: sessionId=$sessionId, scheduleGroupId=$scheduleGroupId")
+
+            // 1. scheduleGroupId에 연결된 위치 기반 자동 실행 목록 조회
+            val locations = locationBasedAutoRunDao.getByLinkedGroup(scheduleGroupId)
+            
+            if (locations.isEmpty()) {
+                Log.d(TAG, "ℹ️ No locations linked to scheduleGroupId: $scheduleGroupId")
+                return
+            }
+
+            val locationIds = locations.map { it.id }
+            Log.d(TAG, "📍 Found ${locationIds.size} locations linked to scheduleGroupId: ${locationIds.joinToString(", ")}")
+
+            // 2. 해당 위치들의 최근 STARTED 상태 AutoRunLog 찾기 (최근 10분 내, sessionId가 null인 것만)
+            val currentTime = System.currentTimeMillis()
+            val recentLog = autoRunLogDao.getRecentLocationStartedLog(locationIds, currentTime)
+
+            if (recentLog == null) {
+                Log.w(TAG, "⚠️ No recent location-based AutoRunLog found (LOCATION, STARTED, sessionId=null, within 10 minutes)")
+                Log.d(TAG, "   - Searching for locations: ${locationIds.joinToString(", ")}")
+                Log.d(TAG, "   - Current time: $currentTime (${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(currentTime))})")
+                Log.d(TAG, "   - Search window: ${currentTime - 600000} ~ $currentTime")
+                
+                // 디버깅: 모든 LOCATION 타입 로그 확인
+                try {
+                    val allLocationLogs = autoRunLogDao.getLogsInRangeList(currentTime - 600000, currentTime)
+                    val locationLogs = allLocationLogs.filter { it.triggerType == "LOCATION" && it.triggerSourceId in locationIds }
+                    Log.d(TAG, "   - Found ${locationLogs.size} LOCATION logs in time window:")
+                    locationLogs.take(5).forEach { log ->
+                        Log.d(TAG, "     * ${log.id}: triggerSourceId=${log.triggerSourceId}, result=${log.result}, sessionId=${log.sessionId}, triggerTime=${log.triggerTime}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "   - Failed to check logs: ${e.message}", e)
+                }
+                return
+            }
+
+            Log.d(TAG, "✅ Found recent AutoRunLog: id=${recentLog.id}, triggerSourceId=${recentLog.triggerSourceId}, triggerTime=${recentLog.triggerTime} (${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(recentLog.triggerTime))})")
+
+            // 3. AutoRunLog의 sessionId 업데이트
+            autoRunLogDao.update(
+                logId = recentLog.id,
+                sessionId = sessionId,
+                result = recentLog.result,
+                failureReason = recentLog.failureReason
+            )
+
+            Log.i(TAG, "✅ Location-based AutoRunLog updated: logId=${recentLog.id}, sessionId=$sessionId")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to update location-based AutoRunLog: ${e.message}", e)
+            throw e
+        }
     }
 }
 

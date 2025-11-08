@@ -10,14 +10,16 @@ import com.allday.detoxy.core.utils.AppCategoryMapper
 import com.allday.detoxy.data.local.entity.FocusInterruption
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.service.overlay.LockOverlayService
-import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.UUID
-import javax.inject.Inject
 
 /**
  * 앱 차단을 위한 AccessibilityService (디톡시 제어)
@@ -30,13 +32,27 @@ import javax.inject.Inject
  *
  * @see AccessibilityService
  * @see AppCategoryMapper
+ *
+ * ⚠️ Hilt 이슈 대응:
+ * AccessibilityService는 시스템이 직접 인스턴스를 생성하므로 @AndroidEntryPoint가 작동하지 않습니다.
+ * EntryPoint를 사용하여 수동으로 의존성을 주입합니다.
  */
-@AndroidEntryPoint
 class FocusAccessibilityService : AccessibilityService() {
 
-    @Inject
-    lateinit var repository: FocusRepository
+    /**
+     * Hilt EntryPoint for manual dependency injection
+     *
+     * AccessibilityService는 시스템이 직접 인스턴스를 생성하므로
+     * @AndroidEntryPoint를 사용할 수 없습니다.
+     * EntryPointAccessors를 통해 수동으로 의존성을 가져옵니다.
+     */
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface FocusAccessibilityServiceEntryPoint {
+        fun repository(): FocusRepository
+    }
 
+    private var repository: FocusRepository? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
@@ -105,7 +121,20 @@ class FocusAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        Log.d(TAG, "AccessibilityService connected")
+        Log.d(TAG, "✅ AccessibilityService connected")
+        
+        // 🆕 Hilt 의존성 주입 (EntryPoint 사용)
+        try {
+            val entryPoint = EntryPointAccessors.fromApplication(
+                applicationContext,
+                FocusAccessibilityServiceEntryPoint::class.java
+            )
+            repository = entryPoint.repository()
+            Log.d(TAG, "✅ Repository injected successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to inject repository: ${e.message}", e)
+            // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -164,9 +193,10 @@ class FocusAccessibilityService : AccessibilityService() {
 
         // 1. 차단 이벤트 로깅 (FocusInterruption 엔티티)
         currentSessionId?.let { sessionId ->
+            repository?.let { repo ->
             serviceScope.launch {
                 try {
-                    repository.logInterruption(
+                        repo.logInterruption(
                         FocusInterruption(
                             id = UUID.randomUUID().toString(),
                             sessionId = sessionId,
@@ -180,6 +210,7 @@ class FocusAccessibilityService : AccessibilityService() {
                     Log.e(TAG, "❌ Failed to log interruption", e)
                 }
             }
+            } ?: Log.w(TAG, "⚠️ Repository is null, interruption not logged")
         } ?: Log.w(TAG, "⚠️ currentSessionId is null, interruption not logged")
 
         // 2. Analytics 이벤트 로깅
