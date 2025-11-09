@@ -3,6 +3,7 @@ package com.allday.detoxy.presentation.ui.autorun.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -219,6 +221,20 @@ private fun TimePickerSection(
     onHourChange: (Int) -> Unit,
     onMinuteChange: (Int) -> Unit
 ) {
+    // 초기값만 설정하고 이후에는 사용자 입력으로만 업데이트
+    var hourText by remember { mutableStateOf(hour.toString()) }
+    var minuteText by remember { mutableStateOf(minute.toString()) }
+    
+    // prop 변경 시 초기화 (다이얼로그가 다시 열릴 때만)
+    LaunchedEffect(hour, minute) {
+        if (hourText.isEmpty() || hourText.toIntOrNull() != hour) {
+            hourText = hour.toString()
+        }
+        if (minuteText.isEmpty() || minuteText.toIntOrNull() != minute) {
+            minuteText = minute.toString()
+        }
+    }
+    
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -231,14 +247,25 @@ private fun TimePickerSection(
                 style = MaterialTheme.typography.labelSmall
             )
             OutlinedTextField(
-                value = hour.toString(),
-                onValueChange = { value ->
-                    value.toIntOrNull()?.let { h ->
-                        if (h in 0..23) onHourChange(h)
+                value = hourText,
+                onValueChange = { newValue ->
+                    // 빈 문자열 허용
+                    if (newValue.isEmpty()) {
+                        hourText = ""
+                    } else {
+                        // 숫자만 허용하고 0-23 범위 체크
+                        newValue.toIntOrNull()?.let { h ->
+                            if (h in 0..23) {
+                                hourText = newValue
+                                onHourChange(h)
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                placeholder = { Text("0") }
             )
         }
 
@@ -255,14 +282,25 @@ private fun TimePickerSection(
                 style = MaterialTheme.typography.labelSmall
             )
             OutlinedTextField(
-                value = minute.toString(),
-                onValueChange = { value ->
-                    value.toIntOrNull()?.let { m ->
-                        if (m in 0..59) onMinuteChange(m)
+                value = minuteText,
+                onValueChange = { newValue ->
+                    // 빈 문자열 허용
+                    if (newValue.isEmpty()) {
+                        minuteText = ""
+                    } else {
+                        // 숫자만 허용하고 0-59 범위 체크
+                        newValue.toIntOrNull()?.let { m ->
+                            if (m in 0..59) {
+                                minuteText = newValue
+                                onMinuteChange(m)
+                            }
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                placeholder = { Text("0") }
             )
         }
     }
@@ -309,16 +347,36 @@ private fun DurationSelector(
         }
 
         // 직접 입력
+        var durationText by remember { mutableStateOf(durationMinutes.toString()) }
+        
+        // prop 변경 시 초기화
+        LaunchedEffect(durationMinutes) {
+            if (durationText.isEmpty() || durationText.toIntOrNull() != durationMinutes) {
+                durationText = durationMinutes.toString()
+            }
+        }
+        
         OutlinedTextField(
-            value = durationMinutes.toString(),
-            onValueChange = { value ->
-                value.toIntOrNull()?.let { d ->
-                    if (d in 1..180) onDurationChange(d)
+            value = durationText,
+            onValueChange = { newValue ->
+                // 빈 문자열 허용
+                if (newValue.isEmpty()) {
+                    durationText = ""
+                } else {
+                    // 숫자만 허용하고 1-180 범위 체크
+                    newValue.toIntOrNull()?.let { d ->
+                        if (d in 1..180) {
+                            durationText = newValue
+                            onDurationChange(d)
+                        }
+                    }
                 }
             },
             label = { Text("직접 입력 (1-180분)") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            placeholder = { Text("25") }
         )
     }
 }

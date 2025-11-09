@@ -2,6 +2,7 @@ package com.allday.detoxy.presentation.ui.autorun.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.presentation.util.formatDuration
@@ -39,8 +41,8 @@ fun TimeSlotInputDialog(
     onDismiss: () -> Unit,
     onConfirm: (TimeSlot) -> Unit
 ) {
-    var hour by remember { mutableIntStateOf(existingSlot?.startHour ?: 9) }
-    var minute by remember { mutableIntStateOf(existingSlot?.startMinute ?: 0) }
+    var hourText by remember { mutableStateOf((existingSlot?.startHour ?: 9).toString()) }
+    var minuteText by remember { mutableStateOf((existingSlot?.startMinute ?: 0).toString()) }
     var duration by remember { mutableIntStateOf(existingSlot?.durationMinutes ?: TimeSlot.DEFAULT_DURATION) }
     var preset by remember { mutableStateOf(existingSlot?.presetType ?: "STANDARD") }
     var enabledDays by remember { mutableStateOf(existingSlot?.enabledDays ?: DayOfWeek.values().toList()) }
@@ -74,26 +76,50 @@ fun TimeSlotInputDialog(
                 ) {
                     // 시간 선택
                     OutlinedTextField(
-                        value = hour.toString(),
-                        onValueChange = { 
-                            hour = it.toIntOrNull()?.coerceIn(0, 23) ?: 0
+                        value = hourText,
+                        onValueChange = { newValue ->
+                            // 빈 문자열 허용
+                            if (newValue.isEmpty()) {
+                                hourText = ""
+                            } else {
+                                // 숫자만 허용하고 0-23 범위 체크
+                                newValue.toIntOrNull()?.let { h ->
+                                    if (h in 0..23) {
+                                        hourText = newValue
+                                    }
+                                }
+                            }
                         },
                         label = { Text("시") },
+                        placeholder = { Text("0") },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                     
                     Text(":", style = MaterialTheme.typography.headlineMedium)
                     
                     // 분 선택
                     OutlinedTextField(
-                        value = minute.toString(),
-                        onValueChange = { 
-                            minute = it.toIntOrNull()?.coerceIn(0, 59) ?: 0
+                        value = minuteText,
+                        onValueChange = { newValue ->
+                            // 빈 문자열 허용
+                            if (newValue.isEmpty()) {
+                                minuteText = ""
+                            } else {
+                                // 숫자만 허용하고 0-59 범위 체크
+                                newValue.toIntOrNull()?.let { m ->
+                                    if (m in 0..59) {
+                                        minuteText = newValue
+                                    }
+                                }
+                            }
                         },
                         label = { Text("분") },
+                        placeholder = { Text("0") },
                         modifier = Modifier.weight(1f),
-                        singleLine = true
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
                 
@@ -230,9 +256,11 @@ fun TimeSlotInputDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    val hour = hourText.toIntOrNull() ?: 0
+                    val minute = minuteText.toIntOrNull() ?: 0
                     onConfirm(TimeSlot(hour, minute, duration, preset, enabledDays))
                 },
-                enabled = enabledDays.isNotEmpty()  // 최소 1개 요일 필요
+                enabled = enabledDays.isNotEmpty() && hourText.isNotEmpty() && minuteText.isNotEmpty()
             ) {
                 Text(if (existingSlot == null) "추가" else "수정")
             }

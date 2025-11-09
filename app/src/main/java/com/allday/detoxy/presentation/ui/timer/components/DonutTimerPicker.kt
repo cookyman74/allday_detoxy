@@ -72,6 +72,12 @@ fun DonutTimerPicker(
     // 현재 각도 (0~360도)
     var currentAngle by remember { mutableStateOf(minutesToAngle(selectedMinutes, maxMinutes)) }
     
+    // selectedMinutes가 외부에서 변경되면 currentAngle 업데이트
+    LaunchedEffect(selectedMinutes) {
+        val newAngle = minutesToAngle(selectedMinutes, maxMinutes)
+        currentAngle = newAngle
+    }
+    
     // 애니메이션 적용된 각도
     val animatedAngle by animateFloatAsState(
         targetValue = currentAngle,
