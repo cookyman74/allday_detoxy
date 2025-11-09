@@ -8,6 +8,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.allday.detoxy.core.manager.AutoRunNotificationManager
 import com.allday.detoxy.data.local.entity.FocusSession
+import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.service.timer.FocusTimerService
 import dagger.assisted.Assisted
@@ -72,8 +73,8 @@ class AutoStartTimerWorker @AssistedInject constructor(
                 // setForeground() 호출이 FocusTimerService의 startForeground()와 충돌하여 서비스가 종료되는 문제 해결
                 
                 // 🆕 이미 타이머가 실행 중인지 확인 (중복 세션 생성 방지)
-                val isTimerRunning = com.allday.detoxy.service.timer.FocusTimerService.isTimerRunning.value
-                val existingSessionId = com.allday.detoxy.service.timer.FocusTimerService.currentSessionId.value
+                val isTimerRunning = FocusTimerService.state.value == FocusState.RUNNING
+                val existingSessionId = FocusTimerService.currentSessionId.value
                 
                 val sessionId: String
                 if (isTimerRunning && existingSessionId != null) {
