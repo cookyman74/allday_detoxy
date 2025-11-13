@@ -23,3 +23,25 @@ google-services.json
 # OS files
 .DS_Store
 docs/GOOGLE_PLAY_DEPLOYMENT_GUIDE.md
+docs/install_screenshot/01_google_play_internal_test_invite.jpeg
+docs/install_screenshot/02_google_play_internal_test_program.jpeg
+docs/install_screenshot/03_google play allday.detoxy 설치 화면.jpeg
+docs/install_screenshot/04.1_allday_detoxy start 화면.jpeg
+docs/install_screenshot/04.2_시작후 온보딩 설정 화면.jpeg
+docs/install_screenshot/05_온보딩 설정을 통한 접근성 설정 요청화면.jpeg
+docs/install_screenshot/06_접근성 설정 중 다운로드한 앱선택후 allday_detoxy설정.jpeg
+docs/install_screenshot/07_location_permission_request.jpeg
+docs/install_screenshot/08_permission_setup_잠금화면.jpeg
+docs/install_screenshot/09_display_over_other_apps_settings.jpeg
+docs/install_screenshot/10_display_over_other_apps_list.jpeg
+docs/install_screenshot/11_첫 시간표 만들기.jpeg
+docs/install_screenshot/12.1_위치기반 스케쥴 만들기.jpeg
+docs/install_screenshot/12.2_위치기반 스케쥴 만들기 위한 주소검색.jpeg
+docs/install_screenshot/13_위치검색후 화면_반경설정.jpeg
+docs/install_screenshot/13.1_위치기반 자동실행 설정.jpeg
+docs/install_screenshot/14_위치기반 스케쥴을 만들기 위한 템플릿 메뉴 선택.jpeg
+docs/install_screenshot/15_템플릿 리스트에서 선택.jpeg
+docs/install_screenshot/16_template_selection_dialog.jpeg
+docs/install_screenshot/17_위치권한 설정.jpeg
+docs/install_screenshot/18_background_location_permission_dialog_2.jpeg
+docs/install_screenshot/19_location_access_permissions.jpeg

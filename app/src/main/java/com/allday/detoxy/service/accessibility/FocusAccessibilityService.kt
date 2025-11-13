@@ -120,49 +120,62 @@ class FocusAccessibilityService : AccessibilityService() {
     }
 
     override fun onServiceConnected() {
-        super.onServiceConnected()
-        Log.d(TAG, "✅ AccessibilityService connected")
-        
-        // 🆕 Hilt 의존성 주입 (EntryPoint 사용)
         try {
-            val entryPoint = EntryPointAccessors.fromApplication(
-                applicationContext,
-                FocusAccessibilityServiceEntryPoint::class.java
-            )
-            repository = entryPoint.repository()
-            Log.d(TAG, "✅ Repository injected successfully")
+            super.onServiceConnected()
+            Log.i(TAG, "✅ AccessibilityService connected")
+            
+            // 🆕 Hilt 의존성 주입 (EntryPoint 사용)
+            try {
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    applicationContext,
+                    FocusAccessibilityServiceEntryPoint::class.java
+                )
+                repository = entryPoint.repository()
+                Log.i(TAG, "✅ Repository injected successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to inject repository: ${e.message}", e)
+                // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
+            }
+            
+            // 서비스 상태 로깅
+            Log.i(TAG, "📊 Service state: isTimerRunning=$isTimerRunning, categories=${enabledCategories.size}, otherApps=$otherAppsEnabled")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to inject repository: ${e.message}", e)
-            // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
+            Log.e(TAG, "❌ CRITICAL: onServiceConnected failed: ${e.message}", e)
+            // 서비스 연결 실패 시에도 크래시 방지
         }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event == null) {
-            Log.d(TAG, "Received null event")
-            return
-        }
+        try {
+            if (event == null) {
+                Log.d(TAG, "Received null event")
+                return
+            }
 
-        // TYPE_WINDOW_STATE_CHANGED 이벤트만 처리
-        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+            // TYPE_WINDOW_STATE_CHANGED 이벤트만 처리
+            if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
-        val packageName = event.packageName?.toString() ?: return
+            val packageName = event.packageName?.toString() ?: return
 
-        // 타이머 실행 상태 확인 (상세 로그)
-        if (!isTimerRunning) {
-            Log.d(TAG, "⏸️ Timer not running - Ignoring $packageName")
-            return
-        }
+            // 타이머 실행 상태 확인 (상세 로그)
+            if (!isTimerRunning) {
+                Log.d(TAG, "⏸️ Timer not running - Ignoring $packageName")
+                return
+            }
 
-        Log.d(TAG, "🔍 Checking app: $packageName (Timer: RUNNING, Categories: ${enabledCategories.size}, OtherApps: $otherAppsEnabled)")
+            Log.d(TAG, "🔍 Checking app: $packageName (Timer: RUNNING, Categories: ${enabledCategories.size}, OtherApps: $otherAppsEnabled)")
 
-        // 디톡시 제어 설정 기반 차단 여부 확인
-        if (isAppBlocked(packageName)) {
-            val category = AppCategoryMapper.getCategoryByPackage(packageName)
-            Log.w(TAG, "⚠️ BLOCKED APP DETECTED: $packageName (Category: ${category?.getDisplayName() ?: "OTHER"})")
-            handleBlockedApp(packageName, category)
-        } else {
-            Log.d(TAG, "✅ App allowed: $packageName")
+            // 디톡시 제어 설정 기반 차단 여부 확인
+            if (isAppBlocked(packageName)) {
+                val category = AppCategoryMapper.getCategoryByPackage(packageName)
+                Log.w(TAG, "⚠️ BLOCKED APP DETECTED: $packageName (Category: ${category?.getDisplayName() ?: "OTHER"})")
+                handleBlockedApp(packageName, category)
+            } else {
+                Log.d(TAG, "✅ App allowed: $packageName")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error in onAccessibilityEvent: ${e.message}", e)
+            // 예외 발생 시에도 서비스가 크래시되지 않도록 처리
         }
     }
 
@@ -224,7 +237,11 @@ class FocusAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        Log.d(TAG, "AccessibilityService interrupted")
+        try {
+            Log.w(TAG, "⚠️ AccessibilityService interrupted")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error in onInterrupt: ${e.message}", e)
+        }
     }
 
     /**
@@ -262,14 +279,18 @@ class FocusAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        
-        // 코루틴 스코프 정리 (메모리 누수 방지)
-        serviceScope.cancel()
-        
-        // 현재 세션 ID 초기화
-        currentSessionId = null
-        
-        Log.d(TAG, "✅ AccessibilityService destroyed (serviceScope cancelled)")
+        try {
+            super.onDestroy()
+            
+            // 코루틴 스코프 정리 (메모리 누수 방지)
+            serviceScope.cancel()
+            
+            // 현재 세션 ID 초기화
+            currentSessionId = null
+            
+            Log.i(TAG, "✅ AccessibilityService destroyed (serviceScope cancelled)")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error in onDestroy: ${e.message}", e)
+        }
     }
 }
