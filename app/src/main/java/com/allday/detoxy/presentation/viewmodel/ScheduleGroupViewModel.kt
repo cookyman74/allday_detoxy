@@ -387,9 +387,12 @@ class ScheduleGroupViewModel @Inject constructor(
             _isLoading.value = true
             
             // 1. ScheduleGroup 생성
+            // 🐛 버그 수정: 위치기반 스케줄 그룹은 초기에 비활성화 상태로 생성
+            // 위치 진입 시 활성화되어야 함
             val scheduleGroup = ScheduleGroup(
                 name = name.trim(),
-                description = description?.trim()?.takeIf { it.isNotEmpty() }
+                description = description?.trim()?.takeIf { it.isNotEmpty() },
+                isActive = false  // 🐛 버그 수정: 위치기반 스케줄은 초기에 비활성화
             )
             repository.insert(scheduleGroup)
             
