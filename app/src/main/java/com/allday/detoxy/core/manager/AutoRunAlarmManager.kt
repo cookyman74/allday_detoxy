@@ -143,14 +143,19 @@ class AutoRunAlarmManager @Inject constructor(
 
         // 🐛 버그 수정: 위치기반 스케쥴인 경우 그룹 활성화 상태 확인
         // scheduleGroupId가 있고 isIndependent=false인 경우, 그룹이 활성화되어 있을 때만 알람 등록
+        Log.d(TAG, "🔍 Checking scheduleGroupId: ${autoRun.scheduleGroupId}, isIndependent: ${autoRun.isIndependent}")
         if (autoRun.scheduleGroupId != null && !autoRun.isIndependent) {
             val scheduleGroup = runBlocking {
                 scheduleGroupDao.getByIdOnce(autoRun.scheduleGroupId)
             }
+            Log.d(TAG, "📋 ScheduleGroup 조회 결과: ${scheduleGroup?.name}, isActive: ${scheduleGroup?.isActive}")
             if (scheduleGroup == null || !scheduleGroup.isActive) {
                 Log.w(TAG, "⏭️ Skipping alarm registration: ScheduleGroup not active (groupId: ${autoRun.scheduleGroupId}, isActive: ${scheduleGroup?.isActive ?: false})")
                 return false
             }
+            Log.d(TAG, "✅ ScheduleGroup is active, proceeding with alarm registration")
+        } else {
+            Log.d(TAG, "ℹ️ Independent auto-run or no scheduleGroupId, proceeding with alarm registration")
         }
 
         // 다음 발생 시각 계산

@@ -51,6 +51,11 @@ fun AddTimeBasedAutoRunDialog(
     
     // 🆕 3차 고도화: 시간표 연결 상태
     // 🆕 특정 스케줄 그룹에서 호출된 경우 해당 그룹 ID로 초기화
+    // 🐛 버그 수정: initialScheduleGroupId가 있으면 위치기반으로 간주 (isLocationBased가 false여도)
+    val actualIsLocationBased = remember(initialScheduleGroupId, isLocationBased, existingAutoRun?.scheduleGroupId) {
+        isLocationBased || (initialScheduleGroupId != null) || (existingAutoRun?.scheduleGroupId != null && !existingAutoRun.isIndependent)
+    }
+    
     var selectedScheduleGroupId by remember { 
         mutableStateOf(existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId) 
     }
@@ -168,22 +173,22 @@ fun AddTimeBasedAutoRunDialog(
                     selectedScheduleGroupId = selectedScheduleGroupId,
                     onScheduleGroupSelected = { groupId ->
                         // 🐛 버그 수정: 위치기반 스케쥴인 경우 scheduleGroupId 변경 불가
-                        if (!isLocationBased) {
-                            selectedScheduleGroupId = groupId
-                            isIndependent = groupId == null
+                        if (!actualIsLocationBased) {
+                        selectedScheduleGroupId = groupId
+                        isIndependent = groupId == null
                         }
                     },
                     isIndependent = isIndependent,
                     onIndependentChange = { independent ->
                         // 🐛 버그 수정: 위치기반 스케쥴인 경우 독립 실행 모드 변경 불가
-                        if (!isLocationBased) {
-                            isIndependent = independent
-                            if (independent) {
-                                selectedScheduleGroupId = null
-                            }
+                        if (!actualIsLocationBased) {
+                        isIndependent = independent
+                        if (independent) {
+                            selectedScheduleGroupId = null
                         }
+                    }
                     },
-                    isLocationBased = isLocationBased  // 🐛 버그 수정: 위치기반 여부 전달
+                    isLocationBased = actualIsLocationBased  // 🐛 버그 수정: 위치기반 여부 전달 (actualIsLocationBased 사용)
                 )
             }
         },
@@ -191,6 +196,32 @@ fun AddTimeBasedAutoRunDialog(
             Button(
                 onClick = {
                     val selectedDays = enabledDays.filter { it.value }.keys.toList()
+                    // 🐛 버그 수정: 위치기반 스케쥴인 경우 scheduleGroupId와 isIndependent 강제 설정
+                    // actualIsLocationBased 사용 (initialScheduleGroupId가 있으면 위치기반으로 간주)
+                    val finalScheduleGroupId = if (actualIsLocationBased) {
+                        // 위치기반 스케쥴인 경우: 기존 값이 있으면 유지, 없으면 initialScheduleGroupId 사용
+                        existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId
+                    } else {
+                        selectedScheduleGroupId
+                    }
+                    val finalIsIndependent = if (actualIsLocationBased) {
+                        // 위치기반 스케쥴인 경우: 그룹에 종속되어야 하므로 false
+                        existingAutoRun?.isIndependent ?: false
+                    } else {
+                        isIndependent
+                    }
+                    
+                    // 🐛 버그 수정: 디버깅 로그 추가
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "=== 저장 데이터 확인 ===")
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "isLocationBased 파라미터: $isLocationBased")
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "actualIsLocationBased: $actualIsLocationBased")
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "existingAutoRun?.scheduleGroupId: ${existingAutoRun?.scheduleGroupId}")
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "initialScheduleGroupId: $initialScheduleGroupId")
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "selectedScheduleGroupId: $selectedScheduleGroupId")
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "finalScheduleGroupId: $finalScheduleGroupId")
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "existingAutoRun?.isIndependent: ${existingAutoRun?.isIndependent}")
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "finalIsIndependent: $finalIsIndependent")
+                    
                     val newAutoRun = TimeBasedAutoRun(
                         id = existingAutoRun?.id ?: UUID.randomUUID().toString(),
                         hour = selectedHour,
@@ -202,20 +233,12 @@ fun AddTimeBasedAutoRunDialog(
                         isEnabled = existingAutoRun?.isEnabled ?: true,
                         createdAt = existingAutoRun?.createdAt ?: System.currentTimeMillis(),
                         // 🆕 3차 고도화: 시간표 연결 필드
-                        // 🐛 버그 수정: 위치기반 스케쥴인 경우 scheduleGroupId와 isIndependent 강제 설정
-                        scheduleGroupId = if (isLocationBased) {
-                            // 위치기반 스케쥴인 경우: 기존 값이 있으면 유지, 없으면 initialScheduleGroupId 사용
-                            existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId
-                        } else {
-                            selectedScheduleGroupId
-                        },
-                        isIndependent = if (isLocationBased) {
-                            // 위치기반 스케쥴인 경우: 그룹에 종속되어야 하므로 false
-                            existingAutoRun?.isIndependent ?: false
-                        } else {
-                            isIndependent
-                        }
+                        scheduleGroupId = finalScheduleGroupId,
+                        isIndependent = finalIsIndependent
                     )
+                    
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "✅ 최종 저장 데이터: scheduleGroupId=${newAutoRun.scheduleGroupId}, isIndependent=${newAutoRun.isIndependent}")
+                    
                     onSave(newAutoRun)
                 },
                 enabled = enabledDays.any { it.value }

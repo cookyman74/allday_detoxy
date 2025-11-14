@@ -173,9 +173,17 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     fun addAutoRun(autoRun: TimeBasedAutoRun) {
         viewModelScope.launch {
             try {
+                // 🐛 버그 수정: 디버깅 로그 추가
+                android.util.Log.d("TimeBasedAutoRunViewModel", "=== addAutoRun ===")
+                android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.id: ${autoRun.id}")
+                android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.scheduleGroupId: ${autoRun.scheduleGroupId}")
+                android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.isIndependent: ${autoRun.isIndependent}")
+                android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.isEnabled: ${autoRun.isEnabled}")
+                
                 repository.insert(autoRun)
                 if (autoRun.isEnabled) {
-                    alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                    val scheduled = alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                    android.util.Log.d("TimeBasedAutoRunViewModel", "알람 등록 결과: $scheduled")
                 }
                 
                 // Analytics 로깅
@@ -209,11 +217,19 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     fun updateAutoRun(autoRun: TimeBasedAutoRun) {
         viewModelScope.launch {
             try {
+                // 🐛 버그 수정: 디버깅 로그 추가
+                android.util.Log.d("TimeBasedAutoRunViewModel", "=== updateAutoRun ===")
+                android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.id: ${autoRun.id}")
+                android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.scheduleGroupId: ${autoRun.scheduleGroupId}")
+                android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.isIndependent: ${autoRun.isIndependent}")
+                android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.isEnabled: ${autoRun.isEnabled}")
+                
                 repository.update(autoRun)
                 // 알람 재등록
                 alarmManager.cancelTimeBasedAutoRun(autoRun.id)
                 if (autoRun.isEnabled) {
-                    alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                    val scheduled = alarmManager.scheduleTimeBasedAutoRun(autoRun)
+                    android.util.Log.d("TimeBasedAutoRunViewModel", "알람 등록 결과: $scheduled")
                 }
             } catch (e: Exception) {
                 _errorState.value = "자동 실행 수정 실패: ${e.message}"

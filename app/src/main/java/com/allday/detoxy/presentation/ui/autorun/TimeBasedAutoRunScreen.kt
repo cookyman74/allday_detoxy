@@ -70,8 +70,10 @@ fun TimeBasedAutoRunScreen(
     LaunchedEffect(scheduleGroupId, locations) {
         if (scheduleGroupId != null) {
             isLocationBasedState = locations.any { it.linkedScheduleGroupId == scheduleGroupId }
+            android.util.Log.d("TimeBasedAutoRunScreen", "위치기반 여부 확인: scheduleGroupId=$scheduleGroupId, isLocationBased=$isLocationBasedState, locations=${locations.map { "${it.label}:${it.linkedScheduleGroupId}" }}")
         } else {
             isLocationBasedState = false
+            android.util.Log.d("TimeBasedAutoRunScreen", "위치기반 여부 확인: scheduleGroupId=null, isLocationBased=false")
         }
     }
     
