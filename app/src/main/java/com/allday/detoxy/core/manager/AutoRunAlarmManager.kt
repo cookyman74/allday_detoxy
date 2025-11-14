@@ -10,6 +10,7 @@ import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.allday.detoxy.data.local.dao.ScheduleGroupDao
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
@@ -59,7 +60,8 @@ class AutoRunAlarmManager @Inject constructor(
     private val alarmManager: AlarmManager,
     private val workManager: WorkManager,
     private val autoRunSettingsRepository: AutoRunSettingsRepository,
-    private val userSettingsRepository: UserSettingsRepository
+    private val userSettingsRepository: UserSettingsRepository,
+    private val scheduleGroupDao: ScheduleGroupDao  // 🐛 버그 수정: 그룹 활성화 상태 확인용
 ) {
 
     companion object {
@@ -137,6 +139,18 @@ class AutoRunAlarmManager @Inject constructor(
         if (!masterEnabled) {
             Log.w(TAG, "⚠️ AutoRun master switch is OFF, skipping: ${autoRun.id}")
             return false
+        }
+
+        // 🐛 버그 수정: 위치기반 스케쥴인 경우 그룹 활성화 상태 확인
+        // scheduleGroupId가 있고 isIndependent=false인 경우, 그룹이 활성화되어 있을 때만 알람 등록
+        if (autoRun.scheduleGroupId != null && !autoRun.isIndependent) {
+            val scheduleGroup = runBlocking {
+                scheduleGroupDao.getByIdOnce(autoRun.scheduleGroupId)
+            }
+            if (scheduleGroup == null || !scheduleGroup.isActive) {
+                Log.w(TAG, "⏭️ Skipping alarm registration: ScheduleGroup not active (groupId: ${autoRun.scheduleGroupId}, isActive: ${scheduleGroup?.isActive ?: false})")
+                return false
+            }
         }
 
         // 다음 발생 시각 계산
