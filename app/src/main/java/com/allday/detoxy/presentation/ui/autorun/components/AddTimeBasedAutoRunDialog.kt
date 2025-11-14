@@ -202,14 +202,16 @@ fun AddTimeBasedAutoRunDialog(
                         isEnabled = existingAutoRun?.isEnabled ?: true,
                         createdAt = existingAutoRun?.createdAt ?: System.currentTimeMillis(),
                         // 🆕 3차 고도화: 시간표 연결 필드
-                        // 🐛 버그 수정: 위치기반 스케쥴인 경우 기존 scheduleGroupId 유지
-                        scheduleGroupId = if (isLocationBased && existingAutoRun != null) {
-                            existingAutoRun.scheduleGroupId
+                        // 🐛 버그 수정: 위치기반 스케쥴인 경우 scheduleGroupId와 isIndependent 강제 설정
+                        scheduleGroupId = if (isLocationBased) {
+                            // 위치기반 스케쥴인 경우: 기존 값이 있으면 유지, 없으면 initialScheduleGroupId 사용
+                            existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId
                         } else {
                             selectedScheduleGroupId
                         },
-                        isIndependent = if (isLocationBased && existingAutoRun != null) {
-                            existingAutoRun.isIndependent
+                        isIndependent = if (isLocationBased) {
+                            // 위치기반 스케쥴인 경우: 그룹에 종속되어야 하므로 false
+                            existingAutoRun?.isIndependent ?: false
                         } else {
                             isIndependent
                         }
