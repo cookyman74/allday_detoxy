@@ -30,6 +30,7 @@ import java.util.*
  * @param onSave 저장 버튼 클릭 콜백 (생성된 TimeBasedAutoRun 전달)
  * @param scheduleViewModel ScheduleGroupViewModel (3차 고도화: 시간표 연동)
  * @param initialScheduleGroupId 초기 스케줄 그룹 ID (특정 스케줄 그룹에 시간대 추가 시 사용)
+ * @param isLocationBased 위치기반 스케쥴 여부 (true인 경우 scheduleGroupId 변경 불가)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +39,8 @@ fun AddTimeBasedAutoRunDialog(
     onDismiss: () -> Unit,
     onSave: (TimeBasedAutoRun) -> Unit,
     scheduleViewModel: ScheduleGroupViewModel = hiltViewModel(),  // 🆕 3차 고도화
-    initialScheduleGroupId: String? = null  // 🆕 특정 스케줄 그룹에 시간대 추가 시 사용
+    initialScheduleGroupId: String? = null,  // 🆕 특정 스케줄 그룹에 시간대 추가 시 사용
+    isLocationBased: Boolean = false  // 🐛 버그 수정: 위치기반 스케쥴 여부
 ) {
     // 상태 관리
     var selectedHour by remember { mutableStateOf(existingAutoRun?.hour ?: 9) }
@@ -165,16 +167,23 @@ fun AddTimeBasedAutoRunDialog(
                     scheduleGroups = scheduleGroups,
                     selectedScheduleGroupId = selectedScheduleGroupId,
                     onScheduleGroupSelected = { groupId ->
-                        selectedScheduleGroupId = groupId
-                        isIndependent = groupId == null
+                        // 🐛 버그 수정: 위치기반 스케쥴인 경우 scheduleGroupId 변경 불가
+                        if (!isLocationBased) {
+                            selectedScheduleGroupId = groupId
+                            isIndependent = groupId == null
+                        }
                     },
                     isIndependent = isIndependent,
                     onIndependentChange = { independent ->
-                        isIndependent = independent
-                        if (independent) {
-                            selectedScheduleGroupId = null
+                        // 🐛 버그 수정: 위치기반 스케쥴인 경우 독립 실행 모드 변경 불가
+                        if (!isLocationBased) {
+                            isIndependent = independent
+                            if (independent) {
+                                selectedScheduleGroupId = null
+                            }
                         }
-                    }
+                    },
+                    isLocationBased = isLocationBased  // 🐛 버그 수정: 위치기반 여부 전달
                 )
             }
         },
@@ -193,8 +202,17 @@ fun AddTimeBasedAutoRunDialog(
                         isEnabled = existingAutoRun?.isEnabled ?: true,
                         createdAt = existingAutoRun?.createdAt ?: System.currentTimeMillis(),
                         // 🆕 3차 고도화: 시간표 연결 필드
-                        scheduleGroupId = selectedScheduleGroupId,
-                        isIndependent = isIndependent
+                        // 🐛 버그 수정: 위치기반 스케쥴인 경우 기존 scheduleGroupId 유지
+                        scheduleGroupId = if (isLocationBased && existingAutoRun != null) {
+                            existingAutoRun.scheduleGroupId
+                        } else {
+                            selectedScheduleGroupId
+                        },
+                        isIndependent = if (isLocationBased && existingAutoRun != null) {
+                            existingAutoRun.isIndependent
+                        } else {
+                            isIndependent
+                        }
                     )
                     onSave(newAutoRun)
                 },
@@ -525,12 +543,30 @@ private fun ScheduleLinkSection(
     selectedScheduleGroupId: String?,
     onScheduleGroupSelected: (String?) -> Unit,
     isIndependent: Boolean,
-    onIndependentChange: (Boolean) -> Unit
+    onIndependentChange: (Boolean) -> Unit,
+    isLocationBased: Boolean = false  // 🐛 버그 수정: 위치기반 여부
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // 🐛 버그 수정: 위치기반 스케쥴인 경우 안내 메시지 표시
+        if (isLocationBased) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Text(
+                    text = "📍 위치기반 스케쥴입니다. 시간표 연결은 변경할 수 없습니다.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
+        
         // 독립 실행 옵션
         Row(
             modifier = Modifier
@@ -538,7 +574,8 @@ private fun ScheduleLinkSection(
                 .toggleable(
                     value = isIndependent,
                     role = Role.Checkbox,
-                    onValueChange = onIndependentChange
+                    onValueChange = onIndependentChange,
+                    enabled = !isLocationBased  // 🐛 버그 수정: 위치기반인 경우 비활성화
                 ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -561,7 +598,7 @@ private fun ScheduleLinkSection(
             )
         }
         
-        // 시간표 목록 (독립 실행이 아닐 때만 표시)
+        // 시간표 목록 (독립 실행이 아닐 때만 표시, 위치기반이 아닐 때만 편집 가능)
         if (!isIndependent) {
             if (scheduleGroups.isEmpty()) {
                 Card(
@@ -592,10 +629,11 @@ private fun ScheduleLinkSection(
                                 value = group.id == selectedScheduleGroupId,
                                 role = Role.RadioButton,
                                 onValueChange = { selected ->
-                                    if (selected) {
+                                    if (selected && !isLocationBased) {  // 🐛 버그 수정: 위치기반인 경우 변경 불가
                                         onScheduleGroupSelected(group.id)
                                     }
-                                }
+                                },
+                                enabled = !isLocationBased  // 🐛 버그 수정: 위치기반인 경우 비활성화
                             ),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically

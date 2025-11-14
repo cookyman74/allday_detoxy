@@ -190,7 +190,7 @@ fun ScheduleGroupScreen(
                     showAddDialog = false
                 }
             },
-            initialMode = CreationMode.CUSTOM  // 기본: 커스텀 모드
+            initialMode = CreationMode.TEMPLATE  // 🐛 버그 수정: 위치기반 스케쥴 생성 시 템플릿이 기본값
         )
     }
     

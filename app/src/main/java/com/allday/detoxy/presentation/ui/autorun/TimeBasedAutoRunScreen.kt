@@ -61,6 +61,20 @@ fun TimeBasedAutoRunScreen(
     // 🆕 3차 고도화: 시간표 그룹 맵
     val scheduleGroupMap by viewModel.scheduleGroupMap.collectAsStateWithLifecycle()
     
+    // 🐛 버그 수정: 위치기반 스케쥴 여부 확인
+    val locationViewModel: com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel = hiltViewModel()
+    val locations by locationViewModel.locations.collectAsStateWithLifecycle()
+    var isLocationBasedState by remember(scheduleGroupId) { mutableStateOf(false) }
+    
+    // 🐛 버그 수정: 위치기반 여부 확인
+    LaunchedEffect(scheduleGroupId, locations) {
+        if (scheduleGroupId != null) {
+            isLocationBasedState = locations.any { it.linkedScheduleGroupId == scheduleGroupId }
+        } else {
+            isLocationBasedState = false
+        }
+    }
+    
     // 🆕 v0.10.1: 특정 스케줄 그룹의 시간대만 필터링
     val autoRuns = remember(allAutoRuns, scheduleGroupId) {
         if (scheduleGroupId != null) {
@@ -285,7 +299,8 @@ fun TimeBasedAutoRunScreen(
                     }
                 },
                 scheduleViewModel = scheduleGroupViewModel,
-                initialScheduleGroupId = scheduleGroupId  // 🆕 특정 스케줄 그룹 ID 전달
+                initialScheduleGroupId = scheduleGroupId,  // 🆕 특정 스케줄 그룹 ID 전달
+                isLocationBased = isLocationBasedState  // 🐛 버그 수정: 위치기반 여부 전달
             )
         } else {
             // 일반 화면: 위치 설정 + 시간표 생성 (ScheduleCreationDialog 사용)
@@ -350,7 +365,8 @@ fun TimeBasedAutoRunScreen(
             onSave = { updatedAutoRun ->
                 viewModel.updateAutoRun(updatedAutoRun)
                 editingAutoRun = null
-            }
+            },
+            isLocationBased = isLocationBasedState  // 🐛 버그 수정: 위치기반 여부 전달
         )
     }
 

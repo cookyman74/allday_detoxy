@@ -141,6 +141,10 @@ fun ScheduleCreationDialog(
                             Log.d("ScheduleCreationDialog", "📍 Location search step: selectedLocation=$selectedLocation")
                             if (selectedLocation != null) {
                                 Log.d("ScheduleCreationDialog", "→ Moving to SCHEDULE_SETUP step with location: ${selectedLocation!!.name}")
+                                // 🐛 버그 수정: 위치기반 스케쥴 생성 시 템플릿 모드로 자동 설정
+                                if (mode == CreationMode.CUSTOM) {
+                                    mode = CreationMode.TEMPLATE
+                                }
                                 currentStep = ScheduleCreationStep.SCHEDULE_SETUP
                             }
                         }

@@ -18,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -121,27 +122,56 @@ class FocusAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         try {
+            // ⚠️ 중요: super.onServiceConnected() 호출 전에 모든 초기화 완료
+            // 시스템이 서비스를 성공적으로 연결했다고 판단하도록 함
+            
+            Log.i(TAG, "🔄 AccessibilityService connecting...")
+            
+            // 🆕 Hilt 의존성 주입 (EntryPoint 사용) - 백그라운드에서 비동기 처리
+            // Hilt 초기화가 완료될 때까지 대기하여 EntryPoint 사용 가능하도록 함
+            serviceScope.launch {
+                try {
+                    // Hilt 초기화 대기 (최대 3초, 100ms 간격으로 재시도)
+                    var retryCount = 0
+                    val maxRetries = 30
+                    var injectionSuccess = false
+                    
+                    while (retryCount < maxRetries && !injectionSuccess) {
+                        try {
+                            val entryPoint = EntryPointAccessors.fromApplication(
+                                applicationContext,
+                                FocusAccessibilityServiceEntryPoint::class.java
+                            )
+                            repository = entryPoint.repository()
+                            Log.i(TAG, "✅ Repository injected successfully (retry: $retryCount)")
+                            injectionSuccess = true
+                        } catch (e: Exception) {
+                            retryCount++
+                            if (retryCount < maxRetries) {
+                                Log.d(TAG, "⏳ Waiting for Hilt initialization... (retry: $retryCount/$maxRetries)")
+                                delay(100) // 100ms 대기 후 재시도
+                            } else {
+                                Log.e(TAG, "❌ Failed to inject repository after $maxRetries retries: ${e.message}", e)
+                                // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Failed to inject repository: ${e.message}", e)
+                    // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
+                }
+            }
+            
+            // super.onServiceConnected() 호출 - 시스템에 서비스 연결 성공 알림
             super.onServiceConnected()
             Log.i(TAG, "✅ AccessibilityService connected")
-            
-            // 🆕 Hilt 의존성 주입 (EntryPoint 사용)
-            try {
-                val entryPoint = EntryPointAccessors.fromApplication(
-                    applicationContext,
-                    FocusAccessibilityServiceEntryPoint::class.java
-                )
-                repository = entryPoint.repository()
-                Log.i(TAG, "✅ Repository injected successfully")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ Failed to inject repository: ${e.message}", e)
-                // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
-            }
             
             // 서비스 상태 로깅
             Log.i(TAG, "📊 Service state: isTimerRunning=$isTimerRunning, categories=${enabledCategories.size}, otherApps=$otherAppsEnabled")
         } catch (e: Exception) {
             Log.e(TAG, "❌ CRITICAL: onServiceConnected failed: ${e.message}", e)
             // 서비스 연결 실패 시에도 크래시 방지
+            // super.onServiceConnected()는 예외 발생 시 호출하지 않음 (시스템이 자동으로 처리)
         }
     }
 
