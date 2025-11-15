@@ -279,7 +279,7 @@ fun AddLocationAutoRunDialog(
                             // 📋 템플릿으로 생성 (Phase 2)
                             @Suppress("UNCHECKED_CAST")
                             val template = data as com.allday.detoxy.domain.model.ScheduleTemplate
-                            scheduleViewModel.createFromTemplate(scheduleName, template)
+                            scheduleViewModel.createFromTemplate(scheduleName, template, isLocationBased = true)  // 🐛 버그 수정: 위치기반 스케쥴
                         }
                         com.allday.detoxy.domain.model.CreationMode.CUSTOM -> {
                             // ✏️ 커스텀 시간대로 생성
@@ -288,7 +288,8 @@ fun AddLocationAutoRunDialog(
                             scheduleViewModel.createScheduleGroupWithTimeSlots(
                                 name = scheduleName,
                                 description = null,
-                                timeSlots = timeSlots
+                                timeSlots = timeSlots,
+                                isLocationBased = true  // 🐛 버그 수정: 위치기반 스케쥴은 위치 진입 시 활성화
                             )
                         }
                     }

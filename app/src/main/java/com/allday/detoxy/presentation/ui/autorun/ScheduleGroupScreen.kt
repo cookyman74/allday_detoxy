@@ -135,30 +135,32 @@ fun ScheduleGroupScreen(
             onConfirm = { scheduleName, mode, timeSlots, template, locationInfo ->
                 scope.launch {
                     if (locationInfo == null) {
-                        // 어디서나 적용 (위치 없음)
+                        // 어디서나 적용 (위치 없음) - 즉시 활성화
                         when (mode) {
                             CreationMode.TEMPLATE -> {
-                                viewModel.createFromTemplate(scheduleName, template!!)
+                                viewModel.createFromTemplate(scheduleName, template!!, isLocationBased = false)
                             }
                             CreationMode.CUSTOM -> {
                                 viewModel.createScheduleGroupWithTimeSlots(
                                     name = scheduleName,
                                     description = null,
-                                    timeSlots = timeSlots
+                                    timeSlots = timeSlots,
+                                    isLocationBased = false  // 🐛 버그 수정: 일반 시간 스케쥴은 즉시 활성화
                                 )
                             }
                         }
                     } else {
-                        // 위치 기반 스케줄
+                        // 위치 기반 스케줄 - 위치 진입 시 활성화
                         val scheduleGroupId = when (mode) {
                             CreationMode.TEMPLATE -> {
-                                viewModel.createFromTemplate(scheduleName, template!!)
+                                viewModel.createFromTemplate(scheduleName, template!!, isLocationBased = true)
                             }
                             CreationMode.CUSTOM -> {
                                 viewModel.createScheduleGroupWithTimeSlots(
                                     name = scheduleName,
                                     description = null,
-                                    timeSlots = timeSlots
+                                    timeSlots = timeSlots,
+                                    isLocationBased = true  // 🐛 버그 수정: 위치기반 스케쥴은 위치 진입 시 활성화
                                 )
                             }
                         }

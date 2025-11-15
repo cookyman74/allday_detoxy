@@ -125,13 +125,14 @@ fun ScheduleTabScreen(
                                 Log.e("ScheduleTabScreen", "❌ ERROR: template is null but mode is TEMPLATE!")
                                 return@launch
                             }
-                            viewModel.createFromTemplate(scheduleName, template)
+                            viewModel.createFromTemplate(scheduleName, template, isLocationBased = true)  // 🐛 버그 수정: 위치기반 스케쥴
                         }
                         CreationMode.CUSTOM -> {
                             viewModel.createScheduleGroupWithTimeSlots(
                                 name = scheduleName,
                                 description = null,
-                                timeSlots = timeSlots
+                                timeSlots = timeSlots,
+                                isLocationBased = true  // 🐛 버그 수정: 위치기반 스케쥴은 위치 진입 시 활성화
                             )
                         }
                     }
@@ -348,13 +349,14 @@ fun ScheduleTabScreen(
                                         Log.e("ScheduleTabScreen", "❌ ERROR: template is null but mode is TEMPLATE!")
                                         return@launch
                                     }
-                                    viewModel.createFromTemplate(scheduleName, template)
+                                    viewModel.createFromTemplate(scheduleName, template, isLocationBased = false)  // 🐛 버그 수정: 일반 시간 스케쥴
                                 }
                                 CreationMode.CUSTOM -> {
                                     viewModel.createScheduleGroupWithTimeSlots(
                                         name = scheduleName,
                                         description = null,
-                                        timeSlots = timeSlots
+                                        timeSlots = timeSlots,
+                                        isLocationBased = false  // 🐛 버그 수정: 일반 시간 스케쥴은 즉시 활성화
                                     )
                                 }
                             }

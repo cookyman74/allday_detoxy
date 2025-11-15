@@ -365,13 +365,15 @@ class ScheduleGroupViewModel @Inject constructor(
      * @param name 시간표 이름
      * @param description 시간표 설명 (옵션)
      * @param timeSlots 시간대 목록
+     * @param isLocationBased 위치기반 스케쥴 여부 (true: 위치 진입 시 활성화, false: 즉시 활성화)
      * @return 생성된 ScheduleGroup의 ID
      * @throws IllegalArgumentException 이름이 비어있거나 시간대가 없을 때
      */
     suspend fun createScheduleGroupWithTimeSlots(
         name: String,
         description: String?,
-        timeSlots: List<TimeSlot>
+        timeSlots: List<TimeSlot>,
+        isLocationBased: Boolean = false  // 🐛 버그 수정: 위치기반 여부에 따라 초기 활성화 상태 결정
     ): String {
         if (name.isBlank()) {
             _errorState.value = "그룹 이름을 입력해주세요"
@@ -387,12 +389,13 @@ class ScheduleGroupViewModel @Inject constructor(
             _isLoading.value = true
             
             // 1. ScheduleGroup 생성
-            // 🐛 버그 수정: 위치기반 스케줄 그룹은 초기에 비활성화 상태로 생성
-            // 위치 진입 시 활성화되어야 함
+            // 🐛 버그 수정: 위치기반 여부에 따라 초기 활성화 상태 결정
+            // - 위치기반 스케줄: isActive = false (위치 진입 시 활성화)
+            // - 일반 시간 스케줄: isActive = true (즉시 활성화)
             val scheduleGroup = ScheduleGroup(
                 name = name.trim(),
                 description = description?.trim()?.takeIf { it.isNotEmpty() },
-                isActive = false  // 🐛 버그 수정: 위치기반 스케줄은 초기에 비활성화
+                isActive = !isLocationBased  // 🐛 버그 수정: 위치기반이면 false, 아니면 true
             )
             repository.insert(scheduleGroup)
             
@@ -439,12 +442,14 @@ class ScheduleGroupViewModel @Inject constructor(
      *
      * @param name 시간표 이름 (사용자 입력)
      * @param template 선택한 템플릿
+     * @param isLocationBased 위치기반 스케쥴 여부 (true: 위치 진입 시 활성화, false: 즉시 활성화)
      * @return 생성된 ScheduleGroup의 ID
      * @throws IllegalArgumentException 이름이 비어있거나 템플릿에 시간대가 없을 때
      */
     suspend fun createFromTemplate(
         name: String,
-        template: ScheduleTemplate
+        template: ScheduleTemplate,
+        isLocationBased: Boolean = false  // 🐛 버그 수정: 위치기반 여부에 따라 초기 활성화 상태 결정
     ): String {
         // 템플릿의 defaultDays를 각 TimeSlot의 enabledDays로 적용
         val timeSlotsWithDays = template.timeSlots.map { slot ->
@@ -454,7 +459,8 @@ class ScheduleGroupViewModel @Inject constructor(
         return createScheduleGroupWithTimeSlots(
             name = name,
             description = template.description,
-            timeSlots = timeSlotsWithDays
+            timeSlots = timeSlotsWithDays,
+            isLocationBased = isLocationBased  // 🐛 버그 수정: 위치기반 여부 전달
         )
     }
     
