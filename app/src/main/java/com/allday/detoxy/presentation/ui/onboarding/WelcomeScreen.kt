@@ -45,7 +45,7 @@ fun WelcomeScreen(
 
         // 앱 이름
         Text(
-            text = "Allday Detoxy",
+            text = "ScreenSence",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center

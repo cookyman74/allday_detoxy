@@ -35,7 +35,7 @@ fun AccessibilityPermissionDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Allday Detoxy가 정상적으로 작동하려면 접근성 서비스 권한이 필요합니다.",
+                    text = "ScreenSence가 정상적으로 작동하려면 접근성 서비스 권한이 필요합니다.",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -63,7 +63,7 @@ fun AccessibilityPermissionDialog(
                 }
 
                 Text(
-                    text = "설정 화면에서 'Allday Detoxy'를 찾아 활성화해 주세요.",
+                    text = "설정 화면에서 'ScreenSence'를 찾아 활성화해 주세요.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(top = 8.dp)

@@ -368,7 +368,7 @@ fun PermissionErrorDialog(
     val (title, message) = when (error) {
         is TimerViewModel.PermissionError.AccessibilityServiceDisabled -> {
             "앱 차단 기능 권한 필요" to "집중 타이머를 사용하려면 앱 차단 기능(접근성 서비스)을 활성화해야 합니다.\n\n" +
-                    "설정 화면에서 'Allday Detoxy'를 찾아 활성화해주세요."
+                    "설정 화면에서 'ScreenSence'를 찾아 활성화해주세요."
         }
         is TimerViewModel.PermissionError.OverlayPermissionDenied -> {
             "잠금 화면 표시 권한 필요" to "집중 타이머를 사용하려면 잠금 화면 표시 권한(다른 앱 위에 표시)이 필요합니다.\n\n" +

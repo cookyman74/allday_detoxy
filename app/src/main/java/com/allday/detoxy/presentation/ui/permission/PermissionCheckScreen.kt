@@ -91,7 +91,7 @@ fun PermissionCheckScreen(
         )
 
         Text(
-            text = "Allday Detoxy 시작하기",
+            text = "ScreenSence 시작하기",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
@@ -121,7 +121,7 @@ fun PermissionCheckScreen(
         // 접근성 서비스 권한
         PermissionCard(
             title = "앱 차단 기능",
-            description = "Instagram, TikTok, YouTube, Facebook 등의 앱을 차단하기 위해 필요합니다. 설정에서 'Allday Detoxy'를 찾아 활성화해주세요.",
+            description = "Instagram, TikTok, YouTube, Facebook 등의 앱을 차단하기 위해 필요합니다. 설정에서 'ScreenSence'를 찾아 활성화해주세요.",
             icon = Icons.Default.Info,
             isGranted = accessibilityGranted,
             isRequired = true,
