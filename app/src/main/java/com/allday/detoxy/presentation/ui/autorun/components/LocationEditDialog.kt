@@ -54,8 +54,11 @@ fun LocationEditDialog(
     LaunchedEffect(location.id) {
         Log.d("LocationEditDialog", "=== 🔍 Initial Values ===")
         Log.d("LocationEditDialog", "location.id: ${location.id}")
+        Log.d("LocationEditDialog", "location.isEnabled: ${location.isEnabled}")
+        Log.d("LocationEditDialog", "location.linkedScheduleGroupId: ${location.linkedScheduleGroupId}")
         Log.d("LocationEditDialog", "location.activateScheduleOnEnter: ${location.activateScheduleOnEnter}")
         Log.d("LocationEditDialog", "location.deactivateScheduleOnExit: ${location.deactivateScheduleOnExit}")
+        Log.d("LocationEditDialog", "isEnabled (UI state): $isEnabled")
         Log.d("LocationEditDialog", "activateOnEnter (UI state): $activateOnEnter")
         Log.d("LocationEditDialog", "deactivateOnExit (UI state): $deactivateOnExit")
     }
@@ -201,7 +204,10 @@ fun LocationEditDialog(
                     }
                     Switch(
                         checked = isEnabled,
-                        onCheckedChange = { isEnabled = it }
+                        onCheckedChange = { newValue ->
+                            Log.d("LocationEditDialog", "🔄 위치 기반 자동 실행 스위치 변경: $isEnabled → $newValue")
+                            isEnabled = newValue
+                        }
                     )
                 }
                 
