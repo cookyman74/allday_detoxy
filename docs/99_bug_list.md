@@ -19,3 +19,14 @@
   - 수정: `isLocationBased` 파라미터를 추가하여 위치기반 여부에 따라 초기 활성화 상태를 구분
     - 위치기반 스케쥴: `isActive = false` (위치 진입 시 활성화)
     - 일반 시간 스케쥴: `isActive = true` (즉시 활성화)
+
+## [2025-11-18] bug list
+- [x] 위치기반 스케쥴 등록 오류 
+  - 관련 수정: [버그 1](../working_history/2025-11-18_fixed_bugs_01.md#1-위치기반-스케줄-등록-시-자동-활성화-설정-비활성화-문제)
+  - 문제: 자동 활성화 설정 부분이 활성화되지 않음, 수정 기능을 통해서도 활성화 후 저장해도 해당 정보가 저장되지 않음
+  - 원인: 
+    - 자동 활성화 설정 스위치의 `enabled` 속성이 `isEnabled`에 의존하여 Geofence 실패 시 비활성화됨
+    - Geofence 실패 시 `activateScheduleOnEnter`와 `deactivateScheduleOnExit`를 강제로 `false`로 설정하여 사용자 설정이 무시됨
+  - 수정:
+    - 스위치의 `enabled` 조건을 `isEnabled`에서 `linkedScheduleGroupId != null`로 변경
+    - Geofence 실패 시에도 사용자 설정값 유지 (나중에 Geofence 등록되면 작동할 수 있도록)

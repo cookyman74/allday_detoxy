@@ -226,7 +226,7 @@ fun LocationEditDialog(
                     Switch(
                         checked = activateOnEnter,
                         onCheckedChange = { activateOnEnter = it },
-                        enabled = isEnabled
+                        enabled = location.linkedScheduleGroupId != null  // 🐛 버그 수정: linkedScheduleGroupId가 있을 때만 활성화
                     )
                 }
                 
@@ -251,7 +251,7 @@ fun LocationEditDialog(
                     Switch(
                         checked = deactivateOnExit,
                         onCheckedChange = { deactivateOnExit = it },
-                        enabled = isEnabled
+                        enabled = location.linkedScheduleGroupId != null  // 🐛 버그 수정: linkedScheduleGroupId가 있을 때만 활성화
                     )
                 }
             }

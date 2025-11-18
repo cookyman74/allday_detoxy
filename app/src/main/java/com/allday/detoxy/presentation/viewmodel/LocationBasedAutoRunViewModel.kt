@@ -204,15 +204,16 @@ class LocationBasedAutoRunViewModel @Inject constructor(
                         exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
                     )
                     
-                    // 🆕 Geofence 실패해도 DB에는 저장 (비활성화 상태로)
+                    // 🐛 버그 수정: Geofence 실패해도 DB에는 저장 (비활성화 상태로, 사용자 설정은 유지)
                     Log.w(TAG, "⚠️ Saving to DB with isEnabled=false due to Geofence failure")
                     val disabledLocation = location.copy(
-                        isEnabled = false,
-                        activateScheduleOnEnter = false,  // Geofence 없으면 의미 없음
-                        deactivateScheduleOnExit = false  // Geofence 없으면 의미 없음
+                        isEnabled = false
+                        // 🐛 버그 수정: activateScheduleOnEnter와 deactivateScheduleOnExit는 사용자 설정 유지
+                        // 나중에 Geofence가 등록되면 작동할 수 있도록 설정값 보존
                     )
                     repository.insert(disabledLocation)
                     Log.d(TAG, "✅ Location saved to DB (disabled): ${disabledLocation.id}")
+                    Log.d(TAG, "   activateScheduleOnEnter=${disabledLocation.activateScheduleOnEnter}, deactivateScheduleOnExit=${disabledLocation.deactivateScheduleOnExit}")
                     return
                 }
                 Log.d(TAG, "✅ Geofence registered successfully")
@@ -291,15 +292,16 @@ class LocationBasedAutoRunViewModel @Inject constructor(
                         exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
                     )
                     
-                    // 🆕 Geofence 실패해도 DB에는 업데이트 (비활성화 상태로)
+                    // 🐛 버그 수정: Geofence 실패해도 DB에는 업데이트 (비활성화 상태로, 사용자 설정은 유지)
                     Log.w(TAG, "⚠️ Updating DB with isEnabled=false due to Geofence failure")
                     val disabledLocation = location.copy(
-                        isEnabled = false,
-                        activateScheduleOnEnter = false,
-                        deactivateScheduleOnExit = false
+                        isEnabled = false
+                        // 🐛 버그 수정: activateScheduleOnEnter와 deactivateScheduleOnExit는 사용자 설정 유지
+                        // 나중에 Geofence가 등록되면 작동할 수 있도록 설정값 보존
                     )
                     repository.update(disabledLocation)
                     Log.d(TAG, "✅ Location updated in DB (disabled): ${disabledLocation.id}")
+                    Log.d(TAG, "   activateScheduleOnEnter=${disabledLocation.activateScheduleOnEnter}, deactivateScheduleOnExit=${disabledLocation.deactivateScheduleOnExit}")
                     return
                 }
                 Log.d(TAG, "✅ Geofence registered successfully")
