@@ -23,7 +23,6 @@ import kotlinx.coroutines.*
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
-import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * 오버레이 잠금 화면 서비스
@@ -32,7 +31,6 @@ import dagger.hilt.android.AndroidEntryPoint
  * 포그라운드 서비스로 실행되어 시스템에 의한 종료를 방지합니다.
  * XML 레이아웃과 TextView를 사용하여 안정적인 UI 업데이트 제공
  */
-@AndroidEntryPoint
 class LockOverlayService : LifecycleService() {
 
     companion object {

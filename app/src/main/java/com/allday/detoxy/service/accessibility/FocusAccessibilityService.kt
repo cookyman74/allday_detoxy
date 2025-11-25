@@ -131,9 +131,9 @@ class FocusAccessibilityService : AccessibilityService() {
             // Hilt 초기화가 완료될 때까지 대기하여 EntryPoint 사용 가능하도록 함
             serviceScope.launch {
                 try {
-                    // Hilt 초기화 대기 (최대 3초, 100ms 간격으로 재시도)
+                    // Hilt 초기화 대기 (최대 5초, 100ms 간격으로 재시도)
                     var retryCount = 0
-                    val maxRetries = 30
+                    val maxRetries = 50
                     var injectionSuccess = false
                     
                     while (retryCount < maxRetries && !injectionSuccess) {
@@ -145,7 +145,7 @@ class FocusAccessibilityService : AccessibilityService() {
                             repository = entryPoint.repository()
                             Log.i(TAG, "✅ Repository injected successfully (retry: $retryCount)")
                             injectionSuccess = true
-                        } catch (e: Exception) {
+                        } catch (e: Throwable) {
                             retryCount++
                             if (retryCount < maxRetries) {
                                 Log.d(TAG, "⏳ Waiting for Hilt initialization... (retry: $retryCount/$maxRetries)")
@@ -156,7 +156,7 @@ class FocusAccessibilityService : AccessibilityService() {
                             }
                         }
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     Log.e(TAG, "❌ Failed to inject repository: ${e.message}", e)
                     // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
                 }
@@ -168,7 +168,7 @@ class FocusAccessibilityService : AccessibilityService() {
             
             // 서비스 상태 로깅
             Log.i(TAG, "📊 Service state: isTimerRunning=$isTimerRunning, categories=${enabledCategories.size}, otherApps=$otherAppsEnabled")
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e(TAG, "❌ CRITICAL: onServiceConnected failed: ${e.message}", e)
             // 서비스 연결 실패 시에도 크래시 방지
             // super.onServiceConnected()는 예외 발생 시 호출하지 않음 (시스템이 자동으로 처리)
