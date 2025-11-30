@@ -61,11 +61,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             DetoxyTheme {
-                MainScreen()
+                MainScreen(timerViewModel = timerViewModel)
             }
         }
     }
-
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)  // Update the intent
@@ -84,13 +83,48 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen() {
+fun MainScreen(timerViewModel: TimerViewModel) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     
     // 온보딩 상태 관리
     var showOnboarding by remember { mutableStateOf(!preferenceManager.isOnboardingCompleted()) }
     var showPermissionCheck by remember { mutableStateOf(false) }
+
+    // 🆕 타이머 실행 중 백버튼 처리
+    val timerState by timerViewModel.timerState.collectAsState()
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    // 타이머가 실행 중일 때만 백버튼 가로채기
+    BackHandler(enabled = timerState == com.allday.detoxy.domain.model.FocusState.RUNNING) {
+        showExitDialog = true
+    }
+
+    if (showExitDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("집중 모드 실행 중") },
+            text = { Text("타이머가 실행 중입니다. 앱을 종료하시겠습니까? (타이머는 백그라운드에서 계속 실행됩니다)") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        // 앱을 백그라운드로 이동
+                        (context as? android.app.Activity)?.moveTaskToBack(true)
+                    }
+                ) {
+                    Text("백그라운드 실행")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = { showExitDialog = false }
+                ) {
+                    Text("취소")
+                }
+            }
+        )
+    }
 
     when {
         // 1. 온보딩 미완료 -> 환영 화면

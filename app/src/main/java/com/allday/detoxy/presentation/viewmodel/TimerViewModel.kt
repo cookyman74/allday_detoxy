@@ -400,10 +400,10 @@ class TimerViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         
-        // ViewModel 종료 시 타이머도 중지
-        if (timerState.value == FocusState.RUNNING) {
-            resetTimer()
-        }
+        // ViewModel 종료 시 타이머도 중지 -> 🔥 제거: 백그라운드 실행 유지를 위해 주석 처리
+        // if (timerState.value == FocusState.RUNNING) {
+        //     resetTimer()
+        // }
         
         Log.d(TAG, "✅ TimerViewModel cleared")
     }
