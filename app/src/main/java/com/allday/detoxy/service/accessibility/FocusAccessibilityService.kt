@@ -178,7 +178,6 @@ class FocusAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         try {
             if (event == null) {
-                Log.d(TAG, "Received null event")
                 return
             }
 
@@ -189,22 +188,17 @@ class FocusAccessibilityService : AccessibilityService() {
 
             // 타이머 실행 상태 확인 (상세 로그)
             if (!isTimerRunning) {
-                Log.d(TAG, "⏸️ Timer not running - Ignoring $packageName")
                 return
             }
-
-            Log.d(TAG, "🔍 Checking app: $packageName (Timer: RUNNING, Categories: ${enabledCategories.size}, OtherApps: $otherAppsEnabled)")
 
             // 디톡시 제어 설정 기반 차단 여부 확인
             if (isAppBlocked(packageName)) {
                 val category = AppCategoryMapper.getCategoryByPackage(packageName)
                 Log.w(TAG, "⚠️ BLOCKED APP DETECTED: $packageName (Category: ${category?.getDisplayName() ?: "OTHER"})")
                 handleBlockedApp(packageName, category)
-            } else {
-                Log.d(TAG, "✅ App allowed: $packageName")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error in onAccessibilityEvent: ${e.message}", e)
+        } catch (e: Throwable) {
+            Log.e(TAG, "❌ Error in onAccessibilityEvent: ${e.message}")
             // 예외 발생 시에도 서비스가 크래시되지 않도록 처리
         }
     }
@@ -322,5 +316,10 @@ class FocusAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error in onDestroy: ${e.message}", e)
         }
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        Log.i(TAG, "🔌 AccessibilityService unbind")
+        return super.onUnbind(intent)
     }
 }
