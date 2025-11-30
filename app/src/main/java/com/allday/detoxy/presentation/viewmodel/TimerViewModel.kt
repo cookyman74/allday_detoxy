@@ -113,6 +113,10 @@ class TimerViewModel @Inject constructor(
         object OverlayPermissionDenied : PermissionError()
     }
 
+    // 🆕 성공 애니메이션 표시 상태 (init 블록보다 먼저 선언되어야 함)
+    private val _showSuccessAnimation = MutableStateFlow(false)
+    val showSuccessAnimation: StateFlow<Boolean> = _showSuccessAnimation.asStateFlow()
+
     init {
         // 사용자 설정 초기화 (최초 실행 시)
         viewModelScope.launch {
@@ -164,7 +168,6 @@ class TimerViewModel @Inject constructor(
         }
 
         // 🆕 FocusTimerService의 currentSessionId를 관찰하여 동기화
-        // (자동 실행으로 시작된 타이머의 경우 TimerViewModel.currentSessionId가 설정되지 않으므로)
         viewModelScope.launch {
             FocusTimerService.currentSessionId.collect { serviceSessionId ->
                 if (serviceSessionId != null && currentSessionId != serviceSessionId) {
@@ -173,8 +176,32 @@ class TimerViewModel @Inject constructor(
                 }
             }
         }
+
+        // 🆕 앱 실행 시 성공 애니메이션 대기 상태 확인 (v0.10.2)
+        checkPendingSuccessAnimation()
         
         Log.d(TAG, "✅ TimerViewModel initialized with StateFlow observation")
+    }
+
+    /**
+     * 성공 애니메이션 대기 상태 확인
+     */
+    fun checkPendingSuccessAnimation() {
+        val preferenceManager = com.allday.detoxy.core.utils.PreferenceManager(application)
+        if (preferenceManager.hasPendingSuccessAnimation()) {
+            Log.d(TAG, "🎉 Pending success animation detected!")
+            _showSuccessAnimation.value = true
+        }
+    }
+
+    /**
+     * 성공 애니메이션 표시 완료 처리
+     */
+    fun onSuccessAnimationShown() {
+        Log.d(TAG, "✅ Success animation shown, clearing flag")
+        val preferenceManager = com.allday.detoxy.core.utils.PreferenceManager(application)
+        preferenceManager.setPendingSuccessAnimation(false)
+        _showSuccessAnimation.value = false
     }
 
     /**

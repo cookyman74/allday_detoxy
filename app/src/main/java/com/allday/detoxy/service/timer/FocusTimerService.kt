@@ -18,6 +18,7 @@ import com.allday.detoxy.core.utils.AppCategoryMapper
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
+import com.allday.detoxy.service.overlay.LockOverlayService // 🆕 추가
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +54,10 @@ class FocusTimerService : Service() {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "focus_timer_channel"
         private const val CHANNEL_NAME = "집중 모드 타이머"
+        
+        // 🆕 성공 알림 전용 채널 (높은 중요도)
+        private const val SUCCESS_CHANNEL_ID = "focus_success_channel"
+        private const val SUCCESS_CHANNEL_NAME = "집중 성공 알림"
 
         const val ACTION_START = "com.allday.detoxy.ACTION_START" // 🆕 간소화된 ACTION
         const val ACTION_START_TIMER = "com.allday.detoxy.ACTION_START_TIMER"
@@ -379,6 +384,15 @@ class FocusTimerService : Service() {
                     Log.d(TAG, "Timer finished successfully")
                     _state.value = FocusState.FINISHED
                     
+                    // 🆕 성공 피드백 수정 (v0.10.2)
+                    // 1. 오버레이 애니메이션 제거 (조용히 사라짐)
+                    // 2. 성공 상태 저장 (앱 실행 시 축하 애니메이션 표시용)
+                    val preferenceManager = com.allday.detoxy.core.utils.PreferenceManager(applicationContext)
+                    preferenceManager.setPendingSuccessAnimation(true)
+                    
+                    // 3. 알림 발송 (시스템 트레이에 남음)
+                    showSuccessNotification()
+                    
                     // 타이머 완료 브로드캐스트 (ViewModel이 세션 종료 처리)
                     sendTimerFinishedBroadcast(success = true)
                     
@@ -464,7 +478,10 @@ class FocusTimerService : Service() {
      */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            
+            // 타이머 실행 중 채널 (낮은 중요도)
+            val timerChannel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_LOW
@@ -472,9 +489,19 @@ class FocusTimerService : Service() {
                 description = "집중 모드 타이머 실행 중"
                 setShowBadge(false)
             }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager?.createNotificationChannel(channel)
+            notificationManager?.createNotificationChannel(timerChannel)
+            
+            // 🆕 성공 알림 채널 (높은 중요도)
+            val successChannel = NotificationChannel(
+                SUCCESS_CHANNEL_ID,
+                SUCCESS_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "집중 모드 성공 알림"
+                setShowBadge(true)
+                enableVibration(true)
+            }
+            notificationManager?.createNotificationChannel(successChannel)
         }
     }
 
@@ -530,6 +557,43 @@ class FocusTimerService : Service() {
             .setContentIntent(pendingIntent)
             .setOngoing(true) // 스와이프로 제거 불가
             .build()
+    }
+
+    /**
+     * 성공 알림 표시
+     */
+    private fun showSuccessNotification() {
+        Log.d(TAG, "🎉 Showing success notification")
+        
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        val notificationIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            notificationIntent,
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, SUCCESS_CHANNEL_ID) // 🔥 성공 전용 채널 사용
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+        }
+
+        val notification = builder
+            .setContentTitle("🎉 집중 성공!")
+            .setContentText("목표를 달성했습니다. 축하합니다!")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+            
+        notificationManager.notify(NOTIFICATION_ID + 1, notification) // 기존 알림과 별도 ID 사용
+        Log.d(TAG, "✅ Success notification sent (ID: ${NOTIFICATION_ID + 1})")
     }
 
     /**

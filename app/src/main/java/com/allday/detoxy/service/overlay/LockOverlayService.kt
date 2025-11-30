@@ -133,6 +133,7 @@ class LockOverlayService : LifecycleService() {
                 Log.d(TAG, "📍 ACTION_SHOW_OVERLAY received - remainingSeconds: $remainingSeconds, totalSeconds: $totalSeconds")
                 showOverlay(remainingSeconds, totalSeconds)
             }
+            // ACTION_SHOW_SUCCESS 제거됨 (v0.10.2: 오버레이 애니메이션 삭제)
             ACTION_HIDE_OVERLAY -> {
                 Log.d(TAG, "📍 ACTION_HIDE_OVERLAY received")
                 hideOverlay()

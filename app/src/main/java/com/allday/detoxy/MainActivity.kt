@@ -56,6 +56,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // 🆕 알림 권한 요청 (Android 13+)
+        requestNotificationPermissionIfNeeded()
+
         // 타이머 포기로 돌아온 경우 처리
         handleTimerGiveUp(intent)
 
@@ -65,6 +68,51 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    /**
+     * 알림 권한 요청 (Android 13+)
+     */
+    private fun requestNotificationPermissionIfNeeded() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (!com.allday.detoxy.core.utils.PermissionUtils.hasNotificationPermission(this)) {
+                Log.d("MainActivity", "Requesting POST_NOTIFICATIONS permission")
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_CODE_POST_NOTIFICATIONS
+                )
+            } else {
+                Log.d("MainActivity", "POST_NOTIFICATIONS permission already granted")
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            REQUEST_CODE_POST_NOTIFICATIONS -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    Log.d("MainActivity", "✅ POST_NOTIFICATIONS permission granted")
+                } else {
+                    Log.w("MainActivity", "❌ POST_NOTIFICATIONS permission denied")
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val REQUEST_CODE_POST_NOTIFICATIONS = 1001
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 🆕 앱이 포그라운드로 돌아올 때 성공 애니메이션 대기 상태 확인
+        timerViewModel.checkPendingSuccessAnimation()
+    }
+
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         setIntent(intent)  // Update the intent

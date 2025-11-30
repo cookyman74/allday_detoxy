@@ -15,6 +15,21 @@ class PreferenceManager(context: Context) {
         private const val PREF_NAME = "app_prefs"
         private const val KEY_FIRST_LAUNCH = "is_first_launch"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+        private const val KEY_PENDING_SUCCESS_ANIMATION = "pending_success_animation" // 🆕 성공 애니메이션 대기 플래그
+    }
+
+    /**
+     * 성공 애니메이션 대기 상태 확인
+     */
+    fun hasPendingSuccessAnimation(): Boolean {
+        return prefs.getBoolean(KEY_PENDING_SUCCESS_ANIMATION, false)
+    }
+
+    /**
+     * 성공 애니메이션 대기 상태 설정
+     */
+    fun setPendingSuccessAnimation(pending: Boolean) {
+        prefs.edit().putBoolean(KEY_PENDING_SUCCESS_ANIMATION, pending).apply()
     }
 
     /**

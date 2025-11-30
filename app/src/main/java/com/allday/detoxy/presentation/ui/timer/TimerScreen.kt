@@ -43,6 +43,7 @@ fun TimerScreen(
     val permissionError by viewModel.permissionError.collectAsState()
     val nextAutoRunInfo by viewModel.nextAutoRunInfo.collectAsState()
     val customPresets by viewModel.customPresets.collectAsState()
+    val showSuccessAnimation by viewModel.showSuccessAnimation.collectAsState() // 🆕 성공 애니메이션
     
     // 도넛 그래프 선택 시간
     var selectedMinutes by remember { mutableStateOf(25) }
@@ -53,6 +54,13 @@ fun TimerScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showPresetSheet by remember { mutableStateOf(false) }
     var selectedPreset by remember { mutableStateOf<com.allday.detoxy.data.local.entity.CustomTimerPreset?>(null) }
+    
+    // 🆕 성공 축하 다이얼로그
+    if (showSuccessAnimation) {
+        SuccessCelebrationDialog(
+            onDismiss = { viewModel.onSuccessAnimationShown() }
+        )
+    }
     
     // 권한 에러 다이얼로그
     permissionError?.let { error ->
@@ -350,6 +358,49 @@ fun CircularTimerDisplay(
             color = MaterialTheme.colorScheme.onSurface
         )
     }
+}
+
+/**
+ * 성공 축하 다이얼로그
+ *
+ * @param onDismiss 다이얼로그 닫기 콜백
+ */
+@Composable
+fun SuccessCelebrationDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "🎉 집중 성공!",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "목표를 달성했습니다!",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "집중 시간을 성공적으로 완료했어요.\n계속해서 좋은 습관을 만들어가세요!",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("확인")
+            }
+        }
+    )
 }
 
 /**
