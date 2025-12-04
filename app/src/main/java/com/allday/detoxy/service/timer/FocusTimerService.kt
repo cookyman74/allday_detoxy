@@ -382,7 +382,6 @@ class FocusTimerService : Service() {
                 // 정상 완료
                 if (_state.value == FocusState.RUNNING && _remainingSeconds.value == 0) {
                     Log.d(TAG, "Timer finished successfully")
-                    _state.value = FocusState.FINISHED
                     
                     // 🆕 성공 피드백 수정 (v0.10.2)
                     // 1. 오버레이 애니메이션 제거 (조용히 사라짐)
@@ -393,12 +392,11 @@ class FocusTimerService : Service() {
                     // 3. 알림 발송 (시스템 트레이에 남음)
                     showSuccessNotification()
                     
-                    // 타이머 완료 브로드캐스트 (ViewModel이 세션 종료 처리)
-                    sendTimerFinishedBroadcast(success = true)
-                    
-                    // 브로드캐스트가 전달될 시간을 주기 위해 지연 후 Service 종료
-                    delay(500)
-                    stopSelf()
+                    // 🔥 버그 수정: 정상 완료 시에도 stopTimerInternal 호출
+                    // - 접근성 서비스 비활성화
+                    // - 세션 ID 유지 (onTimerFinish에서 사용하기 위해)
+                    // - 브로드캐스트 전송 및 서비스 종료
+                    stopTimerInternal(success = true)
                 }
             } catch (e: CancellationException) {
                 Log.d(TAG, "Timer job cancelled")
@@ -449,15 +447,17 @@ class FocusTimerService : Service() {
             sendTimerFinishedBroadcast(success)
         }
 
-        // 상태 초기화
+        // 🔥 버그 수정: StateFlow가 업데이트되고 onTimerFinish가 호출될 시간을 주기 위해
+        // 세션 ID를 null로 설정하기 전에 지연
+        // 상태 초기화 (세션 ID는 나중에 null로 설정)
         _remainingSeconds.value = 0
-        _currentSessionId.value = null
         _currentAutoRunId.value = null         // 🆕 v0.10.1
         _currentScheduleGroupId.value = null   // 🆕 v0.10.1
 
-        // 브로드캐스트가 전달될 시간을 주기 위해 지연 후 Service 종료
+        // 브로드캐스트가 전달되고 StateFlow가 업데이트될 시간을 주기 위해 지연 후 세션 ID 초기화 및 Service 종료
         serviceScope?.launch {
-            delay(500)
+            delay(1000) // StateFlow 업데이트 및 onTimerFinish 호출 대기 시간 증가
+            _currentSessionId.value = null
             stopSelf()
         }
     }

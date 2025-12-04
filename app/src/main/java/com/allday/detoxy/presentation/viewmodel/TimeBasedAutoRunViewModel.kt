@@ -311,6 +311,17 @@ class TimeBasedAutoRunViewModel @Inject constructor(
         _errorState.value = null
     }
 
+    /**
+     * 정확 알람 권한 상태 갱신
+     * 
+     * 화면이 포그라운드로 돌아올 때 권한 상태를 다시 확인합니다.
+     * 권한 설정 화면에서 돌아온 경우 권한 상태가 변경되었을 수 있으므로
+     * 이 메서드를 호출하여 StateFlow를 업데이트합니다.
+     */
+    fun refreshExactAlarmPermission() {
+        alarmManager.canScheduleExactAlarms()
+    }
+
     // ==================== 글로벌 옵션 저장 ====================
 
     /**

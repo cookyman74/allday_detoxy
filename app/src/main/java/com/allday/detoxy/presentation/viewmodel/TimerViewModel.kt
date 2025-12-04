@@ -353,7 +353,7 @@ class TimerViewModel @Inject constructor(
         FocusAccessibilityService.totalSeconds = 0
         FocusAccessibilityService.currentSessionId = null
         Log.d(TAG, "✅ AccessibilityService state cleared")
-
+        
         // 3. DND 모드 비활성화
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             dndManager.disableDnd()
@@ -396,7 +396,48 @@ class TimerViewModel @Inject constructor(
                 currentSessionId = null
                 Log.d(TAG, "✅ Timer finish processing completed")
             }
-        } ?: Log.w(TAG, "⚠️ sessionId is null, cannot end session. currentSessionId=$currentSessionId, FocusTimerService.currentSessionId=${FocusTimerService.currentSessionId.value}")
+        } ?: run {
+            // 🔥 버그 수정: sessionId가 null인 경우 최근 세션을 찾아서 처리
+            Log.w(TAG, "⚠️ sessionId is null, trying to find recent session from database")
+            viewModelScope.launch {
+                try {
+                    // 최근 5분 내에 시작된 세션 중 endTime이 null인 세션 찾기
+                    val now = System.currentTimeMillis()
+                    val fiveMinutesAgo = now - (5 * 60 * 1000)
+                    val recentSessions = repository.getSessionsInRange(fiveMinutesAgo, now)
+                    val activeSession = recentSessions.firstOrNull { it.endTime == null }
+                    
+                    if (activeSession != null) {
+                        Log.i(TAG, "✅ Found active session: sessionId=${activeSession.id}, duration=${activeSession.durationMinutes}min")
+                        // 세션 종료
+                        repository.endSession(
+                            sessionId = activeSession.id,
+                            success = success,
+                            endTime = now
+                        )
+                        Log.d(TAG, "✅ Session ended (fallback): sessionId=${activeSession.id}, success=$success")
+                        
+                        // 성공 시 포인트 지급 및 스트릭 업데이트
+                        if (success) {
+                            val settings = repository.getSettings().first()
+                            settings?.let {
+                                val points = gamificationManager.calculatePoints(activeSession.durationMinutes)
+                                repository.addPoints(points)
+                                Log.d(TAG, "✅ Points added (fallback): $points")
+                                
+                                val updatedSettings = gamificationManager.updateStreak(it, success)
+                                repository.updateStreak(updatedSettings.currentStreak, updatedSettings.lastSuccessDate ?: "")
+                                Log.d(TAG, "✅ Streak updated (fallback): ${updatedSettings.currentStreak}")
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "❌ No active session found in recent 5 minutes. Cannot end session.")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Failed to find and end session (fallback): ${e.message}", e)
+                }
+            }
+        }
     }
 
     /**

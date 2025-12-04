@@ -15,9 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.core.utils.ExactAlarmPermissionUtil
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
@@ -65,6 +68,23 @@ fun TimeBasedAutoRunScreen(
     val locationViewModel: com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel = hiltViewModel()
     val locations by locationViewModel.locations.collectAsStateWithLifecycle()
     var isLocationBasedState by remember(scheduleGroupId) { mutableStateOf(false) }
+    
+    // 🔥 버그 수정: 화면 재진입 시 정확 알람 권한 상태 갱신
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                // 권한 설정 화면에서 돌아올 때 권한 상태 다시 확인
+                viewModel.refreshExactAlarmPermission()
+            }
+        }
+        
+        lifecycleOwner.lifecycle.addObserver(observer)
+        
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     
     // 🐛 버그 수정: 위치기반 여부 확인
     LaunchedEffect(scheduleGroupId, locations) {
