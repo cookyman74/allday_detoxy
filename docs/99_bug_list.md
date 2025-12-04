@@ -30,3 +30,24 @@
   - 수정:
     - 스위치의 `enabled` 조건을 `isEnabled`에서 `linkedScheduleGroupId != null`로 변경
     - Geofence 실패 시에도 사용자 설정값 유지 (나중에 Geofence 등록되면 작동할 수 있도록)
+
+## [2025-12-04] bug list
+- [x] 스케쥴에 따라 실행된 집중모드가 실패로 잡힘, 실제로는 성공하였음. 
+  - 관련 수정: [버그 수정](../working_history/2025-12-04_fix_session_success_failure_bug.md)
+  - 주요 수정 사항:
+    - 정상 완료 시 `stopTimerInternal` 호출 추가 (접근성 서비스 비활성화)
+    - 세션 ID null 설정 타이밍 개선 (StateFlow 업데이트 대기 시간 증가)
+    - `onTimerFinish`에서 세션 ID null 처리 fallback 로직 추가
+- [x] 이에 따라 접근성 오류가 발생된 것으로 추정
+  - 관련 수정: [버그 수정](../working_history/2025-12-04_fix_session_success_failure_bug.md)
+  - 원인: 정상 완료 시 `stopTimerInternal`을 호출하지 않아 접근성 서비스가 비활성화되지 않음
+  - 수정: 정상 완료 시에도 `stopTimerInternal` 호출하여 접근성 서비스 비활성화 
+- [x] 알림 설정 권한 설정하기 오류 : 설정을 완료하고 다시 앱으로 돌아와도 업데이트가 화면이 갱신이 안되어 있다.
+  - 관련 수정: [버그 수정](../working_history/2025-12-04_fix_exact_alarm_permission_refresh.md)
+  - 주요 수정 사항:
+    - `TimeBasedAutoRunScreen`에 `DisposableEffect`와 `LifecycleEventObserver` 추가하여 화면 재진입 시 권한 상태 갱신
+    - `TimeBasedAutoRunViewModel`에 `refreshExactAlarmPermission()` 메서드 추가
+    - `ON_RESUME` 이벤트에서 `alarmManager.canScheduleExactAlarms()` 호출하여 StateFlow 업데이트
+  - 원인: 화면이 포그라운드로 돌아올 때 권한 상태를 다시 확인하는 로직이 없음
+  - 수정: `PermissionCheckScreen`과 동일한 패턴 적용하여 생명주기 이벤트 관찰
+- [ ] 스케쥴을 새로 생성할때 스케쥴 템플릿을 선택후 수정하기 위해 선택된 템플릿을 삭제하려면 삭제가 안된다. 
