@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 fun ScheduleGroupScreen(
     onBack: () -> Unit = {},
     onNavigateToTimeBasedAutoRun: (scheduleGroupId: String, scheduleGroupName: String) -> Unit = { _, _ -> },  // 🆕 스케줄 그룹 정보 전달
+    initialScrollToGroupId: String? = null, // 🆕 초기 스크롤 위치 (특정 스케줄 그룹 ID)
     viewModel: ScheduleGroupViewModel = hiltViewModel(),
     locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()  // 🆕
 ) {
@@ -61,6 +62,7 @@ fun ScheduleGroupScreen(
     val linkedLocations by viewModel.linkedLocations.collectAsStateWithLifecycle()  // 🆕
     val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsStateWithLifecycle()
     
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState() // 🆕 스크롤 상태 관리
     val scope = rememberCoroutineScope()
     
     var showAddDialog by remember { mutableStateOf(false) }
@@ -77,6 +79,17 @@ fun ScheduleGroupScreen(
     LaunchedEffect(scheduleGroups) {
         if (scheduleGroups.isNotEmpty()) {
             viewModel.loadAllLinkedCounts()
+            
+            // 🆕 초기 진입 시 특정 그룹으로 스크롤 이동
+            if (initialScrollToGroupId != null) {
+                val index = scheduleGroups.indexOfFirst { it.id == initialScrollToGroupId }
+                if (index >= 0) {
+                    // 🆕 인덱스 보정: LazyColumn에 "안내 카드"가 0번째 항목으로 추가되어 있으므로 index + 1 필요
+                    val adjustedIndex = index + 1
+                    Log.d("ScheduleGroupScreen", "📜 Scrolling to group: $initialScrollToGroupId (original: $index, adjusted: $adjustedIndex)")
+                    listState.animateScrollToItem(adjustedIndex)
+                }
+            }
         }
     }
     
@@ -333,6 +346,7 @@ fun ScheduleGroupScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState, // 🆕 스크롤 상태 연결
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)

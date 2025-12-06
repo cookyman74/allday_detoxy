@@ -50,7 +50,8 @@ class ScheduleGroupManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val repository: ScheduleGroupRepository,
     private val alarmManager: AutoRunAlarmManager,
-    private val conflictResolver: LocationConflictResolver  // 🆕 Phase 3: 위치 충돌 해소
+    private val conflictResolver: LocationConflictResolver,  // 🆕 Phase 3: 위치 충돌 해소
+    private val geofenceManager: AutoRunGeofenceManager // 🆕 3차 고도화: Geofence 관리 통합
 ) {
     companion object {
         private const val TAG = "ScheduleGroupManager"
@@ -62,17 +63,22 @@ class ScheduleGroupManager @Inject constructor(
      * ## 처리 흐름
      * 1. 해당 그룹 활성화 (lastActivatedAt 업데이트)
      * 2. 그룹 내 활성화된 시간대의 알람 등록
+     * 3. 그룹 내 연결된 위치의 Geofence 등록 (옵션)
      *
      * ## 🆕 다중 활성화 지원
      * - 여러 그룹이 동시에 활성화 가능 (독립적 on/off 스위치)
      * - 실제 실행은 위치/시간에 따라 자동 결정 (LocationConflictResolver, NonLocationScheduleManager)
      * - 사용자가 필요에 따라 원하는 그룹을 자유롭게 활성화/비활성화
      *
+     * ## Geofence 재등록 방지
+     * - Geofence 진입으로 인해 활성화될 때는 Geofence를 다시 등록하지 않음 (무한 루프 방지)
+     *
      * @param groupId 활성화할 시간표 그룹 ID
+     * @param updateGeofences Geofence 등록 여부 (기본값 true, Geofence 트리거 시 false)
      * @return Result<Unit> 성공 시 Success, 실패 시 Failure
      */
-    suspend fun activateGroup(groupId: String): Result<Unit> = runCatching {
-        Log.i(TAG, "🔄 Activating schedule group: $groupId")
+    suspend fun activateGroup(groupId: String, updateGeofences: Boolean = true): Result<Unit> = runCatching {
+        Log.i(TAG, "🔄 Activating schedule group: $groupId (updateGeofences=$updateGeofences)")
 
         // 1. 해당 그룹 활성화 (lastActivatedAt 업데이트)
         val timestamp = System.currentTimeMillis()
@@ -117,6 +123,23 @@ class ScheduleGroupManager @Inject constructor(
                 } else {
                     failCount++
                     Log.w(TAG, "⚠️ Failed to schedule alarm: ${autoRun.label ?: autoRun.id}")
+                }
+            }
+        }
+
+        // 3. 그룹 내 연결된 위치의 Geofence 등록 (옵션)
+        if (updateGeofences) {
+            val linkedLocations = repository.getLinkedLocations(groupId)
+            val enabledLocations = linkedLocations.filter { it.isEnabled }
+            
+            Log.d(TAG, "📍 Registering ${enabledLocations.size} geofences for group: $groupId")
+            
+            enabledLocations.forEach { location ->
+                val result = geofenceManager.addGeofence(location)
+                if (result.isSuccess) {
+                    Log.d(TAG, "✅ Geofence added: ${location.label}")
+                } else {
+                    Log.w(TAG, "⚠️ Failed to add geofence: ${location.label} (${result.exceptionOrNull()?.message})")
                 }
             }
         }
@@ -186,6 +209,7 @@ class ScheduleGroupManager @Inject constructor(
      * ## 처리 흐름
      * 1. 해당 그룹 비활성화
      * 2. 그룹 내 모든 시간대의 알람 취소
+     * 3. 그룹 내 연결된 위치의 Geofence 해제
      *
      * @param groupId 비활성화할 시간표 그룹 ID
      * @return Result<Unit> 성공 시 Success, 실패 시 Failure
@@ -207,7 +231,20 @@ class ScheduleGroupManager @Inject constructor(
             Log.d(TAG, "🗑️ Alarm cancelled: ${autoRun.label ?: autoRun.id}")
         }
 
-        Log.i(TAG, "✅ Schedule group deactivated: $groupId (${timeBasedAutoRuns.size} alarms cancelled)")
+        // 3. 그룹 내 연결된 위치의 Geofence 해제
+        val linkedLocations = repository.getLinkedLocations(groupId)
+        Log.d(TAG, "📍 Removing ${linkedLocations.size} geofences for group: $groupId")
+        
+        linkedLocations.forEach { location ->
+            val result = geofenceManager.removeGeofence(location.id)
+            if (result.isSuccess) {
+                Log.d(TAG, "✅ Geofence removed: ${location.label}")
+            } else {
+                Log.w(TAG, "⚠️ Failed to remove geofence: ${location.label} (${result.exceptionOrNull()?.message})")
+            }
+        }
+
+        Log.i(TAG, "✅ Schedule group deactivated: $groupId (${timeBasedAutoRuns.size} alarms cancelled, ${linkedLocations.size} geofences removed)")
     }
 
     /**
@@ -271,8 +308,8 @@ class ScheduleGroupManager @Inject constructor(
 
         Log.d(TAG, "📋 Linked schedule group: $scheduleGroupId")
 
-        // 3. 시간표 그룹 활성화
-        activateGroup(scheduleGroupId).getOrThrow()
+        // 3. 시간표 그룹 활성화 (Geofence 재등록 방지)
+        activateGroup(scheduleGroupId, updateGeofences = false).getOrThrow()
 
         // 4. 히스테리시스 타이머 기록 (위치 전환 추적)
         conflictResolver.recordActivation(winner.id)
