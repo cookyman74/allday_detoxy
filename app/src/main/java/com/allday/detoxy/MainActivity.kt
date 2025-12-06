@@ -340,7 +340,8 @@ fun MainScreenWithNavigation() {
                             selectedScheduleGroupId = scheduleGroupId
                             selectedScheduleGroupName = scheduleGroupName
                             showAutoRunScreen = AutoRunScreenType.TIME_BASED
-                        }
+                        },
+                        initialScrollToGroupId = selectedScheduleGroupId // 🆕 선택된 그룹으로 스크롤 이동
                     )
                 }
                 // 탭별 화면
