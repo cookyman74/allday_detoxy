@@ -58,6 +58,10 @@ class FocusAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "FocusAccessibilityService"
+        private const val BLOCK_COOLDOWN_MS = 1500L // 1.5초 쿨다운 (중복 실행 방지)
+
+        @Volatile
+        private var lastBlockTime: Long = 0
 
         /**
          * 타이머 실행 상태
@@ -224,6 +228,13 @@ class FocusAccessibilityService : AccessibilityService() {
      * @param category 앱 카테고리 (null이면 OTHER)
      */
     private fun handleBlockedApp(packageName: String, category: AppCategory?) {
+        // 🔥 중복 차단 방지 (쿨다운)
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastBlockTime < BLOCK_COOLDOWN_MS) {
+            return
+        }
+        lastBlockTime = currentTime
+
         val categoryName = category?.name ?: "OTHER"
         
         Log.i(TAG, "🚫 App blocked: $packageName ($categoryName)")
