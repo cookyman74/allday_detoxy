@@ -77,19 +77,16 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d(TAG, "🔔 Geofence event received")
-        
         // GeofencingEvent 파싱
         val geofencingEvent = GeofencingEvent.fromIntent(intent)
         
         if (geofencingEvent == null) {
-            Log.e(TAG, "❌ GeofencingEvent is null")
+            Log.e(TAG, "GeofencingEvent is null")
             return
         }
         
         if (geofencingEvent.hasError()) {
-            val errorCode = geofencingEvent.errorCode
-            Log.e(TAG, "❌ Geofencing error: $errorCode")
+            Log.e(TAG, "Geofencing error: ${geofencingEvent.errorCode}")
             return
         }
         
@@ -99,19 +96,16 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         // ENTER, DWELL, EXIT 이벤트 처리
         when (geofenceTransition) {
             Geofence.GEOFENCE_TRANSITION_ENTER -> {
-                Log.i(TAG, "📍 Geofence ENTER detected (즉시 진입)")
                 handleGeofenceTrigger(context, intent, geofencingEvent, "ENTER")
             }
             Geofence.GEOFENCE_TRANSITION_DWELL -> {
-                Log.i(TAG, "⏱️ Geofence DWELL detected (체류 시간 도달)")
                 handleGeofenceTrigger(context, intent, geofencingEvent, "DWELL")
             }
             Geofence.GEOFENCE_TRANSITION_EXIT -> {
-                Log.i(TAG, "🚪 Geofence EXIT detected (위치 이탈)")
                 handleGeofenceExit(context, intent, geofencingEvent)
             }
             else -> {
-                Log.w(TAG, "⚠️ Unexpected geofence transition: $geofenceTransition")
+                Log.w(TAG, "Unexpected geofence transition: $geofenceTransition")
             }
         }
     }
@@ -170,15 +164,11 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 val locationIds = triggeringGeofences.map { it.requestId }
                 val candidates = mutableListOf<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>()
                 
-                Log.i(TAG, "🔍 Collecting location candidates: ${locationIds.size} geofences triggered")
-                
                 locationIds.forEach { id ->
                     val location = locationDao.getByIdOnce(id)
                     if (location != null) {
-                        Log.d(TAG, "  - ${location.label} (activateOnEnter: ${location.activateScheduleOnEnter}, scheduleGroup: ${location.linkedScheduleGroupId})")
-                        
                         // activateScheduleOnEnter가 true이고, 시간표가 연결된 위치만 후보에 추가
-                        if (location.activateScheduleOnEnter && location.linkedScheduleGroupId != null) {
+                        if (location.isEnabled && location.activateScheduleOnEnter && location.linkedScheduleGroupId != null) {
                             candidates.add(location)
                             
                             // Analytics: auto_run_triggered (각 위치마다)
@@ -192,10 +182,8 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     }
                 }
                 
-                Log.i(TAG, "📊 Location candidates collected: ${candidates.size} eligible")
-                
                 if (candidates.isEmpty()) {
-                    Log.w(TAG, "⚠️ No eligible locations (all disabled or no linked schedule group)")
+                    Log.w(TAG, "No eligible locations found")
                     return@launch
                 }
                 
@@ -204,7 +192,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 val winner = conflictResolver.resolveConflict(userLocation, candidates)
                 
                 if (winner == null) {
-                    Log.e(TAG, "⚠️ No winner location found after conflict resolution")
+                    Log.e(TAG, "No winner location found after conflict resolution")
                     
                     // 실패 로그 기록
                     val firstCandidateId = candidates.firstOrNull()?.id
@@ -237,7 +225,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 )
                 
                 if (result.isSuccess) {
-                    Log.i(TAG, "✅ Location-based schedule activated (with conflict resolution)")
+                    Log.i(TAG, "Location-based schedule activated: ${winner.label}")
                     
                     // 🔧 Critical Fix: 위치 기반 자동 실행 AutoRunLog 기록 (winner 위치 사용)
                     try {
@@ -252,15 +240,14 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                             dwellSeconds = null  // 체류 시간은 타이머 완료 시 계산
                         )
                         autoRunLogDao.insert(log)
-                        Log.i(TAG, "✅ AutoRunLog recorded: LOCATION STARTED (locationId=${winner.id}, locationLabel=${winner.label}, gpsAccuracy=${gpsAccuracyMeters}m)")
                     } catch (e: Exception) {
-                        Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
+                        Log.e(TAG, "Failed to record AutoRunLog: ${e.message}", e)
                     }
                     
                     // TODO: Week 3 - 시간표 활성화 알림 표시
                     // showScheduleActivatedNotification(context, winner.label, scheduleGroupId)
                 } else {
-                    Log.e(TAG, "⚠️ Failed to activate schedule", result.exceptionOrNull())
+                    Log.e(TAG, "Failed to activate schedule", result.exceptionOrNull())
                     
                     // 🔧 Critical Fix: 실패 시 AutoRunLog 기록 (winner 위치 사용)
                     try {
@@ -274,9 +261,8 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                             gpsAccuracyMeters = gpsAccuracyMeters
                         )
                         autoRunLogDao.insert(log)
-                        Log.i(TAG, "✅ AutoRunLog recorded: LOCATION FAILED (locationId=${winner.id}, locationLabel=${winner.label})")
                     } catch (e: Exception) {
-                        Log.e(TAG, "❌ Failed to record AutoRunLog: ${e.message}", e)
+                        Log.e(TAG, "Failed to record AutoRunLog: ${e.message}", e)
                     }
                     
                     // Analytics: auto_run_failed
@@ -289,11 +275,11 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 
                 // Analytics: GPS 정확도 낮을 때 경고
                 if (gpsAccuracyMeters > 100f) {
-                    Log.w(TAG, "⚠️ GPS accuracy is low (${gpsAccuracyMeters}m), might cause issues")
+                    Log.w(TAG, "GPS accuracy is low (${gpsAccuracyMeters}m)")
                 }
                 
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error handling geofence enter (location conflict resolution): ${e.message}", e)
+                Log.e(TAG, "Error handling geofence enter: ${e.message}", e)
                 
                 // Analytics: auto_run_failed
                 AnalyticsHelper.logAutoRunFailed(
