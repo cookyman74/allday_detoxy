@@ -99,7 +99,7 @@ class AutoRunNotificationManager @Inject constructor(
         durationMinutes: Int,
         label: String?,
         minutesBefore: Int,
-        triggerType: String = "TIME"
+        @Suppress("UNUSED_PARAMETER") triggerType: String = "TIME"
     ) {
         val notificationId = generateNotificationId(autoRunId, isPreNotification = true)
         

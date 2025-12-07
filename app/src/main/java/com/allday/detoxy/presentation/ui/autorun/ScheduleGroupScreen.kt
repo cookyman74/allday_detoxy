@@ -55,7 +55,6 @@ fun ScheduleGroupScreen(
     locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()  // 🆕
 ) {
     val scheduleGroups by viewModel.scheduleGroups.collectAsStateWithLifecycle()
-    val activeGroups by viewModel.activeGroups.collectAsStateWithLifecycle()  // 🆕 v0.10.1: 복수형으로 변경
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsStateWithLifecycle()

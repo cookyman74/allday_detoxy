@@ -227,7 +227,7 @@ fun PresetManagementBottomSheet(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             
-            Divider()
+            HorizontalDivider()
             
             // 편집 버튼
             TextButton(

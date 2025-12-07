@@ -3,6 +3,7 @@ package com.allday.detoxy.presentation.ui.autorun.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,7 +45,7 @@ fun ScheduleGroupCard(
     isActive: Boolean,
     timeBasedAutoRuns: List<com.allday.detoxy.data.local.entity.TimeBasedAutoRun>,
     linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun> = emptyList(),
-    linkedLocationCount: Int = linkedLocations.size,
+    @Suppress("UNUSED_PARAMETER") linkedLocationCount: Int = linkedLocations.size,
     onActivate: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -146,7 +147,7 @@ fun ScheduleGroupCard(
                                 )
                                 Spacer(Modifier.weight(1f))
                                 Icon(
-                                    imageVector = Icons.Default.KeyboardArrowRight,
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                     contentDescription = "상세보기",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(20.dp)
@@ -219,7 +220,7 @@ fun ScheduleGroupCard(
                         Spacer(Modifier.weight(1f))
                         if (timeBasedAutoRuns.isNotEmpty()) {
                             Icon(
-                                imageVector = Icons.Default.KeyboardArrowRight,
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = "상세보기",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)

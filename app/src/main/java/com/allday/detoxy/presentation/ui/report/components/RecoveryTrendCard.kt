@@ -233,7 +233,8 @@ private fun DailyRecoveryLineChart(
         }
 
         // X축 라벨 (날짜)
-        sortedEntries.forEachIndexed { index, entry ->
+        sortedEntries.forEachIndexed { index, _ ->
+            @Suppress("UNUSED_VARIABLE")
             val x = padding + xInterval * index
             // 실제 앱에서는 drawContext.canvas.nativeCanvas.drawText() 사용
             // 여기서는 생략 (Canvas에서 텍스트는 별도 Composable로 처리)

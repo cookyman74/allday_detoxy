@@ -28,7 +28,7 @@ import kotlinx.coroutines.delay
 fun LockOverlayScreen(
     remainingSeconds: Int,
     totalSeconds: Int,
-    timerState: MutableState<Int>,
+    @Suppress("UNUSED_PARAMETER") timerState: MutableState<Int>,
     onGiveUp: () -> Unit
 ) {
     // 화면 자체에서 독립적으로 타이머 관리

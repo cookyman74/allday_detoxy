@@ -70,7 +70,7 @@ class DetoxyCoachRecommender @Inject constructor() {
      * 주의 단계 메시지
      */
     private fun getWarningMessages(
-        riskIndex: DetoxyRiskIndex,
+        @Suppress("UNUSED_PARAMETER") riskIndex: DetoxyRiskIndex,
         topDistraction: DistractionItem?
     ): RecommendationMessage {
         val distractionMessage = if (topDistraction != null) {

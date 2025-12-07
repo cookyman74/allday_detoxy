@@ -82,6 +82,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
         val durationMinutes = intent.getIntExtra(AutoRunAlarmManager.EXTRA_DURATION_MINUTES, 0)
         val presetType = intent.getStringExtra(AutoRunAlarmManager.EXTRA_PRESET_TYPE)
         val label = intent.getStringExtra(AutoRunAlarmManager.EXTRA_LABEL)
+        @Suppress("UNUSED_VARIABLE")
         val isPreNotification = intent.getBooleanExtra(AutoRunAlarmManager.EXTRA_IS_PRE_NOTIFICATION, false)
 
         if (autoRunId == null) {
@@ -119,7 +120,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      * 실제 자동 실행 N분 전에 사용자에게 알림을 표시합니다.
      */
     private fun handlePreNotification(
-        context: Context,
+        @Suppress("UNUSED_PARAMETER") context: Context,
         autoRunId: String,
         durationMinutes: Int,
         label: String?,
@@ -174,7 +175,7 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
      * @see docs/02_advanced_autosetting_todolist.md §3.3.1, §3.3.2
      */
     private fun handleAutoRunAlarm(
-        context: Context,
+        @Suppress("UNUSED_PARAMETER") context: Context,
         autoRunId: String,
         durationMinutes: Int,
         presetType: String?,

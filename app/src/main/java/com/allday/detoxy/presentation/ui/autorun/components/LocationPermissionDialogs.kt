@@ -100,7 +100,7 @@ fun LocationPermissionDeniedDialog(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 
                 Text(
                     text = "💡 대신 시간 기반 자동 실행을 사용해보세요!",

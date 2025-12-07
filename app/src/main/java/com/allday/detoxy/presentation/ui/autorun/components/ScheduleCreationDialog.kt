@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -487,7 +488,7 @@ private fun ScheduleSetupStep(
                         onClick = onTemplateSelect,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.List, null)
+                        Icon(Icons.AutoMirrored.Filled.List, null)
                         Spacer(Modifier.width(4.dp))
                         Text("템플릿 선택")
                     }

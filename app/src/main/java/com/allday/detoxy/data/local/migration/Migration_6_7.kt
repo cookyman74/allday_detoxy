@@ -21,11 +21,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * @see com.allday.detoxy.data.local.entity.TimeBasedAutoRun
  */
 val MIGRATION_6_7 = object : Migration(6, 7) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         val currentTime = System.currentTimeMillis()
 
         // 1. ScheduleGroup 테이블에 updatedAt 추가
-        database.execSQL(
+        db.execSQL(
             """
             ALTER TABLE schedule_group 
             ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT $currentTime
@@ -33,7 +33,7 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         )
 
         // 2. LocationBasedAutoRun 테이블에 updatedAt 추가
-        database.execSQL(
+        db.execSQL(
             """
             ALTER TABLE location_based_auto_run 
             ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT $currentTime
@@ -41,7 +41,7 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
         )
 
         // 3. TimeBasedAutoRun 테이블에 updatedAt 추가
-        database.execSQL(
+        db.execSQL(
             """
             ALTER TABLE time_based_auto_run 
             ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT $currentTime

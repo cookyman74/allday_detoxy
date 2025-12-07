@@ -95,7 +95,7 @@ fun BatteryImpactInfoCard(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Divider()
+                    HorizontalDivider()
 
                     Text(
                         text = "최적화 팁",

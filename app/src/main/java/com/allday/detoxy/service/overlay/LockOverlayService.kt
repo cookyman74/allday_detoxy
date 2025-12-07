@@ -213,6 +213,11 @@ class LockOverlayService : LifecycleService() {
             Log.d(TAG, "✅ Layout inflated and views initialized")
 
             // WindowManager 파라미터 설정
+            @Suppress("DEPRECATION")
+            val flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
@@ -224,10 +229,8 @@ class LockOverlayService : LifecycleService() {
                 },
                 // FLAG_NOT_FOCUSABLE 제거: 오버레이가 포커스를 받아 최상위에 표시됨
                 // FLAG_NOT_TOUCH_MODAL 제거: 오버레이 밖의 터치를 차단함
-                // FLAG_FULLSCREEN: 전체 화면 모드로 표시
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                        WindowManager.LayoutParams.FLAG_FULLSCREEN or
-                        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+                // FLAG_FULLSCREEN: 전체 화면 모드로 표시 (deprecated이지만 대체 방법 없음)
+                flags,
                 PixelFormat.TRANSLUCENT
             ).apply {
                 gravity = Gravity.CENTER

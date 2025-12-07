@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -617,8 +617,8 @@ fun ActiveScheduleSummaryCard(
  */
 @Composable
 fun NextScheduleSummaryCard(
-    scheduleGroups: List<ScheduleGroup>,
-    activeGroupId: String?,
+    @Suppress("UNUSED_PARAMETER") scheduleGroups: List<ScheduleGroup>,
+    @Suppress("UNUSED_PARAMETER") activeGroupId: String?,
     viewModel: ScheduleGroupViewModel = hiltViewModel()
 ) {
     val nextSchedule by viewModel.getNextScheduleToday().collectAsState(initial = null)
@@ -747,7 +747,7 @@ fun ScheduleSummaryCard(
                 )
             } else {
                 Icon(
-                    imageVector = Icons.Default.KeyboardArrowRight,
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )

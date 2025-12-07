@@ -6,10 +6,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun TimeBasedAutoRunScreen(
     onBack: () -> Unit = {},
-    onNavigateToLocationBased: () -> Unit = {},
+    @Suppress("UNUSED_PARAMETER") onNavigateToLocationBased: () -> Unit = {},
     onNavigateToScheduleGroup: () -> Unit = {},  // 🆕 3차 고도화: 시간표 관리로 이동
     scheduleGroupId: String? = null,  // 🆕 스케줄 그룹 ID (특정 그룹의 시간표 수정 시)
     scheduleGroupName: String? = null,  // 🆕 스케줄 그룹 이름 (타이틀 표시용)
@@ -153,7 +153,7 @@ fun TimeBasedAutoRunScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "뒤로가기"
                         )
                     }
@@ -162,7 +162,7 @@ fun TimeBasedAutoRunScreen(
                     // 🆕 3차 고도화: 시간표 관리 버튼
                     IconButton(onClick = onNavigateToScheduleGroup) {
                         Icon(
-                            imageVector = Icons.Default.List,
+                            imageVector = Icons.AutoMirrored.Filled.List,
                             contentDescription = "시간표 관리"
                         )
                     }
@@ -233,7 +233,7 @@ fun TimeBasedAutoRunScreen(
                         enabled = autoRuns.size < 10,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.List, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
                         Text("템플릿")
                     }
@@ -351,7 +351,8 @@ fun TimeBasedAutoRunScreen(
                         )
                     } else {
                         // 위치 기반 스케줄 - 위치 진입 시 활성화
-                        val scheduleGroupId = when (mode) {
+                        @Suppress("UNUSED_VARIABLE")
+                        val createdScheduleGroupId = when (mode) {
                             CreationMode.TEMPLATE -> {
                                 scheduleGroupViewModel.createFromTemplate(scheduleName, template!!, isLocationBased = true)
                             }
@@ -366,7 +367,7 @@ fun TimeBasedAutoRunScreen(
                         }
                         
                         // TODO: 위치 정보를 LocationBasedAutoRun으로 저장
-                        // locationViewModel.createLocationWithSchedule(locationInfo, scheduleGroupId)
+                        // locationViewModel.createLocationWithSchedule(locationInfo, createdScheduleGroupId)
                         
                         snackbarHostState.showSnackbar(
                             message = "위치 기반 시간표가 생성되었습니다",
@@ -421,7 +422,8 @@ fun TimeBasedAutoRunScreen(
                         )
                     } else {
                         // 위치 기반 스케줄 - 위치 진입 시 활성화
-                        val scheduleGroupId = when (mode) {
+                        @Suppress("UNUSED_VARIABLE")
+                        val createdScheduleGroupId = when (mode) {
                             CreationMode.TEMPLATE -> {
                                 scheduleGroupViewModel.createFromTemplate(scheduleName, template!!, isLocationBased = true)
                             }
@@ -436,7 +438,7 @@ fun TimeBasedAutoRunScreen(
                         }
                         
                         // TODO: 위치 정보를 LocationBasedAutoRun으로 저장
-                        // locationViewModel.createLocationWithSchedule(locationInfo, scheduleGroupId)
+                        // locationViewModel.createLocationWithSchedule(locationInfo, createdScheduleGroupId)
                         
                         snackbarHostState.showSnackbar(
                             message = "위치 기반 시간표가 생성되었습니다",

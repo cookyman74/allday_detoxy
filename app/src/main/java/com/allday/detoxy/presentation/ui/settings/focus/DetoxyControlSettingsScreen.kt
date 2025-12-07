@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
@@ -74,7 +74,7 @@ fun DetoxyControlSettingsScreen(
                 title = { Text("디톡시 제어 설정") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
                     }
                 },
                 actions = {
@@ -237,7 +237,7 @@ fun PresetSelectionSection(
 fun CategoryTogglesSection(
     enabledCategories: Set<AppCategory>,
     otherAppsEnabled: Boolean,
-    messengerHasBeenEnabled: Boolean,
+    @Suppress("UNUSED_PARAMETER") messengerHasBeenEnabled: Boolean,
     onCategoryToggle: (AppCategory, Boolean) -> Unit,
     onOtherAppsToggle: (Boolean) -> Unit
 ) {
@@ -263,7 +263,7 @@ fun CategoryTogglesSection(
                 onToggle = { enabled -> onCategoryToggle(AppCategory.SNS, enabled) }
             )
 
-            Divider()
+            HorizontalDivider()
 
             // 메신저
             CategoryToggleItem(
@@ -276,7 +276,7 @@ fun CategoryTogglesSection(
                 onToggle = { enabled -> onCategoryToggle(AppCategory.MESSENGER, enabled) }
             )
 
-            Divider()
+            HorizontalDivider()
 
             // Web 서핑
             CategoryToggleItem(
@@ -287,7 +287,7 @@ fun CategoryTogglesSection(
                 onToggle = { enabled -> onCategoryToggle(AppCategory.WEB, enabled) }
             )
 
-            Divider()
+            HorizontalDivider()
 
             // 영상 & 쇼츠
             CategoryToggleItem(
@@ -298,7 +298,7 @@ fun CategoryTogglesSection(
                 onToggle = { enabled -> onCategoryToggle(AppCategory.VIDEO_SHORTS, enabled) }
             )
 
-            Divider()
+            HorizontalDivider()
 
             // 기타 앱
             CategoryToggleItem(

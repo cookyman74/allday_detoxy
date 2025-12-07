@@ -488,7 +488,9 @@ class TimerViewModel @Inject constructor(
         if (autoRuns.isEmpty()) return null
 
         val now = Calendar.getInstance()
+        @Suppress("UNUSED_VARIABLE")
         val currentDay = getDayOfWeekCode(now)
+        @Suppress("UNUSED_VARIABLE")
         val currentTimeMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
 
         var nearestAutoRun: TimeBasedAutoRun? = null

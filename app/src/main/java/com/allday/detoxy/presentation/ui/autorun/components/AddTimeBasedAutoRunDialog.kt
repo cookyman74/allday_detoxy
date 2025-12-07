@@ -466,7 +466,7 @@ private fun PresetSelector(
 private fun PresetOption(
     title: String,
     description: String,
-    value: String,
+    @Suppress("UNUSED_PARAMETER") value: String,
     selected: Boolean,
     onClick: () -> Unit
 ) {

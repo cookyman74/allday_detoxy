@@ -112,7 +112,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * @param triggerType 트리거 타입
      */
     private fun handleStart(
-        context: Context,
+        @Suppress("UNUSED_PARAMETER") context: Context,
         autoRunId: String,
         durationMinutes: Int,
         presetType: String?,
@@ -179,7 +179,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * @param triggerType 트리거 타입
      */
     private fun handleSnooze(
-        context: Context,
+        @Suppress("UNUSED_PARAMETER") context: Context,
         autoRunId: String,
         durationMinutes: Int,
         presetType: String?,
@@ -246,7 +246,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * @param triggerType 트리거 타입
      */
     private fun handleSkip(
-        context: Context,
+        @Suppress("UNUSED_PARAMETER") context: Context,
         autoRunId: String,
         triggerType: String,
         entryPoint: NotificationActionReceiverEntryPoint

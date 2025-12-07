@@ -126,9 +126,9 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
      */
     private fun handleGeofenceTrigger(
         context: Context,
-        intent: Intent,
+        @Suppress("UNUSED_PARAMETER") intent: Intent,
         geofencingEvent: GeofencingEvent,
-        transitionType: String
+        @Suppress("UNUSED_PARAMETER") transitionType: String
     ) {
         // 트리거된 Geofence 리스트 가져오기
         val triggeringGeofences = geofencingEvent.triggeringGeofences

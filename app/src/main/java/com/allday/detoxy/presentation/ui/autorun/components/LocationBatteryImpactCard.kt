@@ -101,7 +101,7 @@ fun LocationBatteryImpactCard(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Divider()
+                    HorizontalDivider()
 
                     Text(
                         text = "💡 최적화 팁",
@@ -129,7 +129,7 @@ fun LocationBatteryImpactCard(
                         text = "체류 시간을 1분 이상으로 설정하면 더 효율적입니다"
                     )
 
-                    Divider()
+                    HorizontalDivider()
 
                     Text(
                         text = "📊 실제 소모량은 설정 → 배터리에서 확인 가능합니다",

@@ -198,6 +198,7 @@ class FocusTimerService : Service() {
                 val sessionId = intent.getStringExtra(EXTRA_SESSION_ID)
                 val presetType = intent.getStringExtra(EXTRA_PRESET_TYPE) // 🔥 프리셋 타입
                 val autoRunId = intent.getStringExtra(EXTRA_AUTO_RUN_ID) // 🆕
+                @Suppress("UNUSED_VARIABLE")
                 val autoRunLabel = intent.getStringExtra(EXTRA_AUTO_RUN_LABEL) // 🆕
                 Log.d(TAG, "Starting timer: $durationMinutes minutes, sessionId: $sessionId, presetType: $presetType, autoRunId: $autoRunId")
                 
