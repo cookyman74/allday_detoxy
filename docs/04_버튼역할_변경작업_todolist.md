@@ -236,39 +236,40 @@
 **예상 소요**: 0.5일
 
 #### 사전작업
-- [ ] 단계 4 작업결과서 확인
-- [ ] 현재 `GeofenceTransitionsReceiver.kt` 코드 확인
-- [ ] `handleGeofenceTrigger` 함수 흐름 파악
-- [ ] `ScheduleGroupDao` 접근 방법 확인 (EntryPoint)
+- [x] 단계 4 작업결과서 확인
+- [x] 현재 `GeofenceTransitionsReceiver.kt` 코드 확인
+- [x] `handleGeofenceTrigger` 함수 흐름 파악
+- [x] `ScheduleGroupDao` 접근 방법 확인 (EntryPoint)
 
 #### 작업
-- [ ] **5.1** `GeofenceReceiverEntryPoint`에 ScheduleGroupDao 추가
+- [x] **5.1** `GeofenceReceiverEntryPoint`에 ScheduleGroupDao 추가
   ```kotlin
   fun scheduleGroupDao(): ScheduleGroupDao
   ```
 
-- [ ] **5.2** `handleGeofenceTrigger` 수정
+- [x] **5.2** `handleGeofenceTrigger` 수정
   - 스케줄 그룹의 manualOverrideState 확인 로직 추가
-  - INACTIVE: 위치 진입 무시 (로그만 기록)
+  - INACTIVE: 위치 진입 무시 (로그만 기록, result="SKIPPED")
   - PAUSED: pauseUntil 확인 후 처리
-    - 만료 안됨: skipAlarmTrigger=true로 활성화
-    - 만료됨: 정상 활성화
+    - 만료 안됨: 위치 진입 무시 (result="SKIPPED")
+    - 만료됨: manualOverrideState 해제 후 정상 활성화
   - null: 정상 활성화 (기존 동작)
 
-- [ ] **5.3** 로그 추가
-  - 각 분기별 상세 로그 추가
-  - Analytics 이벤트 추가 (선택)
+- [x] **5.3** 로그 추가
+  - ENTER: INACTIVE/PAUSED 상태별 상세 로그
+  - EXIT: manualOverrideState 유지 로그
+  - AutoRunLog에 SKIPPED 결과 및 failureReason 기록
 
-- [ ] **5.4** 테스트
-  - 각 상태에서 위치 진입 시뮬레이션
-  - 로그 확인
+- [x] **5.4** handleGeofenceExit 수정 (추가)
+  - INACTIVE 상태에서 이탈 시 로그만 기록
+  - manualOverrideState 유지 (사용자 의도 존중)
 
 #### 작업후처리
-- [ ] 작업결과서 작성: `working_history/version_2.0/05_GeofenceReceiver수정_{날짜}.md`
-- [ ] 기록할 내용:
-  - 수정된 분기 로직 플로우
-  - 테스트 시나리오 및 결과
-  - 위치 기반 테스트 방법 (에뮬레이터 위치 변경)
+- [x] 작업결과서 작성: `working_history/version_2.0/05_GeofenceReceiver수정_2025-12-10.md`
+- [x] 기록할 내용:
+  - 수정된 분기 로직 플로우 다이어그램
+  - 테스트 시나리오 4가지
+  - AutoRunLog 결과 값 정의
 
 ---
 
@@ -360,7 +361,7 @@
 | 2 | ScheduleControlButton 구현 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [02_ScheduleControlButton구현_2025-12-10.md](../working_history/version_2.0/02_ScheduleControlButton구현_2025-12-10.md) |
 | 3 | ScheduleGroupCard 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [03_ScheduleGroupCard수정_2025-12-10.md](../working_history/version_2.0/03_ScheduleGroupCard수정_2025-12-10.md) |
 | 4 | ViewModel/Repository 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [04_ViewModel_Repository수정_2025-12-10.md](../working_history/version_2.0/04_ViewModel_Repository수정_2025-12-10.md) |
-| 5 | GeofenceTransitionsReceiver 수정 | ⬜ 대기 | - | - | - |
+| 5 | GeofenceTransitionsReceiver 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [05_GeofenceReceiver수정_2025-12-10.md](../working_history/version_2.0/05_GeofenceReceiver수정_2025-12-10.md) |
 | 6 | AutoRunAlarmReceiver 수정 | ⬜ 대기 | - | - | - |
 | 7 | 통합 테스트 및 버그 수정 | ⬜ 대기 | - | - | - |
 

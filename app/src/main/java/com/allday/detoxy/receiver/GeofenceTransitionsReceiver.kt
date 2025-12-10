@@ -53,6 +53,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         fun nonLocationScheduleManager(): NonLocationScheduleManager  // 🆕 Phase 4: "어디서나 적용" 스케줄
         fun autoRunLogDao(): com.allday.detoxy.data.local.dao.AutoRunLogDao  // 🆕 AutoRunLog 기록용
         fun locationConflictResolver(): com.allday.detoxy.core.manager.LocationConflictResolver  // 🆕 충돌 해소용
+        fun scheduleGroupDao(): com.allday.detoxy.data.local.dao.ScheduleGroupDao  // v8: manualOverrideState 확인용
     }
     
     companion object {
@@ -154,6 +155,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 val scheduleManager = entryPoint.scheduleGroupManager()
                 val autoRunLogDao = entryPoint.autoRunLogDao()
                 val conflictResolver = entryPoint.locationConflictResolver()
+                val scheduleGroupDao = entryPoint.scheduleGroupDao()  // v8: manualOverrideState 확인용
                 
                 // 비동기 작업 (goAsync)
                 val pendingResult = goAsync()
@@ -169,6 +171,79 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     if (location != null) {
                         // activateScheduleOnEnter가 true이고, 시간표가 연결된 위치만 후보에 추가
                         if (location.isEnabled && location.activateScheduleOnEnter && location.linkedScheduleGroupId != null) {
+                            
+                            // v8: 스케줄 그룹의 manualOverrideState 확인
+                            val scheduleGroupId = location.linkedScheduleGroupId
+                            val scheduleGroup = scheduleGroupDao.getByIdOnce(scheduleGroupId)
+                            
+                            if (scheduleGroup == null) {
+                                Log.w(TAG, "⚠️ v8: ScheduleGroup not found: $scheduleGroupId")
+                                return@forEach
+                            }
+                            
+                            val overrideState = scheduleGroup.manualOverrideState
+                            val pauseUntil = scheduleGroup.pauseUntil
+                            val currentTime = System.currentTimeMillis()
+                            
+                            // v8: 사용자 의도 우선 정책
+                            when (overrideState) {
+                                "INACTIVE" -> {
+                                    // 사용자가 명시적으로 비활성화 → 위치 진입 무시
+                                    Log.i(TAG, "⏹️ v8: Location ${location.label} SKIPPED - ScheduleGroup manually INACTIVE")
+                                    
+                                    // 로그 기록 (SKIPPED)
+                                    try {
+                                        val log = AutoRunLog(
+                                            triggerType = "LOCATION",
+                                            triggerSourceId = id,
+                                            triggerTime = currentTime,
+                                            result = "SKIPPED",
+                                            failureReason = "SCHEDULE_GROUP_INACTIVE",
+                                            sessionId = null,
+                                            gpsAccuracyMeters = gpsAccuracyMeters
+                                        )
+                                        autoRunLogDao.insert(log)
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "❌ Failed to record SKIPPED log: ${e.message}")
+                                    }
+                                    return@forEach  // 이 위치는 건너뛰기
+                                }
+                                "PAUSED" -> {
+                                    // 일시중지 상태 → pauseUntil 확인
+                                    if (pauseUntil != null && currentTime < pauseUntil) {
+                                        // 아직 만료 안됨 → 위치 진입 무시
+                                        val remainingMinutes = (pauseUntil - currentTime) / 60000
+                                        Log.i(TAG, "⏸️ v8: Location ${location.label} SKIPPED - ScheduleGroup PAUSED (${remainingMinutes}min remaining)")
+                                        
+                                        // 로그 기록 (SKIPPED)
+                                        try {
+                                            val log = AutoRunLog(
+                                                triggerType = "LOCATION",
+                                                triggerSourceId = id,
+                                                triggerTime = currentTime,
+                                                result = "SKIPPED",
+                                                failureReason = "SCHEDULE_GROUP_PAUSED",
+                                                sessionId = null,
+                                                gpsAccuracyMeters = gpsAccuracyMeters
+                                            )
+                                            autoRunLogDao.insert(log)
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "❌ Failed to record SKIPPED log: ${e.message}")
+                                        }
+                                        return@forEach  // 이 위치는 건너뛰기
+                                    } else {
+                                        // 만료됨 → 자동으로 ACTIVE로 전환하고 정상 처리
+                                        Log.i(TAG, "✅ v8: PAUSED expired, clearing override state")
+                                        scheduleGroupDao.updateManualOverride(scheduleGroupId, null, null)
+                                        // 정상 후보에 추가 (아래로 진행)
+                                    }
+                                }
+                                else -> {
+                                    // null 또는 기타 → 자동 모드 (정상 처리)
+                                    Log.d(TAG, "✅ v8: Location ${location.label} - ScheduleGroup in AUTO mode")
+                                }
+                            }
+                            
                             candidates.add(location)
                             
                             // Analytics: auto_run_triggered (각 위치마다)
@@ -183,7 +258,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 }
                 
                 if (candidates.isEmpty()) {
-                    Log.w(TAG, "No eligible locations found")
+                    Log.w(TAG, "No eligible locations found (v8: all may have been INACTIVE/PAUSED)")
                     return@launch
                 }
                 
@@ -332,6 +407,7 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         val locationDao = entryPoint.locationBasedAutoRunDao()
         val scheduleManager = entryPoint.scheduleGroupManager()
         val nonLocationScheduleManager = entryPoint.nonLocationScheduleManager()  // 🆕 Phase 4
+        val scheduleGroupDao = entryPoint.scheduleGroupDao()  // v8: manualOverrideState 확인용
         
         // 비동기 작업 (goAsync)
         val pendingResult = goAsync()
@@ -357,6 +433,22 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     if (location != null && location.deactivateScheduleOnExit && location.linkedScheduleGroupId != null) {
                         val scheduleGroupId = location.linkedScheduleGroupId
                         
+                        // v8: 스케줄 그룹의 manualOverrideState 확인
+                        val scheduleGroup = scheduleGroupDao.getByIdOnce(scheduleGroupId)
+                        
+                        if (scheduleGroup == null) {
+                            Log.w(TAG, "⚠️ v8: ScheduleGroup not found on EXIT: $scheduleGroupId")
+                            return@forEach
+                        }
+                        
+                        val overrideState = scheduleGroup.manualOverrideState
+                        
+                        // v8: INACTIVE 상태에서 이탈 시 로그만 기록 (이미 비활성화 상태)
+                        if (overrideState == "INACTIVE") {
+                            Log.i(TAG, "ℹ️ v8: Location EXIT but ScheduleGroup already INACTIVE: $scheduleGroupId")
+                            return@forEach
+                        }
+                        
                         Log.i(TAG, "🚪 Location has linked ScheduleGroup: $scheduleGroupId")
                         
                         // 2. ScheduleGroup 비활성화 (알람 자동 취소)
@@ -365,6 +457,10 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                         if (result.isSuccess) {
                             Log.i(TAG, "✅ ScheduleGroup deactivated on EXIT: $scheduleGroupId")
                             anyScheduleDeactivated = true
+                            
+                            // v8: 위치 이탈 시 manualOverrideState는 유지 (사용자 의도 존중)
+                            // PAUSED 상태였다면 PAUSED 유지, null이었다면 null 유지
+                            Log.d(TAG, "ℹ️ v8: manualOverrideState preserved on EXIT: $overrideState")
                             
                             // TODO: Week 3 - 시간표 비활성화 알림 표시
                             // showScheduleDeactivatedNotification(context, location.label, scheduleGroupId)
