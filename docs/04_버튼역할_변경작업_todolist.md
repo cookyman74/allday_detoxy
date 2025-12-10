@@ -86,13 +86,13 @@
 **예상 소요**: 1일
 
 #### 사전작업
-- [ ] 단계 1 작업결과서 확인
-- [ ] 기존 UI 컴포넌트 스타일 확인 (`presentation/ui/autorun/components/`)
-- [ ] Material3 DropdownMenu 사용법 확인
-- [ ] `combinedClickable` modifier 사용법 확인
+- [x] 단계 1 작업결과서 확인
+- [x] 기존 UI 컴포넌트 스타일 확인 (`presentation/ui/autorun/components/`)
+- [x] Material3 DropdownMenu 사용법 확인
+- [x] `combinedClickable` modifier 사용법 확인
 
 #### 작업
-- [ ] **2.1** `ScheduleGroupControlState.kt` enum 생성
+- [x] **2.1** `ScheduleGroupControlState.kt` enum 생성
   - 파일 위치: `domain/model/ScheduleGroupControlState.kt`
   ```kotlin
   enum class ScheduleGroupControlState {
@@ -102,7 +102,7 @@
   }
   ```
 
-- [ ] **2.2** `PauseDuration.kt` enum 생성
+- [x] **2.2** `PauseDuration.kt` enum 생성
   - 파일 위치: `domain/model/PauseDuration.kt`
   ```kotlin
   enum class PauseDuration(val displayName: String, val durationMillis: Long) {
@@ -113,24 +113,29 @@
   }
   ```
 
-- [ ] **2.3** `ScheduleControlButton.kt` 컴포넌트 구현
+- [x] **2.3** `ScheduleControlButton.kt` 컴포넌트 구현
   - 파일 위치: `presentation/ui/autorun/components/ScheduleControlButton.kt`
-  - 상태별 색상/아이콘 정의
+  - 상태별 색상/아이콘 정의 (ACTIVE: Check, PAUSED: DateRange, INACTIVE: Close)
   - 탭 동작 (토글)
   - 롱프레스/▾ 탭 동작 (드롭다운)
   - 드롭다운 메뉴 (활성/일시중지 옵션/비활성)
 
-- [ ] **2.4** `formatRemainingTime()` 유틸 함수 구현
-  - 남은 시간 표시 포맷 (예: "59분", "1시간 30분")
+- [x] **2.4** `formatRemainingTime()` 유틸 함수 구현
+  - 남은 시간 표시 포맷 (예: "45분", "1시간 30분", "곧 해제")
+  - ScheduleControlButton.kt에 포함하여 구현
 
-- [ ] **2.5** Preview 작성 및 UI 확인
+- [x] **2.5** Preview 작성 및 UI 확인
   - `@Preview` 어노테이션으로 각 상태별 미리보기
+  - ScheduleControlButtonActivePreview
+  - ScheduleControlButtonPausedPreview
+  - ScheduleControlButtonInactivePreview
+  - ScheduleControlButtonAllStatesPreview
 
 #### 작업후처리
-- [ ] 작업결과서 작성: `working_history/version_2.0/02_ScheduleControlButton구현_{날짜}.md`
-- [ ] 기록할 내용:
+- [x] 작업결과서 작성: `working_history/version_2.0/02_ScheduleControlButton구현_2025-12-10.md`
+- [x] 기록할 내용:
   - 컴포넌트 사용법
-  - 스크린샷 (각 상태별)
+  - 상태별 UI 정의
   - 드롭다운 메뉴 동작 확인
 
 ---
@@ -349,7 +354,7 @@
 | 단계 | 작업명 | 상태 | 시작일 | 완료일 | 작업결과서 |
 |------|--------|------|--------|--------|-----------|
 | 1 | DB 마이그레이션 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [01_DB마이그레이션_v8_2025-12-10.md](../working_history/version_2.0/01_DB마이그레이션_v8_2025-12-10.md) |
-| 2 | ScheduleControlButton 구현 | ⬜ 대기 | - | - | - |
+| 2 | ScheduleControlButton 구현 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [02_ScheduleControlButton구현_2025-12-10.md](../working_history/version_2.0/02_ScheduleControlButton구현_2025-12-10.md) |
 | 3 | ScheduleGroupCard 수정 | ⬜ 대기 | - | - | - |
 | 4 | ViewModel/Repository 수정 | ⬜ 대기 | - | - | - |
 | 5 | GeofenceTransitionsReceiver 수정 | ⬜ 대기 | - | - | - |
