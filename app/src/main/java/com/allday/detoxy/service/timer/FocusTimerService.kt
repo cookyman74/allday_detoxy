@@ -16,6 +16,7 @@ import com.allday.detoxy.R
 import com.allday.detoxy.core.manager.DndManager
 import com.allday.detoxy.core.utils.AppCategoryMapper
 import com.allday.detoxy.domain.model.FocusState
+import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 import com.allday.detoxy.service.overlay.LockOverlayService // 🆕 추가
@@ -39,6 +40,9 @@ class FocusTimerService : Service() {
 
     @Inject
     lateinit var settingsRepository: FocusSettingsRepository
+
+    @Inject
+    lateinit var focusRepository: FocusRepository  // 🆕 세션 직접 저장용
 
     @Inject
     lateinit var timeBasedAutoRunDao: com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao  // 🆕 v0.10.1
@@ -448,16 +452,66 @@ class FocusTimerService : Service() {
             sendTimerFinishedBroadcast(success)
         }
 
-        // 🔥 버그 수정: StateFlow가 업데이트되고 onTimerFinish가 호출될 시간을 주기 위해
-        // 세션 ID를 null로 설정하기 전에 지연
+        // 🆕 v0.10.3: 세션을 Service에서 직접 저장 (앱이 백그라운드에서 종료되어도 세션 저장 보장)
+        val sessionIdToSave = _currentSessionId.value
+        if (previousState == FocusState.RUNNING && sessionIdToSave != null) {
+            serviceScope?.launch {
+                try {
+                    val endTime = System.currentTimeMillis()
+                    focusRepository.endSession(
+                        sessionId = sessionIdToSave,
+                        success = success,
+                        endTime = endTime
+                    )
+                    Log.i(TAG, "✅ Session saved directly in Service: sessionId=$sessionIdToSave, success=$success")
+                    
+                    // 성공 시 포인트 및 스트릭 처리
+                    if (success) {
+                        val settings = focusRepository.getSettings().first()
+                        settings?.let { focusSettings ->
+                            val session = focusRepository.getSession(sessionIdToSave).first()
+                            session?.let { focusSession ->
+                                // 포인트 계산: 10분당 10포인트
+                                val points = (focusSession.durationMinutes / 10) * 10
+                                focusRepository.addPoints(points)
+                                Log.i(TAG, "✅ Points added in Service: $points")
+                                
+                                // 스트릭 업데이트
+                                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                    .format(java.util.Date(endTime))
+                                val lastDate = focusSettings.lastSuccessDate
+                                val newStreak = if (lastDate == null) {
+                                    1
+                                } else {
+                                    val yesterday = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                        .format(java.util.Date(endTime - 24 * 60 * 60 * 1000))
+                                    if (lastDate == today) {
+                                        focusSettings.currentStreak
+                                    } else if (lastDate == yesterday) {
+                                        focusSettings.currentStreak + 1
+                                    } else {
+                                        1
+                                    }
+                                }
+                                focusRepository.updateStreak(newStreak, today)
+                                Log.i(TAG, "✅ Streak updated in Service: $newStreak")
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Failed to save session in Service: ${e.message}", e)
+                }
+            }
+        }
+
         // 상태 초기화 (세션 ID는 나중에 null로 설정)
         _remainingSeconds.value = 0
         _currentAutoRunId.value = null         // 🆕 v0.10.1
         _currentScheduleGroupId.value = null   // 🆕 v0.10.1
 
-        // 브로드캐스트가 전달되고 StateFlow가 업데이트될 시간을 주기 위해 지연 후 세션 ID 초기화 및 Service 종료
+        // 세션 저장 완료 후 세션 ID 초기화 및 Service 종료
         serviceScope?.launch {
-            delay(1000) // StateFlow 업데이트 및 onTimerFinish 호출 대기 시간 증가
+            delay(1500) // 세션 저장 완료 대기
             _currentSessionId.value = null
             stopSelf()
         }

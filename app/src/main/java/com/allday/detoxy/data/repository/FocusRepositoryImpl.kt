@@ -38,11 +38,18 @@ class FocusRepositoryImpl @Inject constructor(
     override suspend fun endSession(sessionId: String, success: Boolean, endTime: Long) {
         val session = sessionDao.getSessionById(sessionId).first()
         session?.let {
+            // 🆕 v0.10.3: 이미 종료된 세션은 중복 저장 방지
+            if (it.endTime != null) {
+                android.util.Log.w("FocusRepositoryImpl", "⚠️ Session already ended, skipping: $sessionId")
+                return
+            }
+            
             val updatedSession = it.copy(
                 endTime = endTime,
                 success = success
             )
             sessionDao.update(updatedSession)
+            android.util.Log.d("FocusRepositoryImpl", "✅ Session ended: $sessionId, success=$success")
         }
     }
 
