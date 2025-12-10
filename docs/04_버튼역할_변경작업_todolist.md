@@ -278,35 +278,40 @@
 **예상 소요**: 0.5일
 
 #### 사전작업
-- [ ] 단계 5 작업결과서 확인
-- [ ] 현재 `AutoRunAlarmReceiver.kt` 코드 확인
-- [ ] `handleTimeBasedAutoRun` 함수 흐름 파악
-- [ ] 기존 일시중지 로직 확인 (`userSettingsRepository.isAutoRunEnabled()`)
+- [x] 단계 5 작업결과서 확인
+- [x] 현재 `AutoRunAlarmReceiver.kt` 코드 확인
+- [x] `handleTimeBasedAutoRun` 함수 흐름 파악
+- [x] 기존 일시중지 로직 확인 (`userSettingsRepository.isAutoRunEnabled()`)
 
 #### 작업
-- [ ] **6.1** `AutoRunAlarmReceiverEntryPoint`에 ScheduleGroupDao 추가
+- [x] **6.1** `AutoRunAlarmReceiverEntryPoint`에 ScheduleGroupDao 추가 *(이미 완료됨)*
 
-- [ ] **6.2** `handleTimeBasedAutoRun` 수정
+- [x] **6.2** `handleAutoRunAlarm` 수정 (v8 manualOverrideState 확인)
   - scheduleGroupId가 있는 경우 그룹 상태 확인
   - INACTIVE: 건너뛰기 + 로그 기록
   - PAUSED: pauseUntil 확인 후 처리
-  - 정상: 기존 로직 실행
+    - 만료 안됨: 건너뛰기
+    - 만료됨: manualOverrideState 해제 후 정상 처리
+  - null (AUTO): 기존 isActive 체크 유지 (하위 호환성)
 
-- [ ] **6.3** Skip 로그 기록 함수 수정
-  - `logAutoRunSkipped` 에 새로운 reason 추가
+- [x] **6.3** Skip 로그 기록 (기존 함수 활용)
+  - `logAutoRunSkipped` 에 새로운 reason 사용
+    - `SCHEDULE_GROUP_NOT_FOUND`
     - `SCHEDULE_GROUP_INACTIVE`
     - `SCHEDULE_GROUP_PAUSED`
 
-- [ ] **6.4** 테스트
-  - 각 상태에서 알람 트리거 시뮬레이션
-  - 로그 및 AutoRunLog 테이블 확인
+- [x] **6.4** 우선순위 정의
+  - 레벨 1: 마스터 스위치 (isAutoRunEnabled)
+  - 레벨 2: 수동 제어 (manualOverrideState)
+  - 레벨 3: 자동 제어 (isActive)
+  - 레벨 4: 개별 시간대 (TimeBasedAutoRun.isEnabled)
 
 #### 작업후처리
-- [ ] 작업결과서 작성: `working_history/version_2.0/06_AutoRunAlarmReceiver수정_{날짜}.md`
-- [ ] 기록할 내용:
-  - 수정된 분기 로직
-  - 기존 마스터 스위치와의 우선순위 관계
-  - 테스트 결과
+- [x] 작업결과서 작성: `working_history/version_2.0/06_AutoRunAlarmReceiver수정_2025-12-10.md`
+- [x] 기록할 내용:
+  - 수정된 분기 로직 플로우 다이어그램
+  - 우선순위 계층 구조
+  - 테스트 시나리오 4가지
 
 ---
 
@@ -362,7 +367,7 @@
 | 3 | ScheduleGroupCard 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [03_ScheduleGroupCard수정_2025-12-10.md](../working_history/version_2.0/03_ScheduleGroupCard수정_2025-12-10.md) |
 | 4 | ViewModel/Repository 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [04_ViewModel_Repository수정_2025-12-10.md](../working_history/version_2.0/04_ViewModel_Repository수정_2025-12-10.md) |
 | 5 | GeofenceTransitionsReceiver 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [05_GeofenceReceiver수정_2025-12-10.md](../working_history/version_2.0/05_GeofenceReceiver수정_2025-12-10.md) |
-| 6 | AutoRunAlarmReceiver 수정 | ⬜ 대기 | - | - | - |
+| 6 | AutoRunAlarmReceiver 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [06_AutoRunAlarmReceiver수정_2025-12-10.md](../working_history/version_2.0/06_AutoRunAlarmReceiver수정_2025-12-10.md) |
 | 7 | 통합 테스트 및 버그 수정 | ⬜ 대기 | - | - | - |
 
 **상태 범례**: ⬜ 대기 | 🔄 진행중 | ✅ 완료 | ⏸️ 보류

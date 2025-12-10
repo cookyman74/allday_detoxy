@@ -200,26 +200,68 @@ class AutoRunAlarmReceiver : BroadcastReceiver() {
                     return@launch
                 }
 
-                // 2. 🆕 3차 고도화: scheduleGroupId 체크
-                // 시간대가 그룹에 소속되어 있고, 그룹이 비활성화 상태면 실행 건너뛰기
+                // 2. 🆕 3차 고도화 + v8: scheduleGroupId 및 manualOverrideState 체크
+                // 시간대가 그룹에 소속되어 있고, 그룹 상태에 따라 실행 결정
                 val autoRun = entryPoint.timeBasedAutoRunDao().getById(autoRunId).firstOrNull()
                 
                 if (autoRun != null && !autoRun.isIndependent && autoRun.scheduleGroupId != null) {
                     val scheduleGroup = entryPoint.scheduleGroupDao().getByIdOnce(autoRun.scheduleGroupId)
                     
-                    if (scheduleGroup == null || !scheduleGroup.isActive) {
-                        Log.w(TAG, "⏭️ Skipping auto-run: ScheduleGroup not active (groupId: ${autoRun.scheduleGroupId})")
-                        logAutoRunSkipped(autoRunId, "SCHEDULE_GROUP_NOT_ACTIVE", entryPoint)
+                    if (scheduleGroup == null) {
+                        Log.w(TAG, "⚠️ v8: ScheduleGroup not found: ${autoRun.scheduleGroupId}")
+                        logAutoRunSkipped(autoRunId, "SCHEDULE_GROUP_NOT_FOUND", entryPoint)
                         
-                        // Analytics 로깅
-                        AnalyticsHelper.logAutoRunSkipped(
-                            triggerType = "TIME",
-                            reason = "SCHEDULE_GROUP_NOT_ACTIVE"
-                        )
-                        
-                        // 다음 알람 재스케줄링 (그룹이 활성화되면 다시 실행될 수 있도록)
+                        AnalyticsHelper.logAutoRunSkipped(triggerType = "TIME", reason = "SCHEDULE_GROUP_NOT_FOUND")
                         rescheduleNextAlarm(autoRunId, entryPoint)
                         return@launch
+                    }
+                    
+                    // v8: manualOverrideState 확인 (사용자 의도 우선)
+                    val overrideState = scheduleGroup.manualOverrideState
+                    val pauseUntil = scheduleGroup.pauseUntil
+                    val currentTime = System.currentTimeMillis()
+                    
+                    when (overrideState) {
+                        "INACTIVE" -> {
+                            // 사용자가 명시적으로 비활성화 → 알람 건너뛰기
+                            Log.i(TAG, "⏹️ v8: Alarm SKIPPED - ScheduleGroup manually INACTIVE (groupId: ${autoRun.scheduleGroupId})")
+                            logAutoRunSkipped(autoRunId, "SCHEDULE_GROUP_INACTIVE", entryPoint)
+                            
+                            AnalyticsHelper.logAutoRunSkipped(triggerType = "TIME", reason = "SCHEDULE_GROUP_INACTIVE")
+                            rescheduleNextAlarm(autoRunId, entryPoint)
+                            return@launch
+                        }
+                        "PAUSED" -> {
+                            // 일시중지 상태 → pauseUntil 확인
+                            if (pauseUntil != null && currentTime < pauseUntil) {
+                                // 아직 만료 안됨 → 알람 건너뛰기
+                                val remainingMinutes = (pauseUntil - currentTime) / 60000
+                                Log.i(TAG, "⏸️ v8: Alarm SKIPPED - ScheduleGroup PAUSED (${remainingMinutes}min remaining)")
+                                logAutoRunSkipped(autoRunId, "SCHEDULE_GROUP_PAUSED", entryPoint)
+                                
+                                AnalyticsHelper.logAutoRunSkipped(triggerType = "TIME", reason = "SCHEDULE_GROUP_PAUSED")
+                                rescheduleNextAlarm(autoRunId, entryPoint)
+                                return@launch
+                            } else {
+                                // 만료됨 → 자동으로 manualOverrideState 해제하고 정상 처리
+                                Log.i(TAG, "✅ v8: PAUSED expired, clearing override state and proceeding")
+                                entryPoint.scheduleGroupDao().updateManualOverride(autoRun.scheduleGroupId, null, null)
+                                // 정상 처리로 진행 (아래로 계속)
+                            }
+                        }
+                        else -> {
+                            // null → 자동 모드
+                            // 기존 isActive 체크도 유지 (하위 호환성)
+                            if (!scheduleGroup.isActive) {
+                                Log.w(TAG, "⏭️ Skipping auto-run: ScheduleGroup not active (groupId: ${autoRun.scheduleGroupId})")
+                                logAutoRunSkipped(autoRunId, "SCHEDULE_GROUP_NOT_ACTIVE", entryPoint)
+                                
+                                AnalyticsHelper.logAutoRunSkipped(triggerType = "TIME", reason = "SCHEDULE_GROUP_NOT_ACTIVE")
+                                rescheduleNextAlarm(autoRunId, entryPoint)
+                                return@launch
+                            }
+                            Log.d(TAG, "✅ v8: ScheduleGroup in AUTO mode, proceeding with alarm")
+                        }
                     }
                 }
 
