@@ -7,6 +7,8 @@ import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.repository.TimeBasedAutoRunRepository
+import com.allday.detoxy.domain.model.PauseDuration
+import com.allday.detoxy.domain.model.ScheduleGroupControlState
 import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
@@ -235,6 +237,74 @@ class ScheduleGroupViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _errorState.value = "시간표 비활성화 실패: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // ==================== v8: 통합 제어 ====================
+
+    /**
+     * 스케줄 그룹 제어 상태 변경 (v8)
+     *
+     * ScheduleControlButton에서 호출되어 활성/비활성 상태를 변경합니다.
+     *
+     * ## 동작
+     * - ACTIVE: manualOverrideState를 null로 설정 + activateGroup 호출
+     * - INACTIVE: manualOverrideState를 "INACTIVE"로 설정 + deactivateGroup 호출
+     * - PAUSED: pauseScheduleGroup() 메서드 사용
+     *
+     * @param groupId 스케줄 그룹 ID
+     * @param newState 새로운 제어 상태
+     */
+    fun changeControlState(groupId: String, newState: ScheduleGroupControlState) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                when (newState) {
+                    ScheduleGroupControlState.ACTIVE -> {
+                        // 수동 제어 해제 (자동 모드로 전환)
+                        repository.updateManualOverride(groupId, null, null)
+                        // 그룹 활성화
+                        scheduleManager.activateGroup(groupId)
+                    }
+                    ScheduleGroupControlState.INACTIVE -> {
+                        // 수동 비활성화 설정
+                        repository.updateManualOverride(groupId, "INACTIVE", null)
+                        // 그룹 비활성화
+                        scheduleManager.deactivateGroup(groupId)
+                    }
+                    ScheduleGroupControlState.PAUSED -> {
+                        // PAUSED는 pauseScheduleGroup()으로 처리
+                        // 여기서는 아무 동작 없음
+                    }
+                }
+            } catch (e: Exception) {
+                _errorState.value = "상태 변경 실패: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * 스케줄 그룹 일시중지 (v8)
+     *
+     * ScheduleControlButton 드롭다운에서 호출되어 일시중지를 설정합니다.
+     * 일시중지 중에는 알람이 트리거되지 않지만 위치 감지는 유지됩니다.
+     *
+     * @param groupId 스케줄 그룹 ID
+     * @param duration 일시중지 기간
+     */
+    fun pauseScheduleGroup(groupId: String, duration: PauseDuration) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val pauseUntil = duration.calculatePauseUntil()
+                repository.updateManualOverride(groupId, "PAUSED", pauseUntil)
+            } catch (e: Exception) {
+                _errorState.value = "일시중지 실패: ${e.message}"
             } finally {
                 _isLoading.value = false
             }

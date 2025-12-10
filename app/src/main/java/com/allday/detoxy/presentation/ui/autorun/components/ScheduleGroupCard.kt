@@ -15,52 +15,68 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.data.local.entity.ScheduleGroup
+import com.allday.detoxy.domain.model.PauseDuration
+import com.allday.detoxy.domain.model.ScheduleGroupControlState
 
 /**
- * ScheduleGroup 카드 컴포넌트 (3.5차 고도화 - 간소화 버전)
+ * ScheduleGroup 카드 컴포넌트 (v8 버튼 역할 변경)
  *
- * ScheduleGroup 정보를 표시하고 편집/삭제/활성화 기능을 제공합니다.
+ * ScheduleGroup 정보를 표시하고 편집/삭제/제어 기능을 제공합니다.
  *
  * ## UI 구조
- * - 헤더: 아이콘 + 이름 + 활성화 토글
+ * - 헤더: 아이콘 + 이름 + 통합 제어 버튼 (ScheduleControlButton)
  * - 설명
  * - 위치 정보 (클릭 시 상세/수정)
  * - 시간 정보 (클릭 시 상세/수정)
  * - 하단: 수정/삭제 버튼
  *
+ * ## 상태별 배경색
+ * - ACTIVE: primaryContainer (녹색 계열)
+ * - PAUSED: tertiaryContainer (주황색 계열)
+ * - INACTIVE: surfaceVariant (회색 계열)
+ *
  * @param group 표시할 ScheduleGroup
- * @param isActive 활성화 여부
+ * @param controlState 통합 제어 상태 (ACTIVE/PAUSED/INACTIVE)
+ * @param pauseUntil 일시중지 해제 시각 (PAUSED 상태일 때 남은 시간 표시용)
  * @param timeBasedAutoRuns 연결된 시간대 목록
  * @param linkedLocations 연결된 위치 목록
- * @param onActivate 활성화/비활성화 콜백
+ * @param onStateChange 제어 상태 변경 콜백
+ * @param onPause 일시중지 콜백 (기간 전달)
  * @param onEdit 편집 콜백 (타이틀/설명만)
  * @param onDelete 삭제 콜백
  * @param onLocationClick 위치 정보 클릭 콜백
  * @param onTimeClick 시간 정보 클릭 콜백
  * @param modifier Modifier
+ *
+ * @see ScheduleControlButton
+ * @see ScheduleGroupControlState
  */
 @Composable
 fun ScheduleGroupCard(
     group: ScheduleGroup,
-    isActive: Boolean,
+    controlState: ScheduleGroupControlState,
+    pauseUntil: Long? = null,
     timeBasedAutoRuns: List<com.allday.detoxy.data.local.entity.TimeBasedAutoRun>,
     linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun> = emptyList(),
     @Suppress("UNUSED_PARAMETER") linkedLocationCount: Int = linkedLocations.size,
-    onActivate: () -> Unit,
+    onStateChange: (ScheduleGroupControlState) -> Unit,
+    onPause: (PauseDuration) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onLocationClick: () -> Unit = {},
     onTimeClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    // 상태별 카드 배경색
+    val cardBackgroundColor = when (controlState) {
+        ScheduleGroupControlState.ACTIVE -> MaterialTheme.colorScheme.primaryContainer
+        ScheduleGroupControlState.PAUSED -> MaterialTheme.colorScheme.tertiaryContainer
+        ScheduleGroupControlState.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant
+    }
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = if (isActive) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            }
+            containerColor = cardBackgroundColor
         )
     ) {
         Column(
@@ -98,10 +114,12 @@ fun ScheduleGroupCard(
                     )
                 }
                 
-                // 활성화 토글
-                Switch(
-                    checked = isActive,
-                    onCheckedChange = { onActivate() }
+                // 통합 제어 버튼 (v8)
+                ScheduleControlButton(
+                    controlState = controlState,
+                    pauseUntil = pauseUntil,
+                    onStateChange = onStateChange,
+                    onPause = onPause
                 )
             }
             

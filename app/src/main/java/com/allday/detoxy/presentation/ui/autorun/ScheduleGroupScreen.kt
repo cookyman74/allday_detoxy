@@ -17,6 +17,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.domain.model.CreationMode
+import com.allday.detoxy.domain.model.PauseDuration
+import com.allday.detoxy.domain.model.ScheduleGroupControlState
 import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
 import android.util.Log
@@ -391,19 +393,26 @@ fun ScheduleGroupScreen(
                         val linkedLocationsList = linkedLocations[group.id] ?: emptyList()  // 🆕
                         val locationCount = linkedLocationCounts[group.id] ?: 0
                         
+                        // v8: controlState 계산
+                        val controlState = ScheduleGroupControlState.fromEntity(
+                            manualOverrideState = group.manualOverrideState,
+                            pauseUntil = group.pauseUntil
+                        )
+                        
                         ScheduleGroupCard(
                             group = group,
-                            isActive = group.isActive,  // 🆕 다중 활성화 지원: 각 그룹의 isActive 직접 사용
+                            controlState = controlState,  // v8: 통합 제어 상태
+                            pauseUntil = group.pauseUntil,  // v8: 일시중지 해제 시각
                             timeBasedAutoRuns = timeBasedAutoRunsList,
-                            linkedLocations = linkedLocationsList,  // 🆕
+                            linkedLocations = linkedLocationsList,
                             linkedLocationCount = locationCount,
-                            onActivate = {
-                                // 🆕 3차 고도화: ScheduleGroupManager 사용
-                                if (group.isActive) {
-                                    viewModel.deactivateGroup(group.id)
-                                } else {
-                                    viewModel.activateGroup(group.id)
-                                }
+                            onStateChange = { newState ->
+                                // v8: 상태 변경 처리
+                                viewModel.changeControlState(group.id, newState)
+                            },
+                            onPause = { duration ->
+                                // v8: 일시중지 처리
+                                viewModel.pauseScheduleGroup(group.id, duration)
                             },
                             onEdit = {
                                 editingGroup = group
@@ -412,7 +421,7 @@ fun ScheduleGroupScreen(
                                 deletingGroupId = group.id
                             },
                             onLocationClick = {
-                                // 🆕 위치 정보 수정 다이얼로그 표시
+                                // 위치 정보 수정 다이얼로그 표시
                                 val location = linkedLocationsList.firstOrNull()
                                 if (location != null) {
                                     editingLocation = location
@@ -420,7 +429,7 @@ fun ScheduleGroupScreen(
                                 }
                             },
                             onTimeClick = {
-                                // 🆕 스케줄 그룹 정보와 함께 TimeBasedAutoRunScreen으로 이동
+                                // 스케줄 그룹 정보와 함께 TimeBasedAutoRunScreen으로 이동
                                 Log.d("ScheduleGroupScreen", "Time clicked: ${group.name} (ID: ${group.id})")
                                 onNavigateToTimeBasedAutoRun(group.id, group.name)
                             }

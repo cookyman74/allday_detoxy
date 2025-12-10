@@ -149,5 +149,18 @@ interface ScheduleGroupRepository {
      * @param scheduleGroupId 스케줄 그룹 ID
      */
     suspend fun unlinkAllAutoRuns(scheduleGroupId: String)
+
+    // ==================== v8: 통합 제어 ====================
+
+    /**
+     * 수동 제어 상태 업데이트 (v8+)
+     *
+     * 스케줄 그룹의 활성/비활성/일시중지 상태를 사용자가 명시적으로 제어할 때 사용합니다.
+     *
+     * @param groupId 스케줄 그룹 ID
+     * @param overrideState 수동 제어 상태 (null: 자동 모드, "INACTIVE": 비활성화, "PAUSED": 일시중지)
+     * @param pauseUntil 일시중지 해제 시각 (null: 일시중지 아님 또는 무기한)
+     */
+    suspend fun updateManualOverride(groupId: String, overrideState: String?, pauseUntil: Long?)
 }
 

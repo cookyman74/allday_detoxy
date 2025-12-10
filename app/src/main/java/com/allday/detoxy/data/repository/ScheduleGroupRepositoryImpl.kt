@@ -108,5 +108,11 @@ class ScheduleGroupRepositoryImpl @Inject constructor(
         // LocationBasedAutoRun의 linkedScheduleGroupId를 NULL로 설정
         locationBasedAutoRunDao.unlinkFromGroup(scheduleGroupId)
     }
+
+    // ==================== v8: 통합 제어 ====================
+
+    override suspend fun updateManualOverride(groupId: String, overrideState: String?, pauseUntil: Long?) {
+        scheduleGroupDao.updateManualOverride(groupId, overrideState, pauseUntil)
+    }
 }
 
