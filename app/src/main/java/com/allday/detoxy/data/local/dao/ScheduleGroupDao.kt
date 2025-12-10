@@ -120,5 +120,35 @@ interface ScheduleGroupDao {
      */
     @Query("SELECT COUNT(*) FROM schedule_group WHERE isActive = 1")
     suspend fun getActiveCount(): Int
+
+    // ==================== v8 추가: 통합 제어 ====================
+
+    /**
+     * 수동 제어 상태 업데이트 (v8+)
+     *
+     * 스케줄 그룹의 활성/비활성/일시중지 상태를 사용자가 명시적으로 제어할 때 사용합니다.
+     *
+     * @param groupId 스케줄 그룹 ID
+     * @param state 수동 제어 상태 (null: 자동 모드, "INACTIVE": 비활성화, "PAUSED": 일시중지)
+     * @param pauseUntil 일시중지 해제 시각 (null: 일시중지 아님 또는 무기한)
+     */
+    @Query("UPDATE schedule_group SET manualOverrideState = :state, pauseUntil = :pauseUntil WHERE id = :groupId")
+    suspend fun updateManualOverride(groupId: String, state: String?, pauseUntil: Long?)
+
+    /**
+     * 일시중지 만료된 그룹 자동 해제 (v8+)
+     *
+     * pauseUntil이 현재 시각보다 이전인 그룹의 manualOverrideState를 null로 초기화합니다.
+     * 백그라운드 작업 또는 앱 시작 시 호출하여 만료된 일시중지 상태를 정리합니다.
+     *
+     * @param currentTime 현재 시각 (timestamp)
+     * @return 업데이트된 행 수
+     */
+    @Query("""
+        UPDATE schedule_group 
+        SET manualOverrideState = NULL, pauseUntil = NULL 
+        WHERE manualOverrideState = 'PAUSED' AND pauseUntil IS NOT NULL AND pauseUntil < :currentTime
+    """)
+    suspend fun clearExpiredPauses(currentTime: Long): Int
 }
 

@@ -106,6 +106,34 @@ data class ScheduleGroup(
      * 우선순위 규칙 적용을 위한 필드.
      * 충돌 해소 시 "최근 수정" 기준으로 사용.
      */
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+
+    // ==================== v8 추가: 통합 제어 ====================
+
+    /**
+     * 사용자 수동 제어 상태 (v8+)
+     *
+     * 스케줄 그룹의 활성/비활성/일시중지 상태를 사용자가 명시적으로 제어할 때 사용합니다.
+     * 위치기반 스케줄에서 자동 활성화를 차단하는 데 사용됩니다.
+     *
+     * - null: 자동 모드 (기본값, 기존 동작 유지 - 위치에 따라 자동 활성화/비활성화)
+     * - "INACTIVE": 사용자가 명시적으로 비활성화 (Geofence 해제, 위치 감지 안됨)
+     * - "PAUSED": 사용자가 명시적으로 일시중지 (Geofence 유지, 알람만 건너뛰기)
+     *
+     * @see pauseUntil 일시중지 해제 시각
+     */
+    val manualOverrideState: String? = null,
+
+    /**
+     * 일시중지 해제 시각 (v8+)
+     *
+     * manualOverrideState가 "PAUSED"일 때 자동 해제 시각을 지정합니다.
+     *
+     * - null: 일시중지 아님 또는 무기한 일시중지
+     * - timestamp: 해당 시각이 지나면 자동으로 활성 상태로 전환
+     *
+     * @see manualOverrideState
+     */
+    val pauseUntil: Long? = null
 )
 
