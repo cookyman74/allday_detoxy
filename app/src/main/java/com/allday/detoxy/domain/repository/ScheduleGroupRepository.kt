@@ -162,5 +162,15 @@ interface ScheduleGroupRepository {
      * @param pauseUntil 일시중지 해제 시각 (null: 일시중지 아님 또는 무기한)
      */
     suspend fun updateManualOverride(groupId: String, overrideState: String?, pauseUntil: Long?)
+
+    /**
+     * 만료된 일시중지 자동 해제 (v8+)
+     *
+     * pauseUntil이 현재 시각보다 이전인 그룹의 manualOverrideState를 null로 초기화합니다.
+     * 앱 시작 시 또는 ViewModel 초기화 시 호출하여 만료된 일시중지 상태를 정리합니다.
+     *
+     * @return 업데이트된 행 수
+     */
+    suspend fun clearExpiredPauses(): Int
 }
 

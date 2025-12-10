@@ -191,41 +191,43 @@
 **예상 소요**: 1일
 
 #### 사전작업
-- [ ] 단계 3 작업결과서 확인
-- [ ] 현재 `ScheduleGroupViewModel.kt` 구조 확인
-- [ ] 현재 `ScheduleGroupRepository.kt` 인터페이스 확인
-- [ ] `ScheduleGroupManager.kt` 의존성 확인
+- [x] 단계 3 작업결과서 확인
+- [x] 현재 `ScheduleGroupViewModel.kt` 구조 확인
+- [x] 현재 `ScheduleGroupRepository.kt` 인터페이스 확인
+- [x] `ScheduleGroupManager.kt` 의존성 확인
 
 #### 작업
-- [ ] **4.1** `ScheduleGroupRepository.kt` 인터페이스 추가
+- [x] **4.1** `ScheduleGroupRepository.kt` 인터페이스 추가 *(단계 3에서 완료)*
   ```kotlin
   suspend fun updateManualOverride(groupId: String, overrideState: String?, pauseUntil: Long?)
+  suspend fun clearExpiredPauses(): Int  // 단계 4에서 추가
   ```
 
-- [ ] **4.2** `ScheduleGroupRepositoryImpl.kt` 구현
+- [x] **4.2** `ScheduleGroupRepositoryImpl.kt` 구현 *(단계 3에서 완료)*
   - updateManualOverride 메서드 구현
-  - DAO 호출
+  - clearExpiredPauses 메서드 추가 (단계 4에서 추가)
 
-- [ ] **4.3** `ScheduleGroupViewModel.kt` 수정
+- [x] **4.3** `ScheduleGroupViewModel.kt` 수정 *(단계 3에서 완료)*
   - `changeControlState(groupId, newState)` 함수 추가
   - `pauseScheduleGroup(groupId, duration)` 함수 추가
-  - `getControlState(group)` 함수 추가
-  - `calculateMidnight()`, `calculateTomorrowMidnight()` 유틸 함수
+  - `clearExpiredPausesOnInit()` 추가 (단계 4에서 추가)
+  - `calculateMidnight()`, `calculateTomorrowMidnight()` → PauseDuration enum에서 처리
 
-- [ ] **4.4** 상태 변경 로직 구현
+- [x] **4.4** 상태 변경 로직 구현 *(단계 3에서 완료)*
   - ACTIVE: manualOverride 해제 + activateGroup
   - INACTIVE: manualOverride 설정 + deactivateGroup
   - PAUSED: manualOverride 설정 + pauseUntil 설정
 
-- [ ] **4.5** 일시중지 만료 체크 로직
-  - pauseUntil 비교하여 만료 시 ACTIVE 반환
+- [x] **4.5** 일시중지 만료 체크 로직
+  - `fromEntity()`: pauseUntil 비교하여 만료 시 ACTIVE 반환
+  - `clearExpiredPausesOnInit()`: ViewModel 초기화 시 DB 자동 정리
 
 #### 작업후처리
-- [ ] 작업결과서 작성: `working_history/version_2.0/04_ViewModel_Repository수정_{날짜}.md`
-- [ ] 기록할 내용:
+- [x] 작업결과서 작성: `working_history/version_2.0/04_ViewModel_Repository수정_2025-12-10.md`
+- [x] 기록할 내용:
   - 새로 추가된 함수 목록
   - 상태 전환 플로우 다이어그램
-  - 단위 테스트 결과 (있는 경우)
+  - 아키텍처 다이어그램
 
 ---
 
@@ -357,7 +359,7 @@
 | 1 | DB 마이그레이션 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [01_DB마이그레이션_v8_2025-12-10.md](../working_history/version_2.0/01_DB마이그레이션_v8_2025-12-10.md) |
 | 2 | ScheduleControlButton 구현 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [02_ScheduleControlButton구현_2025-12-10.md](../working_history/version_2.0/02_ScheduleControlButton구현_2025-12-10.md) |
 | 3 | ScheduleGroupCard 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [03_ScheduleGroupCard수정_2025-12-10.md](../working_history/version_2.0/03_ScheduleGroupCard수정_2025-12-10.md) |
-| 4 | ViewModel/Repository 수정 | ⬜ 대기 | - | - | - |
+| 4 | ViewModel/Repository 수정 | ✅ 완료 | 2025-12-10 | 2025-12-10 | [04_ViewModel_Repository수정_2025-12-10.md](../working_history/version_2.0/04_ViewModel_Repository수정_2025-12-10.md) |
 | 5 | GeofenceTransitionsReceiver 수정 | ⬜ 대기 | - | - | - |
 | 6 | AutoRunAlarmReceiver 수정 | ⬜ 대기 | - | - | - |
 | 7 | 통합 테스트 및 버그 수정 | ⬜ 대기 | - | - | - |

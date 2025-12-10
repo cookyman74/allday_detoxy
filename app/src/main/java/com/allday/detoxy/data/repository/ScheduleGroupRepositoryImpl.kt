@@ -114,5 +114,9 @@ class ScheduleGroupRepositoryImpl @Inject constructor(
     override suspend fun updateManualOverride(groupId: String, overrideState: String?, pauseUntil: Long?) {
         scheduleGroupDao.updateManualOverride(groupId, overrideState, pauseUntil)
     }
+
+    override suspend fun clearExpiredPauses(): Int {
+        return scheduleGroupDao.clearExpiredPauses(System.currentTimeMillis())
+    }
 }
 

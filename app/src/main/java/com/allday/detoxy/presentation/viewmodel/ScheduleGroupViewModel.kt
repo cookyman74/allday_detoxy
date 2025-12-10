@@ -41,6 +41,11 @@ class ScheduleGroupViewModel @Inject constructor(
     private val timeBasedRepository: TimeBasedAutoRunRepository
 ) : ViewModel() {
 
+    init {
+        // v8: 앱 시작 시 만료된 일시중지 상태 자동 해제
+        clearExpiredPausesOnInit()
+    }
+
     /**
      * 모든 ScheduleGroup 목록 (Flow)
      */
@@ -307,6 +312,26 @@ class ScheduleGroupViewModel @Inject constructor(
                 _errorState.value = "일시중지 실패: ${e.message}"
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * 만료된 일시중지 자동 해제 (v8)
+     *
+     * ViewModel 초기화 시 호출되어 만료된 일시중지 상태를 정리합니다.
+     * 백그라운드에서 조용히 실행되며 UI에 영향을 주지 않습니다.
+     */
+    private fun clearExpiredPausesOnInit() {
+        viewModelScope.launch {
+            try {
+                val clearedCount = repository.clearExpiredPauses()
+                if (clearedCount > 0) {
+                    android.util.Log.d("ScheduleGroupVM", "v8: Cleared $clearedCount expired pauses")
+                }
+            } catch (e: Exception) {
+                // 초기화 실패 시 로그만 기록 (UI 에러 표시 안함)
+                android.util.Log.w("ScheduleGroupVM", "Failed to clear expired pauses: ${e.message}")
             }
         }
     }
