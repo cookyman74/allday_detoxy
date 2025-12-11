@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.data.local.entity.ScheduleGroup
+import com.allday.detoxy.presentation.ui.component.GlassDialog
 
 /**
  * ScheduleGroup 추가/편집 다이얼로그
@@ -28,14 +29,18 @@ fun AddScheduleGroupDialog(
     var description by remember { mutableStateOf(existingGroup?.description ?: "") }
     var nameError by remember { mutableStateOf<String?>(null) }
     
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    GlassDialog(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             Text(
-                text = if (existingGroup != null) "스케줄 그룹 편집" else "스케줄 그룹 추가"
+                text = if (existingGroup != null) "스케줄 그룹 편집" else "스케줄 그룹 추가",
+                style = MaterialTheme.typography.titleLarge
             )
-        },
-        text = {
+            
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -76,7 +81,7 @@ fun AddScheduleGroupDialog(
                 // 안내 메시지
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f) // 약간 투명하게
                     )
                 ) {
                     Text(
@@ -86,27 +91,29 @@ fun AddScheduleGroupDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (name.isBlank()) {
-                        nameError = "그룹 이름을 입력해주세요"
-                    } else {
-                        onConfirm(name.trim(), description.trim().takeIf { it.isNotEmpty() })
-                        onDismiss()
-                    }
-                }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Text(if (existingGroup != null) "수정" else "추가")
+                TextButton(onClick = onDismiss) {
+                    Text("취소")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        if (name.isBlank()) {
+                            nameError = "그룹 이름을 입력해주세요"
+                        } else {
+                            onConfirm(name.trim(), description.trim().takeIf { it.isNotEmpty() })
+                            onDismiss()
+                        }
+                    }
+                ) {
+                    Text(if (existingGroup != null) "수정" else "추가")
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("취소")
-            }
-        },
-        modifier = modifier
-    )
+        }
+    }
 }
 

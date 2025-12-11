@@ -18,6 +18,7 @@ import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
 import com.allday.detoxy.presentation.ui.timer.components.*
 import com.allday.detoxy.presentation.ui.component.GlassSurface
+import com.allday.detoxy.presentation.ui.component.GlassDialog
 import com.allday.detoxy.presentation.ui.component.liquidGlass
 import com.allday.detoxy.presentation.ui.theme.GlassWhite
 
@@ -397,17 +398,21 @@ fun CircularTimerDisplay(
 fun SuccessCelebrationDialog(
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    GlassDialog(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             Text(
                 text = "🎉 집중 성공!",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
             )
-        },
-        text = {
+            
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -419,16 +424,21 @@ fun SuccessCelebrationDialog(
                 Text(
                     text = "집중 시간을 성공적으로 완료했어요.\n계속해서 좋은 습관을 만들어가세요!",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
             }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Button(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("확인")
             }
         }
-    )
+    }
 }
 
 /**
@@ -455,30 +465,36 @@ fun PermissionErrorDialog(
         }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    GlassDialog(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-        },
-        text = {
+            
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium
             )
-        },
-        confirmButton = {
-            Button(onClick = onOpenSettings) {
-                Text("설정으로 이동")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("취소")
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text("취소")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = onOpenSettings) {
+                    Text("설정으로 이동")
+                }
             }
         }
-    )
+    }
 }

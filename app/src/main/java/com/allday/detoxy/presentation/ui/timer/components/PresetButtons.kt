@@ -11,7 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
 import com.allday.detoxy.data.local.entity.CustomTimerPreset
+import com.allday.detoxy.presentation.ui.component.GlassSurface
 
 /**
  * 프리셋 버튼 Row
@@ -205,56 +208,68 @@ fun PresetManagementBottomSheet(
     
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState
+        sheetState = sheetState,
+        containerColor = Color.Transparent,
+        dragHandle = null // DragHandle will be inside GlassSurface
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            alpha = 0.5f // Matching GlassDialog alpha
         ) {
-            // 프리셋 정보
-            Text(
-                text = preset.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Text(
-                text = "${preset.durationMinutes}분",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            
-            HorizontalDivider()
-            
-            // 편집 버튼
-            TextButton(
-                onClick = {
-                    onEdit()
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("편집하기")
+                // Drag Handle
+                BottomSheetDefaults.DragHandle(
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+
+                // 프리셋 정보
+                Text(
+                    text = preset.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Text(
+                    text = "${preset.durationMinutes}분",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                HorizontalDivider()
+                
+                // 편집 버튼
+                TextButton(
+                    onClick = {
+                        onEdit()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("편집하기")
+                }
+                
+                // 삭제 버튼
+                TextButton(
+                    onClick = {
+                        onDelete()
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("삭제하기")
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            // 삭제 버튼
-            TextButton(
-                onClick = {
-                    onDelete()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("삭제하기")
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

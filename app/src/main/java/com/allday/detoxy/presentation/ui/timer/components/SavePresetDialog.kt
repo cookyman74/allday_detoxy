@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.allday.detoxy.presentation.ui.component.GlassDialog
 
 /**
  * 프리셋 저장 다이얼로그
@@ -44,16 +45,20 @@ fun SavePresetDialog(
     var selectedPresetType by remember { mutableStateOf<String?>(null) }
     var showError by remember { mutableStateOf(false) }
     
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    GlassDialog(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Title
             Text(
                 text = "프리셋 저장",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-        },
-        text = {
+            
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -94,27 +99,31 @@ fun SavePresetDialog(
                     onTypeSelected = { selectedPresetType = it }
                 )
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (presetName.isBlank()) {
-                        showError = true
-                    } else {
-                        onSave(presetName.trim(), selectedPresetType)
-                        onDismiss()
-                    }
-                }
+            
+            // Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Text("저장")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("취소")
+                TextButton(onClick = onDismiss) {
+                    Text("취소")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        if (presetName.isBlank()) {
+                            showError = true
+                        } else {
+                            onSave(presetName.trim(), selectedPresetType)
+                            onDismiss()
+                        }
+                    }
+                ) {
+                    Text("저장")
+                }
             }
         }
-    )
+    }
 }
 
 /**
@@ -185,16 +194,19 @@ fun EditPresetDialog(
     var editedType by remember { mutableStateOf(presetType) }
     var showError by remember { mutableStateOf(false) }
     
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    GlassDialog(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
             Text(
                 text = "프리셋 편집",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-        },
-        text = {
+            
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -227,27 +239,30 @@ fun EditPresetDialog(
                     onTypeSelected = { editedType = it }
                 )
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (editedName.isBlank()) {
-                        showError = true
-                    } else {
-                        onSave(editedName.trim(), editedType)
-                        onDismiss()
-                    }
-                }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Text("저장")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("취소")
+                TextButton(onClick = onDismiss) {
+                    Text("취소")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        if (editedName.isBlank()) {
+                            showError = true
+                        } else {
+                            onSave(editedName.trim(), editedType)
+                            onDismiss()
+                        }
+                    }
+                ) {
+                    Text("저장")
+                }
             }
         }
-    )
+    }
 }
 
 /**
@@ -263,39 +278,45 @@ fun DeletePresetDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
+    GlassDialog(
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
             Text(
                 text = "프리셋 삭제",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
-        },
-        text = {
+            
             Text(
                 text = "'$presetName' 프리셋을 삭제하시겠습니까?\n\n삭제하면 복구할 수 없습니다.",
                 style = MaterialTheme.typography.bodyMedium
             )
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onConfirm()
-                    onDismiss()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
             ) {
-                Text("삭제")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("취소")
+                TextButton(onClick = onDismiss) {
+                    Text("취소")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        onConfirm()
+                        onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("삭제")
+                }
             }
         }
-    )
+    }
 }
 
