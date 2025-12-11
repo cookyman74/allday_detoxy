@@ -137,4 +137,7 @@ dependencies {
     // Debug
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    // Glassmorphism
+    implementation(libs.haze)
+    implementation(libs.haze.materials)
 }

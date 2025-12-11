@@ -36,20 +36,20 @@
 **예상 소요**: 0.5일
 
 #### 사전작업
-- [ ] `libs.versions.toml` 파일 확인
-- [ ] Haze 라이브러리 최신 버전 확인
+- [x] `libs.versions.toml` 파일 확인
+- [x] Haze 라이브러리 최신 버전 확인
 
 #### 작업
-- [ ] **1.1** Haze 라이브러리 의존성 추가
+- [x] **1.1** Haze 라이브러리 의존성 추가
   - `libs.versions.toml`: `haze = { module = "dev.chrisbanes.haze:haze-jetpack-compose", version = "..." }`
   - `app/build.gradle.kts`: `implementation(libs.haze)`
-- [ ] **1.2** Mesh Gradient 리소스 추가
+- [x] **1.2** Mesh Gradient 리소스 추가
   - `res/drawable`에 그라데이션 이미지 자산 추가 (또는 코드 기반 Brush 정의)
-- [ ] **1.3** Color Palette 확장
+- [x] **1.3** Color Palette 확장
   - `ui/theme/Color.kt`: Glass 효과용 투명도 색상 정의
 
 #### 작업후처리
-- [ ] 작업결과서 작성: `working_history/version_2.0/01_Glass라이브러리설정_2025-12-11.md`
+- [x] 작업결과서 작성: `working_history/version_2.0/01_Glass라이브러리설정_2025-12-11.md`
 - [ ] 기록할 내용:
   - 추가된 라이브러리 버전
   - 정의된 컬러/리소스 목록
@@ -181,7 +181,7 @@
 
 | 단계 | 작업명 | 상태 | 시작일 | 완료일 | 작업결과서 |
 |------|--------|------|--------|--------|-----------|
-| 1 | 라이브러리 및 리소스 설정 | ⬜ 대기 | - | - | - |
+| 1 | 라이브러리 및 리소스 설정 | ✅ 완료 | 2025-12-11 | 2025-12-11 | [01_Glass라이브러리설정_2025-12-11.md](../working_history/version_2.0/01_Glass라이브러리설정_2025-12-11.md) |
 | 2 | 기반 컴포넌트(Primitive) 구현 | ⬜ 대기 | - | - | - |
 | 3 | 메인 네비게이션 개편 | ⬜ 대기 | - | - | - |
 | 4 | 주요 화면 및 카드 적용 | ⬜ 대기 | - | - | - |
