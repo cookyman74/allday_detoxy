@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import com.allday.detoxy.presentation.ui.theme.GlassBorderDark
 import com.allday.detoxy.presentation.ui.theme.GlassBorderLight
 import com.allday.detoxy.presentation.ui.theme.GlassWhite
+import com.allday.detoxy.presentation.ui.theme.GlassBlack
 import com.allday.detoxy.presentation.ui.theme.LocalHazeState
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -39,10 +40,17 @@ fun Modifier.liquidGlass(
     shape: Shape = RoundedCornerShape(24.dp),
     alpha: Float = 0.4f,
     borderStrokeWidth: Dp = 1.dp,
-    glassTint: Color = GlassWhite.copy(alpha = alpha)
+    glassTint: Color = Color.Unspecified
 ): Modifier {
     val isLight = !isSystemInDarkTheme()
     val borderColor = if (isLight) GlassBorderLight else GlassBorderDark
+    
+    // Resolve tint color based on theme if not specified
+    val resolvedTint = if (glassTint != Color.Unspecified) {
+        glassTint
+    } else {
+        if (isLight) GlassWhite.copy(alpha = alpha) else GlassBlack.copy(alpha = alpha)
+    }
     
     // HazeChild applies the blur effect by sampling the "haze source" (background).
     // If hazeState is not provided (e.g. preview mode or fallback), we just use a semi-transparent background.
@@ -50,13 +58,13 @@ fun Modifier.liquidGlass(
         Modifier.hazeChild(
             state = hazeState,
             style = HazeStyle(
-                tint = HazeTint(glassTint),
+                tint = HazeTint(resolvedTint),
                 blurRadius = blurRadius,
             )
         )
     } else {
         // Fallback for when HazeState is missing (or preview)
-        Modifier.background(glassTint, shape)
+        Modifier.background(resolvedTint, shape)
     }
 
     return this
