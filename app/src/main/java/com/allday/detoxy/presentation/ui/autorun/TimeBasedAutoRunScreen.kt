@@ -111,9 +111,10 @@ fun TimeBasedAutoRunScreen(
     val autoStartDelayMinutes by viewModel.autoStartDelayMinutes.collectAsStateWithLifecycle()
     val preNotificationMinutes by viewModel.preNotificationMinutes.collectAsStateWithLifecycle()
     
-    // 자동 실행 제어 상태
-    val masterEnabled by viewModel.masterEnabled.collectAsStateWithLifecycle()
-    val pauseUntil by viewModel.pauseUntil.collectAsStateWithLifecycle()
+    // v8: 자동 실행 제어 상태 (AutoRunControlCard 주석처리로 미사용)
+    // ScheduleGroupCard의 ScheduleControlButton으로 그룹 레벨 제어가 이동됨
+    // val masterEnabled by viewModel.masterEnabled.collectAsStateWithLifecycle()
+    // val pauseUntil by viewModel.pauseUntil.collectAsStateWithLifecycle()
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()  // 🆕 3.5차 고도화: Coroutine scope
@@ -190,15 +191,19 @@ fun TimeBasedAutoRunScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. 자동 실행 제어 카드 (MVP)
-            AutoRunControlCard(
-                masterEnabled = masterEnabled,
-                pauseUntil = pauseUntil,
-                onMasterEnabledChange = { viewModel.setMasterEnabled(it) },
-                onPauseForHours = { viewModel.pauseForHours(it) },
-                onPauseUntilMidnight = { viewModel.pauseUntilMidnight() },
-                onResume = { viewModel.resumeAutoRun() }
-            )
+            // v8: 스케줄 그룹 화면에서는 AutoRunControlCard 숨김
+            // ScheduleGroupCard의 ScheduleControlButton으로 그룹 레벨 제어가 이동됨
+            // 일반 화면(scheduleGroupId == null)에서만 마스터 스위치 표시
+            // if (scheduleGroupId == null) {
+            //     AutoRunControlCard(
+            //         masterEnabled = masterEnabled,
+            //         pauseUntil = pauseUntil,
+            //         onMasterEnabledChange = { viewModel.setMasterEnabled(it) },
+            //         onPauseForHours = { viewModel.pauseForHours(it) },
+            //         onPauseUntilMidnight = { viewModel.pauseUntilMidnight() },
+            //         onResume = { viewModel.resumeAutoRun() }
+            //     )
+            // }
             
             // 2. 정확 알람 권한 경고 배너
             if (!canScheduleExactAlarms) {
