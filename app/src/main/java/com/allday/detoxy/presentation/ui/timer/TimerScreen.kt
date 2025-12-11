@@ -17,6 +17,9 @@ import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
 import com.allday.detoxy.presentation.ui.timer.components.*
+import com.allday.detoxy.presentation.ui.component.GlassSurface
+import com.allday.detoxy.presentation.ui.component.liquidGlass
+import com.allday.detoxy.presentation.ui.theme.GlassWhite
 
 /**
  * 타이머 메인 화면 (도넛 그래프 통합)
@@ -154,83 +157,108 @@ fun TimerScreen(
         // 타이머 상태에 따른 UI 표시
         when (timerState) {
             FocusState.IDLE -> {
-                // 도넛 그래프 (IDLE 상태에서만 표시)
-                DonutTimerPicker(
-                    selectedMinutes = selectedMinutes,
-                    onMinutesChange = { selectedMinutes = it },
-                    modifier = Modifier.padding(vertical = 16.dp)
-                )
-                
-                // 다음 예약 정보 표시
-                if (nextAutoRunInfo != null) {
-                    Text(
-                        text = nextAutoRunInfo!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                // 프리셋으로 저장 버튼 (기본 프리셋이 아닐 때)
-                if (selectedMinutes !in listOf(25, 45, 60)) {
-                    OutlinedButton(
-                        onClick = { showSaveDialog = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("프리셋으로 저장")
-                    }
-                }
-                
-                // 프리셋 버튼
-                PresetButtonRow(
-                    customPresets = customPresets,
-                    selectedMinutes = selectedMinutes,
-                    onPresetClick = { minutes, presetId ->
-                        selectedMinutes = minutes
-                        viewModel.incrementPresetUsage(presetId)
-                    },
-                    onPresetLongClick = { preset ->
-                        selectedPreset = preset
-                        showPresetSheet = true
-                    }
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // 시작 버튼
-                Button(
-                    onClick = { viewModel.startTimer(selectedMinutes) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
+                // Glass Panel for Timer Controls
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    alpha = 0.3f
                 ) {
-                    Text(
-                        text = "시작하기",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // 도넛 그래프 (IDLE 상태에서만 표시)
+                        DonutTimerPicker(
+                            selectedMinutes = selectedMinutes,
+                            onMinutesChange = { selectedMinutes = it },
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        )
+                        
+                        // 다음 예약 정보 표시
+                        if (nextAutoRunInfo != null) {
+                            Text(
+                                text = nextAutoRunInfo!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // 프리셋으로 저장 버튼 (기본 프리셋이 아닐 때)
+                        if (selectedMinutes !in listOf(25, 45, 60)) {
+                            OutlinedButton(
+                                onClick = { showSaveDialog = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("프리셋으로 저장")
+                            }
+                        }
+                        
+                        // 프리셋 버튼
+                        PresetButtonRow(
+                            customPresets = customPresets,
+                            selectedMinutes = selectedMinutes,
+                            onPresetClick = { minutes, presetId ->
+                                selectedMinutes = minutes
+                                viewModel.incrementPresetUsage(presetId)
+                            },
+                            onPresetLongClick = { preset ->
+                                selectedPreset = preset
+                                showPresetSheet = true
+                            }
+                        )
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        // 시작 버튼
+                        Button(
+                            onClick = { viewModel.startTimer(selectedMinutes) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                        ) {
+                            Text(
+                                text = "시작하기",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                    }
                 }
             }
 
             FocusState.RUNNING -> {
-                // 원형 프로그레스 바 & 타이머 표시
-                CircularTimerDisplay(
-                    state = timerState,
-                    remainingSeconds = remainingSeconds,
-                    totalSeconds = totalSeconds
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                // 포기 버튼
-                Button(
-                    onClick = { viewModel.giveUpTimer() },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    alpha = 0.3f
                 ) {
-                    Text("포기하기")
+                    Column(
+                        modifier = Modifier
+                            .padding(32.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // 원형 프로그레스 바 & 타이머 표시
+                        CircularTimerDisplay(
+                            state = timerState,
+                            remainingSeconds = remainingSeconds,
+                            totalSeconds = totalSeconds
+                        )
+                        
+                        Spacer(modifier = Modifier.height(32.dp))
+                        
+                        // 포기 버튼
+                        Button(
+                            onClick = { viewModel.giveUpTimer() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                        ) {
+                            Text("포기하기")
+                        }
+                    }
                 }
             }
 

@@ -14,9 +14,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.dp
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.domain.model.PauseDuration
 import com.allday.detoxy.domain.model.ScheduleGroupControlState
+import com.allday.detoxy.presentation.ui.component.GlassSurface
+import com.allday.detoxy.presentation.ui.theme.GlassWhite
 
 /**
  * ScheduleGroup 카드 컴포넌트 (v8.1 UX 개선)
@@ -71,16 +74,17 @@ fun ScheduleGroupCard(
     modifier: Modifier = Modifier
 ) {
     // 상태별 카드 배경색
-    val cardBackgroundColor = when (controlState) {
-        ScheduleGroupControlState.ACTIVE -> MaterialTheme.colorScheme.primaryContainer
-        ScheduleGroupControlState.PAUSED -> MaterialTheme.colorScheme.tertiaryContainer
-        ScheduleGroupControlState.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant
+    // 상태별 카드 Tint 색상
+    val cardTint = when (controlState) {
+        ScheduleGroupControlState.ACTIVE -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        ScheduleGroupControlState.PAUSED -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+        ScheduleGroupControlState.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     }
-    Card(
+    
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = cardBackgroundColor
-        )
+        tint = cardTint,
+        alpha = 0.4f
     ) {
         Column(
             modifier = Modifier
