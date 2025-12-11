@@ -24,10 +24,14 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.allday.detoxy.core.utils.PreferenceManager
 import com.allday.detoxy.presentation.ui.autorun.TimeBasedAutoRunScreen
 import com.allday.detoxy.presentation.ui.autorun.LocationBasedAutoRunScreen
 import com.allday.detoxy.presentation.ui.autorun.ScheduleGroupScreen
+import com.allday.detoxy.presentation.ui.component.GlassBottomNavigation
+import com.allday.detoxy.presentation.ui.component.GlassNavigationItem
+import com.allday.detoxy.presentation.ui.component.GlassScaffold
 import com.allday.detoxy.presentation.ui.schedule.ScheduleTabScreen
 import com.allday.detoxy.presentation.ui.onboarding.WelcomeScreen
 import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
@@ -239,133 +243,98 @@ fun MainScreenWithNavigation() {
         showAutoRunScreen = AutoRunScreenType.NONE
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            // 자동 실행 화면에서는 하단 네비게이션 숨김
-            if (showAutoRunScreen == AutoRunScreenType.NONE) {
-                NavigationBar {
-                    // 탭 0: 타이머
-                    NavigationBarItem(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow,
-                                contentDescription = "타이머"
-                            )
-                        },
-                        label = { Text("타이머") }
-                    )
-                    
-                    // 🆕 탭 1: 스케줄 (신설)
-                    NavigationBarItem(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Filled.DateRange,
-                                contentDescription = "스케줄"
-                            )
-                        },
-                        label = { Text("스케줄") }
-                    )
-                    
-                    // 탭 2: 리포트 (기존 1 → 2)
-                    NavigationBarItem(
-                        selected = selectedTab == 2,
-                        onClick = { selectedTab = 2 },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = "리포트"
-                            )
-                        },
-                        label = { Text("리포트") }
-                    )
-                    
-                    // 탭 3: 설정 (기존 2 → 3)
-                    NavigationBarItem(
-                        selected = selectedTab == 3,
-                        onClick = { selectedTab = 3 },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "설정"
-                            )
-                        },
-                        label = { Text("설정") }
-                    )
-                }
-            }
-        }
-    ) { innerPadding ->
+    val tabs = listOf(
+        GlassNavigationItem(Icons.Default.PlayArrow, "타이머"),
+        GlassNavigationItem(Icons.Filled.DateRange, "스케줄"),
+        GlassNavigationItem(Icons.Default.Star, "리포트"),
+        GlassNavigationItem(Icons.Default.Settings, "설정")
+    )
+
+    GlassScaffold(
+        modifier = Modifier.fillMaxSize()
+    ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier = Modifier.fillMaxSize()
         ) {
-            when (showAutoRunScreen) {
-                // 시간 기반 자동 실행 화면
-                AutoRunScreenType.TIME_BASED -> {
-                    TimeBasedAutoRunScreen(
-                        onBack = {
-                            // 🆕 스케줄 그룹에서 온 경우 다시 스케줄 그룹으로, 아니면 설정으로
-                            if (selectedScheduleGroupId != null) {
-                                showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP
-                                selectedScheduleGroupId = null
-                                selectedScheduleGroupName = null
-                            } else {
-                                showAutoRunScreen = AutoRunScreenType.NONE
-                            }
-                        },
-                        onNavigateToLocationBased = { showAutoRunScreen = AutoRunScreenType.LOCATION_BASED },
-                        onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP },
-                        scheduleGroupId = selectedScheduleGroupId,  // 🆕 스케줄 그룹 ID 전달
-                        scheduleGroupName = selectedScheduleGroupName  // 🆕 스케줄 그룹 이름 전달
-                    )
-                }
-                // 위치 기반 자동 실행 화면
-                AutoRunScreenType.LOCATION_BASED -> {
-                    LocationBasedAutoRunScreen(
-                        onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
-                        onNavigateToTimeBased = { showAutoRunScreen = AutoRunScreenType.TIME_BASED },
-                        onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP }  // 🆕 3차 고도화
-                    )
-                }
-                // 🆕 3차 고도화: 시간표 그룹 관리 화면
-                AutoRunScreenType.SCHEDULE_GROUP -> {
-                    ScheduleGroupScreen(
-                        onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
-                        onNavigateToTimeBasedAutoRun = { scheduleGroupId, scheduleGroupName ->
-                            // 🆕 스케줄 그룹 정보 저장 후 TimeBasedAutoRunScreen으로 이동
-                            selectedScheduleGroupId = scheduleGroupId
-                            selectedScheduleGroupName = scheduleGroupName
-                            showAutoRunScreen = AutoRunScreenType.TIME_BASED
-                        },
-                        initialScrollToGroupId = selectedScheduleGroupId // 🆕 선택된 그룹으로 스크롤 이동
-                    )
-                }
-                // 탭별 화면
-                AutoRunScreenType.NONE -> {
-                    when (selectedTab) {
-                        0 -> TimerScreen()
-                        1 -> {
-                            // 🆕 스케줄 탭 (v0.10 UI/UX 개선)
-                            ScheduleTabScreen(
-                                onNavigateToDetail = { groupId ->
-                                    selectedScheduleGroupId = groupId
+            // Main Content Area
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = if (showAutoRunScreen == AutoRunScreenType.NONE) 80.dp else 0.dp) // Space for floating nav bar
+            ) {
+                when (showAutoRunScreen) {
+                    // 시간 기반 자동 실행 화면
+                    AutoRunScreenType.TIME_BASED -> {
+                        TimeBasedAutoRunScreen(
+                            onBack = {
+                                // 🆕 스케줄 그룹에서 온 경우 다시 스케줄 그룹으로, 아니면 설정으로
+                                if (selectedScheduleGroupId != null) {
                                     showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP
+                                    selectedScheduleGroupId = null
+                                    selectedScheduleGroupName = null
+                                } else {
+                                    showAutoRunScreen = AutoRunScreenType.NONE
                                 }
-                            )
-                        }
-                        2 -> ReportScreen()  // 기존 1 → 2
-                        3 -> DetoxyControlSettingsScreen(  // 기존 2 → 3
-                            onBack = { selectedTab = 0 }  // 뒤로 가기 시 타이머로
+                            },
+                            onNavigateToLocationBased = { showAutoRunScreen = AutoRunScreenType.LOCATION_BASED },
+                            onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP },
+                            scheduleGroupId = selectedScheduleGroupId,  // 🆕 스케줄 그룹 ID 전달
+                            scheduleGroupName = selectedScheduleGroupName  // 🆕 스케줄 그룹 이름 전달
                         )
                     }
+                    // 위치 기반 자동 실행 화면
+                    AutoRunScreenType.LOCATION_BASED -> {
+                        LocationBasedAutoRunScreen(
+                            onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
+                            onNavigateToTimeBased = { showAutoRunScreen = AutoRunScreenType.TIME_BASED },
+                            onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP }  // 🆕 3차 고도화
+                        )
+                    }
+                    // 🆕 3차 고도화: 시간표 그룹 관리 화면
+                    AutoRunScreenType.SCHEDULE_GROUP -> {
+                        ScheduleGroupScreen(
+                            onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
+                            onNavigateToTimeBasedAutoRun = { scheduleGroupId, scheduleGroupName ->
+                                // 🆕 스케줄 그룹 정보 저장 후 TimeBasedAutoRunScreen으로 이동
+                                selectedScheduleGroupId = scheduleGroupId
+                                selectedScheduleGroupName = scheduleGroupName
+                                showAutoRunScreen = AutoRunScreenType.TIME_BASED
+                            },
+                            initialScrollToGroupId = selectedScheduleGroupId // 🆕 선택된 그룹으로 스크롤 이동
+                        )
+                    }
+                    // 탭별 화면
+                    AutoRunScreenType.NONE -> {
+                        when (selectedTab) {
+                            0 -> TimerScreen()
+                            1 -> {
+                                // 🆕 스케줄 탭 (v0.10 UI/UX 개선)
+                                ScheduleTabScreen(
+                                    onNavigateToDetail = { groupId ->
+                                        selectedScheduleGroupId = groupId
+                                        showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP
+                                    }
+                                )
+                            }
+                            2 -> ReportScreen()  // 기존 1 → 2
+                            3 -> DetoxyControlSettingsScreen(  // 기존 2 → 3
+                                onBack = { selectedTab = 0 }  // 뒤로 가기 시 타이머로
+                            )
+                        }
+                    }
                 }
+            }
+
+            // Floating Navigation Bar (Only visible when not in sub-screens)
+            if (showAutoRunScreen == AutoRunScreenType.NONE) {
+                GlassBottomNavigation(
+                    tabs = tabs,
+                    selectedTab = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    modifier = Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
+                )
             }
         }
     }
 }
+
