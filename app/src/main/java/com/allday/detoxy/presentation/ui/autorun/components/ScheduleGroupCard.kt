@@ -19,21 +19,25 @@ import com.allday.detoxy.domain.model.PauseDuration
 import com.allday.detoxy.domain.model.ScheduleGroupControlState
 
 /**
- * ScheduleGroup 카드 컴포넌트 (v8 버튼 역할 변경)
+ * ScheduleGroup 카드 컴포넌트 (v8.1 UX 개선)
  *
  * ScheduleGroup 정보를 표시하고 편집/삭제/제어 기능을 제공합니다.
  *
- * ## UI 구조
- * - 헤더: 아이콘 + 이름 + 통합 제어 버튼 (ScheduleControlButton)
+ * ## UI 구조 (v8.1 UX 개선)
+ * - 헤더: 아이콘 + 이름 + 토글 스위치 (활성/비활성)
  * - 설명
  * - 위치 정보 (클릭 시 상세/수정)
- * - 시간 정보 (클릭 시 상세/수정)
+ * - 시간 정보 + 일시중지 버튼 (클릭 시 상세/수정)
  * - 하단: 수정/삭제 버튼
  *
  * ## 상태별 배경색
  * - ACTIVE: primaryContainer (녹색 계열)
  * - PAUSED: tertiaryContainer (주황색 계열)
  * - INACTIVE: surfaceVariant (회색 계열)
+ *
+ * ## v8.1 변경사항 (UX 개선)
+ * - 헤더: ScheduleControlButton → 토글 스위치 (발견성 향상)
+ * - 시간 섹션: 일시중지 버튼 추가 (접근성 개선)
  *
  * @param group 표시할 ScheduleGroup
  * @param controlState 통합 제어 상태 (ACTIVE/PAUSED/INACTIVE)
@@ -48,7 +52,6 @@ import com.allday.detoxy.domain.model.ScheduleGroupControlState
  * @param onTimeClick 시간 정보 클릭 콜백
  * @param modifier Modifier
  *
- * @see ScheduleControlButton
  * @see ScheduleGroupControlState
  */
 @Composable
@@ -85,7 +88,7 @@ fun ScheduleGroupCard(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 헤더: 아이콘 + 이름 + 토글
+            // 헤더: 아이콘 + 이름 + 토글 스위치 (v8.1)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -114,12 +117,18 @@ fun ScheduleGroupCard(
                     )
                 }
                 
-                // 통합 제어 버튼 (v8)
-                ScheduleControlButton(
-                    controlState = controlState,
-                    pauseUntil = pauseUntil,
-                    onStateChange = onStateChange,
-                    onPause = onPause
+                // v8.1: 토글 스위치로 복원 (활성/비활성)
+                // ACTIVE 또는 PAUSED → ON, INACTIVE → OFF
+                val isEnabled = controlState != ScheduleGroupControlState.INACTIVE
+                Switch(
+                    checked = isEnabled,
+                    onCheckedChange = { checked ->
+                        if (checked) {
+                            onStateChange(ScheduleGroupControlState.ACTIVE)
+                        } else {
+                            onStateChange(ScheduleGroupControlState.INACTIVE)
+                        }
+                    }
                 )
             }
             
@@ -208,56 +217,116 @@ fun ScheduleGroupCard(
             
             HorizontalDivider()
             
-            // 시간 정보 (클릭 가능)
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = timeBasedAutoRuns.isNotEmpty(), onClick = onTimeClick),
-                color = Color.Transparent
+            // 시간 정보 + 일시중지 버튼 (v8.1)
+            // 일시중지 드롭다운 상태
+            var showPauseDropdown by remember { mutableStateOf(false) }
+            
+            Column(
+                modifier = Modifier.padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "시간",
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "시간",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                        Spacer(Modifier.weight(1f))
-                        if (timeBasedAutoRuns.isNotEmpty()) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = "상세보기",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "시간",
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "시간",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                    
+                    Spacer(Modifier.weight(1f))
+                    
+                    // v8.1: 일시중지 버튼 (활성 상태일 때만 표시)
+                    if (controlState != ScheduleGroupControlState.INACTIVE) {
+                        Box {
+                            // PAUSED 상태일 때 해제 버튼, ACTIVE 상태일 때 일시중지 버튼
+                            if (controlState == ScheduleGroupControlState.PAUSED) {
+                                OutlinedButton(
+                                    onClick = { onStateChange(ScheduleGroupControlState.ACTIVE) },
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                    modifier = Modifier.height(32.dp)
+                                ) {
+                                    Text(
+                                        text = "해제 (${formatRemainingTime(pauseUntil)})",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            } else {
+                                OutlinedButton(
+                                    onClick = { showPauseDropdown = true },
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                    modifier = Modifier.height(32.dp)
+                                ) {
+                                    Text(
+                                        text = "일시중지",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            }
+                            
+                            // 일시중지 드롭다운 메뉴
+                            DropdownMenu(
+                                expanded = showPauseDropdown,
+                                onDismissRequest = { showPauseDropdown = false }
+                            ) {
+                                PauseDuration.entries.forEach { duration ->
+                                    DropdownMenuItem(
+                                        text = { Text(duration.displayName) },
+                                        onClick = {
+                                            onPause(duration)
+                                            showPauseDropdown = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                     
-                    if (timeBasedAutoRuns.isEmpty()) {
-                        Text(
-                            text = "설정된 시간대 없음",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    } else {
-                        timeBasedAutoRuns.forEach { autoRun ->
-                            Text(
-                                text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
-                                style = MaterialTheme.typography.bodyMedium
+                    // 시간 상세 화살표
+                    if (timeBasedAutoRuns.isNotEmpty()) {
+                        IconButton(
+                            onClick = onTimeClick,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "상세보기",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        }
+                    }
+                }
+                
+                // 시간대 목록 (클릭 시 상세)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = timeBasedAutoRuns.isNotEmpty(), onClick = onTimeClick),
+                    color = Color.Transparent
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        if (timeBasedAutoRuns.isEmpty()) {
+                            Text(
+                                text = "설정된 시간대 없음",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else {
+                            timeBasedAutoRuns.forEach { autoRun ->
+                                Text(
+                                    text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                     }
                 }
@@ -337,5 +406,30 @@ private fun getIconForType(iconType: String): ImageVector {
         "GYM" -> Icons.Default.Star
         "HOME" -> Icons.Default.Home
         else -> Icons.Default.Star
+    }
+}
+
+/**
+ * 일시중지 남은 시간 포맷 (v8.1)
+ *
+ * @param pauseUntil 일시중지 해제 시각 (timestamp)
+ * @return "1시간 30분" 형식의 문자열
+ */
+private fun formatRemainingTime(pauseUntil: Long?): String {
+    if (pauseUntil == null) return ""
+    
+    val now = System.currentTimeMillis()
+    val diff = pauseUntil - now
+    
+    if (diff <= 0) return "곧 해제"
+    
+    val hours = diff / (1000 * 60 * 60)
+    val minutes = (diff % (1000 * 60 * 60)) / (1000 * 60)
+    
+    return when {
+        hours > 0 && minutes > 0 -> "${hours}시간 ${minutes}분"
+        hours > 0 -> "${hours}시간"
+        minutes > 0 -> "${minutes}분"
+        else -> "1분 미만"
     }
 }
