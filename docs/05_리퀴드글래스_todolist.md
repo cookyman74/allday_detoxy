@@ -65,16 +65,16 @@
 - [ ] 현재 `Modifier` 확장 함수 구조 확인
 
 #### 작업
-- [ ] **2.1** `Modifier.liquidGlass()` 확장 함수 구현
+- [x] **2.1** `Modifier.liquidGlass()` 확장 함수 구현
   - 공통 Blur, Alpha, Border, Shadow, Clip 속성을 캡슐화
-- [ ] **2.2** `GlassSurface` Composable 구현
+- [x] **2.2** `GlassSurface` Composable 구현
   - Material3 Surface를 대체하거나 래핑하여 Glass 스타일 적용
-- [ ] **2.3** `GlassScaffold` 구현
+- [x] **2.3** `GlassScaffold` 구현
   - 배경(Mesh Gradient)과 컨텐츠(Glass)가 조화되도록 레이아웃 구성
 
 #### 작업후처리
-- [ ] 작업결과서 작성: `working_history/version_2.0/02_Glass기반컴포넌트구현_2025-12-11.md`
-- [ ] 기록할 내용:
+- [x] 작업결과서 작성: `working_history/version_2.0/02_Glass기반컴포넌트구현_2025-12-11.md`
+- [x] 기록할 내용:
   - 구현된 Modifier/Composable 사용법
   - Preview 스크린샷
 
@@ -182,7 +182,7 @@
 | 단계 | 작업명 | 상태 | 시작일 | 완료일 | 작업결과서 |
 |------|--------|------|--------|--------|-----------|
 | 1 | 라이브러리 및 리소스 설정 | ✅ 완료 | 2025-12-11 | 2025-12-11 | [01_Glass라이브러리설정_2025-12-11.md](../working_history/version_2.0/01_Glass라이브러리설정_2025-12-11.md) |
-| 2 | 기반 컴포넌트(Primitive) 구현 | ⬜ 대기 | - | - | - |
+| 2 | 기반 컴포넌트(Primitive) 구현 | ✅ 완료 | 2025-12-11 | 2025-12-11 | [02_Glass기반컴포넌트구현_2025-12-11.md](../working_history/version_2.0/02_Glass기반컴포넌트구현_2025-12-11.md) |
 | 3 | 메인 네비게이션 개편 | ⬜ 대기 | - | - | - |
 | 4 | 주요 화면 및 카드 적용 | ⬜ 대기 | - | - | - |
 | 5 | 다이얼로그 및 폴리싱 | ⬜ 대기 | - | - | - |
