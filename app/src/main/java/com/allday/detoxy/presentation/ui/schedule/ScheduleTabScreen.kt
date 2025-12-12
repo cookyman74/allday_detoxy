@@ -247,7 +247,8 @@ fun ScheduleTabScreen(
         locationViewModel.checkPermissions()
     }
 
-    GlassScaffold(
+    // MainActivity의 GlassScaffold 배경 위에 그려짐 (배경 중복 방지)
+    Box(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
@@ -350,7 +351,7 @@ fun ScheduleTabScreen(
         } // LazyColumn 끝
         } // Column 끝
         
-        // FAB (GlassScaffold 내 BoxScope)
+        // FAB (Box 내 BoxScope)
         FloatingActionButton(
             onClick = { showCreateDialog = true },
             containerColor = MaterialTheme.colorScheme.primary,
@@ -361,7 +362,7 @@ fun ScheduleTabScreen(
         ) {
             Icon(Icons.Default.Add, contentDescription = "시간표 추가")
         }
-    } // GlassScaffold 끝
+    } // Box 끝
     
     // 🆕 시간표 생성 다이얼로그 (위치 정보 등록 포함)
     if (showCreateDialog) {

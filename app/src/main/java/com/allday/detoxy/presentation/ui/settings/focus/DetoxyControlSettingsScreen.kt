@@ -73,15 +73,13 @@ fun DetoxyControlSettingsScreen(
     var showMessengerDialog by remember { mutableStateOf(false) }
     var pendingMessengerState by remember { mutableStateOf(false) }
 
-    GlassScaffold(
-        modifier = Modifier.fillMaxSize()
+    // MainActivity의 GlassScaffold 배경 위에 그려짐 (배경 중복 방지)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-        ) {
-            // Glass 스타일 상단 헤더
+        // Glass 스타일 상단 헤더
             GlassSurface(
                 modifier = Modifier.fillMaxWidth(),
                 alpha = 0.4f
@@ -187,7 +185,6 @@ fun DetoxyControlSettingsScreen(
                 Spacer(modifier = Modifier.height(80.dp))
             }
         }
-    }
 
     // 메신저 카테고리 안내 다이얼로그
     if (showMessengerDialog) {

@@ -68,15 +68,13 @@ fun ReportScreen(
             CircularProgressIndicator()
         }
     } else {
-        GlassScaffold(
-            modifier = Modifier.fillMaxSize()
+        // MainActivity의 GlassScaffold 배경 위에 그려짐 (배경 중복 방지)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding() // 필수: 상단 잘림 해결
-            ) {
-                // 헤더 (뒤로 가기 버튼 포함)
+            // 헤더 (뒤로 가기 버튼 포함)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -286,7 +284,6 @@ fun ReportScreen(
                     }
                 }
             }
-        }
     }
 
     // 코치 추천 다이얼로그 (Task 2B.3.4 - RiskLevel 분리 후 활성화)
