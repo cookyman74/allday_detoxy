@@ -1,12 +1,16 @@
 package com.allday.detoxy.presentation.ui.timer
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.launch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -178,6 +182,7 @@ fun TimerScreen(
                             initialPage = selectedTimerStyleIndex,
                             pageCount = { 3 }
                         )
+                        val coroutineScope = rememberCoroutineScope()
 
                         // 1. Pager 스와이프 → ViewModel 저장
                         LaunchedEffect(pagerState.currentPage) {
@@ -191,11 +196,38 @@ fun TimerScreen(
                             }
                         }
 
+                        // 🆕 상단 스와이프 영역 (타이머 스타일 선택용)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                                .pointerInput(pagerState) {
+                                    detectHorizontalDragGestures { _, dragAmount ->
+                                        coroutineScope.launch {
+                                            val targetPage = if (dragAmount < -50) {
+                                                (pagerState.currentPage + 1).coerceAtMost(2)
+                                            } else if (dragAmount > 50) {
+                                                (pagerState.currentPage - 1).coerceAtLeast(0)
+                                            } else {
+                                                pagerState.currentPage
+                                            }
+                                            if (targetPage != pagerState.currentPage) {
+                                                pagerState.animateScrollToPage(targetPage)
+                                            }
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // 스와이프 힌트 (선택적)
+                        }
+
                         HorizontalPager(
                             state = pagerState,
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(horizontal = 16.dp),
-                            pageSpacing = 16.dp
+                            pageSpacing = 16.dp,
+                            userScrollEnabled = false // 🆕 타이머 내부 스와이프 비활성화
                         ) { page ->
                             Box(
                                 modifier = Modifier.fillMaxWidth(),
@@ -243,39 +275,72 @@ fun TimerScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                        // Page Indicator
-                        Row(
-                            Modifier
-                                .wrapContentHeight()
+                        // 🆕 하단 스와이프 영역 + Page Indicator (클릭 가능)
+                        Box(
+                            modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            horizontalArrangement = Arrangement.Center
+                                .height(56.dp)
+                                .pointerInput(pagerState) {
+                                    detectHorizontalDragGestures { _, dragAmount ->
+                                        coroutineScope.launch {
+                                            val targetPage = if (dragAmount < -50) {
+                                                (pagerState.currentPage + 1).coerceAtMost(2)
+                                            } else if (dragAmount > 50) {
+                                                (pagerState.currentPage - 1).coerceAtLeast(0)
+                                            } else {
+                                                pagerState.currentPage
+                                            }
+                                            if (targetPage != pagerState.currentPage) {
+                                                pagerState.animateScrollToPage(targetPage)
+                                            }
+                                        }
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
-                            repeat(pagerState.pageCount) { iteration ->
-                                val color = if (pagerState.currentPage == iteration)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                                Box(
-                                    modifier = Modifier
-                                        .padding(4.dp)
-                                        .clip(CircleShape)
-                                        .background(color)
-                                        .size(8.dp)
-                                )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                // Page Indicator (클릭 가능)
+                                Row(
+                                    Modifier
+                                        .wrapContentHeight()
+                                        .fillMaxWidth()
+                                        .padding(bottom = 4.dp),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    repeat(pagerState.pageCount) { iteration ->
+                                        val color = if (pagerState.currentPage == iteration)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                .clip(CircleShape)
+                                                .background(color)
+                                                .size(10.dp) // 크기 약간 확대
+                                                .clickable {
+                                                    coroutineScope.launch {
+                                                        pagerState.animateScrollToPage(iteration)
+                                                    }
+                                                }
+                                        )
+                                    }
+                                }
+                                
+                                // 다음 예약 정보 표시
+                                if (nextAutoRunInfo != null) {
+                                    Text(
+                                        text = nextAutoRunInfo!!,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                             }
-                        }
-                        
-                        // 다음 예약 정보 표시
-                        if (nextAutoRunInfo != null) {
-                            Text(
-                                text = nextAutoRunInfo!!,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
