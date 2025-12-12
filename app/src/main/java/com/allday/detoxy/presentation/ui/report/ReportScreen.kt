@@ -74,24 +74,29 @@ fun ReportScreen(
                     .fillMaxSize()
                     .statusBarsPadding() // 필수: 상단 잘림 해결
             ) {
-                // 헤더 (투명하고 깔끔하게)
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 24.dp),
+                // 헤더 (설정 페이지와 동일한 크기)
+                GlassSurface(
+                    modifier = Modifier.fillMaxWidth(),
+                    alpha = 0.4f
                 ) {
-                    Text(
-                        text = "디톡시 리포트",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                    ) {
+                        Text(
+                            text = "디톡시 리포트",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // 빈 상태 처리
                     if (!uiState.hasData && uiState.todaySessions.isEmpty()) {
@@ -103,7 +108,7 @@ fun ReportScreen(
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 // 총 집중 시간
                                 GlassStatCard(
@@ -130,7 +135,7 @@ fun ReportScreen(
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 // 현재 스트릭
                                 GlassStatCard(
@@ -164,19 +169,19 @@ fun ReportScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(16.dp),
+                                            .padding(14.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Column {
                                             Text(
                                                 text = "오늘의 성공률",
-                                                style = MaterialTheme.typography.bodyMedium,
+                                                style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = "${String.format("%.0f", uiState.getSuccessRate())}%",
-                                                style = MaterialTheme.typography.headlineMedium,
+                                                style = MaterialTheme.typography.titleLarge,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
@@ -186,9 +191,9 @@ fun ReportScreen(
                                             progress = { uiState.getSuccessRate() / 100f },
                                             modifier = Modifier
                                                 .weight(1f)
-                                                .height(8.dp)
-                                                .padding(start = 24.dp)
-                                                .clip(RoundedCornerShape(4.dp)),
+                                                .height(6.dp)
+                                                .padding(start = 20.dp)
+                                                .clip(RoundedCornerShape(3.dp)),
                                             color = when {
                                                 uiState.getSuccessRate() >= 80 -> Color(0xFF4CAF50)
                                                 uiState.getSuccessRate() >= 50 -> Color(0xFFFFC107)
@@ -205,9 +210,9 @@ fun ReportScreen(
                         item {
                             Text(
                                 text = "주간 인사이트",
-                                style = MaterialTheme.typography.headlineSmall,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(vertical = 12.dp)
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
 
@@ -257,9 +262,9 @@ fun ReportScreen(
                             item {
                                 Text(
                                     text = "오늘의 세션",
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(vertical = 12.dp)
+                                    modifier = Modifier.padding(vertical = 8.dp)
                                 )
                             }
 
@@ -291,71 +296,68 @@ fun ReportScreen(
 }
 
 /**
- * 빈 상태 카드 (Task 2B.3.3 - 개선)
+ * 빈 상태 카드 (크기 최적화)
  */
 @Composable
 private fun EmptyStateCard() {
-    Card(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 32.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .padding(vertical = 16.dp),
+        alpha = 0.35f
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(48.dp),
+                .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 아이콘
-            Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(32.dp),
-                modifier = Modifier.size(96.dp)
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(24.dp)
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(48.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(36.dp)
+                )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // 제목
             Text(
                 text = "첫 디톡시 세션을 시작해보세요!",
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 설명
             Text(
                 text = "디톡시 세션을 시작하면\n다음과 같은 인사이트를 받을 수 있어요:",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                lineHeight = 20.sp
+                lineHeight = 18.sp
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // 기능 목록
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth(0.8f)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(0.85f)
             ) {
                 EmptyStateFeatureItem(
                     icon = Icons.Default.CheckCircle,
@@ -379,12 +381,12 @@ private fun EmptyStateCard() {
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // 안내 텍스트
             Text(
                 text = "타이머 탭에서 집중 모드를 시작해보세요!",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
@@ -394,7 +396,7 @@ private fun EmptyStateCard() {
 }
 
 /**
- * 빈 상태 기능 항목
+ * 빈 상태 기능 항목 (크기 최적화)
  */
 @Composable
 private fun EmptyStateFeatureItem(
@@ -410,22 +412,19 @@ private fun EmptyStateFeatureItem(
             imageVector = icon,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(16.dp)
         )
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
 
 /**
- * 통계 카드
- */
-/**
- * Glass 스타일 통계 카드
+ * Glass 스타일 통계 카드 (크기 최적화)
  */
 @Composable
 private fun GlassStatCard(
@@ -443,43 +442,43 @@ private fun GlassStatCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .background(color.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                    .size(36.dp)
+                    .background(color.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
                     tint = color,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 verticalAlignment = Alignment.Bottom
             ) {
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = unit,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 2.dp, bottom = 4.dp)
+                    modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
@@ -488,10 +487,7 @@ private fun GlassStatCard(
 }
 
 /**
- * 세션 카드
- */
-/**
- * Glass 스타일 세션 카드
+ * Glass 스타일 세션 카드 (크기 최적화)
  */
 @Composable
 private fun GlassSessionCard(
@@ -505,15 +501,15 @@ private fun GlassSessionCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(36.dp)
                     .background(
                         color = if (session.success) Color(0xFF4CAF50).copy(alpha = 0.2f) else Color(0xFFEF5350).copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(10.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -521,22 +517,22 @@ private fun GlassSessionCard(
                     imageVector = if (session.success) Icons.Default.CheckCircle else Icons.Default.Close,
                     contentDescription = if (session.success) "성공" else "실패",
                     tint = if (session.success) Color(0xFF4CAF50) else Color(0xFFEF5350),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (session.success) "성공 세션" else "실패 세션",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "${session.durationMinutes}분 • ${formatTime(session.startTime)}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -545,14 +541,14 @@ private fun GlassSessionCard(
                 val points = session.durationMinutes * 10 // 1분당 10포인트
                 Surface(
                     color = Color(0xFF4CAF50).copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
                         text = "+${points}P",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         color = Color(0xFF4CAF50),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        fontSize = 11.sp
                     )
                 }
             }
