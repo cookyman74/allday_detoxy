@@ -93,12 +93,23 @@ fun TimerScreen(
         )
     }
     
-    // 프리셋 저장 다이얼로그
+    // 프리셋 저장/업데이트 다이얼로그
     if (showSaveDialog) {
+        val existingPresetForSave = customPresets.find { it.durationMinutes == selectedMinutes }
         SavePresetDialog(
             durationMinutes = selectedMinutes,
+            existingPresetName = existingPresetForSave?.name,
+            existingPresetType = existingPresetForSave?.presetType,
             onSave = { name, presetType ->
-                viewModel.saveCustomPreset(name, selectedMinutes, presetType)
+                if (existingPresetForSave != null) {
+                    // 기존 프리셋 업데이트
+                    viewModel.updateCustomPreset(
+                        existingPresetForSave.copy(name = name, presetType = presetType)
+                    )
+                } else {
+                    // 새 프리셋 저장
+                    viewModel.saveCustomPreset(name, selectedMinutes, presetType)
+                }
             },
             onDismiss = { showSaveDialog = false }
         )
@@ -345,15 +356,14 @@ fun TimerScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 프리셋으로 저장 버튼 (커스텀 시간일 때만 표시)
-                        // Type A (Liquid Ring), Type C (Glass Sector)에서 시간 조정 가능
-                        if (pagerState.currentPage != 1 && selectedMinutes !in listOf(25, 45, 60)) {
-                            OutlinedButton(
-                                onClick = { showSaveDialog = true },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("프리셋으로 저장")
-                            }
+                        // 프리셋 저장/업데이트 버튼 (항상 표시)
+                        // 기존 프리셋이 있으면 업데이트, 없으면 새로 저장
+                        val existingPreset = customPresets.find { it.durationMinutes == selectedMinutes }
+                        OutlinedButton(
+                            onClick = { showSaveDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(if (existingPreset != null) "프리셋 업데이트" else "프리셋으로 저장")
                         }
                         
                         // 프리셋 버튼
@@ -365,8 +375,9 @@ fun TimerScreen(
                                 viewModel.incrementPresetUsage(presetId)
                             },
                             onPresetLongClick = { preset ->
+                                // 길게 누르면 바로 삭제 확인 다이얼로그 표시
                                 selectedPreset = preset
-                                showPresetSheet = true
+                                showDeleteDialog = true
                             }
                         )
                         

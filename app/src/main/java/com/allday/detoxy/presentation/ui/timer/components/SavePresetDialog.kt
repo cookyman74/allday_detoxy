@@ -11,38 +11,27 @@ import androidx.compose.ui.unit.dp
 import com.allday.detoxy.presentation.ui.component.GlassDialog
 
 /**
- * 프리셋 저장 다이얼로그
+ * 프리셋 저장/업데이트 다이얼로그
  *
- * 사용자가 도넛 그래프로 선택한 시간을 커스텀 프리셋으로 저장합니다.
- *
- * ## 주요 기능
- * - 프리셋 이름 입력
- * - 차단 프리셋 연결 (옵션)
- * - 유효성 검증 (이름 필수)
- *
- * ## 예시
- * ```kotlin
- * SavePresetDialog(
- *     durationMinutes = 35,
- *     onSave = { name, presetType ->
- *         viewModel.savePreset(name, 35, presetType)
- *     },
- *     onDismiss = { showDialog = false }
- * )
- * ```
+ * 사용자가 선택한 시간을 커스텀 프리셋으로 저장하거나 기존 프리셋을 업데이트합니다.
  *
  * @param durationMinutes 저장할 타이머 시간 (분)
+ * @param existingPresetName 기존 프리셋 이름 (업데이트 시)
+ * @param existingPresetType 기존 차단 프리셋 (업데이트 시)
  * @param onSave 저장 콜백 (이름, 차단 프리셋)
  * @param onDismiss 다이얼로그 닫기 콜백
  */
 @Composable
 fun SavePresetDialog(
     durationMinutes: Int,
+    existingPresetName: String? = null,
+    existingPresetType: String? = null,
     onSave: (name: String, presetType: String?) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var presetName by remember { mutableStateOf("") }
-    var selectedPresetType by remember { mutableStateOf<String?>(null) }
+    val isUpdate = existingPresetName != null
+    var presetName by remember { mutableStateOf(existingPresetName ?: "") }
+    var selectedPresetType by remember { mutableStateOf(existingPresetType) }
     var showError by remember { mutableStateOf(false) }
     
     GlassDialog(
@@ -54,7 +43,7 @@ fun SavePresetDialog(
         ) {
             // Title
             Text(
-                text = "프리셋 저장",
+                text = if (isUpdate) "프리셋 업데이트" else "프리셋 저장",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -65,7 +54,11 @@ fun SavePresetDialog(
             ) {
                 // 안내 텍스트
                 Text(
-                    text = "${durationMinutes}분 타이머를 프리셋으로 저장합니다.",
+                    text = if (isUpdate) {
+                        "${durationMinutes}분 프리셋을 업데이트합니다."
+                    } else {
+                        "${durationMinutes}분 타이머를 프리셋으로 저장합니다."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -119,7 +112,7 @@ fun SavePresetDialog(
                         }
                     }
                 ) {
-                    Text("저장")
+                    Text(if (isUpdate) "업데이트" else "저장")
                 }
             }
         }
@@ -286,13 +279,13 @@ fun DeletePresetDialog(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Text(
-                text = "프리셋 삭제",
+                text = "삭제하시겠습니까?",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             
             Text(
-                text = "'$presetName' 프리셋을 삭제하시겠습니까?\n\n삭제하면 복구할 수 없습니다.",
+                text = "'$presetName' 프리셋을 삭제합니다.",
                 style = MaterialTheme.typography.bodyMedium
             )
             
