@@ -26,7 +26,9 @@ import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDial
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleCreationDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleGroupCard
 import com.allday.detoxy.presentation.ui.autorun.components.LocationEditDialog  // 🆕
+import com.allday.detoxy.presentation.ui.component.GlassSurface
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel  // 🆕
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun  // 🆕
 import kotlinx.coroutines.launch
@@ -273,39 +275,40 @@ fun ScheduleGroupScreen(
         )
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("스케줄 그룹") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "뒤로가기"
-                        )
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            if (scheduleGroups.size < 10) {
-                FloatingActionButton(
-                    onClick = { showAddDialog = true }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "스케줄 그룹 추가"
-                    )
-                }
-            }
-        }
-    ) { paddingValues ->
-        Box(
+    // MainActivity의 GlassScaffold 배경 위에 그려짐 (배경 중복 방지)
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .statusBarsPadding()
         ) {
+            // 헤더 (뒤로 가기 버튼 포함)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "뒤로가기",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                Text(
+                    text = "스케줄 그룹",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
             if (isLoading && scheduleGroups.isEmpty()) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
@@ -355,12 +358,12 @@ fun ScheduleGroupScreen(
                     // 🆕 3.5차 고도화: 다중 활성화 지원 - 각 카드에 활성화 상태 표시
                     // (이전의 "현재 활성화된 시간표" 카드는 단일 활성화 가정으로 제거)
                     
-                    // 안내 카드
+                    // 안내 카드 (Glass 스타일)
                     item {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
+                        GlassSurface(
+                            modifier = Modifier.fillMaxWidth(),
+                            alpha = 0.4f,
+                            shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(
                                 modifier = Modifier.padding(16.dp)
@@ -368,7 +371,8 @@ fun ScheduleGroupScreen(
                                 Text(
                                     text = "💡 스케줄 그룹 사용 방법",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
@@ -377,7 +381,7 @@ fun ScheduleGroupScreen(
                                             "3. 위치 기반 자동 실행에서 그룹을 연결합니다\n" +
                                             "4. 해당 위치에 진입하면 그룹의 시간표가 자동으로 활성화됩니다",
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                                 )
                             }
                         }
@@ -438,11 +442,38 @@ fun ScheduleGroupScreen(
                     
                     // 하단 여백 (FAB 가리지 않도록)
                     item {
-                        Spacer(modifier = Modifier.height(80.dp))
+                        Spacer(modifier = Modifier.height(100.dp))
                     }
                 }
             }
+        } // 내부 Box 끝
+        } // Column 끝
+        
+        // FAB (Box 내 BoxScope)
+        if (scheduleGroups.size < 10) {
+            FloatingActionButton(
+                onClick = { showAddDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+                    .navigationBarsPadding()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "스케줄 그룹 추가"
+                )
+            }
         }
-    }
+        
+        // SnackbarHost (Box 내 BoxScope)
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 80.dp)
+        )
+    } // 외부 Box 끝
 }
 
