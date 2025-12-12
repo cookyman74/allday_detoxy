@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
@@ -65,6 +66,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleTabScreen(
+    onBack: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit,
     viewModel: ScheduleGroupViewModel = hiltViewModel(),
     locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()
@@ -253,15 +255,23 @@ fun ScheduleTabScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
         ) {
-            // 헤더 (리포트 페이지와 동일한 스타일)
-            Box(
+            // 헤더 (뒤로 가기 버튼 포함)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "뒤로",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
                 Text(
                     text = "스케줄",
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold
                 )

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
@@ -48,6 +49,7 @@ import java.util.*
  */
 @Composable
 fun ReportScreen(
+    onBack: () -> Unit = {},
     viewModel: ReportViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -74,15 +76,23 @@ fun ReportScreen(
                     .fillMaxSize()
                     .statusBarsPadding() // 필수: 상단 잘림 해결
             ) {
-                // 헤더 (투명하고 깔끔하게 - 크기만 조정)
-                Box(
+                // 헤더 (뒤로 가기 버튼 포함)
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 20.dp),
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "뒤로",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
                     Text(
                         text = "디톡시 리포트",
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold
                     )
