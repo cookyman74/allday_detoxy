@@ -2,8 +2,10 @@ package com.allday.detoxy.presentation.ui.settings.focus
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -13,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +30,8 @@ import androidx.compose.runtime.DisposableEffect
 import com.allday.detoxy.core.manager.DndManager
 import com.allday.detoxy.core.utils.AppCategory
 import com.allday.detoxy.core.utils.AppCategoryMapper
+import com.allday.detoxy.presentation.ui.component.GlassScaffold
+import com.allday.detoxy.presentation.ui.component.GlassSurface
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.viewmodel.FocusSettingsViewModel
 import com.allday.detoxy.presentation.viewmodel.FocusSettingsUiState
@@ -68,85 +73,119 @@ fun DetoxyControlSettingsScreen(
     var showMessengerDialog by remember { mutableStateOf(false) }
     var pendingMessengerState by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("디톡시 제어 설정") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
+    GlassScaffold(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            // Glass 스타일 상단 헤더
+            GlassSurface(
+                modifier = Modifier.fillMaxWidth(),
+                alpha = 0.4f
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "뒤로",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                        Text(
+                            text = "디톡시 제어 설정",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
                     }
-                },
-                actions = {
                     TextButton(
                         onClick = {
                             viewModel.saveSettings()
                             Toast.makeText(context, "설정이 저장되었습니다", Toast.LENGTH_SHORT).show()
                         }
                     ) {
-                        Text("저장", fontWeight = FontWeight.Bold)
+                        Text(
+                            "저장",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Section 1: 프리셋 선택
-            PresetSelectionSection(
-                selectedPreset = uiState.selectedPreset,
-                onPresetSelected = { preset -> viewModel.applyPreset(preset) }
-            )
+            }
 
-            // Section 2: 카테고리별 토글
-            CategoryTogglesSection(
-                enabledCategories = uiState.enabledCategories,
-                otherAppsEnabled = uiState.otherAppsEnabled,
-                messengerHasBeenEnabled = uiState.messengerHasBeenEnabled,
-                onCategoryToggle = { category, enabled ->
-                    if (category == AppCategory.MESSENGER && enabled && !uiState.messengerHasBeenEnabled) {
-                        // 메신저 첫 활성화 시 안내 다이얼로그 표시
-                        showMessengerDialog = true
-                        pendingMessengerState = enabled
-                    } else {
-                        viewModel.toggleCategory(category, enabled)
+            // 스크롤 가능한 콘텐츠 영역
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Section 1: 프리셋 선택
+                PresetSelectionSection(
+                    selectedPreset = uiState.selectedPreset,
+                    onPresetSelected = { preset -> viewModel.applyPreset(preset) }
+                )
+
+                // Section 2: 카테고리별 토글
+                CategoryTogglesSection(
+                    enabledCategories = uiState.enabledCategories,
+                    otherAppsEnabled = uiState.otherAppsEnabled,
+                    messengerHasBeenEnabled = uiState.messengerHasBeenEnabled,
+                    onCategoryToggle = { category, enabled ->
+                        if (category == AppCategory.MESSENGER && enabled && !uiState.messengerHasBeenEnabled) {
+                            // 메신저 첫 활성화 시 안내 다이얼로그 표시
+                            showMessengerDialog = true
+                            pendingMessengerState = enabled
+                        } else {
+                            viewModel.toggleCategory(category, enabled)
+                        }
+                    },
+                    onOtherAppsToggle = { enabled ->
+                        viewModel.toggleOtherApps(enabled)
                     }
-                },
-                onOtherAppsToggle = { enabled ->
-                    viewModel.toggleOtherApps(enabled)
-                }
-            )
+                )
 
-            // Section 3: 현재 설정 프리뷰
-            SettingsPreviewSection(
-                enabledCategories = uiState.enabledCategories,
-                otherAppsEnabled = uiState.otherAppsEnabled,
-                selectedPreset = uiState.selectedPreset
-            )
+                // Section 3: 현재 설정 프리뷰
+                SettingsPreviewSection(
+                    enabledCategories = uiState.enabledCategories,
+                    otherAppsEnabled = uiState.otherAppsEnabled,
+                    selectedPreset = uiState.selectedPreset
+                )
 
-            // Section 4: 권한 상태
-            PermissionStatusSection(
-                dndPermissionState = uiState.dndPermissionState,
-                accessibilityEnabled = uiState.accessibilityEnabled,
-                overlayEnabled = uiState.overlayEnabled
-            )
+                // Section 4: 권한 상태
+                PermissionStatusSection(
+                    dndPermissionState = uiState.dndPermissionState,
+                    accessibilityEnabled = uiState.accessibilityEnabled,
+                    overlayEnabled = uiState.overlayEnabled
+                )
 
-            // 🆕 스케줄 탭 안내 (v0.10 UI/UX 개선)
-            ScheduleTabInfoCard()
+                // 🆕 스케줄 탭 안내 (v0.10 UI/UX 개선)
+                ScheduleTabInfoCard()
 
-            // Section 5: 디톡시 루틴 (향후 구현)
-            DetoxyRoutineSection(
-                routineEnabled = uiState.routineEnabled,
-                onRoutineToggle = { enabled ->
-                    viewModel.toggleRoutine(enabled)
-                }
-            )
+                // Section 5: 디톡시 루틴 (향후 구현)
+                DetoxyRoutineSection(
+                    routineEnabled = uiState.routineEnabled,
+                    onRoutineToggle = { enabled ->
+                        viewModel.toggleRoutine(enabled)
+                    }
+                )
+
+                // 하단 여백 (네비게이션 바 고려)
+                Spacer(modifier = Modifier.height(80.dp))
+            }
         }
     }
 
@@ -166,7 +205,7 @@ fun DetoxyControlSettingsScreen(
 }
 
 /**
- * 프리셋 선택 섹션
+ * 프리셋 선택 섹션 (Glass 스타일)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -174,20 +213,19 @@ fun PresetSelectionSection(
     selectedPreset: AppCategoryMapper.DetoxyPreset?,
     onPresetSelected: (AppCategoryMapper.DetoxyPreset) -> Unit
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        alpha = 0.35f
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 text = "디톡시 강도 프리셋",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             SingleChoiceSegmentedButtonRow(
@@ -231,7 +269,7 @@ fun PresetSelectionSection(
 }
 
 /**
- * 카테고리 토글 섹션
+ * 카테고리 토글 섹션 (Glass 스타일)
  */
 @Composable
 fun CategoryTogglesSection(
@@ -241,17 +279,19 @@ fun CategoryTogglesSection(
     onCategoryToggle: (AppCategory, Boolean) -> Unit,
     onOtherAppsToggle: (Boolean) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        alpha = 0.35f
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "차단 앱 카테고리",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             // SNS
@@ -263,7 +303,7 @@ fun CategoryTogglesSection(
                 onToggle = { enabled -> onCategoryToggle(AppCategory.SNS, enabled) }
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
             // 메신저
             CategoryToggleItem(
@@ -276,7 +316,7 @@ fun CategoryTogglesSection(
                 onToggle = { enabled -> onCategoryToggle(AppCategory.MESSENGER, enabled) }
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
             // Web 서핑
             CategoryToggleItem(
@@ -287,7 +327,7 @@ fun CategoryTogglesSection(
                 onToggle = { enabled -> onCategoryToggle(AppCategory.WEB, enabled) }
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
             // 영상 & 쇼츠
             CategoryToggleItem(
@@ -298,7 +338,7 @@ fun CategoryTogglesSection(
                 onToggle = { enabled -> onCategoryToggle(AppCategory.VIDEO_SHORTS, enabled) }
             )
 
-            HorizontalDivider()
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
             // 기타 앱
             CategoryToggleItem(
@@ -313,7 +353,7 @@ fun CategoryTogglesSection(
 }
 
 /**
- * 카테고리 토글 아이템
+ * 카테고리 토글 아이템 (Glass 스타일)
  */
 @Composable
 fun CategoryToggleItem(
@@ -337,15 +377,30 @@ fun CategoryToggleItem(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = icon,
-                style = MaterialTheme.typography.headlineMedium
-            )
+            // 아이콘 배경 (Glass 스타일)
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = if (isEnabled)
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = icon,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
             Column {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = description,
@@ -372,13 +427,19 @@ fun CategoryToggleItem(
         }
         Switch(
             checked = isEnabled,
-            onCheckedChange = onToggle
+            onCheckedChange = onToggle,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+            )
         )
     }
 }
 
 /**
- * 설정 프리뷰 섹션
+ * 설정 프리뷰 섹션 (Glass 스타일 - Nested)
  */
 @Composable
 fun SettingsPreviewSection(
@@ -386,20 +447,20 @@ fun SettingsPreviewSection(
     otherAppsEnabled: Boolean,
     selectedPreset: AppCategoryMapper.DetoxyPreset?
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        )
+        alpha = 0.25f,
+        tint = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "현재 설정 요약",
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             val blockedCategories = mutableListOf<String>()
@@ -415,7 +476,8 @@ fun SettingsPreviewSection(
 
             Text(
                 text = summaryText,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             if (AppCategory.MESSENGER !in enabledCategories) {
@@ -446,7 +508,7 @@ fun SettingsPreviewSection(
 }
 
 /**
- * 권한 상태 섹션
+ * 권한 상태 섹션 (Glass 스타일)
  */
 @Composable
 fun PermissionStatusSection(
@@ -456,17 +518,19 @@ fun PermissionStatusSection(
 ) {
     val context = LocalContext.current
 
-    Card(
-        modifier = Modifier.fillMaxWidth()
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        alpha = 0.35f
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 text = "권한 상태",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             // 접근성 권한
@@ -527,7 +591,7 @@ fun PermissionStatusSection(
 }
 
 /**
- * 권한 상태 아이템
+ * 권한 상태 아이템 (Glass 스타일)
  */
 @Composable
 fun PermissionStatusItem(
@@ -544,34 +608,44 @@ fun PermissionStatusItem(
     ) {
         Row(
             modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = icon)
+            Text(
+                text = icon,
+                style = MaterialTheme.typography.titleLarge
+            )
             Column {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isGranted)
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    else
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                 )
             }
         }
 
         if (!isGranted) {
             TextButton(onClick = onSettingsClick) {
-                Text("설정하기")
+                Text(
+                    "설정하기",
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
 }
 
 /**
- * 예약설정 섹션 (2차 고도화)
+ * 예약설정 섹션 (2차 고도화) - Glass 스타일
  * 
  * 시간 기반 자동 실행 화면으로 이동하는 버튼을 제공합니다.
  */
@@ -579,16 +653,15 @@ fun PermissionStatusItem(
 fun TimeBasedAutoRunSection(
     onNavigateToAutoRun: () -> Unit
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        )
+        alpha = 0.25f,
+        tint = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -601,7 +674,8 @@ fun TimeBasedAutoRunSection(
                     Text(
                         text = "예약설정",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
@@ -619,23 +693,22 @@ fun TimeBasedAutoRunSection(
 }
 
 /**
- * 디톡시 루틴 섹션
+ * 디톡시 루틴 섹션 (Glass 스타일)
  */
 @Composable
 fun DetoxyRoutineSection(
     routineEnabled: Boolean,
     onRoutineToggle: (Boolean) -> Unit
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-        )
+        alpha = 0.25f,
+        tint = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -648,7 +721,8 @@ fun DetoxyRoutineSection(
                     Text(
                         text = "디톡시 루틴 (예정)",
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Text(
@@ -660,30 +734,34 @@ fun DetoxyRoutineSection(
             Switch(
                 checked = routineEnabled,
                 onCheckedChange = onRoutineToggle,
-                enabled = false // 향후 구현 예정
+                enabled = false, // 향후 구현 예정
+                colors = SwitchDefaults.colors(
+                    disabledCheckedThumbColor = Color.White.copy(alpha = 0.5f),
+                    disabledUncheckedThumbColor = Color.White.copy(alpha = 0.5f),
+                    disabledUncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                )
             )
         }
     }
 }
 
 /**
- * 스케줄 탭 안내 카드 (v0.10 UI/UX 개선)
+ * 스케줄 탭 안내 카드 (v0.10 UI/UX 개선) - Glass 스타일
  * 
  * 하단 네비게이션의 "스케줄" 탭으로 안내하는 카드입니다.
  * 기존 예약설정 기능은 이제 별도 스케줄 탭에서 관리됩니다.
  */
 @Composable
 fun ScheduleTabInfoCard() {
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
-        )
+        alpha = 0.25f,
+        tint = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -691,7 +769,8 @@ fun ScheduleTabInfoCard() {
                 Text(
                     text = "💡 스케줄 관리는 이제 별도 탭에서",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -700,18 +779,28 @@ fun ScheduleTabInfoCard() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Icon(
-                imageVector = Icons.Default.DateRange,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.size(32.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
         }
     }
 }
 
 /**
- * 메신저 카테고리 안내 다이얼로그
+ * 메신저 카테고리 안내 다이얼로그 (Glass 스타일)
  */
 @Composable
 fun MessengerCategoryDialog(
@@ -720,19 +809,31 @@ fun MessengerCategoryDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
         icon = {
-            Text(text = "💬", style = MaterialTheme.typography.headlineLarge)
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(16.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "💬", style = MaterialTheme.typography.headlineLarge)
+            }
         },
         title = {
             Text(
                 text = "메신저 차단 안내",
                 style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold
             )
         },
         text = {
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
                     text = "메신저 앱은 긴급 연락이 필요할 수 있어 기본적으로 차단하지 않습니다.",
@@ -744,14 +845,17 @@ fun MessengerCategoryDialog(
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                // 경고 박스 (Glass 스타일)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        .padding(12.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(text = "⚠️")
@@ -769,7 +873,8 @@ fun MessengerCategoryDialog(
                 onClick = onConfirm,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error
-                )
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text("메신저도 차단")
             }
