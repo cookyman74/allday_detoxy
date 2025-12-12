@@ -1,17 +1,20 @@
 package com.allday.detoxy.presentation.ui.timer.components
 
+import android.view.HapticFeedbackConstants
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,43 +25,65 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.allday.detoxy.domain.model.FocusState
+import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Type C: Visual Timer (타임타이머 스타일)
+ * Type C: Visual Timer (타임타이머 스타일 - Interactive)
  *
- * 직관적인 비주얼 타이머를 Glassmorphism으로 재해석한 스타일입니다.
- * - 남은 시간이 빨간색 '부채꼴(Sector)' 모양으로 시각화되어 줄어듭니다.
- * - 외곽 눈금과 숫자로 정확한 시간 인지 가능
- * - 중앙에 디지털 시간 표시
+ * 직관적인 비주얼 타이머 - 빨간색 부채꼴로 시간을 표시합니다.
+ * IDLE 상태에서 드래그로 시간 설정 가능
  */
 @Composable
 fun TimerStyleGlassSector(
-    state: FocusState,
-    remainingSeconds: Int,
-    totalSeconds: Int,
+    selectedMinutes: Int = 25,
+    onMinutesChange: (Int) -> Unit = {},
+    state: FocusState = FocusState.IDLE,
+    remainingSeconds: Int = 0,
+    totalSeconds: Int = 0,
     modifier: Modifier = Modifier
 ) {
-    // 포맷된 시간 계산
-    val formattedTime = remember(remainingSeconds) {
-        val minutes = remainingSeconds / 60
-        val seconds = remainingSeconds % 60
-        String.format("%02d:%02d", minutes, seconds)
+    val view = LocalView.current
+    val maxMinutes = 60
+    val minMinutes = 5
+    val stepMinutes = 5
+    
+    val displayMinutes = if (state == FocusState.IDLE) selectedMinutes.coerceAtMost(60) else remainingSeconds / 60
+    val displaySeconds = if (state == FocusState.IDLE) 0 else remainingSeconds % 60
+    
+    var currentAngle by remember { mutableStateOf(minutesToAngle60(selectedMinutes.coerceAtMost(60))) }
+    
+    LaunchedEffect(selectedMinutes) {
+        if (state == FocusState.IDLE) {
+            currentAngle = minutesToAngle60(selectedMinutes.coerceAtMost(60))
+        }
     }
-
-    // 진행률 (남은 시간 비율)
+    
+    val animatedAngle by animateFloatAsState(
+        targetValue = currentAngle,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "angle_animation"
+    )
+    
     val progress = remember(remainingSeconds, totalSeconds) {
         if (totalSeconds == 0) 0f
         else remainingSeconds.toFloat() / totalSeconds.toFloat()
     }
     
-    // 타임타이머 스타일 색상 (빨간색 계열)
-    val sectorColor = Color(0xFFE53935) // 빨간색
+    var previousMinutes by remember { mutableStateOf(selectedMinutes) }
+    
+    val sectorColor = Color(0xFFE53935)
     val sectorColorLight = Color(0xFFFF5252)
     val backgroundColor = Color.White.copy(alpha = 0.95f)
     val tickColor = Color(0xFF424242)
@@ -68,7 +93,6 @@ fun TimerStyleGlassSector(
         modifier = modifier.size(280.dp),
         contentAlignment = Alignment.Center
     ) {
-        // 외부 프레임 (그림자 효과)
         Box(
             modifier = Modifier
                 .size(280.dp)
@@ -77,15 +101,49 @@ fun TimerStyleGlassSector(
                 .background(backgroundColor),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.size(260.dp)) {
+            Canvas(
+                modifier = Modifier
+                    .size(260.dp)
+                    .then(
+                        if (state == FocusState.IDLE) {
+                            Modifier
+                                .pointerInput(Unit) {
+                                    detectDragGestures { change, _ ->
+                                        val center = Offset(size.width / 2f, size.height / 2f)
+                                        val angle = calculateAngle60(change.position, center)
+                                        val minutes = angleToMinutes60(angle, minMinutes, stepMinutes)
+                                        
+                                        if (minutes != previousMinutes) {
+                                            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                            previousMinutes = minutes
+                                        }
+                                        
+                                        currentAngle = angle
+                                        onMinutesChange(minutes)
+                                    }
+                                }
+                                .pointerInput(Unit) {
+                                    detectTapGestures { offset ->
+                                        val center = Offset(size.width / 2f, size.height / 2f)
+                                        val angle = calculateAngle60(offset, center)
+                                        val minutes = angleToMinutes60(angle, minMinutes, stepMinutes)
+                                        
+                                        currentAngle = angle
+                                        onMinutesChange(minutes)
+                                        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                                    }
+                                }
+                        } else Modifier
+                    )
+            ) {
                 val center = Offset(size.width / 2, size.height / 2)
                 val outerRadius = size.minDimension / 2
-                val innerRadius = outerRadius * 0.35f // 중앙 흰색 원 반경
-                val sectorRadius = outerRadius * 0.85f // 부채꼴 반경
+                val innerRadius = outerRadius * 0.35f
+                val sectorRadius = outerRadius * 0.85f
                 
-                // 1. 외곽 눈금 그리기 (0-60)
+                // 1. 외곽 눈금 그리기
                 for (i in 0 until 60) {
-                    val angle = i * 6.0 - 90.0 // 12시 방향 기준
+                    val angle = i * 6.0 - 90.0
                     val angleRad = Math.toRadians(angle)
                     
                     val isMajor = i % 5 == 0
@@ -107,11 +165,10 @@ fun TimerStyleGlassSector(
                     )
                 }
                 
-                // 2. 남은 시간 부채꼴 그리기 (빨간색 섹터)
-                val sweepAngle = 360f * progress
+                // 2. 부채꼴 그리기
+                val sweepAngle = if (state == FocusState.IDLE) animatedAngle else 360f * progress
                 
-                if (progress > 0f) {
-                    // 부채꼴 영역 (빨간색)
+                if (sweepAngle > 0f) {
                     drawArc(
                         brush = Brush.radialGradient(
                             colors = listOf(
@@ -123,13 +180,12 @@ fun TimerStyleGlassSector(
                             radius = sectorRadius
                         ),
                         startAngle = -90f,
-                        sweepAngle = sweepAngle, // 시계 방향으로 채움
+                        sweepAngle = sweepAngle,
                         useCenter = true,
                         topLeft = Offset(center.x - sectorRadius, center.y - sectorRadius),
                         size = Size(sectorRadius * 2, sectorRadius * 2)
                     )
                     
-                    // 부채꼴 테두리
                     drawArc(
                         color = sectorColor.copy(alpha = 0.3f),
                         startAngle = -90f,
@@ -141,13 +197,10 @@ fun TimerStyleGlassSector(
                     )
                 }
                 
-                // 3. 중앙 흰색 원 (디지털 시계 배경)
+                // 3. 중앙 흰색 원
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(
-                            Color.White,
-                            Color(0xFFF5F5F5)
-                        ),
+                        colors = listOf(Color.White, Color(0xFFF5F5F5)),
                         center = center,
                         radius = innerRadius
                     ),
@@ -155,7 +208,6 @@ fun TimerStyleGlassSector(
                     center = center
                 )
                 
-                // 중앙 원 테두리
                 drawCircle(
                     color = Color(0xFFE0E0E0),
                     radius = innerRadius,
@@ -164,7 +216,7 @@ fun TimerStyleGlassSector(
                 )
             }
             
-            // 4. 외곽 숫자 표시 (0, 5, 10, ..., 55)
+            // 4. 외곽 숫자 표시
             Box(modifier = Modifier.size(260.dp)) {
                 val numbers = listOf(0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55)
                 numbers.forEach { num ->
@@ -189,11 +241,9 @@ fun TimerStyleGlassSector(
             }
             
             // 5. 중앙 시간 텍스트
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = formattedTime,
+                    text = String.format("%02d:%02d", displayMinutes, displaySeconds),
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF212121),
@@ -209,4 +259,23 @@ fun TimerStyleGlassSector(
             }
         }
     }
+}
+
+private fun minutesToAngle60(minutes: Int): Float {
+    return (minutes.toFloat() / 60f) * 360f
+}
+
+private fun angleToMinutes60(angle: Float, minMinutes: Int, stepMinutes: Int): Int {
+    val minutes = (angle / 360f * 60f).roundToInt()
+    val coercedMinutes = minutes.coerceIn(minMinutes, 60)
+    return (coercedMinutes.toFloat() / stepMinutes).roundToInt() * stepMinutes
+}
+
+private fun calculateAngle60(touchPosition: Offset, center: Offset): Float {
+    val dx = touchPosition.x - center.x
+    val dy = touchPosition.y - center.y
+    var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+    angle = (angle + 90) % 360
+    if (angle < 0) angle += 360
+    return angle
 }

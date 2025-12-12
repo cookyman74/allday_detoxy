@@ -203,15 +203,16 @@ fun TimerScreen(
                             ) {
                                 when (page) {
                                     0 -> {
-                                        // Type A: Interactive Donut Picker
-                                        DonutTimerPicker(
+                                        // Type A: Liquid Ring (Interactive - 드래그 포인터 포함)
+                                        TimerStyleLiquidRing(
                                             selectedMinutes = selectedMinutes,
                                             onMinutesChange = { selectedMinutes = it },
+                                            state = FocusState.IDLE,
                                             modifier = Modifier.padding(vertical = 16.dp)
                                         )
                                     }
                                     1 -> {
-                                        // Type B: Minimal Flux (Preview + Gesture Interaction)
+                                        // Type B: Minimal Flux (Preview + Gesture Handler)
                                         var isDragging by remember { mutableStateOf(false) }
                                         
                                         Box(contentAlignment = Alignment.Center) {
@@ -219,30 +220,24 @@ fun TimerScreen(
                                                 state = FocusState.IDLE,
                                                 remainingSeconds = selectedMinutes * 60,
                                                 totalSeconds = selectedMinutes * 60,
-                                                isDragging = isDragging // 드래그 상태 전달
+                                                isDragging = isDragging
                                             )
                                             // 투명 제스처 핸들러 오버레이
                                             TimerGestureHandler(
                                                 selectedMinutes = selectedMinutes,
                                                 onMinutesChange = { selectedMinutes = it },
-                                                onDragStateChange = { isDragging = it } // 드래그 상태 업데이트
+                                                onDragStateChange = { isDragging = it }
                                             )
                                         }
                                     }
                                     2 -> {
-                                        // Type C: Glass Sector (Preview + Gesture Interaction)
-                                        Box(contentAlignment = Alignment.Center) {
-                                            TimerStyleGlassSector(
-                                                state = FocusState.IDLE, // IDLE 상태에서는 꽉 찬 원(00:00)이나 프리뷰를 보여줌
-                                                remainingSeconds = selectedMinutes * 60,
-                                                totalSeconds = selectedMinutes * 60
-                                            )
-                                            // 투명 제스처 핸들러 오버레이
-                                            TimerGestureHandler(
-                                                selectedMinutes = selectedMinutes,
-                                                onMinutesChange = { selectedMinutes = it }
-                                            )
-                                        }
+                                        // Type C: Glass Sector (Interactive - 부채꼴 드래그)
+                                        TimerStyleGlassSector(
+                                            selectedMinutes = selectedMinutes,
+                                            onMinutesChange = { selectedMinutes = it },
+                                            state = FocusState.IDLE,
+                                            modifier = Modifier.padding(vertical = 16.dp)
+                                        )
                                     }
                                 }
                             }
@@ -285,10 +280,9 @@ fun TimerScreen(
                         
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 프리셋으로 저장 버튼 (Page 0이고 기본 프리셋이 아닐 때만 노출하거나 항상 노출? -> 항상 노출하되 Type B/C에서는 시간 변경 불가 안내?)
-                        // UX 결정: Type A에서만 시간 변경 가능하고, 다른 페이지에서는 하단 프리셋으로만 변경 가능. 
-                        // 저장 버튼은 Type A에서 커스텀 시간 설정했을 때 유용함.
-                        if (pagerState.currentPage == 0 && selectedMinutes !in listOf(25, 45, 60)) {
+                        // 프리셋으로 저장 버튼 (커스텀 시간일 때만 표시)
+                        // Type A (Liquid Ring), Type C (Glass Sector)에서 시간 조정 가능
+                        if (pagerState.currentPage != 1 && selectedMinutes !in listOf(25, 45, 60)) {
                             OutlinedButton(
                                 onClick = { showSaveDialog = true },
                                 modifier = Modifier.fillMaxWidth()
