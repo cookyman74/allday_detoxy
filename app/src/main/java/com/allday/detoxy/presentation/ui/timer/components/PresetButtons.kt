@@ -1,16 +1,19 @@
 package com.allday.detoxy.presentation.ui.timer.components
 
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.CompositionLocalProvider
@@ -139,6 +142,7 @@ private fun DefaultPresetButton(
  * @param onClick 클릭 콜백
  * @param onLongClick 길게 누르기 콜백
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun CustomPresetButton(
     preset: CustomTimerPreset,
@@ -146,43 +150,51 @@ private fun CustomPresetButton(
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
-    Button(
-        onClick = onClick,
+    val hapticFeedback = LocalHapticFeedback.current
+    
+    Surface(
         modifier = Modifier
             .width(100.dp)
             .height(64.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = { onLongClick() }
-                )
-            },
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.tertiary
-            } else {
-                MaterialTheme.colorScheme.tertiaryContainer
-            },
-            contentColor = if (isSelected) {
-                MaterialTheme.colorScheme.onTertiary
-            } else {
-                MaterialTheme.colorScheme.onTertiaryContainer
-            }
-        )
+            .clip(RoundedCornerShape(50)) // Button 모양과 동일
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongClick()
+                }
+            ),
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.tertiary
+        } else {
+            MaterialTheme.colorScheme.tertiaryContainer
+        },
+        shape = RoundedCornerShape(50)
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxSize()
         ) {
             Text(
                 text = preset.name,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 1
+                maxLines = 1,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onTertiary
+                } else {
+                    MaterialTheme.colorScheme.onTertiaryContainer
+                }
             )
             Text(
                 text = "${preset.durationMinutes}분",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.onTertiary
+                } else {
+                    MaterialTheme.colorScheme.onTertiaryContainer
+                }
             )
         }
     }
