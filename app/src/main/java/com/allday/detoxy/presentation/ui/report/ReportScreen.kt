@@ -74,28 +74,23 @@ fun ReportScreen(
                     .fillMaxSize()
                     .statusBarsPadding() // 필수: 상단 잘림 해결
             ) {
-                // 헤더 (설정 페이지와 동일한 크기)
-                GlassSurface(
-                    modifier = Modifier.fillMaxWidth(),
-                    alpha = 0.4f
+                // 헤더 (투명하고 깔끔하게 - 크기만 조정)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 20.dp),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 16.dp),
-                    ) {
-                        Text(
-                            text = "디톡시 리포트",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(
+                        text = "디톡시 리포트",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // 빈 상태 처리
@@ -317,17 +312,17 @@ private fun EmptyStateCard() {
                 modifier = Modifier
                     .size(72.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         shape = RoundedCornerShape(24.dp)
                     ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(36.dp)
-                )
+                    )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

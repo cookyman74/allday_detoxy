@@ -96,13 +96,13 @@ fun DetoxyControlSettingsScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = onBack) {
+                    IconButton(onClick = onBack) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "뒤로",
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
-                        }
+                    }
                         Text(
                             text = "디톡시 제어 설정",
                             style = MaterialTheme.typography.titleLarge,
@@ -126,62 +126,62 @@ fun DetoxyControlSettingsScreen(
             }
 
             // 스크롤 가능한 콘텐츠 영역
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Section 1: 프리셋 선택
-                PresetSelectionSection(
-                    selectedPreset = uiState.selectedPreset,
-                    onPresetSelected = { preset -> viewModel.applyPreset(preset) }
-                )
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Section 1: 프리셋 선택
+            PresetSelectionSection(
+                selectedPreset = uiState.selectedPreset,
+                onPresetSelected = { preset -> viewModel.applyPreset(preset) }
+            )
 
-                // Section 2: 카테고리별 토글
-                CategoryTogglesSection(
-                    enabledCategories = uiState.enabledCategories,
-                    otherAppsEnabled = uiState.otherAppsEnabled,
-                    messengerHasBeenEnabled = uiState.messengerHasBeenEnabled,
-                    onCategoryToggle = { category, enabled ->
-                        if (category == AppCategory.MESSENGER && enabled && !uiState.messengerHasBeenEnabled) {
-                            // 메신저 첫 활성화 시 안내 다이얼로그 표시
-                            showMessengerDialog = true
-                            pendingMessengerState = enabled
-                        } else {
-                            viewModel.toggleCategory(category, enabled)
-                        }
-                    },
-                    onOtherAppsToggle = { enabled ->
-                        viewModel.toggleOtherApps(enabled)
+            // Section 2: 카테고리별 토글
+            CategoryTogglesSection(
+                enabledCategories = uiState.enabledCategories,
+                otherAppsEnabled = uiState.otherAppsEnabled,
+                messengerHasBeenEnabled = uiState.messengerHasBeenEnabled,
+                onCategoryToggle = { category, enabled ->
+                    if (category == AppCategory.MESSENGER && enabled && !uiState.messengerHasBeenEnabled) {
+                        // 메신저 첫 활성화 시 안내 다이얼로그 표시
+                        showMessengerDialog = true
+                        pendingMessengerState = enabled
+                    } else {
+                        viewModel.toggleCategory(category, enabled)
                     }
-                )
+                },
+                onOtherAppsToggle = { enabled ->
+                    viewModel.toggleOtherApps(enabled)
+                }
+            )
 
-                // Section 3: 현재 설정 프리뷰
-                SettingsPreviewSection(
-                    enabledCategories = uiState.enabledCategories,
-                    otherAppsEnabled = uiState.otherAppsEnabled,
-                    selectedPreset = uiState.selectedPreset
-                )
+            // Section 3: 현재 설정 프리뷰
+            SettingsPreviewSection(
+                enabledCategories = uiState.enabledCategories,
+                otherAppsEnabled = uiState.otherAppsEnabled,
+                selectedPreset = uiState.selectedPreset
+            )
 
-                // Section 4: 권한 상태
-                PermissionStatusSection(
-                    dndPermissionState = uiState.dndPermissionState,
-                    accessibilityEnabled = uiState.accessibilityEnabled,
-                    overlayEnabled = uiState.overlayEnabled
-                )
+            // Section 4: 권한 상태
+            PermissionStatusSection(
+                dndPermissionState = uiState.dndPermissionState,
+                accessibilityEnabled = uiState.accessibilityEnabled,
+                overlayEnabled = uiState.overlayEnabled
+            )
 
-                // 🆕 스케줄 탭 안내 (v0.10 UI/UX 개선)
-                ScheduleTabInfoCard()
+            // 🆕 스케줄 탭 안내 (v0.10 UI/UX 개선)
+            ScheduleTabInfoCard()
 
-                // Section 5: 디톡시 루틴 (향후 구현)
-                DetoxyRoutineSection(
-                    routineEnabled = uiState.routineEnabled,
-                    onRoutineToggle = { enabled ->
-                        viewModel.toggleRoutine(enabled)
-                    }
-                )
+            // Section 5: 디톡시 루틴 (향후 구현)
+            DetoxyRoutineSection(
+                routineEnabled = uiState.routineEnabled,
+                onRoutineToggle = { enabled ->
+                    viewModel.toggleRoutine(enabled)
+                }
+            )
 
                 // 하단 여백 (네비게이션 바 고려)
                 Spacer(modifier = Modifier.height(80.dp))
@@ -389,11 +389,11 @@ fun CategoryToggleItem(
                         shape = RoundedCornerShape(12.dp)
                     ),
                 contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = icon,
+        ) {
+            Text(
+                text = icon,
                     style = MaterialTheme.typography.headlineSmall
-                )
+            )
             }
             Column {
                 Text(
@@ -788,12 +788,12 @@ fun ScheduleTabInfoCard() {
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.DateRange,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.tertiary,
+            Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(28.dp)
-                )
+            )
             }
         }
     }
@@ -820,7 +820,7 @@ fun MessengerCategoryDialog(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "💬", style = MaterialTheme.typography.headlineLarge)
+            Text(text = "💬", style = MaterialTheme.typography.headlineLarge)
             }
         },
         title = {
