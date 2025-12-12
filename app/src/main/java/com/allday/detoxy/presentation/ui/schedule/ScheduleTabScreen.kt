@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
@@ -24,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import android.util.Log
+import com.allday.detoxy.presentation.ui.component.GlassScaffold
+import com.allday.detoxy.presentation.ui.component.GlassSurface
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -242,31 +245,33 @@ fun ScheduleTabScreen(
         locationViewModel.checkPermissions()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("스케줄") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showCreateDialog = true }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "시간표 추가")
-            }
-        }
-    ) { innerPadding ->
-        LazyColumn(
+    GlassScaffold(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
+                .statusBarsPadding()
         ) {
+            // 헤더 (리포트 페이지와 동일한 스타일)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+            ) {
+                Text(
+                    text = "스케줄",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             // 🆕 v0.10.1: 1. 작동 중인 스케줄 카드 (타이머 실행 중)
             if (timerState == com.allday.detoxy.domain.model.FocusState.RUNNING && runningScheduleGroup != null) {
                 item {
@@ -326,9 +331,27 @@ fun ScheduleTabScreen(
                         onClick = { onNavigateToDetail(group.id) }
                     )
                 }
+                
+                // 하단 여백 (FAB과 겹치지 않도록)
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
             }
+        } // LazyColumn 끝
+        } // Column 끝
+        
+        // FAB (GlassScaffold 내 BoxScope)
+        FloatingActionButton(
+            onClick = { showCreateDialog = true },
+            containerColor = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .navigationBarsPadding()
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "시간표 추가")
         }
-    }
+    } // GlassScaffold 끝
     
     // 🆕 시간표 생성 다이얼로그 (위치 정보 등록 포함)
     if (showCreateDialog) {
@@ -469,11 +492,10 @@ fun RunningScheduleCard(
     remainingSeconds: Int,
     linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-        )
+        alpha = 0.6f,
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -500,7 +522,8 @@ fun RunningScheduleCard(
                 Text(
                     text = schedule.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 // 남은 시간 표시
                 val hours = remainingSeconds / 3600
@@ -513,7 +536,7 @@ fun RunningScheduleCard(
                 Text(
                     text = timeText,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
                 
                 // 위치 정보 (있는 경우)
@@ -521,7 +544,7 @@ fun RunningScheduleCard(
                     Text(
                         text = "📍 ${linkedLocations.first().label}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -550,11 +573,10 @@ fun ActiveScheduleSummaryCard(
     activeSchedule: ScheduleGroup,
     linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        )
+        alpha = 0.5f,
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -581,7 +603,8 @@ fun ActiveScheduleSummaryCard(
                 Text(
                     text = activeSchedule.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 
                 // 위치 기반인 경우 트리거 조건 표시
@@ -589,13 +612,13 @@ fun ActiveScheduleSummaryCard(
                     Text(
                         text = "📍 ${linkedLocations.first().label}에 진입하면 작동",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 } else {
                     Text(
                         text = "⏰ 예정된 시간에 자동 작동",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -624,11 +647,10 @@ fun NextScheduleSummaryCard(
     val nextSchedule by viewModel.getNextScheduleToday().collectAsState(initial = null)
     
     if (nextSchedule != null) {
-        Card(
+        GlassSurface(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
+            alpha = 0.4f,
+            shape = RoundedCornerShape(16.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -653,7 +675,8 @@ fun NextScheduleSummaryCard(
                     Text(
                         text = "${nextSchedule!!.hour}:${String.format("%02d", nextSchedule!!.minute)} - ${nextSchedule!!.durationMinutes}분",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -674,17 +697,12 @@ fun ScheduleSummaryCard(
     linkedLocationCount: Int,
     onClick: () -> Unit
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
+        alpha = if (isActive) 0.5f else 0.3f,
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -706,7 +724,8 @@ fun ScheduleSummaryCard(
                 Text(
                     text = group.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 
                 Row(
@@ -717,7 +736,7 @@ fun ScheduleSummaryCard(
                     Text(
                         text = "⏰ ${timeSlotCount}개",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                     
                     // 연결된 위치
@@ -725,7 +744,7 @@ fun ScheduleSummaryCard(
                         Text(
                             text = "📍 위치 ${linkedLocationCount}개",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
                     } else {
                         Text(
@@ -749,7 +768,7 @@ fun ScheduleSummaryCard(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
             }
         }
@@ -765,13 +784,12 @@ fun ScheduleSummaryCard(
 fun EmptyScheduleCard(
     onCreateClick: () -> Unit
 ) {
-    Card(
+    GlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 32.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        alpha = 0.3f,
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier
@@ -784,19 +802,19 @@ fun EmptyScheduleCard(
                 imageVector = Icons.Default.DateRange,
                 contentDescription = null,
                 modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
             
             Text(
                 text = "아직 시간표가 없습니다",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurface
             )
             
             Text(
                 text = "자동 실행 스케줄을 추가하여\n매일 반복되는 집중 루틴을 만들어보세요",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
             )
             
