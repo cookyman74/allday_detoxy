@@ -76,10 +76,10 @@ fun TimerStyleGlassSector(
         label = "angle_animation"
     )
     
-    val progress = remember(remainingSeconds, totalSeconds) {
-        if (totalSeconds == 0) 0f
-        else remainingSeconds.toFloat() / totalSeconds.toFloat()
-    }
+    // 🔧 타임타이머 스타일: 남은 시간(분)을 직접 각도로 변환
+    // 60분 기준 눈금이므로, 1분 = 6도
+    val remainingMinutesFloat = remainingSeconds.toFloat() / 60f
+    val runningSweepAngle = remainingMinutesFloat * 6f  // 분을 각도로 변환 (1분 = 6도)
     
     var previousMinutes by remember { mutableStateOf(selectedMinutes) }
     
@@ -166,7 +166,9 @@ fun TimerStyleGlassSector(
                 }
                 
                 // 2. 부채꼴 그리기
-                val sweepAngle = if (state == FocusState.IDLE) animatedAngle else 360f * progress
+                // IDLE: 설정된 분에 따른 각도
+                // RUNNING: 남은 분을 직접 각도로 변환 (60분 기준 눈금과 일치)
+                val sweepAngle = if (state == FocusState.IDLE) animatedAngle else runningSweepAngle
                 
                 if (sweepAngle > 0f) {
                     drawArc(
