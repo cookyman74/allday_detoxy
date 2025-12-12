@@ -89,11 +89,10 @@ fun TimerStyleLiquidRing(
         label = "angle_animation"
     )
     
-    // 진행률 (RUNNING 상태용)
-    val progress = remember(remainingSeconds, totalSeconds) {
-        if (totalSeconds == 0) 0f
-        else remainingSeconds.toFloat() / totalSeconds.toFloat()
-    }
+    // 🔧 RUNNING 상태: 남은 시간(분)을 직접 각도로 변환
+    // 180분 기준 눈금이므로, 1분 = 2도 (360/180)
+    val remainingMinutesFloat = remainingSeconds.toFloat() / 60f
+    val runningSweepAngle = (remainingMinutesFloat / maxMinutes) * 360f
     
     // 이전 분 값 (햅틱 피드백용)
     var previousMinutes by remember { mutableStateOf(selectedMinutes) }
@@ -190,7 +189,8 @@ fun TimerStyleLiquidRing(
                 )
                 
                 // 3. 진행률 링
-                val sweepAngle = if (state == FocusState.IDLE) animatedAngle else 360f * progress
+                // IDLE: 설정된 분에 따른 각도, RUNNING: 남은 분을 직접 각도로 변환
+                val sweepAngle = if (state == FocusState.IDLE) animatedAngle else runningSweepAngle
                 if (sweepAngle > 0f) {
                     drawArc(
                         color = primaryColor,

@@ -48,11 +48,10 @@ fun TimerStyleMinimalFlux(
     isDragging: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    // 진행률 계산 (남은 시간 비율)
-    val progress = remember(remainingSeconds, totalSeconds) {
-        if (totalSeconds == 0) 0f
-        else remainingSeconds.toFloat() / totalSeconds.toFloat()
-    }
+    // 🔧 남은 시간(분)을 직접 각도로 변환
+    // 60분 기준 눈금이므로, 1분 = 6도 (360/60)
+    val remainingMinutesFloat = remainingSeconds.toFloat() / 60f
+    val runningSweepAngle = remainingMinutesFloat * 6f
 
     // 포맷된 시간
     val formattedTime = remember(remainingSeconds) {
@@ -143,8 +142,9 @@ fun TimerStyleMinimalFlux(
                 }
                 
                 // 3. 남은 시간 부채꼴 (달빛 효과)
-                val sweepAngle = 360f * progress
-                if (progress > 0f) {
+                // 남은 분을 직접 각도로 변환 (60분 기준 눈금과 일치)
+                val sweepAngle = runningSweepAngle
+                if (remainingSeconds > 0) {
                     // 반투명 달빛 섹터
                     drawArc(
                         brush = Brush.radialGradient(
