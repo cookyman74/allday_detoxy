@@ -29,6 +29,7 @@ import com.allday.detoxy.data.local.entity.FocusSession
 import com.allday.detoxy.presentation.viewmodel.ReportViewModel
 import com.allday.detoxy.presentation.ui.component.GlassScaffold
 import com.allday.detoxy.presentation.ui.component.GlassSurface
+import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
 import com.allday.detoxy.presentation.ui.component.liquidGlass
 import com.allday.detoxy.presentation.ui.report.components.DetoxyRiskCard
 import com.allday.detoxy.presentation.ui.report.components.RecoveryTrendCard
@@ -165,7 +166,7 @@ fun ReportScreen(
                         // 성공률 표시
                         if (uiState.todaySessions.isNotEmpty()) {
                             item {
-                                GlassSurface(
+                                SimpleGlassSurface(
                                     modifier = Modifier.fillMaxWidth(),
                                     alpha = 0.3f
                                 ) {
@@ -298,15 +299,15 @@ fun ReportScreen(
 }
 
 /**
- * 빈 상태 카드 (크기 최적화)
+ * 빈 상태 카드 (성능 최적화 - 블러 없음)
  */
 @Composable
 private fun EmptyStateCard() {
-    GlassSurface(
+    SimpleGlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 16.dp),
-        alpha = 0.35f
+        alpha = 0.4f
     ) {
         Column(
             modifier = Modifier
@@ -426,7 +427,7 @@ private fun EmptyStateFeatureItem(
 }
 
 /**
- * Glass 스타일 통계 카드 (크기 최적화)
+ * Glass 스타일 통계 카드 (성능 최적화 - 블러 없음)
  */
 @Composable
 private fun GlassStatCard(
@@ -437,9 +438,9 @@ private fun GlassStatCard(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    GlassSurface(
+    SimpleGlassSurface(
         modifier = modifier,
-        alpha = 0.3f
+        alpha = 0.35f
     ) {
         Column(
             modifier = Modifier
@@ -489,16 +490,16 @@ private fun GlassStatCard(
 }
 
 /**
- * Glass 스타일 세션 카드 (크기 최적화)
+ * Glass 스타일 세션 카드 (성능 최적화 - 블러 없음)
  */
 @Composable
 private fun GlassSessionCard(
     session: FocusSession,
     modifier: Modifier = Modifier
 ) {
-    GlassSurface(
+    SimpleGlassSurface(
         modifier = modifier.fillMaxWidth(),
-        alpha = if (session.success) 0.3f else 0.2f
+        alpha = if (session.success) 0.35f else 0.25f
     ) {
         Row(
             modifier = Modifier

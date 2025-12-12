@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import android.util.Log
 import com.allday.detoxy.presentation.ui.component.GlassScaffold
 import com.allday.detoxy.presentation.ui.component.GlassSurface
+import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -503,7 +504,7 @@ fun RunningScheduleCard(
     remainingSeconds: Int,
     linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>
 ) {
-    GlassSurface(
+    SimpleGlassSurface(
         modifier = Modifier.fillMaxWidth(),
         alpha = 0.6f,
         shape = RoundedCornerShape(16.dp)
@@ -584,7 +585,7 @@ fun ActiveScheduleSummaryCard(
     activeSchedule: ScheduleGroup,
     linkedLocations: List<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>
 ) {
-    GlassSurface(
+    SimpleGlassSurface(
         modifier = Modifier.fillMaxWidth(),
         alpha = 0.5f,
         shape = RoundedCornerShape(16.dp)
@@ -658,7 +659,7 @@ fun NextScheduleSummaryCard(
     val nextSchedule by viewModel.getNextScheduleToday().collectAsState(initial = null)
     
     if (nextSchedule != null) {
-        GlassSurface(
+        SimpleGlassSurface(
             modifier = Modifier.fillMaxWidth(),
             alpha = 0.4f,
             shape = RoundedCornerShape(16.dp)
@@ -708,7 +709,7 @@ fun ScheduleSummaryCard(
     linkedLocationCount: Int,
     onClick: () -> Unit
 ) {
-    GlassSurface(
+    SimpleGlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
@@ -795,7 +796,7 @@ fun ScheduleSummaryCard(
 fun EmptyScheduleCard(
     onCreateClick: () -> Unit
 ) {
-    GlassSurface(
+    SimpleGlassSurface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 32.dp),

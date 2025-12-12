@@ -108,3 +108,50 @@ fun Modifier.liquidGlassLight(
     alpha = 0.2f,
     borderStrokeWidth = 0.5.dp
 )
+
+/**
+ * 🆕 성능 최적화용 경량 Glass modifier
+ * 
+ * 실시간 블러 없이 단순 반투명 배경 + 테두리만 적용합니다.
+ * LazyColumn/LazyRow 내 리스트 아이템에 사용하여 성능을 개선합니다.
+ * 
+ * @param shape 컴포넌트 모양
+ * @param alpha 배경 투명도
+ * @param borderStrokeWidth 테두리 두께
+ * @param backgroundColor 커스텀 배경색 (null이면 테마 기본 Glass 색상)
+ */
+@Composable
+fun Modifier.simpleGlass(
+    shape: Shape = RoundedCornerShape(16.dp),
+    alpha: Float = 0.4f,
+    borderStrokeWidth: Dp = 0.5.dp,
+    backgroundColor: Color? = null
+): Modifier {
+    val isLight = !isSystemInDarkTheme()
+    val borderColor = if (isLight) GlassBorderLight else GlassBorderDark
+    val resolvedBackgroundColor = backgroundColor ?: if (isLight) {
+        GlassWhite.copy(alpha = alpha)
+    } else {
+        GlassBlack.copy(alpha = alpha)
+    }
+    
+    return this
+        .shadow(
+            elevation = 4.dp,
+            shape = shape,
+            ambientColor = Color.Black.copy(alpha = 0.05f),
+            spotColor = Color.Black.copy(alpha = 0.05f)
+        )
+        .background(resolvedBackgroundColor, shape)
+        .border(
+            width = borderStrokeWidth,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    borderColor.copy(alpha = 0.4f),
+                    borderColor.copy(alpha = 0.1f)
+                )
+            ),
+            shape = shape
+        )
+        .clip(shape)
+}

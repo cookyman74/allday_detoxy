@@ -26,7 +26,7 @@ import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDial
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleCreationDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleGroupCard
 import com.allday.detoxy.presentation.ui.autorun.components.LocationEditDialog  // 🆕
-import com.allday.detoxy.presentation.ui.component.GlassSurface
+import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel  // 🆕
@@ -360,7 +360,7 @@ fun ScheduleGroupScreen(
                     
                     // 안내 카드 (Glass 스타일)
                     item {
-                        GlassSurface(
+                        SimpleGlassSurface(
                             modifier = Modifier.fillMaxWidth(),
                             alpha = 0.4f,
                             shape = RoundedCornerShape(16.dp)

@@ -18,8 +18,7 @@ import androidx.compose.ui.unit.dp
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.domain.model.PauseDuration
 import com.allday.detoxy.domain.model.ScheduleGroupControlState
-import com.allday.detoxy.presentation.ui.component.GlassSurface
-import com.allday.detoxy.presentation.ui.theme.GlassWhite
+import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
 
 /**
  * ScheduleGroup 카드 컴포넌트 (v8.1 UX 개선)
@@ -81,9 +80,9 @@ fun ScheduleGroupCard(
         ScheduleGroupControlState.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     }
     
-    GlassSurface(
+    SimpleGlassSurface(
         modifier = modifier.fillMaxWidth(),
-        tint = cardTint,
+        backgroundColor = cardTint,
         alpha = 0.4f
     ) {
         Column(
