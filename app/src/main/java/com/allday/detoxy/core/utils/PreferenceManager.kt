@@ -16,6 +16,21 @@ class PreferenceManager(context: Context) {
         private const val KEY_FIRST_LAUNCH = "is_first_launch"
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_PENDING_SUCCESS_ANIMATION = "pending_success_animation" // 🆕 성공 애니메이션 대기 플래그
+        private const val KEY_LAST_TIMER_STYLE_INDEX = "last_timer_style_index" // 🆕 마지막 타이머 스타일
+    }
+
+    /**
+     * 마지막 선택한 타이머 스타일 로드
+     */
+    fun getLastTimerStyleIndex(): Int {
+        return prefs.getInt(KEY_LAST_TIMER_STYLE_INDEX, 0)
+    }
+
+    /**
+     * 마지막 선택한 타이머 스타일 저장
+     */
+    fun setLastTimerStyleIndex(index: Int) {
+        prefs.edit().putInt(KEY_LAST_TIMER_STYLE_INDEX, index).apply()
     }
 
     /**

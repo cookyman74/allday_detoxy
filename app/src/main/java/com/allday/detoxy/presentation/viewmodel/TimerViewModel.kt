@@ -114,8 +114,13 @@ class TimerViewModel @Inject constructor(
     }
 
     // 🆕 성공 애니메이션 표시 상태 (init 블록보다 먼저 선언되어야 함)
+    // 🆕 성공 애니메이션 표시 상태 (init 블록보다 먼저 선언되어야 함)
     private val _showSuccessAnimation = MutableStateFlow(false)
     val showSuccessAnimation: StateFlow<Boolean> = _showSuccessAnimation.asStateFlow()
+
+    // 🆕 마지막 선택된 타이머 스타일 인덱스 (0: LiquidRing, 1: MinimalFlux, 2: GlassSector)
+    private val _selectedTimerStyleIndex = MutableStateFlow(0)
+    val selectedTimerStyleIndex: StateFlow<Int> = _selectedTimerStyleIndex.asStateFlow()
 
     init {
         // 사용자 설정 초기화 (최초 실행 시)
@@ -186,11 +191,21 @@ class TimerViewModel @Inject constructor(
     /**
      * 성공 애니메이션 대기 상태 확인
      */
+    /**
+     * 성공 애니메이션 대기 상태 확인
+     */
     fun checkPendingSuccessAnimation() {
         val preferenceManager = com.allday.detoxy.core.utils.PreferenceManager(application)
         if (preferenceManager.hasPendingSuccessAnimation()) {
             Log.d(TAG, "🎉 Pending success animation detected!")
             _showSuccessAnimation.value = true
+        }
+        
+        // 🆕 저장된 타이머 스타일 인덱스 로드
+        viewModelScope.launch {
+            val savedIndex = preferenceManager.getLastTimerStyleIndex()
+            _selectedTimerStyleIndex.value = savedIndex
+            Log.d(TAG, "🔄 Loaded timer style index: $savedIndex")
         }
     }
 
@@ -699,6 +714,21 @@ class TimerViewModel @Inject constructor(
         if (presetId != null) {
             viewModelScope.launch {
                 presetRepository.incrementUsageCount(presetId)
+            }
+        }
+    }
+    /**
+     * 타이머 스타일 변경 처리
+     *
+     * @param index 변경된 스타일 인덱스
+     */
+    fun onTimerStyleChanged(index: Int) {
+        if (_selectedTimerStyleIndex.value != index) {
+            _selectedTimerStyleIndex.value = index
+            viewModelScope.launch {
+                val preferenceManager = com.allday.detoxy.core.utils.PreferenceManager(application)
+                preferenceManager.setLastTimerStyleIndex(index)
+                Log.d(TAG, "💾 Saved timer style index: $index")
             }
         }
     }

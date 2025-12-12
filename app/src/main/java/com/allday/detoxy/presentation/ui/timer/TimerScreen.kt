@@ -1,6 +1,9 @@
 package com.allday.detoxy.presentation.ui.timer
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -48,6 +51,7 @@ fun TimerScreen(
     val nextAutoRunInfo by viewModel.nextAutoRunInfo.collectAsState()
     val customPresets by viewModel.customPresets.collectAsState()
     val showSuccessAnimation by viewModel.showSuccessAnimation.collectAsState() // 🆕 성공 애니메이션
+    val selectedTimerStyleIndex by viewModel.selectedTimerStyleIndex.collectAsState() // 🆕 저장된 스타일 인덱스
     
     // 도넛 그래프 선택 시간
     var selectedMinutes by remember { mutableStateOf(25) }
@@ -165,29 +169,126 @@ fun TimerScreen(
                     alpha = 0.3f
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier
+                            .padding(vertical = 24.dp, horizontal = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // 도넛 그래프 (IDLE 상태에서만 표시)
-                        DonutTimerPicker(
-                            selectedMinutes = selectedMinutes,
-                            onMinutesChange = { selectedMinutes = it },
-                            modifier = Modifier.padding(vertical = 16.dp)
+                        // Multi-style Timer Pager (IDLE 상태)
+                        val pagerState = rememberPagerState(
+                            initialPage = selectedTimerStyleIndex,
+                            pageCount = { 3 }
                         )
+
+                        // 1. Pager 스와이프 → ViewModel 저장
+                        LaunchedEffect(pagerState.currentPage) {
+                            viewModel.onTimerStyleChanged(pagerState.currentPage)
+                        }
+
+                        // 2. ViewModel 상태 변경 → Pager 이동 (초기 로딩 시)
+                        LaunchedEffect(selectedTimerStyleIndex) {
+                            if (pagerState.currentPage != selectedTimerStyleIndex) {
+                                pagerState.scrollToPage(selectedTimerStyleIndex)
+                            }
+                        }
+
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            pageSpacing = 16.dp
+                        ) { page ->
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                when (page) {
+                                    0 -> {
+                                        // Type A: Interactive Donut Picker
+                                        DonutTimerPicker(
+                                            selectedMinutes = selectedMinutes,
+                                            onMinutesChange = { selectedMinutes = it },
+                                            modifier = Modifier.padding(vertical = 16.dp)
+                                        )
+                                    }
+                                    1 -> {
+                                        // Type B: Minimal Flux (Preview + Gesture Interaction)
+                                        var isDragging by remember { mutableStateOf(false) }
+                                        
+                                        Box(contentAlignment = Alignment.Center) {
+                                            TimerStyleMinimalFlux(
+                                                state = FocusState.IDLE,
+                                                remainingSeconds = selectedMinutes * 60,
+                                                totalSeconds = selectedMinutes * 60,
+                                                isDragging = isDragging // 드래그 상태 전달
+                                            )
+                                            // 투명 제스처 핸들러 오버레이
+                                            TimerGestureHandler(
+                                                selectedMinutes = selectedMinutes,
+                                                onMinutesChange = { selectedMinutes = it },
+                                                onDragStateChange = { isDragging = it } // 드래그 상태 업데이트
+                                            )
+                                        }
+                                    }
+                                    2 -> {
+                                        // Type C: Glass Sector (Preview + Gesture Interaction)
+                                        Box(contentAlignment = Alignment.Center) {
+                                            TimerStyleGlassSector(
+                                                state = FocusState.IDLE, // IDLE 상태에서는 꽉 찬 원(00:00)이나 프리뷰를 보여줌
+                                                remainingSeconds = selectedMinutes * 60,
+                                                totalSeconds = selectedMinutes * 60
+                                            )
+                                            // 투명 제스처 핸들러 오버레이
+                                            TimerGestureHandler(
+                                                selectedMinutes = selectedMinutes,
+                                                onMinutesChange = { selectedMinutes = it }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Page Indicator
+                        Row(
+                            Modifier
+                                .wrapContentHeight()
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            repeat(pagerState.pageCount) { iteration ->
+                                val color = if (pagerState.currentPage == iteration)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                Box(
+                                    modifier = Modifier
+                                        .padding(4.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                        .size(8.dp)
+                                )
+                            }
+                        }
                         
                         // 다음 예약 정보 표시
                         if (nextAutoRunInfo != null) {
                             Text(
                                 text = nextAutoRunInfo!!,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(top = 8.dp)
                             )
                         }
                         
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 프리셋으로 저장 버튼 (기본 프리셋이 아닐 때)
-                        if (selectedMinutes !in listOf(25, 45, 60)) {
+                        // 프리셋으로 저장 버튼 (Page 0이고 기본 프리셋이 아닐 때만 노출하거나 항상 노출? -> 항상 노출하되 Type B/C에서는 시간 변경 불가 안내?)
+                        // UX 결정: Type A에서만 시간 변경 가능하고, 다른 페이지에서는 하단 프리셋으로만 변경 가능. 
+                        // 저장 버튼은 Type A에서 커스텀 시간 설정했을 때 유용함.
+                        if (pagerState.currentPage == 0 && selectedMinutes !in listOf(25, 45, 60)) {
                             OutlinedButton(
                                 onClick = { showSaveDialog = true },
                                 modifier = Modifier.fillMaxWidth()
@@ -235,18 +336,89 @@ fun TimerScreen(
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(32.dp)
+                            .padding(vertical = 32.dp)
                             .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // 원형 프로그레스 바 & 타이머 표시
-                        CircularTimerDisplay(
-                            state = timerState,
-                            remainingSeconds = remainingSeconds,
-                            totalSeconds = totalSeconds
+                        // Multi-style Timer Pager
+                        val pagerState = rememberPagerState(
+                            initialPage = selectedTimerStyleIndex,
+                            pageCount = { 3 }
                         )
+
+                        // 1. Pager 스와이프 → ViewModel 저장
+                        LaunchedEffect(pagerState.currentPage) {
+                            viewModel.onTimerStyleChanged(pagerState.currentPage)
+                        }
+
+                        // 2. ViewModel 상태 변경 → Pager 이동 (초기 로딩 시)
+                        LaunchedEffect(selectedTimerStyleIndex) {
+                            if (pagerState.currentPage != selectedTimerStyleIndex) {
+                                pagerState.scrollToPage(selectedTimerStyleIndex)
+                            }
+                        }
                         
-                        Spacer(modifier = Modifier.height(32.dp))
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(horizontal = 32.dp),
+                            pageSpacing = 16.dp
+                        ) { page ->
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                when (page) {
+                                    0 -> TimerStyleLiquidRing(
+                                        state = timerState,
+                                        remainingSeconds = remainingSeconds,
+                                        totalSeconds = totalSeconds
+                                    )
+                                    1 -> TimerStyleMinimalFlux(
+                                        state = timerState,
+                                        remainingSeconds = remainingSeconds,
+                                        totalSeconds = totalSeconds
+                                    )
+                                    2 -> TimerStyleGlassSector(
+                                        state = timerState,
+                                        remainingSeconds = remainingSeconds,
+                                        totalSeconds = totalSeconds
+                                    )
+                                    else -> TimerStyleLiquidRing(
+                                        state = timerState,
+                                        remainingSeconds = remainingSeconds,
+                                        totalSeconds = totalSeconds
+                                    )
+                                }
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        // Page Indicator
+                        Row(
+                            Modifier
+                                .wrapContentHeight()
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            repeat(pagerState.pageCount) { iteration ->
+                                val color = if (pagerState.currentPage == iteration)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                Box(
+                                    modifier = Modifier
+                                        .padding(4.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                        .size(8.dp)
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
                         
                         // 포기 버튼
                         Button(
@@ -255,7 +427,7 @@ fun TimerScreen(
                                 containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                             ),
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxWidth(0.8f) // 버튼 너비 조정
                                 .height(56.dp)
                         ) {
                             Text("포기하기")
@@ -325,70 +497,7 @@ fun TimerScreen(
     }
 }
 
-/**
- * 원형 타이머 표시
- *
- * @param state 타이머 상태
- * @param remainingSeconds 남은 시간 (초)
- * @param totalSeconds 전체 시간 (초)
- */
-@Composable
-fun CircularTimerDisplay(
-    state: FocusState,
-    remainingSeconds: Int,
-    totalSeconds: Int
-) {
-    // 포맷된 시간 계산
-    val formattedTime = remember(remainingSeconds) {
-        val minutes = remainingSeconds / 60
-        val seconds = remainingSeconds % 60
-        String.format("%02d:%02d", minutes, seconds)
-    }
-
-    // 진행률 계산
-    val progress = remember(remainingSeconds, totalSeconds) {
-        if (totalSeconds == 0) 0f
-        else {
-            val elapsed = totalSeconds - remainingSeconds
-            elapsed.toFloat() / totalSeconds.toFloat()
-        }
-    }
-    Box(
-        modifier = Modifier
-            .size(240.dp)
-            .clip(CircleShape),
-        contentAlignment = Alignment.Center
-    ) {
-        // 배경 원
-        CircularProgressIndicator(
-            progress = { 1f },
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            strokeWidth = 12.dp,
-        )
-
-        // 진행률 원
-        CircularProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxSize(),
-            color = when (state) {
-                FocusState.RUNNING -> MaterialTheme.colorScheme.primary
-                FocusState.FINISHED -> MaterialTheme.colorScheme.tertiary
-                FocusState.FAILED -> MaterialTheme.colorScheme.error
-                else -> MaterialTheme.colorScheme.outline
-            },
-            strokeWidth = 12.dp,
-        )
-
-        // 시간 텍스트
-        Text(
-            text = if (state == FocusState.IDLE) "00:00" else formattedTime,
-            style = MaterialTheme.typography.displayLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
+// CircularTimerDisplay removed and moved to TimerStyleLiquidRing.kt
 
 /**
  * 성공 축하 다이얼로그
