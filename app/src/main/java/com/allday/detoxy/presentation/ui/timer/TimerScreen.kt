@@ -174,7 +174,7 @@ fun TimerScreen(
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(vertical = 24.dp, horizontal = 16.dp),
+                            .padding(vertical = 8.dp, horizontal = 16.dp), // 24dp → 8dp
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         // Multi-style Timer Pager (IDLE 상태)
@@ -200,7 +200,7 @@ fun TimerScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(40.dp)
+                                .height(16.dp) // 40dp → 16dp
                                 .pointerInput(pagerState) {
                                     detectHorizontalDragGestures { _, dragAmount ->
                                         coroutineScope.launch {
@@ -240,7 +240,7 @@ fun TimerScreen(
                                             selectedMinutes = selectedMinutes,
                                             onMinutesChange = { selectedMinutes = it },
                                             state = FocusState.IDLE,
-                                            modifier = Modifier.padding(vertical = 16.dp)
+                                            modifier = Modifier.padding(vertical = 4.dp) // 16dp → 4dp
                                         )
                                     }
                                     1 -> {
@@ -268,7 +268,7 @@ fun TimerScreen(
                                             selectedMinutes = selectedMinutes,
                                             onMinutesChange = { selectedMinutes = it },
                                             state = FocusState.IDLE,
-                                            modifier = Modifier.padding(vertical = 16.dp)
+                                            modifier = Modifier.padding(vertical = 4.dp) // 16dp → 4dp
                                         )
                                     }
                                 }
