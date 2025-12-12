@@ -143,6 +143,7 @@ fun TimerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .statusBarsPadding() // 1. System Bar Padding
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,

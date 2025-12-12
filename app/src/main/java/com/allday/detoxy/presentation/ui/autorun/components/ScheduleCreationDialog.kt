@@ -71,199 +71,180 @@ fun ScheduleCreationDialog(
     GlassDialog(
         onDismissRequest = onDismiss
     ) {
-        Column(
-            modifier = Modifier
-                .padding(24.dp)
-                .fillMaxSize() // Full Size for complex content? Or wrap content?
-                // Actually ScheduleCreationDialog has a lot of content, maybe GlassDialog with wrapContentHeight is too small if content is huge.
-                // But let's stick to wrapContentHeight as GlassDialog defines it. 
-                // However, verticalScroll is used below, so max height should be handled.
-                // Let's rely on standard Dialog behavior where it fits the screen or scrolls.
-                // GlassDialog uses wrapContentHeight.
-            ,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = when (currentStep) {
-                    ScheduleCreationStep.LOCATION_CHOICE -> "위치 설정 여부"
-                    ScheduleCreationStep.LOCATION_SEARCH -> "위치 검색"
-                    ScheduleCreationStep.SCHEDULE_SETUP -> "시간표 만들기"
-                },
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            
+        // 내부 검색 모드인 경우 (showLocationSearch가 true인 경우)
+        if (showLocationSearch) {
+            Box(modifier = Modifier.padding(24.dp)) {
+                LocationSearchContent(
+                    onCancel = { showLocationSearch = false },
+                    onLocationSelected = { location ->
+                        selectedLocation = location
+                        showLocationSearch = false
+                    }
+                )
+            }
+        } else {
+            // 기본 단계 진행 화면
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false) // Allow taking available space but not forcing full height
-                    .verticalScroll(rememberScrollState()),
+                    .padding(24.dp)
+                    // .fillMaxSize() 제거: 다이얼로그 크기를 컨텐츠에 맞게
+                    .wrapContentHeight(), 
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                when (currentStep) {
-                    ScheduleCreationStep.LOCATION_CHOICE -> {
-                        LocationChoiceStep(
-                            hasLocation = hasLocation,
-                            onHasLocationChange = { hasLocation = it }
-                        )
-                    }
-                    ScheduleCreationStep.LOCATION_SEARCH -> {
-                        LocationSearchStep(
-                            selectedLocation = selectedLocation,
-                            radiusMeters = radiusMeters,
-                            onLocationSelect = { showLocationSearch = true },
-                            onRadiusChange = { radiusMeters = it }
-                        )
-                    }
-                    ScheduleCreationStep.SCHEDULE_SETUP -> {
-                        ScheduleSetupStep(
-                            name = name,
-                            onNameChange = { name = it },
-                            mode = mode,
-                            onModeChange = { mode = it },
-                            timeSlots = timeSlots,
-                            selectedTemplate = selectedTemplate,
-                            onAddTimeSlot = { showTimeSlotInput = true },
-                            onEditTimeSlot = { slot ->
-                                editingSlot = slot
-                                showTimeSlotInput = true
-                            },
-                            onDeleteTimeSlot = { slot ->
-                                timeSlots = timeSlots - slot
-                            },
-                            onTemplateSelect = { showTemplateSelector = true }
-                        )
-                    }
-                }
-            }
-            
-            // Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                TextButton(
-                    onClick = {
-                        if (currentStep == ScheduleCreationStep.LOCATION_CHOICE) {
-                            onDismiss()
-                        } else {
-                            // 이전 단계로
-                            currentStep = when (currentStep) {
-                                ScheduleCreationStep.LOCATION_SEARCH -> ScheduleCreationStep.LOCATION_CHOICE
-                                ScheduleCreationStep.SCHEDULE_SETUP -> {
-                                    if (hasLocation) {
-                                        ScheduleCreationStep.LOCATION_SEARCH
-                                    } else {
-                                        ScheduleCreationStep.LOCATION_CHOICE
-                                    }
-                                }
-                                else -> currentStep
-                            }
-                        }
-                    }
-                ) {
-                    Text(if (currentStep == ScheduleCreationStep.LOCATION_CHOICE) "취소" else "이전")
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                Button(
-                    onClick = {
-                        when (currentStep) {
-                            ScheduleCreationStep.LOCATION_CHOICE -> {
-                                Log.d("ScheduleCreationDialog", "📍 Location choice: hasLocation=$hasLocation")
-                                if (hasLocation) {
-                                    Log.d("ScheduleCreationDialog", "→ Moving to LOCATION_SEARCH step")
-                                    currentStep = ScheduleCreationStep.LOCATION_SEARCH
-                                } else {
-                                    Log.d("ScheduleCreationDialog", "→ Moving to SCHEDULE_SETUP step (no location)")
-                                    currentStep = ScheduleCreationStep.SCHEDULE_SETUP
-                                }
-                            }
-                            ScheduleCreationStep.LOCATION_SEARCH -> {
-                                Log.d("ScheduleCreationDialog", "📍 Location search step: selectedLocation=$selectedLocation")
-                                if (selectedLocation != null) {
-                                    Log.d("ScheduleCreationDialog", "→ Moving to SCHEDULE_SETUP step with location: ${selectedLocation!!.name}")
-                                    // 🐛 버그 수정: 위치기반 스케쥴 생성 시 템플릿 모드로 자동 설정
-                                    if (mode == CreationMode.CUSTOM) {
-                                        mode = CreationMode.TEMPLATE
-                                    }
-                                    currentStep = ScheduleCreationStep.SCHEDULE_SETUP
-                                }
-                            }
-                            ScheduleCreationStep.SCHEDULE_SETUP -> {
-                                Log.d("ScheduleCreationDialog", "=== 🔍 Schedule Creation Debug ===")
-                                Log.d("ScheduleCreationDialog", "hasLocation: $hasLocation")
-                                Log.d("ScheduleCreationDialog", "selectedLocation: $selectedLocation")
-                                Log.d("ScheduleCreationDialog", "name: $name")
-                                Log.d("ScheduleCreationDialog", "mode: $mode")
-                                Log.d("ScheduleCreationDialog", "selectedTemplate: $selectedTemplate")
-                                Log.d("ScheduleCreationDialog", "timeSlots: ${timeSlots.size}")
-                                
-                                val locationInfo = if (hasLocation && selectedLocation != null) {
-                                    LocationInfo(
-                                        name = selectedLocation!!.name,  // 🆕 위치 이름 전달
-                                        address = selectedLocation!!.address,
-                                        latitude = selectedLocation!!.latitude,
-                                        longitude = selectedLocation!!.longitude,
-                                        radiusMeters = radiusMeters
-                                    ).also {
-                                        Log.d("ScheduleCreationDialog", "✅ LocationInfo created: ${it.name} (${it.address})")
-                                    }
-                                } else {
-                                    Log.d("ScheduleCreationDialog", "❌ LocationInfo is NULL (hasLocation=$hasLocation, selectedLocation=$selectedLocation)")
-                                    null
-                                }
-                                
-                                Log.d("ScheduleCreationDialog", "📤 Calling onConfirm with locationInfo: $locationInfo")
-                                
-                                onConfirm(
-                                    name,
-                                    mode,
-                                    timeSlots,
-                                    selectedTemplate,
-                                    locationInfo
-                                )
-                            }
-                        }
+                Text(
+                    text = when (currentStep) {
+                        ScheduleCreationStep.LOCATION_CHOICE -> "위치 설정 여부"
+                        ScheduleCreationStep.LOCATION_SEARCH -> "위치 반경 설정" // 제목 변경
+                        ScheduleCreationStep.SCHEDULE_SETUP -> "시간표 만들기"
                     },
-                    enabled = when (currentStep) {
-                        ScheduleCreationStep.LOCATION_CHOICE -> true
-                        ScheduleCreationStep.LOCATION_SEARCH -> selectedLocation != null
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                // 스크롤 가능한 컨텐츠 영역
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                         // weight(1f) 제거 -> 고정 높이가 아닌 내용물 크기만큼
+                        .heightIn(max = 400.dp) // 최대 높이 제한 (스크롤 생김)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    when (currentStep) {
+                        ScheduleCreationStep.LOCATION_CHOICE -> {
+                            LocationChoiceStep(
+                                hasLocation = hasLocation,
+                                onHasLocationChange = { hasLocation = it }
+                            )
+                        }
+                        ScheduleCreationStep.LOCATION_SEARCH -> {
+                            LocationSearchStep(
+                                selectedLocation = selectedLocation,
+                                radiusMeters = radiusMeters,
+                                onLocationSelect = { showLocationSearch = true },
+                                onRadiusChange = { radiusMeters = it }
+                            )
+                        }
                         ScheduleCreationStep.SCHEDULE_SETUP -> {
-                            name.isNotBlank() && when (mode) {
-                                CreationMode.TEMPLATE -> selectedTemplate != null
-                                CreationMode.CUSTOM -> timeSlots.isNotEmpty()
-                            }
+                            ScheduleSetupStep(
+                                name = name,
+                                onNameChange = { name = it },
+                                mode = mode,
+                                onModeChange = { mode = it },
+                                timeSlots = timeSlots,
+                                selectedTemplate = selectedTemplate,
+                                onAddTimeSlot = { showTimeSlotInput = true },
+                                onEditTimeSlot = { slot ->
+                                    editingSlot = slot
+                                    showTimeSlotInput = true
+                                },
+                                onDeleteTimeSlot = { slot ->
+                                    timeSlots = timeSlots - slot
+                                },
+                                onTemplateSelect = { showTemplateSelector = true }
+                            )
                         }
                     }
+                }
+                
+                // Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Text(
-                        when (currentStep) {
-                            ScheduleCreationStep.LOCATION_CHOICE -> "다음"
-                            ScheduleCreationStep.LOCATION_SEARCH -> "다음"
-                            ScheduleCreationStep.SCHEDULE_SETUP -> "만들기"
+                    TextButton(
+                        onClick = {
+                            if (currentStep == ScheduleCreationStep.LOCATION_CHOICE) {
+                                onDismiss()
+                            } else {
+                                // 이전 단계로
+                                currentStep = when (currentStep) {
+                                    ScheduleCreationStep.LOCATION_SEARCH -> ScheduleCreationStep.LOCATION_CHOICE
+                                    ScheduleCreationStep.SCHEDULE_SETUP -> {
+                                        if (hasLocation) {
+                                            ScheduleCreationStep.LOCATION_SEARCH
+                                        } else {
+                                            ScheduleCreationStep.LOCATION_CHOICE
+                                        }
+                                    }
+                                    else -> currentStep
+                                }
+                            }
                         }
-                    )
+                    ) {
+                        Text(if (currentStep == ScheduleCreationStep.LOCATION_CHOICE) "취소" else "이전")
+                    }
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Button(
+                        onClick = {
+                            when (currentStep) {
+                                ScheduleCreationStep.LOCATION_CHOICE -> {
+                                    if (hasLocation) {
+                                        currentStep = ScheduleCreationStep.LOCATION_SEARCH
+                                    } else {
+                                        currentStep = ScheduleCreationStep.SCHEDULE_SETUP
+                                    }
+                                }
+                                ScheduleCreationStep.LOCATION_SEARCH -> {
+                                    if (selectedLocation != null) {
+                                        if (mode == CreationMode.CUSTOM) {
+                                            mode = CreationMode.TEMPLATE
+                                        }
+                                        currentStep = ScheduleCreationStep.SCHEDULE_SETUP
+                                    }
+                                }
+                                ScheduleCreationStep.SCHEDULE_SETUP -> {
+                                    val locationInfo = if (hasLocation && selectedLocation != null) {
+                                        LocationInfo(
+                                            name = selectedLocation!!.name,
+                                            address = selectedLocation!!.address,
+                                            latitude = selectedLocation!!.latitude,
+                                            longitude = selectedLocation!!.longitude,
+                                            radiusMeters = radiusMeters
+                                        )
+                                    } else {
+                                        null
+                                    }
+                                    
+                                    onConfirm(
+                                        name,
+                                        mode,
+                                        timeSlots,
+                                        selectedTemplate,
+                                        locationInfo
+                                    )
+                                }
+                            }
+                        },
+                        enabled = when (currentStep) {
+                            ScheduleCreationStep.LOCATION_CHOICE -> true
+                            ScheduleCreationStep.LOCATION_SEARCH -> selectedLocation != null
+                            ScheduleCreationStep.SCHEDULE_SETUP -> {
+                                name.isNotBlank() && when (mode) {
+                                    CreationMode.TEMPLATE -> selectedTemplate != null
+                                    CreationMode.CUSTOM -> timeSlots.isNotEmpty()
+                                }
+                            }
+                        }
+                    ) {
+                        Text(
+                            when (currentStep) {
+                                ScheduleCreationStep.LOCATION_CHOICE -> "다음"
+                                ScheduleCreationStep.LOCATION_SEARCH -> "다음"
+                                ScheduleCreationStep.SCHEDULE_SETUP -> "만들기"
+                            }
+                        )
+                    }
                 }
             }
         }
     }
     
-    // 위치 검색 다이얼로그
-    if (showLocationSearch) {
-        LocationSearchDialog(
-            onDismiss = { 
-                Log.d("ScheduleCreationDialog", "❌ Location search dismissed without selection")
-                showLocationSearch = false 
-            },
-            onLocationSelected = { location ->
-                Log.d("ScheduleCreationDialog", "📍 Location selected: ${location.name} (${location.address})")
-                selectedLocation = location
-                showLocationSearch = false
-            }
-        )
-    }
+    // 위치 검색 모드(showLocationSearch)는 이제 내부 상태(DialogStep)가 아닌 Swapping Content로 처리하거나
+    // currentStep이 LOCATION_SEARCH 일 때 메인 컨텐츠 영역에서 보여줍니다.
+    // 따라서 별도의 GlassDialog 호출(LocationSearchDialog)은 제거합니다.
     
     // 시간대 입력 다이얼로그
     if (showTimeSlotInput) {
@@ -578,7 +559,8 @@ private fun RadioButtonOption(
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
     ) {
         RadioButton(
             selected = selected,
@@ -599,11 +581,13 @@ private fun RadioButtonOption(
 }
 
 /**
- * 위치 검색 다이얼로그
+ * 위치 검색 컨텐츠 (Dialog 내부용)
+ * 
+ * 별도의 Window를 생성하지 않고 기존 Dialog 내부에서 화면만 전환하여 표시합니다.
  */
 @Composable
-private fun LocationSearchDialog(
-    onDismiss: () -> Unit,
+private fun LocationSearchContent(
+    onCancel: () -> Unit,
     onLocationSelected: (GeocoderUtils.LocationInfo) -> Unit
 ) {
     val context = LocalContext.current
@@ -613,78 +597,83 @@ private fun LocationSearchDialog(
     var searchResults by remember { mutableStateOf<List<GeocoderUtils.LocationInfo>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     
-    GlassDialog(
-        onDismissRequest = onDismiss
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        Text(
+            text = "위치 검색",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
+        
         Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "위치 검색",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Column(
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("주소 또는 장소 이름") },
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    label = { Text("주소 또는 장소 이름") },
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    if (searchQuery.isNotBlank()) {
-                                        isSearching = true
-                                        val result = GeocoderUtils.searchLocation(context, searchQuery)
-                                        result.onSuccess { locations ->
-                                            searchResults = locations
-                                        }.onFailure {
-                                            searchResults = emptyList()
-                                        }
-                                        isSearching = false
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                if (searchQuery.isNotBlank()) {
+                                    isSearching = true
+                                    val result = GeocoderUtils.searchLocation(context, searchQuery)
+                                    result.onSuccess { locations ->
+                                        searchResults = locations
+                                    }.onFailure {
+                                        searchResults = emptyList()
                                     }
+                                    isSearching = false
                                 }
                             }
-                        ) {
-                            Icon(Icons.Default.Search, "검색")
                         }
+                    ) {
+                        Icon(Icons.Default.Search, "검색")
                     }
-                )
-                
-                if (isSearching) {
-                    CircularProgressIndicator(modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally))
-                }
-                
-                if (searchResults.isNotEmpty()) {
-                    // 제한된 높이 내에서 리스트 표시
-                    Column(modifier = Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState())) {
-                        searchResults.take(5).forEach { location ->
-                            ListItem(
-                                headlineContent = { Text(location.name) },
-                                supportingContent = { Text(location.address) },
-                                modifier = Modifier.clickable {
-                                    onLocationSelected(location)
-                                },
-                                colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-                            )
-                        }
-                    }
-                }
+                },
+                singleLine = true
+            )
+            
+            if (isSearching) {
+                CircularProgressIndicator(modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally))
             }
             
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text("취소")
+            if (searchResults.isNotEmpty()) {
+                // 제한된 높이 내에서 리스트 표시
+                Column(modifier = Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState())) {
+                    searchResults.take(5).forEach { location ->
+                        ListItem(
+                            headlineContent = { Text(location.name) },
+                            supportingContent = { Text(location.address) },
+                            modifier = Modifier.clickable {
+                                onLocationSelected(location)
+                            },
+                            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
+                        )
+                        HorizontalDivider()
+                    }
                 }
+            } else if (searchQuery.isNotBlank() && !isSearching) {
+                Text(
+                    text = "검색 결과가 없습니다.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally).padding(vertical = 16.dp)
+                )
+            }
+        }
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onCancel) {
+                Text("취소")
             }
         }
     }

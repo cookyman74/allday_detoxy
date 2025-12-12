@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.runtime.CompositionLocalProvider
+import com.allday.detoxy.presentation.ui.theme.LocalHazeState
 
 /**
  * Glassmorphism 스타일이 적용된 다이얼로그
@@ -28,13 +30,16 @@ fun GlassDialog(
         onDismissRequest = onDismissRequest,
         properties = properties
     ) {
-        GlassSurface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
-            alpha = 0.5f
-        ) {
-            content()
+        // Disable Haze in Dialogs to prevent cross-window RenderNode issues
+        CompositionLocalProvider(LocalHazeState provides null) {
+            GlassSurface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                alpha = 0.5f
+            ) {
+                content()
+            }
         }
     }
 }

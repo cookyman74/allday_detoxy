@@ -64,7 +64,13 @@ fun Modifier.liquidGlass(
         )
     } else {
         // Fallback for when HazeState is missing (or preview)
-        Modifier.background(resolvedTint, shape)
+        // Increase opacity significantly to prevent transparency issues when blur is missing
+        val fallbackTint = if (resolvedTint.alpha < 0.9f) {
+            resolvedTint.copy(alpha = 0.95f)
+        } else {
+            resolvedTint
+        }
+        Modifier.background(fallbackTint, shape)
     }
 
     return this

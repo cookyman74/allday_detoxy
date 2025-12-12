@@ -31,14 +31,17 @@ fun GlassScaffold(
     val isDark = isSystemInDarkTheme()
     val backgroundBrush = if (isDark) MeshGradientBackgroundDark else MeshGradientBackgroundLight
 
-    CompositionLocalProvider(LocalHazeState provides hazeState) {
+    // FIXME: Haze causes crashes on some Xiaomi devices (RenderNode/ThreadedRenderer issues).
+    // Temporarily disabling Haze globally to ensure app stability.
+    // Falls back to safe translucent backgrounds via GlassModifier's null check.
+    CompositionLocalProvider(LocalHazeState provides null) { // was: provides hazeState
         Box(
             modifier = modifier
                 .fillMaxSize()
                 .background(backgroundBrush) // 1. Draw Background
-                .haze(state = hazeState)     // 2. Set this Box as the Haze Source
+                // .haze(state = hazeState)  // 2. Disabled Haze Source
         ) {
-            content() // 3. Draw Foreground Content (which can use hazeChild)
+            content() // 3. Draw Foreground Content (will use fallback background)
         }
     }
 }
