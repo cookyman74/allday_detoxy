@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.allday.detoxy.data.local.entity.FocusSession
 import com.allday.detoxy.presentation.viewmodel.ReportViewModel
+import com.allday.detoxy.presentation.ui.component.GlassScaffold
+import com.allday.detoxy.presentation.ui.component.GlassSurface
+import com.allday.detoxy.presentation.ui.component.liquidGlass
 import com.allday.detoxy.presentation.ui.report.components.DetoxyRiskCard
 import com.allday.detoxy.presentation.ui.report.components.RecoveryTrendCard
 import com.allday.detoxy.presentation.ui.report.components.DistractionTopCard
@@ -63,211 +66,212 @@ fun ReportScreen(
             CircularProgressIndicator()
         }
     } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+        GlassScaffold(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // 헤더
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.primary,
-                shadowElevation = 4.dp
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding() // 필수: 상단 잘림 해결
             ) {
+                // 헤더 (투명하고 깔끔하게)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 20.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(horizontal = 24.dp, vertical = 24.dp),
                 ) {
                     Text(
                         text = "디톡시 리포트",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.displaySmall,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold
                     )
                 }
-            }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 빈 상태 처리
-                if (!uiState.hasData && uiState.todaySessions.isEmpty()) {
-                    item {
-                        EmptyStateCard()
-                    }
-                } else {
-                    // 메인 통계 카드들
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // 총 집중 시간
-                            StatCard(
-                                modifier = Modifier.weight(1f),
-                                title = "총 집중 시간",
-                                value = "${uiState.getTotalFocusMinutes()}",
-                                unit = "분",
-                                icon = Icons.Default.PlayArrow,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            // 성공 세션
-                            StatCard(
-                                modifier = Modifier.weight(1f),
-                                title = "성공 세션",
-                                value = "${uiState.getSuccessSessionCount()}",
-                                unit = "회",
-                                icon = Icons.Default.CheckCircle,
-                                color = Color(0xFF4CAF50)
-                            )
-                        }
-                    }
-
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // 현재 스트릭
-                            StatCard(
-                                modifier = Modifier.weight(1f),
-                                title = "연속 성공",
-                                value = "${uiState.settings.currentStreak}",
-                                unit = "일",
-                                icon = Icons.Default.Favorite,
-                                color = Color(0xFFFF6B35)
-                            )
-
-                            // 총 포인트
-                            StatCard(
-                                modifier = Modifier.weight(1f),
-                                title = "총 포인트",
-                                value = "${uiState.settings.totalPoints}",
-                                unit = "P",
-                                icon = Icons.Default.Star,
-                                color = Color(0xFFFFC107)
-                            )
-                        }
-                    }
-
-                    // 성공률 표시
-                    if (uiState.todaySessions.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // 빈 상태 처리
+                    if (!uiState.hasData && uiState.todaySessions.isEmpty()) {
                         item {
-                            Card(
+                            EmptyStateCard()
+                        }
+                    } else {
+                        // 메인 통계 카드들
+                        item {
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                                )
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                // 총 집중 시간
+                                GlassStatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "총 집중 시간",
+                                    value = "${uiState.getTotalFocusMinutes()}",
+                                    unit = "분",
+                                    icon = Icons.Default.PlayArrow,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+
+                                // 성공 세션
+                                GlassStatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "성공 세션",
+                                    value = "${uiState.getSuccessSessionCount()}",
+                                    unit = "회",
+                                    icon = Icons.Default.CheckCircle,
+                                    color = Color(0xFF4CAF50)
+                                )
+                            }
+                        }
+
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                // 현재 스트릭
+                                GlassStatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "연속 성공",
+                                    value = "${uiState.settings.currentStreak}",
+                                    unit = "일",
+                                    icon = Icons.Default.Favorite,
+                                    color = Color(0xFFFF6B35)
+                                )
+
+                                // 총 포인트
+                                GlassStatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "총 포인트",
+                                    value = "${uiState.settings.totalPoints}",
+                                    unit = "P",
+                                    icon = Icons.Default.Star,
+                                    color = Color(0xFFFFC107)
+                                )
+                            }
+                        }
+
+                        // 성공률 표시
+                        if (uiState.todaySessions.isNotEmpty()) {
+                            item {
+                                GlassSurface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    alpha = 0.3f
                                 ) {
-                                    Column {
-                                        Text(
-                                            text = "오늘의 성공률",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                        Text(
-                                            text = "${String.format("%.0f", uiState.getSuccessRate())}%",
-                                            style = MaterialTheme.typography.headlineMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = "오늘의 성공률",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = "${String.format("%.0f", uiState.getSuccessRate())}%",
+                                                style = MaterialTheme.typography.headlineMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+
+                                        LinearProgressIndicator(
+                                            progress = { uiState.getSuccessRate() / 100f },
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(8.dp)
+                                                .padding(start = 24.dp)
+                                                .clip(RoundedCornerShape(4.dp)),
+                                            color = when {
+                                                uiState.getSuccessRate() >= 80 -> Color(0xFF4CAF50)
+                                                uiState.getSuccessRate() >= 50 -> Color(0xFFFFC107)
+                                                else -> Color(0xFFFF5252)
+                                            },
+                                            trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha=0.5f)
                                         )
                                     }
-
-                                    LinearProgressIndicator(
-                                        progress = { uiState.getSuccessRate() / 100f },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(8.dp)
-                                            .padding(start = 24.dp)
-                                            .clip(RoundedCornerShape(4.dp)),
-                                        color = when {
-                                            uiState.getSuccessRate() >= 80 -> Color(0xFF4CAF50)
-                                            uiState.getSuccessRate() >= 50 -> Color(0xFFFFC107)
-                                            else -> Color(0xFFFF5252)
-                                        }
-                                    )
                                 }
                             }
                         }
-                    }
 
-                    // 신규 고급 통계 카드들 (Week 2B) - Task 2B.3.3 최종 통합
-                    item {
-                        Text(
-                            text = "주간 인사이트",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
-
-                    // 1. 위험 지수 카드
-                    item {
-                        DetoxyRiskCard(riskIndex = uiState.riskIndex)
-                    }
-
-                    // 2. 회복률 추세 카드
-                    item {
-                        RecoveryTrendCard(recoveryTrend = uiState.recoveryTrend)
-                    }
-
-                    // 3. 방해요인 Top 3 카드
-                    item {
-                        DistractionTopCard(distractions = uiState.topDistractions)
-                    }
-
-                    // 4. 코치 추천 카드 (Task 2B.3.4 - RiskLevel 분리 후 활성화)
-                    item {
-                        CoachRecommendationCard(
-                            recommendation = uiState.coachRecommendation,
-                            onDetailClick = {
-                                showCoachDialog = true
-                                // TODO: Analytics 이벤트 추가 (report_coach_recommendation_shown)
-                            }
-                        )
-                    }
-
-                    // 5. 포기 지점 분석 카드 (Task 2B.3.3 - 추가 구현)
-                    item {
-                        DistractionAvoidanceCard(giveUpAnalysis = uiState.giveUpAnalysis)
-                    }
-
-                    // 6. 허용 앱 체류 시간 카드 (Task 2B.3.3 - 추가 구현, UsageStats 준비)
-                    item {
-                        AllowedAppDwellCard(
-                            isUsageStatsEnabled = false, // TODO: UsageStats 권한 상태 연동
-                            onEnableUsageStats = {
-                                // TODO: UsageStats 권한 요청 구현
-                            }
-                        )
-                    }
-
-                    // 세션 리스트 섹션 헤더
-                    if (uiState.todaySessions.isNotEmpty()) {
+                        // 신규 고급 통계 카드들 (Week 2B) - Task 2B.3.3 최종 통합
                         item {
                             Text(
-                                text = "오늘의 세션",
-                                style = MaterialTheme.typography.titleMedium,
+                                text = "주간 인사이트",
+                                style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(vertical = 12.dp)
                             )
                         }
 
-                        // 세션 리스트
-                        items(uiState.todaySessions.sortedByDescending { it.startTime }) { session ->
-                            SessionCard(session = session)
+                        // 1. 위험 지수 카드
+                        item {
+                            DetoxyRiskCard(riskIndex = uiState.riskIndex)
+                        }
+
+                        // 2. 회복률 추세 카드
+                        item {
+                            RecoveryTrendCard(recoveryTrend = uiState.recoveryTrend)
+                        }
+
+                        // 3. 방해요인 Top 3 카드
+                        item {
+                            DistractionTopCard(distractions = uiState.topDistractions)
+                        }
+
+                        // 4. 코치 추천 카드 (Task 2B.3.4 - RiskLevel 분리 후 활성화)
+                        item {
+                            CoachRecommendationCard(
+                                recommendation = uiState.coachRecommendation,
+                                onDetailClick = {
+                                    showCoachDialog = true
+                                    // TODO: Analytics 이벤트 추가 (report_coach_recommendation_shown)
+                                }
+                            )
+                        }
+
+                        // 5. 포기 지점 분석 카드 (Task 2B.3.3 - 추가 구현)
+                        item {
+                            DistractionAvoidanceCard(giveUpAnalysis = uiState.giveUpAnalysis)
+                        }
+
+                        // 6. 허용 앱 체류 시간 카드 (Task 2B.3.3 - 추가 구현, UsageStats 준비)
+                        item {
+                            AllowedAppDwellCard(
+                                isUsageStatsEnabled = false, // TODO: UsageStats 권한 상태 연동
+                                onEnableUsageStats = {
+                                    // TODO: UsageStats 권한 요청 구현
+                                }
+                            )
+                        }
+
+                        // 세션 리스트 섹션 헤더
+                        if (uiState.todaySessions.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "오늘의 세션",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(vertical = 12.dp)
+                                )
+                            }
+
+                            // 세션 리스트
+                            items(uiState.todaySessions.sortedByDescending { it.startTime }) { session ->
+                                GlassSessionCard(session = session)
+                            }
+                        }
+                        
+                        // 하단 여백 추가 (네비게이션 바 고려)
+                        item {
+                            Spacer(modifier = Modifier.height(100.dp))
                         }
                     }
                 }
@@ -420,8 +424,11 @@ private fun EmptyStateFeatureItem(
 /**
  * 통계 카드
  */
+/**
+ * Glass 스타일 통계 카드
+ */
 @Composable
-private fun StatCard(
+private fun GlassStatCard(
     title: String,
     value: String,
     unit: String,
@@ -429,14 +436,9 @@ private fun StatCard(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    GlassSurface(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        )
+        alpha = 0.3f
     ) {
         Column(
             modifier = Modifier
@@ -444,13 +446,20 @@ private fun StatCard(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = color,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(color.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = color,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
             Row(
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -481,20 +490,17 @@ private fun StatCard(
 /**
  * 세션 카드
  */
+/**
+ * Glass 스타일 세션 카드
+ */
 @Composable
-private fun SessionCard(
+private fun GlassSessionCard(
     session: FocusSession,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    GlassSurface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (session.success) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            } else {
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
-            }
-        )
+        alpha = if (session.success) 0.3f else 0.2f
     ) {
         Row(
             modifier = Modifier
@@ -502,12 +508,22 @@ private fun SessionCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = if (session.success) Icons.Default.CheckCircle else Icons.Default.Close,
-                contentDescription = if (session.success) "성공" else "실패",
-                tint = if (session.success) Color(0xFF4CAF50) else Color(0xFFEF5350),
-                modifier = Modifier.size(32.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = if (session.success) Color(0xFF4CAF50).copy(alpha = 0.2f) else Color(0xFFEF5350).copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (session.success) Icons.Default.CheckCircle else Icons.Default.Close,
+                    contentDescription = if (session.success) "성공" else "실패",
+                    tint = if (session.success) Color(0xFF4CAF50) else Color(0xFFEF5350),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -515,7 +531,8 @@ private fun SessionCard(
                 Text(
                     text = if (session.success) "성공 세션" else "실패 세션",
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "${session.durationMinutes}분 • ${formatTime(session.startTime)}",
