@@ -8,6 +8,9 @@ import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -51,7 +54,8 @@ class ScheduleGroupManager @Inject constructor(
     private val repository: ScheduleGroupRepository,
     private val alarmManager: AutoRunAlarmManager,
     private val conflictResolver: LocationConflictResolver,  // 🆕 Phase 3: 위치 충돌 해소
-    private val geofenceManager: AutoRunGeofenceManager // 🆕 3차 고도화: Geofence 관리 통합
+    private val geofenceManager: AutoRunGeofenceManager, // 🆕 3차 고도화: Geofence 관리 통합
+    private val fusedLocationClient: com.google.android.gms.location.FusedLocationProviderClient // 🆕 v8.1: 명시적 위치 확인
 ) {
     companion object {
         private const val TAG = "ScheduleGroupManager"
@@ -64,6 +68,7 @@ class ScheduleGroupManager @Inject constructor(
      * 1. 해당 그룹 활성화 (lastActivatedAt 업데이트)
      * 2. 그룹 내 활성화된 시간대의 알람 등록
      * 3. 그룹 내 연결된 위치의 Geofence 등록 (옵션)
+     * 4. 🆕 v8: 수동 제어(INACTIVE/PAUSED) 상태 해제 (자동 모드 복귀)
      *
      * ## 🆕 다중 활성화 지원
      * - 여러 그룹이 동시에 활성화 가능 (독립적 on/off 스위치)
@@ -79,6 +84,10 @@ class ScheduleGroupManager @Inject constructor(
      */
     suspend fun activateGroup(groupId: String, updateGeofences: Boolean = true): Result<Unit> = runCatching {
         Log.i(TAG, "🔄 Activating schedule group: $groupId (updateGeofences=$updateGeofences)")
+
+        // 🆕 v8: 수동 제어 상태 해제 (자동 모드로 복귀)
+        // 활성화한다는 것은 곧 '사용하겠다'는 의미이므로, 기존의 비활성화/일시중지 상태를 초기화함
+        repository.updateManualOverride(groupId, null, null)
 
         // 1. 해당 그룹 활성화 (lastActivatedAt 업데이트)
         val timestamp = System.currentTimeMillis()
@@ -135,9 +144,12 @@ class ScheduleGroupManager @Inject constructor(
             Log.d(TAG, "📍 Registering ${enabledLocations.size} geofences for group: $groupId")
             
             enabledLocations.forEach { location ->
+                // Geofence 등록 시 INITIAL_TRIGGER_ENTER가 설정되어 있으므로,
+                // 이미 해당 위치에 있다면 잠시 후 자동으로 Geofence 진입 이벤트가 발생함.
+                // 따라서 별도의 위치 확인 로직 없이도 "켜자마자 위치 확인" 동작이 수행됨.
                 val result = geofenceManager.addGeofence(location)
                 if (result.isSuccess) {
-                    Log.d(TAG, "✅ Geofence added: ${location.label}")
+                    Log.d(TAG, "✅ Geofence added: ${location.label} (Expecting INITIAL_TRIGGER if inside)")
                 } else {
                     Log.w(TAG, "⚠️ Failed to add geofence: ${location.label} (${result.exceptionOrNull()?.message})")
                 }
@@ -209,13 +221,22 @@ class ScheduleGroupManager @Inject constructor(
      * ## 처리 흐름
      * 1. 해당 그룹 비활성화
      * 2. 그룹 내 모든 시간대의 알람 취소
-     * 3. 그룹 내 연결된 위치의 Geofence 해제
+     * 3. Geofence는 유지 (위치 진입 감지를 위해)
+     * 4. 🆕 v8: 사용자 액션인 경우 수동 제어(INACTIVE) 상태 설정
      *
      * @param groupId 비활성화할 시간표 그룹 ID
+     * @param isUserAction 사용자 명시적 액션 여부 (true: INACTIVE 설정, false: 상태 유지)
      * @return Result<Unit> 성공 시 Success, 실패 시 Failure
      */
-    suspend fun deactivateGroup(groupId: String): Result<Unit> = runCatching {
-        Log.i(TAG, "🔄 Deactivating schedule group: $groupId")
+    suspend fun deactivateGroup(groupId: String, isUserAction: Boolean = false): Result<Unit> = runCatching {
+        Log.i(TAG, "🔄 Deactivating schedule group: $groupId (isUserAction=$isUserAction)")
+
+        // 🆕 v8: 사용자 액션인 경우 manualOverrideState를 INACTIVE로 설정
+        // 이렇게 해야 Geofence 진입 시 Receiver가 'INACTIVE'를 확인하고 자동 실행을 차단함
+        if (isUserAction) {
+            repository.updateManualOverride(groupId, "INACTIVE", null)
+            Log.d(TAG, "🚫 Manual override set to INACTIVE: $groupId")
+        }
 
         // 1. 그룹 비활성화 (lastActivatedAt은 유지)
         repository.toggleActive(groupId, false)
@@ -308,6 +329,103 @@ class ScheduleGroupManager @Inject constructor(
         conflictResolver.recordActivation(winner.id)
 
         Log.i(TAG, "✅ Schedule group activated by location: $scheduleGroupId (location: ${winner.label})")
+    }
+    /**
+     * 시간표 그룹 자동 모드 시작 (수동 ON)
+     *
+     * 사용자가 UI에서 스위치를 켰을 때 호출됩니다.
+     * 무조건 활성화하지 않고, Geofence를 등록하여 위치에 따라 활성화/비활성화 여부를 결정합니다.
+     *
+     * ## 동작 방식
+     * 1. manualOverrideState = null (자동 모드)
+     * 2. isActive = false (일단끔, 위치 확인 대기)
+     * 3. Geofence 등록 (INITIAL_TRIGGER_ENTER 사용)
+     *    - 위치 내부라면: Receiver가 activateGroup 호출 -> 활성화
+     *    - 위치 외부라면: 아무 일도 안 일어남 -> 비활성 유지
+     *
+     * @param groupId 그룹 ID
+     */
+    /**
+     * 시간표 그룹 자동 모드 시작 (수동 ON)
+     *
+     * 사용자가 UI에서 스위치를 켰을 때 호출됩니다.
+     * 무조건 활성화하지 않고, Geofence를 등록하여 위치에 따라 활성화/비활성화 여부를 결정합니다.
+     * 
+     * ## 동작 방식 (v8.1 개선)
+     * 1. manualOverrideState = null (자동 모드)
+     * 2. isActive = false (일단끔, 위치 확인 대기)
+     * 3. Geofence 등록 (미래의 이벤트를 위해)
+     * 4. [NEW] 명시적 위치 확인 (현재 상태 동기화)
+     *    - INITIAL_TRIGGER에만 의존하지 않고, getLastLocation을 통해 즉시 확인
+     *    - 위치 내부라면: activateGroup 호출 -> 활성화
+     *    - 위치 외부라면: 비활성 유지
+     *
+     * @param groupId 그룹 ID
+     */
+    suspend fun startAutoMode(groupId: String): Result<Unit> = runCatching {
+        Log.i(TAG, "🔄 Starting Auto Mode for group: $groupId")
+        
+        // 1. 수동 제어 해제
+        repository.updateManualOverride(groupId, null, null)
+        
+        // 2. 일단 비활성화 (모니터링 모드)
+        repository.toggleActive(groupId, false)
+        Log.d(TAG, "📉 Set to inactive (waiting for location check)")
+        
+        // 3. Geofence 등록 (미래 감지용)
+        val linkedLocations = repository.getLinkedLocations(groupId)
+        val enabledLocations = linkedLocations.filter { it.isEnabled }
+        
+        Log.d(TAG, "📍 Registering ${enabledLocations.size} geofences for Auto Mode")
+        
+        enabledLocations.forEach { location ->
+            geofenceManager.addGeofence(location)
+        }
+        
+        // 4. [Critical] 명시적 위치 확인
+        // Geofence INITIAL_TRIGGER가 불안정할 수 있으므로, 현재 위치를 직접 가져와서 확인
+        try {
+            if (androidx.core.app.ActivityCompat.checkSelfPermission(
+                    context,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
+                    if (location != null) {
+                        Log.i(TAG, "📍 Current location found: ${location.latitude}, ${location.longitude} (Accuracy: ${location.accuracy}m)")
+                        
+                        // 현재 위치가 등록된 Geofence 반경 내에 있는지 확인
+                        val match = enabledLocations.find { target ->
+                            val results = FloatArray(1)
+                            Location.distanceBetween(
+                                location.latitude, location.longitude,
+                                target.latitude, target.longitude,
+                                results
+                            )
+                            val distanceInMeters = results[0]
+                            distanceInMeters <= target.radiusMeters
+                        }
+                        
+                        if (match != null) {
+                            Log.i(TAG, "✅ User is inside location: ${match.label} (Distance match). Activating immediately.")
+                            // Coroutine scope가 필요하므로 GlobalScope 또는 viewModelScope를 써야 하지만,
+                            // 여기서는 runBlocking이나 suspend 함수 내 호출을 보장해야 함.
+                            // fusedLocationClient callback은 메인 쓰레드 등에서 비동기 실행됨.
+                            // 안전하게 동기화하기 위해 CoroutineScope를 사용해 activate 호출
+                            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                activateGroup(groupId, updateGeofences = false)
+                            }
+                        } else {
+                            Log.i(TAG, "ℹ️ User is outside all locations. Staying INACTIVE.")
+                        }
+                    } else {
+                        Log.w(TAG, "⚠️ Last location is null. Relying on Geofence trigger.")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Explicit location check failed: ${e.message}")
+        }
     }
 }
 

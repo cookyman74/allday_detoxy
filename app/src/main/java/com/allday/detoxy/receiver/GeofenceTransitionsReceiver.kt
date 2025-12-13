@@ -443,16 +443,18 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                         
                         val overrideState = scheduleGroup.manualOverrideState
                         
-                        // v8: INACTIVE 상태에서 이탈 시 로그만 기록 (이미 비활성화 상태)
+                        // v8: INACTIVE 상태에서 이탈 시 -> 상태 유지 (사용자 명시적 비활성화 존중)
+                        // 사용자가 "끄기"를 선택했다면, 위치를 벗어났다가 다시 돌아와도 계속 꺼져 있어야 함.
                         if (overrideState == "INACTIVE") {
-                            Log.i(TAG, "ℹ️ v8: Location EXIT but ScheduleGroup already INACTIVE: $scheduleGroupId")
-                            return@forEach
+                             Log.i(TAG, "ℹ️ v8: Location EXIT but ScheduleGroup manually INACTIVE (Processing Skipped): $scheduleGroupId")
+                             return@forEach
                         }
                         
                         Log.i(TAG, "🚪 Location has linked ScheduleGroup: $scheduleGroupId")
                         
                         // 2. ScheduleGroup 비활성화 (알람 자동 취소)
-                        val result = scheduleManager.deactivateGroup(scheduleGroupId)
+                        // v8: 위치 이탈로 인한 자동 비활성화이므로 isUserAction=false
+                        val result = scheduleManager.deactivateGroup(scheduleGroupId, isUserAction = false)
                         
                         if (result.isSuccess) {
                             Log.i(TAG, "✅ ScheduleGroup deactivated on EXIT: $scheduleGroupId")

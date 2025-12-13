@@ -236,7 +236,9 @@ class ScheduleGroupViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val result = scheduleManager.deactivateGroup(scheduleGroupId)
+                // 사용자가 UI에서 비활성화 버튼을 클릭한 경우이므로 isUserAction=true
+                // → manualOverrideState가 'INACTIVE'로 설정되어 자동 실행이 차단됨
+                val result = scheduleManager.deactivateGroup(scheduleGroupId, isUserAction = true)
                 if (result.isFailure) {
                     _errorState.value = "시간표 비활성화 실패: ${result.exceptionOrNull()?.message}"
                 }
@@ -269,16 +271,17 @@ class ScheduleGroupViewModel @Inject constructor(
                 _isLoading.value = true
                 when (newState) {
                     ScheduleGroupControlState.ACTIVE -> {
-                        // 수동 제어 해제 (자동 모드로 전환)
-                        repository.updateManualOverride(groupId, null, null)
-                        // 그룹 활성화
-                        scheduleManager.activateGroup(groupId)
+                        // 수동 활성화 (자동 모드 시작)
+                        // v8 Fix: 무조건 활성화하지 않고, 위치 확인을 위해 Auto Mode 시작
+                        // (위치 내부면 즉시 켜지고, 아니면 꺼진 상태로 대기)
+                        scheduleManager.startAutoMode(groupId)
                     }
                     ScheduleGroupControlState.INACTIVE -> {
                         // 수동 비활성화 설정
-                        repository.updateManualOverride(groupId, "INACTIVE", null)
-                        // 그룹 비활성화
-                        scheduleManager.deactivateGroup(groupId)
+                        // deactivateGroup(isUserAction=true) 내부에서 updateManualOverride 호출됨
+                        // 하지만 명시성을 위해 repository 호출은 유지하거나, 중복이면 제거 가능
+                        // 여기서는 Manager에 위임
+                        scheduleManager.deactivateGroup(groupId, isUserAction = true)
                     }
                     ScheduleGroupControlState.PAUSED -> {
                         // PAUSED는 pauseScheduleGroup()으로 처리

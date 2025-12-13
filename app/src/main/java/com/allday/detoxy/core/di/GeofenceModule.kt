@@ -35,5 +35,16 @@ object GeofenceModule {
     fun provideGeofencingClient(@ApplicationContext context: Context): GeofencingClient {
         return LocationServices.getGeofencingClient(context)
     }
+
+    /**
+     * FusedLocationProviderClient 제공 (v8.1)
+     *
+     * 명시적 위치 확인을 위해 사용합니다.
+     */
+    @Provides
+    @Singleton
+    fun provideFusedLocationProviderClient(@ApplicationContext context: Context): com.google.android.gms.location.FusedLocationProviderClient {
+        return LocationServices.getFusedLocationProviderClient(context)
+    }
 }
 
