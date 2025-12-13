@@ -67,11 +67,27 @@ fun AddTimeBasedAutoRunDialog(
     val scheduleGroups by scheduleViewModel.scheduleGroups.collectAsStateWithLifecycle()
     
     // 요일 선택 상태 (MON, TUE, WED, THU, FRI, SAT, SUN)
-    val enabledDays = remember {
+    val enabledDays = remember(existingAutoRun) {
         mutableStateMapOf<String, Boolean>().apply {
             val existing = existingAutoRun?.let { parseEnabledDays(it.enabledDays) } ?: emptySet()
+            
+            // 🆕 v8.1: 그룹 이름에 '매일' 또는 'Daily'가 포함되면 기본값을 전체 요일로 설정
+            val targetGroupId = existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId
+            val targetGroup = scheduleGroups.find { it.id == targetGroupId }
+            
+            val isDaily = targetGroup?.name?.contains("매일") == true || 
+                          targetGroup?.name?.contains("Daily", ignoreCase = true) == true
+            
+            val defaultDays = if (isDaily) {
+                // 매일 스케줄이면 월~일 모두 선택
+                listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
+            } else {
+                // 기본값은 평일(월~금)
+                listOf("MON", "TUE", "WED", "THU", "FRI")
+            }
+
             listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN").forEach { day ->
-                this[day] = existing.contains(day) || existingAutoRun == null && day in listOf("MON", "TUE", "WED", "THU", "FRI")
+                this[day] = existing.contains(day) || (existingAutoRun == null && day in defaultDays)
             }
         }
     }
