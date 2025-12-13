@@ -283,7 +283,7 @@ fun ScheduleTabScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+        ) {
             // 🆕 v0.10.1: 1. 작동 중인 스케줄 카드 (타이머 실행 중)
             if (timerState == com.allday.detoxy.domain.model.FocusState.RUNNING && runningScheduleGroup != null) {
                 item {
@@ -347,8 +347,8 @@ fun ScheduleTabScreen(
                 // 하단 여백 (FAB과 겹치지 않도록)
                 item {
                     Spacer(modifier = Modifier.height(80.dp))
-                }
             }
+        }
         } // LazyColumn 끝
         } // Column 끝
         

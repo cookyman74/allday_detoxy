@@ -291,7 +291,7 @@ fun ScheduleGroupScreen(
                     .padding(horizontal = 8.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBack) {
+                    IconButton(onClick = onBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "뒤로가기",
@@ -303,12 +303,12 @@ fun ScheduleGroupScreen(
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold
-                )
-            }
+                    )
+                }
 
-            Box(
+        Box(
                 modifier = Modifier.fillMaxSize()
-            ) {
+        ) {
             if (isLoading && scheduleGroups.isEmpty()) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)

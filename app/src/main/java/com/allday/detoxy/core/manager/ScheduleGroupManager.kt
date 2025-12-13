@@ -231,20 +231,13 @@ class ScheduleGroupManager @Inject constructor(
             Log.d(TAG, "🗑️ Alarm cancelled: ${autoRun.label ?: autoRun.id}")
         }
 
-        // 3. 그룹 내 연결된 위치의 Geofence 해제
+        // 🔧 Critical Fix: Geofence는 해제하지 않음!
+        // Geofence가 항상 등록되어 있어야 위치 진입 시 자동으로 스케줄 그룹을 활성화할 수 있음
+        // 스케줄 그룹 비활성화 시 알람만 취소하고 Geofence는 유지
         val linkedLocations = repository.getLinkedLocations(groupId)
-        Log.d(TAG, "📍 Removing ${linkedLocations.size} geofences for group: $groupId")
-        
-        linkedLocations.forEach { location ->
-            val result = geofenceManager.removeGeofence(location.id)
-            if (result.isSuccess) {
-                Log.d(TAG, "✅ Geofence removed: ${location.label}")
-            } else {
-                Log.w(TAG, "⚠️ Failed to remove geofence: ${location.label} (${result.exceptionOrNull()?.message})")
-            }
-        }
+        Log.d(TAG, "📍 Keeping ${linkedLocations.size} geofences for group: $groupId (for auto-activation on location enter)")
 
-        Log.i(TAG, "✅ Schedule group deactivated: $groupId (${timeBasedAutoRuns.size} alarms cancelled, ${linkedLocations.size} geofences removed)")
+        Log.i(TAG, "✅ Schedule group deactivated: $groupId (${timeBasedAutoRuns.size} alarms cancelled, geofences kept for auto-activation)")
     }
 
     /**

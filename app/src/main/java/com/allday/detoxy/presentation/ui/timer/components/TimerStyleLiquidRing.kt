@@ -78,7 +78,7 @@ fun TimerStyleLiquidRing(
             currentAngle = minutesToAngle(selectedMinutes, maxMinutes)
         }
     }
-    
+
     // 애니메이션 적용된 각도
     val animatedAngle by animateFloatAsState(
         targetValue = currentAngle,
@@ -155,7 +155,7 @@ fun TimerStyleLiquidRing(
                 val outerRadius = size.minDimension / 2
                 val ringRadius = outerRadius * 0.78f
                 val ringWidth = 14.dp.toPx()
-                
+
                 // 1. 외곽 눈금 그리기
                 for (i in 0 until 60) {
                     val angle = i * 6.0 - 90.0
@@ -236,7 +236,7 @@ fun TimerStyleLiquidRing(
                     val angleRad = Math.toRadians(angle.toDouble())
                     val numberRadius = 105.dp
                     
-                    Text(
+        Text(
                         text = num.toString(),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,

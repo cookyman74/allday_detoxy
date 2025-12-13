@@ -138,7 +138,7 @@ fun TimerStyleMinimalFlux(
                         color = Color.White.copy(alpha = if (isMajor) 0.6f else 0.25f),
                         radius = tickSize / 2,
                         center = Offset(tickX, tickY)
-                    )
+        )
                 }
                 
                 // 3. 남은 시간 부채꼴 (달빛 효과)
@@ -213,20 +213,20 @@ fun TimerStyleMinimalFlux(
                                 )
                             )
                     )
-                }
             }
-            
+        }
+
             // 6. 중앙 시간 텍스트
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = formattedTime,
+        Text(
+            text = formattedTime,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Bold,
                     color = Color(0xFF1A1A2E),
                     letterSpacing = 1.sp
-                )
+        )
             }
         }
     }

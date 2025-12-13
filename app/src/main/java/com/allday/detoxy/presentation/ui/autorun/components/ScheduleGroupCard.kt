@@ -224,29 +224,29 @@ fun ScheduleGroupCard(
             // 일시중지 드롭다운 상태
             var showPauseDropdown by remember { mutableStateOf(false) }
             
-            Column(
-                modifier = Modifier.padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "시간",
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Text(
-                        text = "시간",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
+                    Row(
+                    modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "시간",
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "시간",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
                     
-                    Spacer(Modifier.weight(1f))
+                        Spacer(Modifier.weight(1f))
                     
                     // v8.1: 일시중지 버튼 (활성 상태일 때만 표시)
                     if (controlState != ScheduleGroupControlState.INACTIVE) {
@@ -295,7 +295,7 @@ fun ScheduleGroupCard(
                     }
                     
                     // 시간 상세 화살표
-                    if (timeBasedAutoRuns.isNotEmpty()) {
+                        if (timeBasedAutoRuns.isNotEmpty()) {
                         IconButton(
                             onClick = onTimeClick,
                             modifier = Modifier.size(32.dp)
@@ -317,18 +317,18 @@ fun ScheduleGroupCard(
                     color = Color.Transparent
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        if (timeBasedAutoRuns.isEmpty()) {
+                    if (timeBasedAutoRuns.isEmpty()) {
+                        Text(
+                            text = "설정된 시간대 없음",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        timeBasedAutoRuns.forEach { autoRun ->
                             Text(
-                                text = "설정된 시간대 없음",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
+                                text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
+                                style = MaterialTheme.typography.bodyMedium
                             )
-                        } else {
-                            timeBasedAutoRuns.forEach { autoRun ->
-                                Text(
-                                    text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
                             }
                         }
                     }

@@ -108,7 +108,7 @@ fun TimerScreen(
                     )
                 } else {
                     // 새 프리셋 저장
-                    viewModel.saveCustomPreset(name, selectedMinutes, presetType)
+                viewModel.saveCustomPreset(name, selectedMinutes, presetType)
                 }
             },
             onDismiss = { showSaveDialog = false }
@@ -275,8 +275,8 @@ fun TimerScreen(
                                     }
                                     2 -> {
                                         // Type C: Glass Sector (Interactive - 부채꼴 드래그)
-                                        TimerStyleGlassSector(
-                                            selectedMinutes = selectedMinutes,
+                                            TimerStyleGlassSector(
+                                                selectedMinutes = selectedMinutes,
                                             onMinutesChange = { selectedMinutes = it },
                                             state = FocusState.IDLE,
                                             modifier = Modifier.padding(vertical = 4.dp) // 16dp → 4dp
@@ -316,40 +316,40 @@ fun TimerScreen(
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 // Page Indicator (클릭 가능)
-                                Row(
-                                    Modifier
-                                        .wrapContentHeight()
-                                        .fillMaxWidth()
+                        Row(
+                            Modifier
+                                .wrapContentHeight()
+                                .fillMaxWidth()
                                         .padding(bottom = 4.dp),
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    repeat(pagerState.pageCount) { iteration ->
-                                        val color = if (pagerState.currentPage == iteration)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                                        Box(
-                                            modifier = Modifier
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            repeat(pagerState.pageCount) { iteration ->
+                                val color = if (pagerState.currentPage == iteration)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                Box(
+                                    modifier = Modifier
                                                 .padding(horizontal = 8.dp, vertical = 4.dp)
-                                                .clip(CircleShape)
-                                                .background(color)
+                                        .clip(CircleShape)
+                                        .background(color)
                                                 .size(10.dp) // 크기 약간 확대
                                                 .clickable {
                                                     coroutineScope.launch {
                                                         pagerState.animateScrollToPage(iteration)
                                                     }
                                                 }
-                                        )
-                                    }
-                                }
-                                
-                                // 다음 예약 정보 표시
-                                if (nextAutoRunInfo != null) {
-                                    Text(
-                                        text = nextAutoRunInfo!!,
-                                        style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                        
+                        // 다음 예약 정보 표시
+                        if (nextAutoRunInfo != null) {
+                            Text(
+                                text = nextAutoRunInfo!!,
+                                style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface
-                                    )
+                            )
                                 }
                             }
                         }
@@ -359,10 +359,10 @@ fun TimerScreen(
                         // 프리셋 저장/업데이트 버튼 (항상 표시)
                         // 기존 프리셋이 있으면 업데이트, 없으면 새로 저장
                         val existingPreset = customPresets.find { it.durationMinutes == selectedMinutes }
-                        OutlinedButton(
-                            onClick = { showSaveDialog = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                            OutlinedButton(
+                                onClick = { showSaveDialog = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                             Text(if (existingPreset != null) "프리셋 업데이트" else "프리셋으로 저장")
                         }
                         

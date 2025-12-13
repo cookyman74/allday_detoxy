@@ -165,10 +165,10 @@ private fun CustomPresetButton(
                 }
             ),
         color = if (isSelected) {
-            MaterialTheme.colorScheme.tertiary
-        } else {
-            MaterialTheme.colorScheme.tertiaryContainer
-        },
+                MaterialTheme.colorScheme.tertiary
+            } else {
+                MaterialTheme.colorScheme.tertiaryContainer
+            },
         shape = RoundedCornerShape(50)
     ) {
         Column(

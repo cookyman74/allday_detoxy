@@ -136,35 +136,35 @@ fun TimerStyleGlassSector(
                         } else Modifier
                     )
             ) {
-                val center = Offset(size.width / 2, size.height / 2)
+            val center = Offset(size.width / 2, size.height / 2)
                 val outerRadius = size.minDimension / 2
                 val innerRadius = outerRadius * 0.35f
                 val sectorRadius = outerRadius * 0.85f
-                
+            
                 // 1. 외곽 눈금 그리기
-                for (i in 0 until 60) {
+            for (i in 0 until 60) {
                     val angle = i * 6.0 - 90.0
-                    val angleRad = Math.toRadians(angle)
-                    
-                    val isMajor = i % 5 == 0
+                val angleRad = Math.toRadians(angle)
+                
+                val isMajor = i % 5 == 0
                     val tickOuterRadius = outerRadius - 4.dp.toPx()
                     val tickLength = if (isMajor) 14.dp.toPx() else 6.dp.toPx()
                     val tickWidth = if (isMajor) 2.5.dp.toPx() else 1.5.dp.toPx()
-                    
+
                     val startX = center.x + (tickOuterRadius - tickLength) * cos(angleRad).toFloat()
                     val startY = center.y + (tickOuterRadius - tickLength) * sin(angleRad).toFloat()
                     val endX = center.x + tickOuterRadius * cos(angleRad).toFloat()
                     val endY = center.y + tickOuterRadius * sin(angleRad).toFloat()
 
-                    drawLine(
+                drawLine(
                         color = tickColor.copy(alpha = if (isMajor) 0.8f else 0.4f),
-                        start = Offset(startX, startY),
-                        end = Offset(endX, endY),
-                        strokeWidth = tickWidth,
-                        cap = StrokeCap.Round
-                    )
-                }
-                
+                    start = Offset(startX, startY),
+                    end = Offset(endX, endY),
+                    strokeWidth = tickWidth,
+                    cap = StrokeCap.Round
+                )
+            }
+            
                 // 2. 부채꼴 그리기
                 // IDLE: 설정된 분에 따른 각도
                 // RUNNING: 남은 분을 직접 각도로 변환 (60분 기준 눈금과 일치)
@@ -178,7 +178,7 @@ fun TimerStyleGlassSector(
                                 sectorColor,
                                 sectorColor.copy(alpha = 0.9f)
                             ),
-                            center = center,
+                    center = center,
                             radius = sectorRadius
                         ),
                         startAngle = -90f,
@@ -239,15 +239,15 @@ fun TimerStyleGlassSector(
                                 )
                             )
                     )
-                }
             }
-            
+        }
+
             // 5. 중앙 시간 텍스트
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
+        Text(
                     text = String.format("%02d:%02d", displayMinutes, displaySeconds),
                     fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Bold,
                     color = Color(0xFF212121),
                     letterSpacing = 2.sp
                 )
