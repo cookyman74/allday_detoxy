@@ -1,9 +1,13 @@
 package com.allday.detoxy.presentation.ui.autorun.components
 
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -18,7 +22,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.core.utils.GeocoderUtils
+import com.allday.detoxy.core.utils.LocationUtils
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -145,6 +151,39 @@ fun LocationEditDialog(
                             }
                         }
                     }
+                    
+                    // 🆕 지도에서 확인 버튼
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        val context = LocalContext.current
+                        TextButton(
+                            onClick = {
+                                try {
+                                    val uri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(${Uri.encode(label.ifBlank { "위치" })})")
+                                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "지도 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "지도에서 확인",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+
                     Text(
                         text = "위치를 변경하려면 검색 버튼을 눌러 새 위치를 선택하세요.",
                         style = MaterialTheme.typography.bodySmall,
@@ -329,101 +368,108 @@ private fun LocationSearchDialog(
     var isSearching by remember { mutableStateOf(false) }
     var searchJob by remember { mutableStateOf<Job?>(null) }
     
+    // 🆕 현재 위치 상태 및 로직 (AddLocationAutoRunDialog와 동일 패턴, 나중에 더 추상화 가능)
+    var isLocating by remember { mutableStateOf(false) }
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val isGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                        permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (isGranted) {
+            scope.launch {
+                isLocating = true
+                val result = LocationUtils.getCurrentLocation(fusedLocationClient)
+                result.onSuccess { location ->
+                    val addressResult = GeocoderUtils.getAddressFromCoordinates(
+                        context, location.latitude, location.longitude
+                    )
+                    addressResult.onSuccess { info ->
+                        val infoWithAccuracy = info.copy(accuracy = location.accuracy)
+                        searchResults = listOf(infoWithAccuracy) + searchResults
+                        searchQuery = info.address
+                    }.onFailure {
+                        Toast.makeText(context, "주소를 가져오지 못했지만 좌표를 등록합니다.", Toast.LENGTH_SHORT).show()
+                        val fallbackInfo = GeocoderUtils.LocationInfo(
+                            name = "현재 위치",
+                            address = "위도: ${location.latitude}, 경도: ${location.longitude}",
+                            latitude = location.latitude,
+                            longitude = location.longitude,
+                            accuracy = location.accuracy
+                        )
+                        searchResults = listOf(fallbackInfo) + searchResults
+                    }
+                }.onFailure {
+                    Toast.makeText(context, "위치를 찾을 수 없습니다. GPS 설정을 확인해주세요.", Toast.LENGTH_SHORT).show()
+                }
+                isLocating = false
+            }
+        } else {
+            Toast.makeText(context, "현재 위치를 찾으려면 위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // 검색 함수
+    val performSearch = {
+         if (searchQuery.length >= 2) {
+             searchJob?.cancel()
+             searchJob = scope.launch {
+                 delay(500) // Debounce (버튼 클릭시는 필요없지만 로직 통일)
+                 isSearching = true
+                 val result = GeocoderUtils.searchLocation(context, searchQuery)
+                 searchResults = result.getOrElse { emptyList() }
+                 isSearching = false
+             }
+         }
+    }
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("위치 검색") },
         text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { query ->
-                        searchQuery = query
-                        
-                        // 디바운스: 이전 검색 취소
+            LocationSearchContent(
+                searchQuery = searchQuery,
+                onSearchQueryChange = { query -> 
+                    searchQuery = query 
+                    // Auto-search logic handled in LocationSearchContent logic? 
+                    // No, LocationSearchContent is stateless specifically for UI.
+                    // We need to implement debounce here if we want auto-search on typing.
+                    if (query.length >= 2) {
                         searchJob?.cancel()
-                        
-                        if (query.length >= 2) {
-                            searchJob = scope.launch {
-                                delay(500)  // 500ms 대기
-                                isSearching = true
-                                val result = GeocoderUtils.searchLocation(context, query)
-                                searchResults = result.getOrElse { emptyList() }  // 🆕 Result 처리
-                                isSearching = false
-                            }
-                        } else {
-                            searchResults = emptyList()
+                        searchJob = scope.launch {
+                            delay(500)
+                            isSearching = true
+                            val result = GeocoderUtils.searchLocation(context, query)
+                            searchResults = result.getOrElse { emptyList() }
+                            isSearching = false
                         }
-                    },
-                    label = { Text("주소 또는 장소 이름") },
-                    placeholder = { Text("예: 내곡중학교, 서울시청") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    trailingIcon = {
-                        if (isSearching) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                        }
+                    } else {
+                        searchResults = emptyList()
                     }
-                )
-                
-                if (searchQuery.length < 2) {
-                    Text(
-                        text = "최소 2글자 이상 입력하세요",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else if (searchResults.isEmpty() && !isSearching) {
-                    Text(
-                        text = "검색 결과가 없습니다",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(searchResults) { result ->
-                            Surface(
-                                onClick = { onLocationSelected(result) },  // 🆕 클릭 이벤트
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                ListItem(
-                                    headlineContent = {
-                                        Text(
-                                            text = result.name,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    },
-                                    supportingContent = {
-                                        Text(
-                                            text = result.address,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    },
-                                    leadingContent = {
-                                        Icon(
-                                            imageVector = Icons.Default.Place,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                )
-                            }
-                            HorizontalDivider()
-                        }
+                },
+                searchResults = searchResults,
+                isSearching = isSearching,
+                isLocatingCurrentPosition = isLocating,
+                onSearch = { 
+                    searchJob?.cancel()
+                    scope.launch {
+                        isSearching = true
+                        val result = GeocoderUtils.searchLocation(context, searchQuery)
+                        searchResults = result.getOrElse { emptyList() }
+                        isSearching = false
                     }
-                }
-            }
+                },
+                onCurrentLocationClick = {
+                     requestPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                },
+                onLocationSelected = onLocationSelected
+            )
         },
         confirmButton = {},
         dismissButton = {

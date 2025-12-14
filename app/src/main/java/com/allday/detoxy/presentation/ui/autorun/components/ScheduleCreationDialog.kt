@@ -1,6 +1,12 @@
 package com.allday.detoxy.presentation.ui.autorun.components
 
+import android.Manifest // Added
+import android.content.Intent // Added
+import android.net.Uri // Added
 import android.util.Log
+import android.widget.Toast // Added
+import androidx.activity.compose.rememberLauncherForActivityResult // Added
+import androidx.activity.result.contract.ActivityResultContracts // Added
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,9 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.presentation.ui.component.GlassDialog
 import com.allday.detoxy.core.utils.GeocoderUtils
+import com.allday.detoxy.core.utils.LocationUtils // Added
 import com.allday.detoxy.domain.model.CreationMode
 import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
+import com.google.android.gms.location.LocationServices // Added
 import kotlinx.coroutines.launch
 
 /**
@@ -50,6 +58,8 @@ fun ScheduleCreationDialog(
     initialMode: CreationMode = CreationMode.CUSTOM
 ) {
     var currentStep by remember { mutableStateOf(ScheduleCreationStep.LOCATION_CHOICE) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     
     // 위치 설정
     var hasLocation by remember { mutableStateOf(false) }
@@ -67,6 +77,70 @@ fun ScheduleCreationDialog(
     var showTimeSlotInput by remember { mutableStateOf(false) }
     var editingSlot by remember { mutableStateOf<TimeSlot?>(null) }
     var showTemplateSelector by remember { mutableStateOf(false) }
+
+    // 🆕 Shared Location Search State
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<GeocoderUtils.LocationInfo>>(emptyList()) }
+    var isSearching by remember { mutableStateOf(false) }
+    var isLocating by remember { mutableStateOf(false) }
+
+    val fusedLocationClient = remember { 
+        LocationServices.getFusedLocationProviderClient(context) 
+    }
+
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val isGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                        permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (isGranted) {
+            scope.launch {
+                isLocating = true
+                val result = LocationUtils.getCurrentLocation(fusedLocationClient)
+                result.onSuccess { location ->
+                    val addressResult = GeocoderUtils.getAddressFromCoordinates(
+                        context, location.latitude, location.longitude
+                    )
+                    addressResult.onSuccess { info ->
+                        val infoWithAccuracy = info.copy(accuracy = location.accuracy)
+                        searchResults = listOf(infoWithAccuracy) + searchResults
+                        searchQuery = info.address
+                    }.onFailure {
+                        Toast.makeText(context, "주소를 가져오지 못했지만 좌표를 등록합니다.", Toast.LENGTH_SHORT).show()
+                        val fallbackInfo = GeocoderUtils.LocationInfo(
+                            name = "현재 위치",
+                            address = "위도: ${location.latitude}, 경도: ${location.longitude}",
+                            latitude = location.latitude,
+                            longitude = location.longitude,
+                            accuracy = location.accuracy
+                        )
+                        searchResults = listOf(fallbackInfo) + searchResults
+                    }
+                }.onFailure {
+                    Toast.makeText(context, "위치를 찾을 수 없습니다. GPS 설정을 확인해주세요.", Toast.LENGTH_SHORT).show()
+                }
+                isLocating = false
+            }
+        } else {
+            Toast.makeText(context, "현재 위치를 찾으려면 위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // 검색 함수
+    val performSearch: () -> Unit = {
+        if (searchQuery.isNotBlank()) {
+            scope.launch {
+                isSearching = true
+                val result = GeocoderUtils.searchLocation(context, searchQuery)
+                result.onSuccess { locations ->
+                    searchResults = locations
+                }.onFailure {
+                    searchResults = emptyList()
+                }
+                isSearching = false
+            }
+        }
+    }
     
     GlassDialog(
         onDismissRequest = onDismiss
@@ -74,13 +148,44 @@ fun ScheduleCreationDialog(
         // 내부 검색 모드인 경우 (showLocationSearch가 true인 경우)
         if (showLocationSearch) {
             Box(modifier = Modifier.padding(24.dp)) {
-                LocationSearchContent(
-                    onCancel = { showLocationSearch = false },
-                    onLocationSelected = { location ->
-                        selectedLocation = location
-                        showLocationSearch = false
+                // 🆕 Use Shared Component
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(
+                        text = "위치 검색",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    
+                    LocationSearchContent(
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = { searchQuery = it },
+                        searchResults = searchResults,
+                        isSearching = isSearching,
+                        isLocatingCurrentPosition = isLocating,
+                        onSearch = performSearch,
+                        onCurrentLocationClick = {
+                            requestPermissionLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        },
+                        onLocationSelected = { location ->
+                            selectedLocation = location
+                            showLocationSearch = false
+                        }
+                    )
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showLocationSearch = false }) {
+                            Text("취소")
+                        }
                     }
-                )
+                }
             }
         } else {
             // 기본 단계 진행 화면
@@ -242,10 +347,6 @@ fun ScheduleCreationDialog(
         }
     }
     
-    // 위치 검색 모드(showLocationSearch)는 이제 내부 상태(DialogStep)가 아닌 Swapping Content로 처리하거나
-    // currentStep이 LOCATION_SEARCH 일 때 메인 컨텐츠 영역에서 보여줍니다.
-    // 따라서 별도의 GlassDialog 호출(LocationSearchDialog)은 제거합니다.
-    
     // 시간대 입력 다이얼로그
     if (showTimeSlotInput) {
         TimeSlotInputDialog(
@@ -370,26 +471,79 @@ private fun LocationSearchStep(
             Card(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = selectedLocation.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = selectedLocation.address,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = selectedLocation.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = selectedLocation.address,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = onLocationSelect) {
+                            Icon(Icons.Default.Edit, "변경")
+                        }
                     }
-                    IconButton(onClick = onLocationSelect) {
-                        Icon(Icons.Default.Edit, "변경")
+
+                    // 🆕 지도에서 확인 & 정확도 표시 (LocationSettingsStep과 유사하게 추가)
+                    val context = LocalContext.current
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                         selectedLocation.accuracy?.let { accuracy ->
+                            AssistChip(
+                                onClick = { },
+                                label = { 
+                                    Text(
+                                        text = "오차 ±${accuracy.toInt()}m",
+                                        style = MaterialTheme.typography.labelSmall
+                                    ) 
+                                },
+                                modifier = Modifier.height(24.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        TextButton(
+                            onClick = {
+                                try {
+                                    val lat = selectedLocation.latitude
+                                    val lng = selectedLocation.longitude
+                                    val uri = Uri.parse("geo:$lat,$lng?q=$lat,$lng(${Uri.encode(selectedLocation.name)})")
+                                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                                    context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "지도 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Place, // Use Place as Map might be unavailable
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "지도에서 확인",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
                     }
                 }
             }
@@ -422,7 +576,7 @@ private fun LocationSearchStep(
 }
 
 /**
- * Step 3: 시간표 설정
+ * Step 3: 시간표 설정 (unchanged)
  */
 @Composable
 private fun ScheduleSetupStep(
@@ -579,103 +733,3 @@ private fun RadioButtonOption(
         }
     }
 }
-
-/**
- * 위치 검색 컨텐츠 (Dialog 내부용)
- * 
- * 별도의 Window를 생성하지 않고 기존 Dialog 내부에서 화면만 전환하여 표시합니다.
- */
-@Composable
-private fun LocationSearchContent(
-    onCancel: () -> Unit,
-    onLocationSelected: (GeocoderUtils.LocationInfo) -> Unit
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    
-    var searchQuery by remember { mutableStateOf("") }
-    var searchResults by remember { mutableStateOf<List<GeocoderUtils.LocationInfo>>(emptyList()) }
-    var isSearching by remember { mutableStateOf(false) }
-    
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "위치 검색",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
-        
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("주소 또는 장소 이름") },
-                modifier = Modifier.fillMaxWidth(),
-                trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                if (searchQuery.isNotBlank()) {
-                                    isSearching = true
-                                    val result = GeocoderUtils.searchLocation(context, searchQuery)
-                                    result.onSuccess { locations ->
-                                        searchResults = locations
-                                    }.onFailure {
-                                        searchResults = emptyList()
-                                    }
-                                    isSearching = false
-                                }
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.Search, "검색")
-                    }
-                },
-                singleLine = true
-            )
-            
-            if (isSearching) {
-                CircularProgressIndicator(modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally))
-            }
-            
-            if (searchResults.isNotEmpty()) {
-                // 제한된 높이 내에서 리스트 표시
-                Column(modifier = Modifier.heightIn(max = 240.dp).verticalScroll(rememberScrollState())) {
-                    searchResults.take(5).forEach { location ->
-                        ListItem(
-                            headlineContent = { Text(location.name) },
-                            supportingContent = { Text(location.address) },
-                            modifier = Modifier.clickable {
-                                onLocationSelected(location)
-                            },
-                            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent)
-                        )
-                        HorizontalDivider()
-                    }
-                }
-            } else if (searchQuery.isNotBlank() && !isSearching) {
-                Text(
-                    text = "검색 결과가 없습니다.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally).padding(vertical = 16.dp)
-                )
-            }
-        }
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
-        ) {
-            TextButton(onClick = onCancel) {
-                Text("취소")
-            }
-        }
-    }
-}
-

@@ -1,5 +1,11 @@
 package com.allday.detoxy.presentation.ui.autorun.components
 
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,8 +32,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
 import com.allday.detoxy.core.utils.GeocoderUtils
+import com.allday.detoxy.core.utils.LocationUtils
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -138,12 +147,71 @@ fun AddLocationAutoRunDialog(
                 when (currentStep) {
                     LocationDialogStep.SEARCH -> {
                         // 단계 1: 위치 검색
-                        LocationSearchStep(
+                        // 단계 1: 위치 검색
+                        // 🆕 현재 위치 찾기 로직
+                        var isLocating by remember { mutableStateOf(false) }
+                        
+                        val fusedLocationClient = remember { 
+                            LocationServices.getFusedLocationProviderClient(context) 
+                        }
+
+                        val requestPermissionLauncher = rememberLauncherForActivityResult(
+                            ActivityResultContracts.RequestMultiplePermissions()
+                        ) { permissions ->
+                            val isGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                                            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+                            if (isGranted) {
+                                // 권한 허용됨 -> 위치 조회 시작
+                                scope.launch {
+                                    isLocating = true
+                                    val result = LocationUtils.getCurrentLocation(fusedLocationClient)
+                                    result.onSuccess { location ->
+                                        // 좌표 -> 주소 변환
+                                        val addressResult = GeocoderUtils.getAddressFromCoordinates(
+                                            context, location.latitude, location.longitude
+                                        )
+                                        addressResult.onSuccess { info ->
+                                            val infoWithAccuracy = info.copy(accuracy = location.accuracy)
+                                            // 결과 리스트에 현재 위치 추가 (최상단)
+                                            searchResults = listOf(infoWithAccuracy) + searchResults
+                                            searchQuery = info.address // 주소 자동 입력
+                                        }.onFailure {
+                                            // 주소 변환 실패해도 좌표만으로 등록 가능하게 처리 (TODO: Fallback UI)
+                                            Toast.makeText(context, "주소를 가져오지 못했지만 좌표를 등록합니다.", Toast.LENGTH_SHORT).show()
+                                            val fallbackInfo = GeocoderUtils.LocationInfo(
+                                                name = "현재 위치",
+                                                address = "위도: ${location.latitude}, 경도: ${location.longitude}",
+                                                latitude = location.latitude,
+                                                longitude = location.longitude,
+                                                accuracy = location.accuracy
+                                            )
+                                            searchResults = listOf(fallbackInfo) + searchResults
+                                        }
+                                    }.onFailure {
+                                        Toast.makeText(context, "위치를 찾을 수 없습니다. GPS 설정을 확인해주세요.", Toast.LENGTH_SHORT).show()
+                                    }
+                                    isLocating = false
+                                }
+                            } else {
+                                Toast.makeText(context, "현재 위치를 찾으려면 위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
+                        LocationSearchContent(
                             searchQuery = searchQuery,
                             onSearchQueryChange = { searchQuery = it },
                             searchResults = searchResults,
                             isSearching = isSearching,
+                            isLocatingCurrentPosition = isLocating,
                             onSearch = performSearch,
+                            onCurrentLocationClick = {
+                                requestPermissionLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
+                            },
                             onLocationSelected = { location ->
                                 selectedLocation = location
                                 label = location.name
@@ -309,123 +377,6 @@ fun AddLocationAutoRunDialog(
 }
 
 /**
- * 위치 검색 단계
- */
-@Composable
-private fun LocationSearchStep(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    searchResults: List<GeocoderUtils.LocationInfo>,
-    isSearching: Boolean,
-    onSearch: () -> Unit,
-    onLocationSelected: (GeocoderUtils.LocationInfo) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Text(
-            text = "주소 또는 장소 이름을 검색하세요",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        // 검색 입력
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("검색") },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "검색"
-                )
-            },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { onSearch() })
-        )
-
-        // 검색 결과
-        if (isSearching) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else if (searchResults.isNotEmpty()) {
-            Text(
-                text = "검색 결과:",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(searchResults) { location ->
-                    LocationSearchResultCard(
-                        location = location,
-                        onClick = { onLocationSelected(location) }
-                    )
-                }
-            }
-        } else if (searchQuery.isNotBlank()) {
-            Text(
-                text = "검색 결과가 없습니다",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-/**
- * 위치 검색 결과 카드
- */
-@Composable
-private fun LocationSearchResultCard(
-    location: GeocoderUtils.LocationInfo,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = location.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = location.address,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-/**
  * 상세 설정 단계
  */
 @Composable
@@ -477,6 +428,61 @@ private fun LocationSettingsStep(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                    
+                    // 🆕 2.3 정확도 및 지도 확인 UI
+                    val context = LocalContext.current // To launch intent
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // 정확도 (새로 검색된 위치인 경우에만 표시)
+                        selectedLocation?.accuracy?.let { accuracy ->
+                            AssistChip(
+                                onClick = { },
+                                label = { 
+                                    Text(
+                                        text = "오차 ±${accuracy.toInt()}m",
+                                        style = MaterialTheme.typography.labelSmall
+                                    ) 
+                                },
+                                modifier = Modifier.height(24.dp)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.weight(1f))
+                        
+                        // 지도에서 확인 버튼
+                        val lat = selectedLocation?.latitude ?: existingLocation?.latitude
+                        val lng = selectedLocation?.longitude ?: existingLocation?.longitude
+                        
+                        if (lat != null && lng != null) {
+                            TextButton(
+                                onClick = {
+                                    try {
+                                        val uri = Uri.parse("geo:$lat,$lng?q=$lat,$lng(${Uri.encode(label.ifBlank { "위치" })})")
+                                        val intent = Intent(Intent.ACTION_VIEW, uri)
+                                        context.startActivity(intent)
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "지도 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Place,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "지도에서 확인",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

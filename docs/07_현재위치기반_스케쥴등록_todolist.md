@@ -39,11 +39,11 @@
 - [ ] `GeofenceModule.kt` Hilt 주입 설정 확인
 
 #### 작업
-- [ ] **1.1** `LocationInfo` 데이터 클래스 확장
+- [x] **1.1** `LocationInfo` 데이터 클래스 확장
   - `accuracy: Float? = null` 필드 추가
   - 관련 `searchLocation` 및 `getAddressFromCoordinates` 반환 값 수정
 
-- [ ] **1.2** `LocationUtils.kt` (신규 파일) 생성
+- [x] **1.2** `LocationUtils.kt` (신규 파일) 생성
   - `FusedLocationProviderClient`를 사용하는 `getCurrentLocation` 함수 구현
   - `suspend` 함수로 구현 (CoroutineScope 내 호출)
   - **Timeout 처리**: `withTimeout(5000)` 등으로 5초 제한 설정
@@ -51,7 +51,7 @@
   - **정확도 반환**: `LocationResult` 또는 `LocationInfo` 반환
 
 #### 작업후처리
-- [ ] 작업결과서 작성: `working_history/version_2.0/01_LocationUtils구현_2025-12-14.md`
+- [x] 작업결과서 작성: `working_history/version_2.0/01_LocationUtils구현_2025-12-14.md`
 
 ### 📌 단계 2: UI 구현 및 리팩토링
 
@@ -64,31 +64,33 @@
 - [ ] `AndroidManifest.xml` 권한 설정 재확인
 
 #### 작업
-- [ ] **2.0** 공통 컴포넌트 `LocationSearchContent` 분리
+- [x] **2.0** 공통 컴포넌트 `LocationSearchContent` 분리
   - `AddLocationAutoRunDialog`와 `LocationEditDialog`의 중복된 검색 로직 추출
   - 검색창, 리스트, 로딩, 에러 UI 포함
 
-- [ ] **2.1** `LocationSearchContent` UI 개편
+- [x] **2.1** `LocationSearchContent` UI 개편
   - **검색바 영역 수정**: `OutlinedTextField`의 `trailingIcon`에 '현재 위치' 아이콘(`Icons.Default.MyLocation`) 추가 (입력 값이 없을 때만 표시)
   - **보조 버튼 추가**: 검색바 하단에 `TextButton`으로 "📍 현재 위치로 설정" 명시적 버튼 추가 (접근성 고려)
   - **권한 런처 연결**: 버튼 클릭 시 `rememberLauncherForActivityResult` 실행 (권한 체크 -> 요청 -> 조회)
 
-- [ ] **2.2** 권한 획득 후 로직 연결
+- [x] **2.2** 권한 획득 후 로직 연결
   - 권한 승인 시 `GeocoderUtils.getCurrentLocation` 호출
   - **로딩 UI**: 검색 결과 영역에 "위치 찾는 중..." 텍스트와 `LinearProgressIndicator` 표시
   - 결과 수신 시 `onLocationSelected` 호출 및 주소 필드 자동 채움
   
-- [ ] **2.3** 정확도 및 지도 확인 UI 추가
+- [x] **2.3** 정확도 및 지도 확인 UI 추가
   - `LocationSettingsStep` (상세 설정) 화면에서 주소 카드 내에:
     - 정확도 Chip (`AssistChip` 등 활용): "오차 ±15m" (LocationInfo.accuracy 활용)
     - 지도 아이콘 버튼: 클릭 시 구글지도/네이버지도 Intent 실행 (`geo:lat,lng`)
 
-- [ ] **2.4** 기존 다이얼로그에 공통 컴포넌트 적용
+- [x] **2.4** 기존 다이얼로그에 공통 컴포넌트 적용
   - `AddLocationAutoRunDialog.kt` -> `LocationSearchContent` 사용
   - `LocationEditDialog.kt` -> `LocationSearchContent` 사용
 
+
 #### 작업후처리
-- [ ] 작업결과서 작성: `working_history/version_2.0/02_LocationUI구현_2025-12-14.md`
+- [x] 작업결과서 작성: `working_history/version_2.0/02_LocationUI구현_2025-12-14.md` (Step 2.0~2.2, 2.4)
+- [x] 작업결과서 작성: `working_history/version_2.0/03_Location기능테스트_2025-12-14.md` (Step 2.3 포함)
 
 ### 📌 단계 3: 테스트 및 디버깅
 
@@ -119,8 +121,9 @@
 
 | 단계 | 작업명 | 상태 | 시작일 | 완료일 | 작업결과서 |
 |---|---|---|---|---|---|
-| 1 | 유틸리티 및 권한 로직 보강 | ⬜ 대기 | - | - | - |
-| 2 | UI 구현 (현재 위치 버튼 추가) | ⬜ 대기 | - | - | - |
+| 1 | 유틸리티 및 권한 로직 보강 | ✅ 완료 | 2025-12-14 | 2025-12-14 | 생성완료 |
+| 2 | UI 구현 (현재 위치 버튼 추가) | ✅ 완료 | 2025-12-14 | 2025-12-14 | 생성완료 |
+| 3 | 테스트 및 디버깅 | ⬜ 대기 | - | - | - |
 | 3 | 테스트 및 디버깅 | ⬜ 대기 | - | - | - |
 
 **상태 범례**: ⬜ 대기 | 🔄 진행중 | ✅ 완료 | ⏸️ 보류
