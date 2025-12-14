@@ -21,8 +21,8 @@
 - 에러 케이스(GPS 꺼짐, 네트워크 오류)에 대한 방어 로직 포함
 
 ### 작업후처리 규칙
-- 작업 완료 후 `working_history/version_1.0/`에 기록
-- 실제 기기 또는 에뮬레이터에서 위치 변경 테스트 필수
+- 작업 완료 후 `working_history/version_2.0/{단계번호}_{작업타이틀}_{날짜}.md` 파일 작성
+- [working_history_template.md](../working_history/version_2.0/working_history_template.md) 형식 준수
 
 ---
 
@@ -33,7 +33,10 @@
 **예상 소요**: 0.3일
 
 #### 사전작업
-- [ ] `GeocoderUtils.kt` 확인
+#### 사전작업
+- [ ] 이전 작업 내역 확인 (`working_history/` 확인)
+- [ ] `GeocoderUtils.kt` 현재 구현 상태 분석 (비동기 처리 등)
+- [ ] `GeofenceModule.kt` Hilt 주입 설정 확인
 
 #### 작업
 - [ ] **1.1** `LocationInfo` 데이터 클래스 확장
@@ -47,12 +50,18 @@
   - **Retry 로직**: 실패 시 `getLastLocation` 폴백 고려
   - **정확도 반환**: `LocationResult` 또는 `LocationInfo` 반환
 
+#### 작업후처리
+- [ ] 작업결과서 작성: `working_history/version_2.0/01_LocationUtils구현_2025-12-14.md`
+
 ### 📌 단계 2: UI 구현 및 리팩토링
 
 **예상 소요**: 0.5일
 
 #### 사전작업
-- [ ] `AddLocationAutoRunDialog.kt` UI 구조 파악
+#### 사전작업
+- [ ] 단계 1의 작업 결과 확인 (`working_history/version_2.0/01_LocationUtils구현_...md`)
+- [ ] `AddLocationAutoRunDialog.kt` 및 `LocationEditDialog.kt` UI 구조 및 중복 코드 분석
+- [ ] `AndroidManifest.xml` 권한 설정 재확인
 
 #### 작업
 - [ ] **2.0** 공통 컴포넌트 `LocationSearchContent` 분리
@@ -78,9 +87,16 @@
   - `AddLocationAutoRunDialog.kt` -> `LocationSearchContent` 사용
   - `LocationEditDialog.kt` -> `LocationSearchContent` 사용
 
+#### 작업후처리
+- [ ] 작업결과서 작성: `working_history/version_2.0/02_LocationUI구현_2025-12-14.md`
+
 ### 📌 단계 3: 테스트 및 디버깅
 
 **예상 소요**: 0.2일
+
+#### 사전작업
+- [ ] 단계 2의 작업 결과 확인 (`working_history/version_2.0/02_LocationUI구현_...md`)
+- [ ] 테스트 시나리오(GPS Off, 권한 거부 등) 준비 상태 점검
 
 #### 작업
 - [ ] **3.1** 권한 시나리오 테스트
@@ -93,6 +109,9 @@
 - [ ] **3.3** 실제 위치 확인
   - 에뮬레이터/기기 위치 변경 후 "현재 위치" 클릭 시 올바른 주소 표시 확인
   - "지도에서 확인" 버튼 클릭 시 외부 지도 앱 연동 확인
+
+#### 작업후처리
+- [ ] 작업결과서 작성: `working_history/version_2.0/03_Location기능테스트_2025-12-14.md`
 
 ---
 
