@@ -164,13 +164,28 @@ class LockOverlayService : LifecycleService() {
             return
         }
 
-        // 기존 오버레이가 있으면 제거 (새로운 시간으로 업데이트하기 위함)
-        if (isOverlayShowing) {
-            Log.d(TAG, "Removing existing overlay to update with new time: $remainingSeconds seconds")
-            hideOverlay()
-        }
-
         try {
+            // 🔥 v0.10.3 Optimization: Reuse existing overlay view
+            if (isOverlayShowing && overlayView != null) {
+                Log.d(TAG, "♻️ Reusing existing overlay - Updating time: $remainingSeconds / $totalSeconds")
+                
+                // 데이터 업데이트
+                currentRemainingSeconds = remainingSeconds
+                currentTotalSeconds = totalSeconds
+                
+                // UI 즉시 갱신
+                updateTimerDisplay()
+                
+                // 🔧 v0.10.3.1: 타이머 항상 재시작하여 외부 소스와 동기화 보장
+                // 기존 타이머 취소 후 새 타이머 시작
+                timerJob?.cancel()
+                startTimerUpdate()
+                Log.d(TAG, "🔄 Timer restarted with synced time: $remainingSeconds seconds")
+                
+                return
+            }
+
+
             Log.d(TAG, "✅ Overlay permission granted")
             Log.d(TAG, "Creating new overlay - Remaining: $remainingSeconds, Total: $totalSeconds")
 
