@@ -2,12 +2,17 @@ package com.allday.detoxy.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
+import com.allday.detoxy.data.local.converter.ScheduleInfoConverter
+import com.allday.detoxy.data.local.converter.ScheduleTypeConverter
+import com.allday.detoxy.data.local.converter.TodoCompletionStatusConverter
 import com.allday.detoxy.data.local.dao.AutoRunLogDao
 import com.allday.detoxy.data.local.dao.CustomTimerPresetDao
 import com.allday.detoxy.data.local.dao.DetoxyRoutineLogDao
 import com.allday.detoxy.data.local.dao.FocusDistractionDao
 import com.allday.detoxy.data.local.dao.FocusInterruptionDao
 import com.allday.detoxy.data.local.dao.FocusSessionDao
+import com.allday.detoxy.data.local.dao.FocusSessionTodoResultDao
 import com.allday.detoxy.data.local.dao.FocusSettingsDao
 import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.ScheduleGroupDao
@@ -19,6 +24,7 @@ import com.allday.detoxy.data.local.entity.DetoxyRoutineLog
 import com.allday.detoxy.data.local.entity.FocusDistraction
 import com.allday.detoxy.data.local.entity.FocusInterruption
 import com.allday.detoxy.data.local.entity.FocusSession
+import com.allday.detoxy.data.local.entity.FocusSessionTodoResultEntity
 import com.allday.detoxy.data.local.entity.FocusSettings
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.data.local.entity.ScheduleGroup
@@ -39,6 +45,7 @@ import com.allday.detoxy.data.local.entity.UserSettings
  * - v6 (3차 고도화): ScheduleGroup UI 필드 + LocationBasedAutoRun 연동 옵션 + TimeBasedAutoRun 우선순위
  * - v7 (3.5차 고도화 Phase 0): updatedAt 필드 추가 (ScheduleGroup, LocationBasedAutoRun, TimeBasedAutoRun)
  * - v8 (버튼 역할 변경): manualOverrideState, pauseUntil 필드 추가 (ScheduleGroup 통합 제어)
+ * - v9 (할일 관리): scheduleInfoJson 필드 + FocusSessionTodoResultEntity 테이블 추가
  *
  * @property sessionDao FocusSession DAO
  * @property settingsDao UserSettings DAO
@@ -51,6 +58,7 @@ import com.allday.detoxy.data.local.entity.UserSettings
  * @property customTimerPresetDao CustomTimerPreset DAO (v4+)
  * @property autoRunLogDao AutoRunLog DAO (v4+)
  * @property scheduleGroupDao ScheduleGroup DAO (v5+)
+ * @property focusSessionTodoResultDao FocusSessionTodoResultDao (v9+)
  */
 @Database(
     entities = [
@@ -64,10 +72,16 @@ import com.allday.detoxy.data.local.entity.UserSettings
         LocationBasedAutoRun::class,
         CustomTimerPreset::class,
         AutoRunLog::class,
-        ScheduleGroup::class
+        ScheduleGroup::class,
+        FocusSessionTodoResultEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
+)
+@TypeConverters(
+    ScheduleInfoConverter::class,
+    ScheduleTypeConverter::class,
+    TodoCompletionStatusConverter::class
 )
 abstract class DetoxyDatabase : RoomDatabase() {
 
@@ -125,4 +139,9 @@ abstract class DetoxyDatabase : RoomDatabase() {
      * ScheduleGroup DAO 반환 (v5+)
      */
     abstract fun scheduleGroupDao(): ScheduleGroupDao
+
+    /**
+     * FocusSessionTodoResult DAO 반환 (v9+)
+     */
+    abstract fun focusSessionTodoResultDao(): FocusSessionTodoResultDao
 }

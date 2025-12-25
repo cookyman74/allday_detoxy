@@ -101,51 +101,51 @@ working_history/version_1.1/{Phase번호}_{작업타이틀}_{YYYY-MM-DD}.md
 
 ---
 
-## Phase 0. 준비 단계 (Day 0)
+## Phase 0. 준비 단계 (Day 0) ✅
 
 ### 📥 사전 작업
-- [ ] 기획서 전체 내용 숙지 (`10_추가기능_할일관리기능.md`)
-- [ ] 현재 프로젝트 빌드 상태 확인
+- [x] 기획서 전체 내용 숙지 (`10_추가기능_할일관리기능.md`)
+- [x] 현재 프로젝트 빌드 상태 확인
 
 ### ✅ 작업 내용
-- [ ] 기획서 요구사항 재확인
-- [ ] 현재 Room DB 버전 확인 (`AppDatabase.kt`)
-- [ ] 기존 AutoRun 스케줄 생성/편집 플로우 QA
-- [ ] Migration 테스트용 dummy DB 덤프 준비
+- [x] 기획서 요구사항 재확인
+- [x] 현재 Room DB 버전 확인 (`DetoxyDatabase.kt` - v8)
+- [x] 기존 AutoRun 스케줄 생성/편집 플로우 QA
+- [x] Migration 테스트용 dummy DB 덤프 준비
 
 ### 📤 사후 작업
-- [ ] Phase0_준비단계_{날짜}.md 작성
-- [ ] 확인된 DB 버전 및 Migration 번호 문서화
-- [ ] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
+- [x] Phase0_준비단계_{날짜}.md 작성
+- [x] 확인된 DB 버전 및 Migration 번호 문서화 (v8 → v9)
+- [x] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
 
 ---
 
-## Phase 1. 데이터 레이어 확장 (Day 1)
+## Phase 1. 데이터 레이어 확장 (Day 1) ✅
 
 > **📄 상세 작업 지시서**: [details/phase1_데이터레이어확장.md](./details/phase1_데이터레이어확장.md)
 
 ### 📥 사전 작업
-- [ ] Phase 0 작업결과서 확인 (`Phase0_준비단계_{날짜}.md`)
-- [ ] 확정된 DB 버전 및 Migration 번호 확인
-- [ ] 기획서 섹션 3 (데이터 스키마 설계) 재확인
+- [x] Phase 0 작업결과서 확인 (`Phase0_준비단계_{날짜}.md`)
+- [x] 확정된 DB 버전 및 Migration 번호 확인
+- [x] 기획서 섹션 3 (데이터 스키마 설계) 재확인
 
 ### ✅ 작업 내용
-- [ ] `ScheduleInfo`, `ScheduleTodo` data class 생성
-- [ ] `TimeBasedAutoRun`에 `scheduleInfoJson` 컬럼 추가
-- [ ] `LocationBasedAutoRun`에 동일 컬럼 추가
-- [ ] `ScheduleInfoConverter` TypeConverter 구현
-- [ ] `FocusSessionTodoResultEntity` 생성
-- [ ] Enum TypeConverters 구현
-- [ ] Migration 클래스 작성 및 테스트
-- [ ] `FocusSessionTodoResultDao` 구현
+- [x] `ScheduleInfo`, `ScheduleTodo` data class 생성
+- [x] `TimeBasedAutoRun`에 `scheduleInfoJson` 컬럼 추가
+- [x] `LocationBasedAutoRun`에 동일 컬럼 추가
+- [x] `ScheduleInfoConverter` TypeConverter 구현
+- [x] `FocusSessionTodoResultEntity` 생성
+- [x] Enum TypeConverters 구현
+- [x] Migration 클래스 작성 및 테스트 (v8 → v9)
+- [x] `FocusSessionTodoResultDao` 구현
 
-**검증**: Migration 테스트 통과, DB 스키마 변경 후 앱 정상 실행
+**검증**: ✅ Migration 테스트 통과, DB 스키마 변경 후 앱 정상 실행 (BUILD SUCCESSFUL)
 
 ### 📤 사후 작업
-- [ ] Phase1_데이터레이어확장_{날짜}.md 작성
-- [ ] 생성된 Entity/DAO 목록 문서화
-- [ ] Migration 버전 정보 기록
-- [ ] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
+- [x] Phase1_데이터레이어확장_{날짜}.md 작성
+- [x] 생성된 Entity/DAO 목록 문서화
+- [x] Migration 버전 정보 기록 (v8 → v9)
+- [x] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
 
 ---
 

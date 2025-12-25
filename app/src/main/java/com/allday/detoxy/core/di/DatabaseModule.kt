@@ -9,6 +9,7 @@ import com.allday.detoxy.data.local.dao.DetoxyRoutineLogDao
 import com.allday.detoxy.data.local.dao.FocusDistractionDao
 import com.allday.detoxy.data.local.dao.FocusInterruptionDao
 import com.allday.detoxy.data.local.dao.FocusSessionDao
+import com.allday.detoxy.data.local.dao.FocusSessionTodoResultDao
 import com.allday.detoxy.data.local.dao.FocusSettingsDao
 import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.ScheduleGroupDao
@@ -16,6 +17,7 @@ import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.UserSettingsDao
 import com.allday.detoxy.data.local.migration.MIGRATION_6_7
 import com.allday.detoxy.data.local.migration.MIGRATION_7_8
+import com.allday.detoxy.data.local.migration.MIGRATION_8_9
 import com.allday.detoxy.data.local.migrations.MIGRATION_1_2
 import com.allday.detoxy.data.local.migrations.MIGRATION_2_3
 import com.allday.detoxy.data.local.migrations.MIGRATION_3_4
@@ -42,6 +44,7 @@ import javax.inject.Singleton
  * - v5 → v6 (3차 고도화): ScheduleGroup UI 필드 + LocationBasedAutoRun 연동 옵션 + TimeBasedAutoRun 우선순위 (MIGRATION_5_6)
  * - v6 → v7 (3.5차 고도화 Phase 0): updatedAt 필드 추가 (MIGRATION_6_7)
  * - v7 → v8 (버튼 역할 변경): manualOverrideState, pauseUntil 필드 추가 (MIGRATION_7_8)
+ * - v8 → v9 (할일 관리): scheduleInfoJson 필드 + focus_session_todo_result 테이블 추가 (MIGRATION_8_9)
  *
  * @InstallIn(SingletonComponent::class)로 앱 전체 생명주기 동안 싱글톤 유지
  */
@@ -72,7 +75,8 @@ object DatabaseModule {
                 MIGRATION_4_5,
                 MIGRATION_5_6,
                 MIGRATION_6_7,
-                MIGRATION_7_8
+                MIGRATION_7_8,
+                MIGRATION_8_9
             )
             .build()
     }
@@ -196,5 +200,16 @@ object DatabaseModule {
     @Provides
     fun provideScheduleGroupDao(database: DetoxyDatabase): ScheduleGroupDao {
         return database.scheduleGroupDao()
+    }
+
+    /**
+     * FocusSessionTodoResultDao 제공 (v9+)
+     *
+     * @param database DetoxyDatabase 인스턴스
+     * @return FocusSessionTodoResultDao
+     */
+    @Provides
+    fun provideFocusSessionTodoResultDao(database: DetoxyDatabase): FocusSessionTodoResultDao {
+        return database.focusSessionTodoResultDao()
     }
 }

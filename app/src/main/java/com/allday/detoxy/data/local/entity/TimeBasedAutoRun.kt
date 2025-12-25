@@ -146,6 +146,21 @@ data class TimeBasedAutoRun(
      * 우선순위 규칙 적용을 위한 필드.
      * "어디서나 적용" 스케줄 충돌 시 "최근 수정" 기준으로 사용.
      */
-    val updatedAt: Long = createdAt
+    val updatedAt: Long = createdAt,
+
+    // ==================== v9 추가: 할일 관리 기능 ====================
+
+    /**
+     * 스케줄 정보 JSON (v9+)
+     *
+     * 목표(title) + 할일(todos) 정보를 JSON 형태로 저장.
+     * ScheduleInfo 객체를 직렬화하여 저장.
+     *
+     * null: 목표/할일 없음 (기존 스케줄 호환)
+     * JSON: ScheduleInfo 객체 직렬화
+     *
+     * @see com.allday.detoxy.domain.model.ScheduleInfo
+     */
+    val scheduleInfoJson: String? = null
 )
 

@@ -228,14 +228,14 @@ abstract class AppDatabase : RoomDatabase() {
 
 ## 완료 기준
 
-- [ ] ScheduleInfo data class 생성
-- [ ] ScheduleInfoConverter 구현
-- [ ] TimeBasedAutoRun에 scheduleInfoJson 컬럼 추가
-- [ ] LocationBasedAutoRun에 scheduleInfoJson 컬럼 추가
-- [ ] FocusSessionTodoResultEntity 생성
-- [ ] Enum TypeConverters 구현
-- [ ] Migration 작성 및 테스트 통과
-- [ ] DB 스키마 변경 후 앱 정상 실행
+- [x] ScheduleInfo data class 생성
+- [x] ScheduleInfoConverter 구현
+- [x] TimeBasedAutoRun에 scheduleInfoJson 컬럼 추가
+- [x] LocationBasedAutoRun에 scheduleInfoJson 컬럼 추가
+- [x] FocusSessionTodoResultEntity 생성
+- [x] Enum TypeConverters 구현
+- [x] Migration 작성 및 테스트 통과 (v8 → v9)
+- [x] DB 스키마 변경 후 앱 정상 실행 (BUILD SUCCESSFUL)
 
 ---
 
