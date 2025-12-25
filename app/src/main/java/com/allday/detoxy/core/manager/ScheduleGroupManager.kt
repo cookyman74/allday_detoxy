@@ -7,8 +7,10 @@ import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import java.util.Calendar
@@ -60,6 +62,14 @@ class ScheduleGroupManager @Inject constructor(
     companion object {
         private const val TAG = "ScheduleGroupManager"
     }
+    
+    // 🔧 v0.10.4: 구조화된 CoroutineScope 사용 (GlobalScope 대체)
+    // SupervisorJob: 자식 코루틴 예외가 부모에 영향을 주지 않음
+    private val managerScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, throwable ->
+            Log.e(TAG, "❌ [SCOPE] Uncaught exception in ScheduleGroupManager: ${throwable.message}", throwable)
+        }
+    )
 
     /**
      * 시간표 그룹 활성화
@@ -392,7 +402,7 @@ class ScheduleGroupManager @Inject constructor(
             ) {
                 fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
                     if (location != null) {
-                        Log.i(TAG, "📍 Current location found: ${location.latitude}, ${location.longitude} (Accuracy: ${location.accuracy}m)")
+                        Log.i(TAG, "📍 [AUTO_MODE] Current location found: ${location.latitude}, ${location.longitude} (Accuracy: ${location.accuracy}m)")
                         
                         // 현재 위치가 등록된 Geofence 반경 내에 있는지 확인
                         val match = enabledLocations.find { target ->
@@ -407,24 +417,36 @@ class ScheduleGroupManager @Inject constructor(
                         }
                         
                         if (match != null) {
-                            Log.i(TAG, "✅ User is inside location: ${match.label} (Distance match). Activating immediately.")
-                            // Coroutine scope가 필요하므로 GlobalScope 또는 viewModelScope를 써야 하지만,
-                            // 여기서는 runBlocking이나 suspend 함수 내 호출을 보장해야 함.
-                            // fusedLocationClient callback은 메인 쓰레드 등에서 비동기 실행됨.
-                            // 안전하게 동기화하기 위해 CoroutineScope를 사용해 activate 호출
-                            kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                                activateGroup(groupId, updateGeofences = false)
+                            Log.i(TAG, "✅ [AUTO_MODE] User is inside location: ${match.label}. Activating immediately.")
+                            // 🔧 v0.10.4: GlobalScope 대신 구조화된 managerScope 사용
+                            managerScope.launch {
+                                try {
+                                    Log.d(TAG, "🚀 [AUTO_MODE] Calling activateGroup for: $groupId")
+                                    activateGroup(groupId, updateGeofences = false)
+                                    Log.i(TAG, "✅ [AUTO_MODE] activateGroup completed for: $groupId")
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "❌ [AUTO_MODE] Failed to activate group: ${e.message}", e)
+                                } catch (t: Throwable) {
+                                    Log.e(TAG, "❌ [AUTO_MODE] CRITICAL: Throwable caught: ${t.message}", t)
+                                }
                             }
                         } else {
-                            Log.i(TAG, "ℹ️ User is outside all locations. Staying INACTIVE.")
+                            Log.i(TAG, "ℹ️ [AUTO_MODE] User is outside all locations (${enabledLocations.size} checked). Staying INACTIVE.")
                         }
                     } else {
-                        Log.w(TAG, "⚠️ Last location is null. Relying on Geofence trigger.")
+                        Log.w(TAG, "⚠️ [AUTO_MODE] Last location is null. Relying on Geofence trigger.")
                     }
+                }.addOnFailureListener { e ->
+                    // 🔧 v0.10.4: 위치 확인 실패 시 로깅
+                    Log.e(TAG, "❌ [AUTO_MODE] Failed to get last location: ${e.message}", e)
                 }
+            } else {
+                Log.w(TAG, "⚠️ [AUTO_MODE] Location permission not granted")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Explicit location check failed: ${e.message}")
+            Log.e(TAG, "❌ [AUTO_MODE] Explicit location check failed: ${e.message}", e)
+        } catch (t: Throwable) {
+            Log.e(TAG, "❌ [AUTO_MODE] CRITICAL: Throwable caught during location check: ${t.message}", t)
         }
     }
 }

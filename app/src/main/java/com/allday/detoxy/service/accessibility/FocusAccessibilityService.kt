@@ -129,12 +129,15 @@ class FocusAccessibilityService : AccessibilityService() {
             // ⚠️ 중요: super.onServiceConnected() 호출 전에 모든 초기화 완료
             // 시스템이 서비스를 성공적으로 연결했다고 판단하도록 함
             
-            Log.i(TAG, "🔄 AccessibilityService connecting...")
+            Log.i(TAG, "🔄 [CONNECT] AccessibilityService connecting... (Thread: ${Thread.currentThread().name})")
+            Log.d(TAG, "🔄 [CONNECT] Current state: isTimerRunning=$isTimerRunning, categories=${enabledCategories.size}")
             
             // 🆕 Hilt 의존성 주입 (EntryPoint 사용) - 백그라운드에서 비동기 처리
             // Hilt 초기화가 완료될 때까지 대기하여 EntryPoint 사용 가능하도록 함
             serviceScope.launch {
                 try {
+                    Log.d(TAG, "⏳ [CONNECT] Starting Hilt injection...")
+                    
                     // Hilt 초기화 대기 (최대 5초, 100ms 간격으로 재시도)
                     var retryCount = 0
                     val maxRetries = 50
@@ -147,33 +150,36 @@ class FocusAccessibilityService : AccessibilityService() {
                                 FocusAccessibilityServiceEntryPoint::class.java
                             )
                             repository = entryPoint.repository()
-                            Log.i(TAG, "✅ Repository injected successfully (retry: $retryCount)")
+                            Log.i(TAG, "✅ [CONNECT] Repository injected successfully (retry: $retryCount)")
                             injectionSuccess = true
                         } catch (e: Throwable) {
                             retryCount++
                             if (retryCount < maxRetries) {
-                                Log.d(TAG, "⏳ Waiting for Hilt initialization... (retry: $retryCount/$maxRetries)")
+                                Log.d(TAG, "⏳ [CONNECT] Waiting for Hilt initialization... (retry: $retryCount/$maxRetries)")
                                 delay(100) // 100ms 대기 후 재시도
                             } else {
-                                Log.e(TAG, "❌ Failed to inject repository after $maxRetries retries: ${e.message}", e)
+                                Log.e(TAG, "❌ [CONNECT] Failed to inject repository after $maxRetries retries: ${e.message}")
+                                Log.e(TAG, "❌ [CONNECT] Stack trace: ${e.stackTraceToString()}")
                                 // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
                             }
                         }
                     }
                 } catch (e: Throwable) {
-                    Log.e(TAG, "❌ Failed to inject repository: ${e.message}", e)
+                    Log.e(TAG, "❌ [CONNECT] Failed to inject repository: ${e.message}")
+                    Log.e(TAG, "❌ [CONNECT] Stack trace: ${e.stackTraceToString()}")
                     // repository가 null이어도 앱 차단 기능은 작동 (로깅만 실패)
                 }
             }
             
             // super.onServiceConnected() 호출 - 시스템에 서비스 연결 성공 알림
             super.onServiceConnected()
-            Log.i(TAG, "✅ AccessibilityService connected")
+            Log.i(TAG, "✅ [CONNECT] AccessibilityService connected successfully")
             
             // 서비스 상태 로깅
-            Log.i(TAG, "📊 Service state: isTimerRunning=$isTimerRunning, categories=${enabledCategories.size}, otherApps=$otherAppsEnabled")
+            Log.i(TAG, "📊 [CONNECT] Service state: isTimerRunning=$isTimerRunning, categories=${enabledCategories.size}, otherApps=$otherAppsEnabled")
         } catch (e: Throwable) {
-            Log.e(TAG, "❌ CRITICAL: onServiceConnected failed: ${e.message}", e)
+            Log.e(TAG, "❌ [CONNECT] CRITICAL: onServiceConnected failed: ${e.message}")
+            Log.e(TAG, "❌ [CONNECT] Stack trace: ${e.stackTraceToString()}")
             // 서비스 연결 실패 시에도 크래시 방지
             // super.onServiceConnected()는 예외 발생 시 호출하지 않음 (시스템이 자동으로 처리)
         }
@@ -273,9 +279,10 @@ class FocusAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {
         try {
-            Log.w(TAG, "⚠️ AccessibilityService interrupted")
+            Log.w(TAG, "⚠️ [INTERRUPT] AccessibilityService interrupted (Thread: ${Thread.currentThread().name})")
+            Log.w(TAG, "⚠️ [INTERRUPT] Current state: isTimerRunning=$isTimerRunning, sessionId=$currentSessionId")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error in onInterrupt: ${e.message}", e)
+            Log.e(TAG, "❌ [INTERRUPT] Error in onInterrupt: ${e.message}")
         }
     }
 
@@ -330,7 +337,8 @@ class FocusAccessibilityService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        Log.i(TAG, "🔌 AccessibilityService unbind")
+        Log.i(TAG, "🔌 [UNBIND] AccessibilityService unbind (Thread: ${Thread.currentThread().name})")
+        Log.i(TAG, "🔌 [UNBIND] Final state: isTimerRunning=$isTimerRunning, sessionId=$currentSessionId")
         return super.onUnbind(intent)
     }
 }

@@ -17,6 +17,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -75,7 +76,10 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         }
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    // 🔧 v0.10.4: SupervisorJob으로 자식 코루틴 예외가 다른 코루틴에 영향을 주지 않도록 함
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, throwable ->
+        Log.e(TAG, "❌ Uncaught exception in GeofenceTransitionsReceiver scope: ${throwable.message}", throwable)
+    })
     
     override fun onReceive(context: Context, intent: Intent) {
         // GeofencingEvent 파싱
@@ -160,8 +164,14 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 // 비동기 작업 (goAsync)
                 val pendingResult = goAsync()
                 
+                // 🔧 v0.10.4: 디버깅 로그 강화
+                Log.i(TAG, "📍 [GEOFENCE_ENTER] Processing ${triggeringGeofences.size} geofence(s)")
+                val startTime = System.currentTimeMillis()
+                
         scope.launch {
             try {
+                Log.d(TAG, "⏱️ [GEOFENCE_ENTER] Coroutine started (${System.currentTimeMillis() - startTime}ms after trigger)")
+                
                 // 🆕 Phase 3: 반경 내 모든 위치 수집 (충돌 해소를 위해)
                 val locationIds = triggeringGeofences.map { it.requestId }
                 val candidates = mutableListOf<com.allday.detoxy.data.local.entity.LocationBasedAutoRun>()
@@ -354,7 +364,8 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 }
                 
             } catch (e: Exception) {
-                Log.e(TAG, "Error handling geofence enter: ${e.message}", e)
+                Log.e(TAG, "❌ [GEOFENCE_ENTER] Error handling geofence enter: ${e.message}", e)
+                Log.e(TAG, "❌ [GEOFENCE_ENTER] Stack trace: ${e.stackTraceToString()}")
                 
                 // Analytics: auto_run_failed
                 AnalyticsHelper.logAutoRunFailed(
@@ -362,7 +373,13 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                     failureReason = e.message ?: "exception",
                     gpsAccuracyMeters = gpsAccuracyMeters
                 )
+            } catch (t: Throwable) {
+                // 🔧 v0.10.4: Throwable까지 catch하여 Error도 로깅
+                Log.e(TAG, "❌ [GEOFENCE_ENTER] CRITICAL: Throwable caught: ${t.message}", t)
+                Log.e(TAG, "❌ [GEOFENCE_ENTER] Stack trace: ${t.stackTraceToString()}")
             } finally {
+                val elapsed = System.currentTimeMillis() - startTime
+                Log.i(TAG, "✅ [GEOFENCE_ENTER] Coroutine completed (${elapsed}ms total)")
                 pendingResult.finish()
             }
         }
@@ -412,8 +429,14 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         // 비동기 작업 (goAsync)
         val pendingResult = goAsync()
         
+        // 🔧 v0.10.4: 디버깅 로그 강화
+        Log.i(TAG, "🚪 [GEOFENCE_EXIT] Processing ${triggeringGeofences.size} geofence(s)")
+        val startTime = System.currentTimeMillis()
+        
         scope.launch {
             try {
+                Log.d(TAG, "⏱️ [GEOFENCE_EXIT] Coroutine started (${System.currentTimeMillis() - startTime}ms after trigger)")
+                
                 var anyScheduleDeactivated = false
                 
                 // 각 Geofence 처리
@@ -491,8 +514,15 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 }
                 
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Error handling geofence exit: ${e.message}", e)
+                Log.e(TAG, "❌ [GEOFENCE_EXIT] Error handling geofence exit: ${e.message}", e)
+                Log.e(TAG, "❌ [GEOFENCE_EXIT] Stack trace: ${e.stackTraceToString()}")
+            } catch (t: Throwable) {
+                // 🔧 v0.10.4: Throwable까지 catch하여 Error도 로깅
+                Log.e(TAG, "❌ [GEOFENCE_EXIT] CRITICAL: Throwable caught: ${t.message}", t)
+                Log.e(TAG, "❌ [GEOFENCE_EXIT] Stack trace: ${t.stackTraceToString()}")
             } finally {
+                val elapsed = System.currentTimeMillis() - startTime
+                Log.i(TAG, "✅ [GEOFENCE_EXIT] Coroutine completed (${elapsed}ms total)")
                 pendingResult.finish()
             }
         }
