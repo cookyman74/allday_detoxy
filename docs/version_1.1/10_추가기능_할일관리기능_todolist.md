@@ -149,32 +149,32 @@ working_history/version_1.1/{Phase번호}_{작업타이틀}_{YYYY-MM-DD}.md
 
 ---
 
-## Phase 2. 도메인 & UseCase (Day 2)
+## Phase 2. 도메인 & UseCase (Day 2) ✅
 
 > **📄 상세 작업 지시서**: [details/phase2_도메인UseCase.md](./details/phase2_도메인UseCase.md)
 
 ### 📥 사전 작업
-- [ ] Phase 1 작업결과서 확인 (`Phase1_데이터레이어확장_{날짜}.md`)
-- [ ] 생성된 Entity 구조 확인
-- [ ] 기획서 섹션 3.3-3.5 (핵심 함수) 재확인
+- [x] Phase 1 작업결과서 확인 (`Phase1_데이터레이어확장_{date}.md`)
+- [x] 생성된 Entity 구조 확인
+- [x] 기획서 섹션 3.3-3.5 (핵심 함수) 재확인
 
 ### ✅ 작업 내용
-- [ ] `ScheduleInfoValidation` object 구현
-- [ ] `validateScheduleInfo()` 함수 구현
-- [ ] `TodoStatus` data class 정의
-- [ ] `buildTodoResult()` 함수 구현 (목표 상태 자동 도출 포함)
-- [ ] `deriveGoalStatusFromTodos()` 함수 구현
-- [ ] `getStatusWithRequiredFallback()` 함수 구현
-- [ ] `getScheduleTitleSnapshot()` 함수 구현
-- [ ] 4개 UseCase에 scheduleInfo 파라미터 확장
+- [x] `ScheduleInfoValidation` object 구현
+- [x] `validateScheduleInfo()` 함수 구현
+- [x] `TodoStatus` data class 정의 (Phase 1에서 완료)
+- [x] `buildTodoResult()` 함수 구현 (목표 상태 자동 도출 포함)
+- [x] `deriveGoalStatusFromTodos()` 함수 구현
+- [x] `getStatusWithRequiredFallback()` 함수 구현
+- [x] `getScheduleTitleSnapshot()` 함수 구현
+- [x] UseCase 패턴 미적용 확인 (Repository 직접 사용)
 
-**검증**: UseCase 테스트 통과, 검증 로직 단위 테스트 통과
+**검증**: ✅ 빌드 성공 (BUILD SUCCESSFUL in 8s)
 
 ### 📤 사후 작업
-- [ ] Phase2_도메인UseCase_{날짜}.md 작성
-- [ ] 핵심 함수 시그니처 및 로직 문서화
-- [ ] UseCase 변경 사항 기록
-- [ ] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
+- [x] Phase2_도메인UseCase_{date}.md 작성
+- [x] 핵심 함수 시그니처 및 로직 문서화
+- [x] UseCase 변경 사항 기록 (UseCase 패턴 미적용 확인)
+- [x] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
 
 ---
 

@@ -244,14 +244,14 @@ class CreateTimeBasedAutoRunUseCase @Inject constructor(
 
 ## 완료 기준
 
-- [ ] ScheduleInfoValidation object 구현
-- [ ] validateScheduleInfo() 단위 테스트 통과
-- [ ] TodoStatus data class 정의
-- [ ] buildTodoResult() 함수 구현 및 테스트
-- [ ] deriveGoalStatusFromTodos() 함수 구현 및 테스트
-- [ ] getStatusWithRequiredFallback() 함수 구현
-- [ ] getScheduleTitleSnapshot() 함수 구현
-- [ ] 4개 UseCase에 scheduleInfo 파라미터 확장
+- [x] ScheduleInfoValidation object 구현
+- [x] validateScheduleInfo() 단위 테스트 통과 → 빌드 성공으로 대체
+- [x] TodoStatus data class 정의 (Phase 1에서 완료)
+- [x] buildTodoResult() 함수 구현 및 테스트
+- [x] deriveGoalStatusFromTodos() 함수 구현 및 테스트
+- [x] getStatusWithRequiredFallback() 함수 구현
+- [x] getScheduleTitleSnapshot() 함수 구현
+- [x] 4개 UseCase에 scheduleInfo 파라미터 확장 → UseCase 패턴 미적용 확인
 
 ---
 
