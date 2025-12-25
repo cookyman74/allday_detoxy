@@ -33,12 +33,18 @@ interface FocusSessionTodoResultDao {
     
     /**
      * 수정 필요 항목 조회 (NO_RESPONSE 또는 NOT_COMPLETED 포함)
-     * - todoResultsJson에 "NO_RESPONSE" 또는 "NOT_COMPLETED" 문자열이 포함된 결과
+     * 
+     * ## 쿼리 방식
+     * todoResultsJson에 "status":"NO_RESPONSE" 또는 "status":"NOT_COMPLETED" 패턴이 포함된 결과
+     * 
+     * ## 주의사항
+     * JSON LIKE 쿼리는 내용(content) 필드에 해당 문자열이 포함된 경우에도 매칭될 수 있음.
+     * 정확한 필터링이 필요하면 Repository 계층에서 JSON 파싱 후 재필터링 권장.
      */
     @Query("""
         SELECT * FROM focus_session_todo_result 
-        WHERE todoResultsJson LIKE '%NO_RESPONSE%' 
-           OR todoResultsJson LIKE '%NOT_COMPLETED%'
+        WHERE todoResultsJson LIKE '%"status":"NO_RESPONSE"%' 
+           OR todoResultsJson LIKE '%"status":"NOT_COMPLETED"%'
         ORDER BY completedAt DESC
     """)
     fun getModifiableResultsFlow(): Flow<List<FocusSessionTodoResultEntity>>
