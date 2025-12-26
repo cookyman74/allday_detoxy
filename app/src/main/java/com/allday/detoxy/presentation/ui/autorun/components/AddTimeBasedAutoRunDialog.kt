@@ -15,7 +15,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.allday.detoxy.data.local.converter.ScheduleInfoConverter
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
+import com.allday.detoxy.domain.model.ScheduleInfo
+import com.allday.detoxy.domain.model.ScheduleTodo
+import com.allday.detoxy.domain.validation.validateScheduleInfo
+import com.allday.detoxy.domain.validation.ValidationResult
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import org.json.JSONArray
 import java.util.*
@@ -48,6 +53,16 @@ fun AddTimeBasedAutoRunDialog(
     var durationMinutes by remember { mutableStateOf(existingAutoRun?.durationMinutes ?: 25) }
     var selectedPreset by remember { mutableStateOf(existingAutoRun?.presetType ?: "STANDARD") }
     var label by remember { mutableStateOf(existingAutoRun?.label ?: "") }
+    
+    // 🆕 v9: 목표/할일 상태
+    val scheduleInfoConverter = remember { ScheduleInfoConverter() }
+    var scheduleInfo by remember { 
+        mutableStateOf(
+            existingAutoRun?.scheduleInfoJson?.let { scheduleInfoConverter.toScheduleInfo(it) } 
+                ?: ScheduleInfo.EMPTY
+        ) 
+    }
+    var showTodoSection by remember { mutableStateOf(scheduleInfo.todos.isNotEmpty()) }
     
     // 🆕 3차 고도화: 시간표 연결 상태
     // 🆕 특정 스케줄 그룹에서 호출된 경우 해당 그룹 ID로 초기화
@@ -175,6 +190,51 @@ fun AddTimeBasedAutoRunDialog(
                     singleLine = true
                 )
                 
+                // 🆕 v9: 목표/할일 성정 섹션
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                
+                GoalInputSection(
+                    title = scheduleInfo.title,
+                    onTitleChange = { newTitle ->
+                        scheduleInfo = scheduleInfo.copy(title = newTitle)
+                    },
+                    showTodoSection = showTodoSection,
+                    onToggleTodoSection = { showTodoSection = true }
+                )
+                
+                if (showTodoSection) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TodoListSection(
+                        todos = scheduleInfo.todos,
+                        onTodoChange = { index, updatedTodo ->
+                            val newTodos = scheduleInfo.todos.toMutableList()
+                            newTodos[index] = updatedTodo
+                            scheduleInfo = scheduleInfo.copy(todos = newTodos)
+                        },
+                        onTodoDelete = { index ->
+                            val newTodos = scheduleInfo.todos.toMutableList()
+                            newTodos.removeAt(index)
+                            // 🔧 리뷰 반영: 삭제 후 orderIndex 재정렬
+                            val reorderedTodos = newTodos.mapIndexed { newIndex, todo ->
+                                todo.copy(orderIndex = newIndex)
+                            }
+                            scheduleInfo = scheduleInfo.copy(todos = reorderedTodos)
+                        },
+                        onTodoAdd = {
+                            if (scheduleInfo.todos.size < ScheduleTodo.MAX_TODO_COUNT) {
+                                // 🔧 리뷰 반영: 새 항목의 orderIndex는 현재 목록의 최대값 + 1
+                                val maxOrderIndex = scheduleInfo.todos.maxOfOrNull { it.orderIndex } ?: -1
+                                val newTodos = scheduleInfo.todos + ScheduleTodo(
+                                    content = "",
+                                    orderIndex = maxOrderIndex + 1
+                                )
+                                scheduleInfo = scheduleInfo.copy(todos = newTodos)
+                            }
+                        },
+                        onHide = { showTodoSection = false }
+                    )
+                }
+                
                 // 🆕 3차 고도화: 시간표 연결 설정
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 
@@ -238,6 +298,22 @@ fun AddTimeBasedAutoRunDialog(
                     android.util.Log.d("AddTimeBasedAutoRunDialog", "existingAutoRun?.isIndependent: ${existingAutoRun?.isIndependent}")
                     android.util.Log.d("AddTimeBasedAutoRunDialog", "finalIsIndependent: $finalIsIndependent")
                     
+                    // 🔧 리뷰 반영: 빈 할일 필터링 및 검증
+                    val filteredInfo = if (scheduleInfo.hasContent()) {
+                        val validTodos = scheduleInfo.todos.filter { it.content.isNotBlank() }
+                        scheduleInfo.copy(todos = validTodos)
+                    } else {
+                        ScheduleInfo.EMPTY
+                    }
+                    
+                    // 검증 수행
+                    val validationResult = validateScheduleInfo(filteredInfo)
+                    if (validationResult is ValidationResult.Error) {
+                        android.util.Log.w("AddTimeBasedAutoRunDialog", "검증 실패: ${validationResult.message}")
+                        // 검증 실패 시 저장 중단 (토스트 등 UI 피드백은 Phase 6에서 구현)
+                        return@Button
+                    }
+                    
                     val newAutoRun = TimeBasedAutoRun(
                         id = existingAutoRun?.id ?: UUID.randomUUID().toString(),
                         hour = selectedHour,
@@ -250,7 +326,13 @@ fun AddTimeBasedAutoRunDialog(
                         createdAt = existingAutoRun?.createdAt ?: System.currentTimeMillis(),
                         // 🆕 3차 고도화: 시간표 연결 필드
                         scheduleGroupId = finalScheduleGroupId,
-                        isIndependent = finalIsIndependent
+                        isIndependent = finalIsIndependent,
+                        // 🆕 v9: 목표/할일 정보 저장 (필터링된 정보 사용)
+                        scheduleInfoJson = if (filteredInfo.hasContent()) {
+                            scheduleInfoConverter.fromScheduleInfo(filteredInfo)
+                        } else {
+                            null
+                        }
                     )
                     
                     android.util.Log.d("AddTimeBasedAutoRunDialog", "✅ 최종 저장 데이터: scheduleGroupId=${newAutoRun.scheduleGroupId}, isIndependent=${newAutoRun.isIndependent}")

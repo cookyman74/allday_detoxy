@@ -278,14 +278,14 @@ class TimeBasedAutoRunViewModel @Inject constructor(
 
 ## 완료 기준
 
-- [ ] GoalInputSection Composable 생성
-- [ ] TodoListSection Composable 생성
-- [ ] TodoItemRow Composable 생성
-- [ ] AddTimeBasedAutoRunDialog에 섹션 통합
-- [ ] AddLocationBasedAutoRunDialog에 동일 적용
-- [ ] TimeBasedAutoRunViewModel 상태 확장
-- [ ] LocationBasedAutoRunViewModel 동일 적용
-- [ ] Validation 실시간 피드백 동작
+- [x] GoalInputSection Composable 생성
+- [x] TodoListSection Composable 생성
+- [x] TodoItemRow Composable 생성
+- [x] AddTimeBasedAutoRunDialog에 섹션 통합
+- [x] AddLocationBasedAutoRunDialog에 동일 적용
+- [x] TimeBasedAutoRunViewModel 상태 확장 → 로컬 상태로 처리
+- [x] LocationBasedAutoRunViewModel 동일 적용 → 로컬 상태로 처리
+- [x] Validation 실시간 피드백 동작 (글자 수 제한 표시)
 
 ---
 

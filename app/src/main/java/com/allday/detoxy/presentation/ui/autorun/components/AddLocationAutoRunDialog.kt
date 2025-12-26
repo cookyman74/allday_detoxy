@@ -33,7 +33,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
 import com.allday.detoxy.core.utils.GeocoderUtils
 import com.allday.detoxy.core.utils.LocationUtils
+import com.allday.detoxy.data.local.converter.ScheduleInfoConverter
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
+import com.allday.detoxy.domain.model.ScheduleInfo
+import com.allday.detoxy.domain.model.ScheduleTodo
+import com.allday.detoxy.domain.validation.validateScheduleInfo
+import com.allday.detoxy.domain.validation.ValidationResult
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
@@ -99,6 +104,16 @@ fun AddLocationAutoRunDialog(
     var triggerType by remember { mutableStateOf(existingLocation?.triggerType ?: "ENTER") }
     var dwellTimeMinutes by remember { mutableStateOf(existingLocation?.dwellTimeMinutes ?: 0) }
     var requiresUserConfirmation by remember { mutableStateOf(existingLocation?.requiresUserConfirmation ?: false) }
+    
+    // 🆕 v9: 목표/할일 상태
+    val scheduleInfoConverter = remember { ScheduleInfoConverter() }
+    var scheduleInfo by remember { 
+        mutableStateOf(
+            existingLocation?.scheduleInfoJson?.let { scheduleInfoConverter.toScheduleInfo(it) } 
+                ?: ScheduleInfo.EMPTY
+        ) 
+    }
+    var showTodoSection by remember { mutableStateOf(scheduleInfo.todos.isNotEmpty()) }
 
     // 🆕 3차 고도화: 시간표 연결 상태
     var enableScheduleLink by remember { mutableStateOf(existingLocation?.linkedScheduleGroupId != null) }
@@ -235,7 +250,12 @@ fun AddLocationAutoRunDialog(
                             dwellTimeMinutes = dwellTimeMinutes,
                             onDwellTimeChange = { dwellTimeMinutes = it },
                             requiresUserConfirmation = requiresUserConfirmation,
-                            onRequiresConfirmationChange = { requiresUserConfirmation = it }
+                            onRequiresConfirmationChange = { requiresUserConfirmation = it },
+                            // 🆕 v9: 목표/할일 파라미터 추가
+                            scheduleInfo = scheduleInfo,
+                            onScheduleInfoChange = { scheduleInfo = it },
+                            showTodoSection = showTodoSection,
+                            onShowTodoSectionChange = { showTodoSection = it }
                         )
                     }
                     LocationDialogStep.SCHEDULE -> {
@@ -287,6 +307,20 @@ fun AddLocationAutoRunDialog(
                             }
                             LocationDialogStep.SCHEDULE -> {
                                 // SCHEDULE → 저장
+                                // 🔧 리뷰 반영: 빈 할일 필터링 및 검증
+                                val filteredInfo = if (scheduleInfo.hasContent()) {
+                                    val validTodos = scheduleInfo.todos.filter { it.content.isNotBlank() }
+                                    scheduleInfo.copy(todos = validTodos)
+                                } else {
+                                    ScheduleInfo.EMPTY
+                                }
+                                
+                                val validationResult = validateScheduleInfo(filteredInfo)
+                                if (validationResult is ValidationResult.Error) {
+                                    android.util.Log.w("AddLocationAutoRunDialog", "검증 실패: ${validationResult.message}")
+                                    return@Button
+                                }
+                                
                                 val location = LocationBasedAutoRun(
                                     id = existingLocation?.id ?: UUID.randomUUID().toString(),
                                     label = label.ifBlank { selectedLocation?.name ?: "위치" },
@@ -304,7 +338,13 @@ fun AddLocationAutoRunDialog(
                                     // 🆕 3차 고도화: 시간표 연결 필드
                                     linkedScheduleGroupId = if (enableScheduleLink) selectedScheduleGroupId else null,
                                     activateScheduleOnEnter = enableScheduleLink && activateOnEnter,
-                                    deactivateScheduleOnExit = enableScheduleLink && deactivateOnExit
+                                    deactivateScheduleOnExit = enableScheduleLink && deactivateOnExit,
+                                    // 🆕 v9: 목표/할일 정보 저장 (필터링된 정보 사용)
+                                    scheduleInfoJson = if (filteredInfo.hasContent()) {
+                                        scheduleInfoConverter.fromScheduleInfo(filteredInfo)
+                                    } else {
+                                        null
+                                    }
                                 )
                                 onSave(location)
                                 onDismiss()
@@ -394,7 +434,12 @@ private fun LocationSettingsStep(
     dwellTimeMinutes: Int,
     onDwellTimeChange: (Int) -> Unit,
     requiresUserConfirmation: Boolean,
-    onRequiresConfirmationChange: (Boolean) -> Unit
+    onRequiresConfirmationChange: (Boolean) -> Unit,
+    // 🆕 v9: 목표/할일 파라미터
+    scheduleInfo: ScheduleInfo = ScheduleInfo.EMPTY,
+    onScheduleInfoChange: (ScheduleInfo) -> Unit = {},
+    showTodoSection: Boolean = false,
+    onShowTodoSectionChange: (Boolean) -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -565,6 +610,51 @@ private fun LocationSettingsStep(
                 description = "SNS 일부 허용",
                 selected = selectedPreset == "RELAXED",
                 onClick = { onPresetChange("RELAXED") }
+            )
+        }
+
+        // 🆕 v9: 목표/할일 설정 섹션
+        HorizontalDivider()
+        
+        GoalInputSection(
+            title = scheduleInfo.title,
+            onTitleChange = { newTitle ->
+                onScheduleInfoChange(scheduleInfo.copy(title = newTitle))
+            },
+            showTodoSection = showTodoSection,
+            onToggleTodoSection = { onShowTodoSectionChange(true) }
+        )
+        
+        if (showTodoSection) {
+            Spacer(modifier = Modifier.height(8.dp))
+            TodoListSection(
+                todos = scheduleInfo.todos,
+                onTodoChange = { index, updatedTodo ->
+                    val newTodos = scheduleInfo.todos.toMutableList()
+                    newTodos[index] = updatedTodo
+                    onScheduleInfoChange(scheduleInfo.copy(todos = newTodos))
+                },
+                onTodoDelete = { index ->
+                    val newTodos = scheduleInfo.todos.toMutableList()
+                    newTodos.removeAt(index)
+                    // 🔧 리뷰 반영: 삭제 후 orderIndex 재정렬
+                    val reorderedTodos = newTodos.mapIndexed { newIndex, todo ->
+                        todo.copy(orderIndex = newIndex)
+                    }
+                    onScheduleInfoChange(scheduleInfo.copy(todos = reorderedTodos))
+                },
+                onTodoAdd = {
+                    if (scheduleInfo.todos.size < ScheduleTodo.MAX_TODO_COUNT) {
+                        // 🔧 리뷰 반영: 새 항목의 orderIndex는 현재 목록의 최대값 + 1
+                        val maxOrderIndex = scheduleInfo.todos.maxOfOrNull { it.orderIndex } ?: -1
+                        val newTodos = scheduleInfo.todos + ScheduleTodo(
+                            content = "",
+                            orderIndex = maxOrderIndex + 1
+                        )
+                        onScheduleInfoChange(scheduleInfo.copy(todos = newTodos))
+                    }
+                },
+                onHide = { onShowTodoSectionChange(false) }
             )
         }
 

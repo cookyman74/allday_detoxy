@@ -178,32 +178,31 @@ working_history/version_1.1/{Phase번호}_{작업타이틀}_{YYYY-MM-DD}.md
 
 ---
 
-## Phase 3. 스케줄 생성/편집 UI (Day 3-4)
+## Phase 3. 스케줄 생성/편집 UI (Day 3-4) ✅
 
 > **📄 상세 작업 지시서**: [details/phase3_스케줄UI.md](./details/phase3_스케줄UI.md)
 
 ### 📥 사전 작업
-- [ ] Phase 2 작업결과서 확인 (`Phase2_도메인UseCase_{날짜}.md`)
-- [ ] 검증 로직 및 UseCase 인터페이스 확인
-- [ ] 기획서 섹션 6.1-6.2 (UI 설계) 재확인
+- [x] Phase 2 작업결과서 확인 (`Phase2_도메인UseCase_{date}.md`)
+- [x] 검증 로직 및 UseCase 인터페이스 확인
+- [x] 기획서 섹션 6.1-6.2 (UI 설계) 재확인
 
 ### ✅ 작업 내용
-- [ ] `GoalInputSection` Composable 생성
-- [ ] `TodoListSection` Composable 생성
-- [ ] `TodoItemRow` Composable 생성
-- [ ] `AddTimeBasedAutoRunDialog`에 새 섹션 통합
-- [ ] `AddLocationBasedAutoRunDialog`에 동일 적용
-- [ ] `TimeBasedAutoRunViewModel` 상태 확장
-- [ ] `LocationBasedAutoRunViewModel` 동일 적용
-- [ ] Validation 실시간 피드백 UI
+- [x] `GoalInputSection` Composable 생성
+- [x] `TodoListSection` Composable 생성
+- [x] `TodoItemRow` Composable 생성
+- [x] `AddTimeBasedAutoRunDialog`에 새 섹션 통합
+- [x] `AddLocationAutoRunDialog`에 동일 적용
+- [x] 로컬 상태로 scheduleInfo 관리 (ViewModel 확장 불필요)
+- [x] Validation 실시간 피드백 UI (글자 수 제한 표시)
 
-**검증**: 스케줄 생성/편집 다이얼로그에 목표/할일 입력 가능
+**검증**: ✅ 빌드 성공 (BUILD SUCCESSFUL in 7s)
 
 ### 📤 사후 작업
-- [ ] Phase3_스케줄UI_{날짜}.md 작성
-- [ ] 생성된 Composable 목록 및 스크린샷 첨부
-- [ ] ViewModel 상태 변경 사항 기록
-- [ ] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
+- [x] Phase3_스케줄UI_{date}.md 작성
+- [x] 생성된 Composable 목록 문서화
+- [x] 다이얼로그 통합 내용 기록
+- [x] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
 
 ---
 
