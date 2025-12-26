@@ -263,30 +263,60 @@ working_history/version_1.1/{Phase번호}_{작업타이틀}_{YYYY-MM-DD}.md
 
 ---
 
-## Phase 6. 할일 관리 페이지 (Day 7)
+## Phase 6. 할일 관리 페이지 - 통합 체크리스트 (Day 7)
 
 > **📄 상세 작업 지시서**: [details/phase6_할일관리페이지.md](./details/phase6_할일관리페이지.md)
+> 
+> **🔄 8차 리뷰 반영**: "계획된 할일" + "완료된 할일" 분리 → **오늘의 할일 통합 체크리스트**로 변경
 
 ### 📥 사전 작업
 - [ ] Phase 5 작업결과서 확인 (`Phase5_세션종료다이얼로그_{날짜}.md`)
 - [ ] FocusSessionTodoResult 저장 구조 확인
-- [ ] 기획서 섹션 9 (할일 관리 페이지) 재확인
+- [ ] 기획서 섹션 9 (할일 관리 페이지 - 개선안) 재확인
 
 ### ✅ 작업 내용
-- [ ] 스케줄 탭 내 서브 탭으로 "할일 관리" 추가
-- [ ] `TodoManagementScreen` Composable 생성
-- [ ] 수정 가능 항목 필터링 (NO_RESPONSE + NOT_COMPLETED)
-- [ ] 목표(isGoal=true) 수정 가능
-- [ ] `EditTodoResultDialog` 구현
-- [ ] `lastModifiedAt` 업데이트
-- [ ] 세션 중 접근 제한
 
-**검증**: 할일 관리 페이지 정상 동작, 미응답/미완료 항목 수정 가능
+#### 6.1 데이터 모델
+- [ ] `TodayTodoItem` data class 생성
+- [ ] `TodayTodoStatus` enum 생성 (PENDING, COMPLETED, NOT_COMPLETED, NO_RESPONSE)
+- [ ] `TodoSourceType` enum 생성 (PLANNED, SESSION_RESULT)
+- [ ] `TodoFilter` enum 생성 (ALL, PENDING, COMPLETED, INCOMPLETE)
+
+#### 6.2 ViewModel 수정
+- [ ] `TodoManagementViewModel`에 오늘 기준 필터링 로직 추가
+- [ ] 오늘 완료된 세션 결과 조회 (todayResults)
+- [ ] 오늘 예정된 스케줄의 계획된 할일 조회
+- [ ] 두 데이터 통합 로직 (`getTodayTodos()`)
+- [ ] 필터 상태 관리 StateFlow 추가
+
+#### 6.3 UI 구현
+- [ ] `TodoManagementScreen` 전면 개편
+  - [ ] 날짜 표시 헤더 (오늘의 할일 + 날짜)
+  - [ ] 필터 칩 UI (전체/대기/완료/미완료)
+  - [ ] 스케줄별 그룹화 카드 (TodayScheduleCard)
+  - [ ] 통합 할일 아이템 UI (TodayTodoItemRow)
+- [ ] 상태별 아이콘/색상 적용
+  - [ ] 대기: ☐ 회색
+  - [ ] 완료: ☑️ 초록
+  - [ ] 미완료: ✖️ 빨강
+  - [ ] 미응답: ⚪ 회색
+
+#### 6.4 수정 기능
+- [ ] 수정 가능 항목 필터링 (NOT_COMPLETED + NO_RESPONSE)
+- [ ] `EditTodoStatusDialog` 구현 (완료/미완료 선택)
+- [ ] `lastModifiedAt` 업데이트
+- [ ] 세션 중 수정 버튼 비활성화 (목록 조회는 허용)
+
+**검증**: 
+- 오늘의 할일이 통합 체크리스트로 표시
+- 필터가 정상 동작
+- 미완료/미응답 항목 수정 가능
+- 세션 중 수정 버튼 비활성화 확인
 
 ### 📤 사후 작업
 - [ ] Phase6_할일관리페이지_{날짜}.md 작성
-- [ ] 관리 페이지 UI 스크린샷 첨부
-- [ ] 수정 가능 항목 정책 문서화
+- [ ] 통합 체크리스트 UI 스크린샷 첨부
+- [ ] 필터 동작 및 수정 기능 테스트 결과 문서화
 - [ ] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
 
 ---

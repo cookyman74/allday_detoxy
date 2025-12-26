@@ -278,78 +278,106 @@ fun ScheduleTabScreen(
                     fontWeight = FontWeight.Bold
                 )
             }
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // 🆕 v0.10.1: 1. 작동 중인 스케줄 카드 (타이머 실행 중)
-            if (timerState == com.allday.detoxy.domain.model.FocusState.RUNNING && runningScheduleGroup != null) {
-                item {
-                    RunningScheduleCard(
-                        schedule = runningScheduleGroup,
-                        remainingSeconds = remainingSeconds,
-                        linkedLocations = linkedLocations[runningScheduleGroup.id] ?: emptyList()
+            
+            // 🆕 v9: 서브 탭 (전체 스케줄 / 할일 관리)
+            var selectedSubTab by remember { mutableStateOf(0) }
+            val subTabs = listOf("전체 스케줄", "📋 할일 관리")
+            
+            TabRow(
+                selectedTabIndex = selectedSubTab,
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onBackground
+            ) {
+                subTabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedSubTab == index,
+                        onClick = { selectedSubTab = index },
+                        text = { Text(title) }
                     )
                 }
             }
             
-            // 2. 활성화된 스케줄 카드들 (대기 상태) - 작동 중인 것 제외
-            val waitingGroups = activeGroups.filter { it.id != runningScheduleGroupId }
-            items(waitingGroups) { group ->
-                ActiveScheduleSummaryCard(
-                    activeSchedule = group,
-                    linkedLocations = linkedLocations[group.id] ?: emptyList()
-                )
-            }
-            
-            // 3. 다음 예약 카드
-            item {
-                NextScheduleSummaryCard(
-                    scheduleGroups = scheduleGroups,
-                    activeGroupId = activeGroups.firstOrNull()?.id  // 첫 번째 활성화 그룹 (호환성 유지)
-                )
-            }
-            
-            // 섹션 헤더
-            item {
-                Text(
-                    text = "모든 시간표 (${scheduleGroups.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                )
-            }
-            
-            // 빈 상태
-            if (scheduleGroups.isEmpty()) {
-                item {
-                    EmptyScheduleCard(
-                        onCreateClick = { showCreateDialog = true }
-                    )
+            // 탭 컨텐츠
+            when (selectedSubTab) {
+                0 -> {
+                    // 기존 스케줄 목록
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // 🆕 v0.10.1: 1. 작동 중인 스케줄 카드 (타이머 실행 중)
+                        if (timerState == com.allday.detoxy.domain.model.FocusState.RUNNING && runningScheduleGroup != null) {
+                            item(key = "running_schedule") {
+                                RunningScheduleCard(
+                                    schedule = runningScheduleGroup,
+                                    remainingSeconds = remainingSeconds,
+                                    linkedLocations = linkedLocations[runningScheduleGroup.id] ?: emptyList()
+                                )
+                            }
+                        }
+                        
+                        // 2. 활성화된 스케줄 카드들 (대기 상태) - 작동 중인 것 제외
+                        val waitingGroups = activeGroups.filter { it.id != runningScheduleGroupId }
+                        items(waitingGroups, key = { "waiting_${it.id}" }) { group ->
+                            ActiveScheduleSummaryCard(
+                                activeSchedule = group,
+                                linkedLocations = linkedLocations[group.id] ?: emptyList()
+                            )
+                        }
+                        
+                        // 3. 다음 예약 카드
+                        item(key = "next_schedule") {
+                            NextScheduleSummaryCard(
+                                scheduleGroups = scheduleGroups,
+                                activeGroupId = activeGroups.firstOrNull()?.id
+                            )
+                        }
+                        
+                        // 섹션 헤더
+                        item(key = "section_header") {
+                            Text(
+                                text = "모든 시간표 (${scheduleGroups.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                            )
+                        }
+                        
+                        // 빈 상태
+                        if (scheduleGroups.isEmpty()) {
+                            item(key = "empty_state") {
+                                EmptyScheduleCard(
+                                    onCreateClick = { showCreateDialog = true }
+                                )
+                            }
+                        } else {
+                            // 시간표 목록
+                            items(scheduleGroups, key = { "schedule_${it.id}" }) { group ->
+                                val timeSlots = linkedTimeBasedAutoRuns[group.id] ?: emptyList()
+                                val locationCount = linkedLocationCounts[group.id] ?: 0
+                                
+                                ScheduleSummaryCard(
+                                    group = group,
+                                    isActive = activeGroups.any { it.id == group.id },
+                                    timeSlotCount = timeSlots.size,
+                                    linkedLocationCount = locationCount,
+                                    onClick = { onNavigateToDetail(group.id) }
+                                )
+                            }
+                            
+                            // 하단 여백 (FAB과 겹치지 않도록)
+                            item(key = "bottom_spacer") {
+                                Spacer(modifier = Modifier.height(80.dp))
+                            }
+                        }
+                    }
                 }
-            } else {
-                // 시간표 목록
-                items(scheduleGroups) { group ->
-                    val timeSlots = linkedTimeBasedAutoRuns[group.id] ?: emptyList()
-                    val locationCount = linkedLocationCounts[group.id] ?: 0
-                    
-                    ScheduleSummaryCard(
-                        group = group,
-                        isActive = activeGroups.any { it.id == group.id },  // 🆕 v0.10.1: 여러 활성화 그룹 지원
-                        timeSlotCount = timeSlots.size,
-                        linkedLocationCount = locationCount,
-                        onClick = { onNavigateToDetail(group.id) }
-                    )
+                1 -> {
+                    // 🆕 v9.1: 오늘의 할일 통합 체크리스트
+                    com.allday.detoxy.presentation.ui.todo.TodayTodoScreen()
                 }
-                
-                // 하단 여백 (FAB과 겹치지 않도록)
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
             }
-        }
-        } // LazyColumn 끝
         } // Column 끝
         
         // FAB (Box 내 BoxScope)
@@ -561,10 +589,16 @@ fun RunningScheduleCard(
                 }
             }
             
+            val iconTint = try {
+                Color(android.graphics.Color.parseColor(schedule.colorHex))
+            } catch (e: Exception) {
+                MaterialTheme.colorScheme.primary
+            }
+            
             Icon(
                 imageVector = getIconForType(schedule.iconType),
                 contentDescription = null,
-                tint = Color(android.graphics.Color.parseColor(schedule.colorHex)),
+                tint = iconTint,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -635,10 +669,16 @@ fun ActiveScheduleSummaryCard(
                 }
             }
             
+            val iconTint = try {
+                Color(android.graphics.Color.parseColor(activeSchedule.colorHex))
+            } catch (e: Exception) {
+                MaterialTheme.colorScheme.primary
+            }
+
             Icon(
                 imageVector = getIconForType(activeSchedule.iconType),
                 contentDescription = null,
-                tint = Color(android.graphics.Color.parseColor(activeSchedule.colorHex)),
+                tint = iconTint,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -724,10 +764,16 @@ fun ScheduleSummaryCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 아이콘
+            val iconTint = try {
+                Color(android.graphics.Color.parseColor(group.colorHex))
+            } catch (e: Exception) {
+                MaterialTheme.colorScheme.primary
+            }
+
             Icon(
                 imageVector = getIconForType(group.iconType),
                 contentDescription = null,
-                tint = Color(android.graphics.Color.parseColor(group.colorHex)),
+                tint = iconTint,
                 modifier = Modifier.size(32.dp)
             )
             
