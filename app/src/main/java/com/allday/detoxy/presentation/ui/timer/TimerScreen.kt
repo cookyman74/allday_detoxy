@@ -57,6 +57,11 @@ fun TimerScreen(
     val showSuccessAnimation by viewModel.showSuccessAnimation.collectAsState() // 🆕 성공 애니메이션
     val selectedTimerStyleIndex by viewModel.selectedTimerStyleIndex.collectAsState() // 🆕 저장된 스타일 인덱스
     
+    // 🆕 v9: 세션 종료 다이얼로그 상태
+    val showTodoDialog by viewModel.showTodoDialog.collectAsState()
+    val showGoalDialog by viewModel.showGoalDialog.collectAsState()
+    val currentScheduleInfo by viewModel.currentScheduleInfo.collectAsState()
+    
     // 도넛 그래프 선택 시간
     var selectedMinutes by remember { mutableStateOf(25) }
     
@@ -66,6 +71,24 @@ fun TimerScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showPresetSheet by remember { mutableStateOf(false) }
     var selectedPreset by remember { mutableStateOf<com.allday.detoxy.data.local.entity.CustomTimerPreset?>(null) }
+    
+    // 🆕 v9: 세션 종료 할일 체크 다이얼로그
+    if (showTodoDialog && currentScheduleInfo != null) {
+        SessionEndTodoDialog(
+            scheduleInfo = currentScheduleInfo!!,
+            onComplete = { responses -> viewModel.onTodoDialogComplete(responses) },
+            onDismiss = { viewModel.onDialogDismiss() }
+        )
+    }
+    
+    // 🆕 v9: 세션 종료 목표 달성 다이얼로그
+    if (showGoalDialog && currentScheduleInfo != null) {
+        SessionEndGoalDialog(
+            goal = currentScheduleInfo!!.title,
+            onComplete = { completed -> viewModel.onGoalDialogComplete(completed) },
+            onDismiss = { viewModel.onDialogDismiss() }
+        )
+    }
     
     // 🆕 성공 축하 다이얼로그
     if (showSuccessAnimation) {

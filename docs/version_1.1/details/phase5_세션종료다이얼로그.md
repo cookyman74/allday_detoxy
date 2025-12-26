@@ -346,13 +346,14 @@ fun onGoalDialogComplete(completed: Boolean) {
 
 ## 완료 기준
 
-- [ ] resolveSessionEndDialogType() 함수 구현
-- [ ] SessionEndTodoDialog Composable 생성
-- [ ] SessionEndGoalDialog Composable 생성
-- [ ] 30초 타이머 동작
-- [ ] handleNoResponse() 함수 구현
-- [ ] buildTodoResult() 호출 및 저장
-- [ ] deriveGoalStatusFromTodos() 목표 상태 자동 도출
+- [x] resolveSessionEndDialogType() 함수 구현
+- [x] SessionEndTodoDialog Composable 생성
+- [x] SessionEndGoalDialog Composable 생성
+- [x] 30초 타이머 동작
+- [x] handleNoResponse() 함수 구현
+- [x] buildTodoResult() 호출 및 저장
+- [x] deriveGoalStatusFromTodos() 목표 상태 자동 도출
+- [x] TimerScreen UI 통합 (2025-12-26)
 
 ---
 

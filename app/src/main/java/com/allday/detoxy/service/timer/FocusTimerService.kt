@@ -97,6 +97,10 @@ class FocusTimerService : Service() {
         private val _currentScheduleGroupId = MutableStateFlow<String?>(null)
         val currentScheduleGroupId: StateFlow<String?> = _currentScheduleGroupId.asStateFlow()
 
+        // 🆕 v9: 현재 스케줄 타입 (리뷰 피드백 반영)
+        private val _currentScheduleType = MutableStateFlow<com.allday.detoxy.domain.model.ScheduleType?>(null)
+        val currentScheduleType: StateFlow<com.allday.detoxy.domain.model.ScheduleType?> = _currentScheduleType.asStateFlow()
+
         /**
          * 타이머 시작
          */
@@ -293,8 +297,17 @@ class FocusTimerService : Service() {
         // 🆕 v0.10.1: 작동 중인 AutoRun/ScheduleGroup 정보 저장
         _currentAutoRunId.value = autoRunId
         _currentScheduleGroupId.value = scheduleGroupId
+        // 🆕 v9 리뷰 피드백: 스케줄 타입 결정
+        // - autoRunId가 있으면 TIME_BASED (시간 기반 자동 실행)
+        // - autoRunId가 없고 scheduleGroupId가 있으면 LOCATION_BASED (위치 기반 자동 실행)
+        // - 둘 다 없으면 수동 타이머 (TIME_BASED 기본값)
+        _currentScheduleType.value = when {
+            autoRunId != null -> com.allday.detoxy.domain.model.ScheduleType.TIME_BASED
+            scheduleGroupId != null -> com.allday.detoxy.domain.model.ScheduleType.LOCATION_BASED
+            else -> com.allday.detoxy.domain.model.ScheduleType.TIME_BASED
+        }
         
-        Log.d(TAG, "Timer started: $totalSec seconds, autoRunId=$autoRunId, scheduleGroupId=$scheduleGroupId")
+        Log.d(TAG, "Timer started: $totalSec seconds, autoRunId=$autoRunId, scheduleGroupId=$scheduleGroupId, scheduleType=${_currentScheduleType.value}")
 
         // 🆕 위치 기반 자동 실행 AutoRunLog sessionId 업데이트
         // scheduleGroupId가 있는 경우 (위치 기반으로 활성화된 시간표일 수 있음)
@@ -442,12 +455,12 @@ class FocusTimerService : Service() {
             Log.e(TAG, "❌ Failed to release WakeLock: ${e.message}", e)
         }
 
-        // AccessibilityService 비활성화
+        // AccessibilityService 비활성화 (scheduleInfoJson은 지연 초기화)
         FocusAccessibilityService.isTimerRunning = false
         FocusAccessibilityService.remainingSeconds = 0
         FocusAccessibilityService.totalSeconds = 0
         FocusAccessibilityService.currentSessionId = null
-        FocusAccessibilityService.currentScheduleInfoJson = null  // 🆕 v9: 초기화
+        // 🆕 v9 리뷰 피드백: currentScheduleInfoJson은 지연 초기화 (레이스 컨디션 방지)
         Log.i(TAG, "✅ AccessibilityService deactivated (isTimerRunning=false)")
 
         // DND 모드 비활성화
@@ -513,15 +526,23 @@ class FocusTimerService : Service() {
             }
         }
 
+        // 🆕 v9 리뷰 피드백: 스케줄 메타데이터 초기화를 지연시켜 레이스 컨디션 방지
+        // TimerViewModel.onTimerFinish()가 StateFlow 변경을 감지하고 값을 읽을 시간을 줌
         // 상태 초기화 (세션 ID는 나중에 null로 설정)
         _remainingSeconds.value = 0
-        _currentAutoRunId.value = null         // 🆕 v0.10.1
-        _currentScheduleGroupId.value = null   // 🆕 v0.10.1
 
-        // 세션 저장 완료 후 세션 ID 초기화 및 Service 종료
+        // 세션 저장 완료 후 세션 ID 및 스케줄 메타데이터 초기화, Service 종료
         serviceScope?.launch {
-            delay(1500) // 세션 저장 완료 대기
+            delay(1500) // 세션 저장 완료 및 ViewModel 처리 대기
+            
+            // 🆕 v9: 스케줄 메타데이터 초기화 (지연 후)
+            _currentAutoRunId.value = null
+            _currentScheduleGroupId.value = null
+            _currentScheduleType.value = null
             _currentSessionId.value = null
+            FocusAccessibilityService.currentScheduleInfoJson = null  // 지연 초기화
+            
+            Log.d(TAG, "✅ Schedule metadata cleared after delay")
             stopSelf()
         }
     }

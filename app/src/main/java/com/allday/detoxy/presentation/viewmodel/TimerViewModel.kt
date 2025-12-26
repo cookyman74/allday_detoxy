@@ -2,23 +2,33 @@ package com.allday.detoxy.presentation.viewmodel
 
 import android.app.Application
 import android.os.Build
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.allday.detoxy.core.manager.DndManager
+import com.allday.detoxy.core.utils.PreferenceManager
+import com.allday.detoxy.data.local.converter.ScheduleInfoConverter
+import com.allday.detoxy.data.local.dao.FocusSessionTodoResultDao
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
 import com.allday.detoxy.data.local.entity.FocusSession
+import com.allday.detoxy.data.local.entity.FocusSessionTodoResultEntity
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.data.local.entity.UserSettings
 import com.allday.detoxy.domain.manager.GamificationManager
 import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.domain.model.FocusState
+import com.allday.detoxy.domain.model.ScheduleInfo
+import com.allday.detoxy.domain.model.ScheduleType
+import com.allday.detoxy.domain.model.TodoCompletionStatus
 import com.allday.detoxy.domain.repository.FocusRepository
 import com.allday.detoxy.domain.repository.FocusSettingsRepository
+import com.allday.detoxy.domain.util.SessionEndDialogType
+import com.allday.detoxy.domain.util.TodoResultBuilder
+import com.allday.detoxy.domain.util.resolveSessionEndDialogType
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 import com.allday.detoxy.service.overlay.LockOverlayService
 import com.allday.detoxy.service.timer.FocusTimerService
 import dagger.hilt.android.lifecycle.HiltViewModel
-import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -53,7 +63,8 @@ class TimerViewModel @Inject constructor(
     private val settingsRepository: FocusSettingsRepository,
     private val gamificationManager: GamificationManager,
     private val timeBasedAutoRunDao: TimeBasedAutoRunDao,
-    private val presetRepository: com.allday.detoxy.data.repository.CustomTimerPresetRepository
+    private val presetRepository: com.allday.detoxy.data.repository.CustomTimerPresetRepository,
+    private val todoResultDao: FocusSessionTodoResultDao  // 🆕 v9
 ) : ViewModel() {
 
     // DndManager 인스턴스
@@ -121,6 +132,23 @@ class TimerViewModel @Inject constructor(
     // 🆕 마지막 선택된 타이머 스타일 인덱스 (0: LiquidRing, 1: MinimalFlux, 2: GlassSector)
     private val _selectedTimerStyleIndex = MutableStateFlow(0)
     val selectedTimerStyleIndex: StateFlow<Int> = _selectedTimerStyleIndex.asStateFlow()
+    
+    // 🆕 v9: 세션 종료 다이얼로그 상태
+    private val _showTodoDialog = MutableStateFlow(false)
+    val showTodoDialog: StateFlow<Boolean> = _showTodoDialog.asStateFlow()
+    
+    private val _showGoalDialog = MutableStateFlow(false)
+    val showGoalDialog: StateFlow<Boolean> = _showGoalDialog.asStateFlow()
+    
+    private val _currentScheduleInfo = MutableStateFlow<ScheduleInfo?>(null)
+    val currentScheduleInfo: StateFlow<ScheduleInfo?> = _currentScheduleInfo.asStateFlow()
+    
+    // 🆕 v9: 세션 메타데이터 (리뷰 피드백 반영)
+    // 세션 시작 시 저장하여 종료 시 안정적으로 술
+    private var currentScheduleGroupId: String? = null
+    private var currentScheduleType: ScheduleType = ScheduleType.TIME_BASED
+    
+    private val scheduleInfoConverter = ScheduleInfoConverter()
 
     init {
         // 사용자 설정 초기화 (최초 실행 시)
@@ -366,7 +394,19 @@ class TimerViewModel @Inject constructor(
         FocusAccessibilityService.isTimerRunning = false
         FocusAccessibilityService.remainingSeconds = 0
         FocusAccessibilityService.totalSeconds = 0
+        
+        // 🆕 v9: 스케줄 정보 저장 (다이얼로그 표시용)
+        val scheduleInfoJson = FocusAccessibilityService.currentScheduleInfoJson
+        _currentScheduleInfo.value = scheduleInfoJson?.let { scheduleInfoConverter.toScheduleInfo(it) }
+        Log.d(TAG, "🎯 Current schedule info: ${_currentScheduleInfo.value}")
+        
+        // 🆕 v9 리뷰 피드백: 세션 메타데이터 저장 (종료 시점에 읽으면 null일 수 있음)
+        currentScheduleGroupId = FocusTimerService.currentScheduleGroupId.value
+        currentScheduleType = FocusTimerService.currentScheduleType.value ?: ScheduleType.TIME_BASED
+        Log.d(TAG, "📦 Saved schedule metadata: groupId=$currentScheduleGroupId, type=$currentScheduleType")
+        
         FocusAccessibilityService.currentSessionId = null
+        FocusAccessibilityService.currentScheduleInfoJson = null
         Log.d(TAG, "✅ AccessibilityService state cleared")
         
         // 3. DND 모드 비활성화
@@ -375,7 +415,7 @@ class TimerViewModel @Inject constructor(
             Log.d(TAG, "✅ DND mode disabled")
         }
 
-        // 4. 세션 종료 및 포인트/스트릭 업데이트 (Week 3)
+        // 4. 세션 종료 처리
         sessionIdToUse?.let { sessionId ->
             viewModelScope.launch {
                 // 세션 종료
@@ -404,11 +444,14 @@ class TimerViewModel @Inject constructor(
                             Log.d(TAG, "✅ Streak updated: ${updatedSettings.currentStreak}")
                         }
                     }
+                    
+                    // 🆕 v9: 세션 종료 다이얼로그 표시 여부 결정
+                    showSessionEndDialog()
                 } else {
                     Log.d(TAG, "⚠️ Session failed, no points or streak update")
+                    currentSessionId = null
                 }
-
-                currentSessionId = null
+                
                 Log.d(TAG, "✅ Timer finish processing completed")
             }
         } ?: run {
@@ -444,6 +487,9 @@ class TimerViewModel @Inject constructor(
                                 repository.updateStreak(updatedSettings.currentStreak, updatedSettings.lastSuccessDate ?: "")
                                 Log.d(TAG, "✅ Streak updated (fallback): ${updatedSettings.currentStreak}")
                             }
+                            
+                            // 🆕 v9: 세션 종료 다이얼로그 표시
+                            showSessionEndDialog()
                         }
                     } else {
                         Log.e(TAG, "❌ No active session found in recent 5 minutes. Cannot end session.")
@@ -452,6 +498,135 @@ class TimerViewModel @Inject constructor(
                     Log.e(TAG, "❌ Failed to find and end session (fallback): ${e.message}", e)
                 }
             }
+        }
+    }
+    
+    /**
+     * 🆕 v9: 세션 종료 다이얼로그 표시 여부 결정
+     */
+    private fun showSessionEndDialog() {
+        val scheduleInfo = _currentScheduleInfo.value
+        val dialogType = resolveSessionEndDialogType(scheduleInfo)
+        
+        Log.d(TAG, "🎯 Session end dialog type: $dialogType")
+        
+        when (dialogType) {
+            is SessionEndDialogType.Skip -> {
+                // 다이얼로그 없이 바로 종료 (리뷰 피드백: _currentScheduleInfo도 초기화)
+                Log.d(TAG, "📝 No dialog needed, finishing session")
+                currentSessionId = null
+                _currentScheduleInfo.value = null
+                currentScheduleGroupId = null
+            }
+            is SessionEndDialogType.GoalOnly -> {
+                _showGoalDialog.value = true
+            }
+            is SessionEndDialogType.TodoChecklist -> {
+                _showTodoDialog.value = true
+            }
+        }
+    }
+    
+    /**
+     * 🆕 v9: 할일 체크 다이얼로그 완료 콜백
+     */
+    fun onTodoDialogComplete(responses: Map<String, TodoCompletionStatus>) {
+        _showTodoDialog.value = false
+        
+        val scheduleInfo = _currentScheduleInfo.value ?: return
+        val sessionId = currentSessionId
+        
+        viewModelScope.launch {
+            try {
+                // 리뷰 피드백: 세션 시작 시 저장한 값 사용 (종료 시점에 읽으면 null일 수 있음)
+                val scheduleGroupId = currentScheduleGroupId ?: FocusTimerService.currentScheduleGroupId.value ?: "unknown"
+                val scheduleType = currentScheduleType
+                val todoResults = TodoResultBuilder.buildTodoResult(scheduleGroupId, scheduleInfo, responses)
+                
+                if (todoResults != null && sessionId != null) {
+                    val resultEntity = FocusSessionTodoResultEntity(
+                        sessionId = sessionId,
+                        scheduleId = scheduleGroupId,
+                        scheduleType = scheduleType,
+                        scheduleTitleSnapshot = TodoResultBuilder.getScheduleTitleSnapshot(scheduleInfo, ""),
+                        todoResultsJson = com.allday.detoxy.data.local.converter.TodoResultConverter.toJson(todoResults),
+                        completedAt = System.currentTimeMillis()
+                    )
+                    todoResultDao.insert(resultEntity)
+                    Log.i(TAG, "✅ Todo results saved: ${todoResults.size} items")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to save todo results: ${e.message}", e)
+            } finally {
+                currentSessionId = null
+                _currentScheduleInfo.value = null
+                currentScheduleGroupId = null  // 리뷰 피드백: 메타데이터도 초기화
+            }
+        }
+    }
+    
+    /**
+     * 🆕 v9: 목표 달성 다이얼로그 완료 콜백
+     */
+    fun onGoalDialogComplete(completed: Boolean) {
+        _showGoalDialog.value = false
+        
+        val scheduleInfo = _currentScheduleInfo.value ?: return
+        val sessionId = currentSessionId
+        
+        // 리뷰 피드백: 세션 시작 시 저장한 값 사용
+        val scheduleGroupId = currentScheduleGroupId ?: FocusTimerService.currentScheduleGroupId.value ?: "unknown"
+        val scheduleType = currentScheduleType
+        
+        val goalStatus = if (completed) TodoCompletionStatus.COMPLETED 
+                         else TodoCompletionStatus.NOT_COMPLETED
+        
+        // goalId에 대한 응답으로 변환
+        val responses = mapOf("goal:$scheduleGroupId" to goalStatus)
+        
+        viewModelScope.launch {
+            try {
+                val todoResults = TodoResultBuilder.buildTodoResult(scheduleGroupId, scheduleInfo, responses)
+                
+                if (todoResults != null && sessionId != null) {
+                    val resultEntity = FocusSessionTodoResultEntity(
+                        sessionId = sessionId,
+                        scheduleId = scheduleGroupId,
+                        scheduleType = scheduleType,
+                        scheduleTitleSnapshot = scheduleInfo.title,
+                        todoResultsJson = com.allday.detoxy.data.local.converter.TodoResultConverter.toJson(todoResults),
+                        completedAt = System.currentTimeMillis()
+                    )
+                    todoResultDao.insert(resultEntity)
+                    Log.i(TAG, "✅ Goal result saved: completed=$completed")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to save goal result: ${e.message}", e)
+            } finally {
+                currentSessionId = null
+                _currentScheduleInfo.value = null
+                currentScheduleGroupId = null
+            }
+        }
+    }
+    
+    /**
+     * 🆕 v9: 다이얼로그 닫기 (무응답 처리)
+     */
+    fun onDialogDismiss() {
+        val scheduleInfo = _currentScheduleInfo.value
+        
+        if (_showTodoDialog.value) {
+            // 할일 다이얼로그 무응답 처리
+            scheduleInfo?.let {
+                val responses = TodoResultBuilder.handleNoResponse(it.todos)
+                onTodoDialogComplete(responses)
+            }
+            _showTodoDialog.value = false
+        } else if (_showGoalDialog.value) {
+            // 목표 다이얼로그 무응답 처리 (미완료로 기록)
+            onGoalDialogComplete(false)
+            _showGoalDialog.value = false
         }
     }
 

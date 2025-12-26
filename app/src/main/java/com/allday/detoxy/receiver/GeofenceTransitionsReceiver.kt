@@ -312,6 +312,13 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
                 if (result.isSuccess) {
                     Log.i(TAG, "Location-based schedule activated: ${winner.label}")
                     
+                    // 🆕 v9: 위치 기반 스케줄 scheduleInfoJson 설정 (리뷰 피드백)
+                    // 오버레이/세션 종료 다이얼로그에서 목표·할일 표시용
+                    winner.scheduleInfoJson?.let { json ->
+                        com.allday.detoxy.service.accessibility.FocusAccessibilityService.currentScheduleInfoJson = json
+                        Log.i(TAG, "✅ v9: currentScheduleInfoJson set from location-based schedule")
+                    }
+                    
                     // 🔧 Critical Fix: 위치 기반 자동 실행 AutoRunLog 기록 (winner 위치 사용)
                     try {
                         val log = AutoRunLog(

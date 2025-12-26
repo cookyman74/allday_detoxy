@@ -1,6 +1,7 @@
 package com.allday.detoxy.domain.util
 
 import com.allday.detoxy.domain.model.ScheduleInfo
+import com.allday.detoxy.domain.model.ScheduleTodo
 import com.allday.detoxy.domain.model.TodoCompletionStatus
 import com.allday.detoxy.domain.model.TodoStatus
 
@@ -10,6 +11,25 @@ import com.allday.detoxy.domain.model.TodoStatus
  * 세션 종료 시 사용자 응답과 ScheduleInfo를 기반으로 TodoStatus 목록을 생성합니다.
  */
 object TodoResultBuilder {
+
+    /**
+     * 🆕 v9: 무응답(30초 타임아웃) 시 기본 상태 맵 생성
+     * 
+     * - 필수 항목: NOT_COMPLETED (미완료)
+     * - 일반 항목: NO_RESPONSE (미응답)
+     * 
+     * @param todos 할일 목록
+     * @return 할일ID -> 상태 맵
+     */
+    fun handleNoResponse(todos: List<ScheduleTodo>): Map<String, TodoCompletionStatus> {
+        return todos.associate { todo ->
+            todo.id to if (todo.isRequired) {
+                TodoCompletionStatus.NOT_COMPLETED  // 필수 항목은 미완료
+            } else {
+                TodoCompletionStatus.NO_RESPONSE    // 일반 항목은 미응답
+            }
+        }
+    }
 
     /**
      * 할일 결과 생성
