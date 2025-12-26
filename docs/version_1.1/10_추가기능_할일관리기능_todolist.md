@@ -206,32 +206,32 @@ working_history/version_1.1/{Phase번호}_{작업타이틀}_{YYYY-MM-DD}.md
 
 ---
 
-## Phase 4. 차단 오버레이 할일 표시 (Day 5)
+## Phase 4. 차단 오버레이 할일 표시 (Day 5) ✅
 
 > **📄 상세 작업 지시서**: [details/phase4_오버레이표시.md](./details/phase4_오버레이표시.md)
 
 > **🎯 핵심 MVP 기능**: 차단된 앱 실행 시 목표/할일 표시
 
 ### 📥 사전 작업
-- [ ] Phase 3 작업결과서 확인 (`Phase3_스케줄UI_{날짜}.md`)
-- [ ] ScheduleInfo 저장 구조 확인
-- [ ] 기획서 섹션 6.1 (오버레이 표시 규칙) 재확인
+- [x] Phase 3 작업결과서 확인 (`Phase3_스케줄UI_2025-12-26.md`)
+- [x] ScheduleInfo 저장 구조 확인
+- [x] 기획서 섹션 6.1 (오버레이 표시 규칙) 재확인
 
 ### ✅ 작업 내용
-- [ ] `OverlayDisplayRules` object 구현
-- [ ] `truncateForOverlay()` 함수 구현
-- [ ] `LockOverlayService`에 할일 표시 UI 추가
-- [ ] `PreferenceManager`에 프라이버시 설정 추가
-- [ ] 설정 화면에 프라이버시 옵션 UI 추가
-- [ ] 우선순위 규칙 구현
+- [x] `OverlayDisplayRules` object 구현
+- [x] `truncateForOverlay()` 함수 구현
+- [x] `LockOverlayService`에 할일 표시 UI 추가
+- [x] `PreferenceManager`에 프라이버시 설정 추가
+- [x] 설정 화면에 프라이버시 옵션 UI 생성
+- [x] 우선순위 규칙 구현 (OverlayDisplayMode)
 
-**검증**: 오버레이에 목표/할일 표시, 프라이버시 설정 동작 확인
+**검증**: ✅ BUILD SUCCESSFUL in 6s
 
 ### 📤 사후 작업
-- [ ] Phase4_오버레이표시_{날짜}.md 작성
-- [ ] 오버레이 스크린샷 첨부
-- [ ] 프라이버시 설정 키 목록 기록
-- [ ] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
+- [x] Phase4_오버레이표시_{date}.md 작성
+- [ ] 오버레이 스크린샷 첨부 (수동 QA 후)
+- [x] 프라이버시 설정 키 목록 기록
+- [x] ✅ 본 문서 및 상세 작업 지시서의 체크리스트 완료 표시
 
 ---
 

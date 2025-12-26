@@ -211,6 +211,7 @@ class FocusTimerService : Service() {
                 if (scope == null) {
                     Log.e(TAG, "❌ serviceScope is null, cannot start timer!")
                     // serviceScope가 null이면 직접 시작 (fallback)
+                    FocusAccessibilityService.currentScheduleInfoJson = null  // 🆕 v9
                     startTimerInternal(durationMinutes, sessionId, presetType, autoRunId, null)
                 } else {
                     scope.launch {
@@ -221,6 +222,13 @@ class FocusTimerService : Service() {
                                     timeBasedAutoRunDao.getById(autoRunId).first()
                                 }
                                 Log.d(TAG, "✅ Found autoRun: ${autoRun?.id}, scheduleGroupId: ${autoRun?.scheduleGroupId}")
+                                
+                                // 🆕 v9: scheduleInfoJson 설정
+                                autoRun?.scheduleInfoJson?.let { json ->
+                                    FocusAccessibilityService.currentScheduleInfoJson = json
+                                    Log.i(TAG, "✅ currentScheduleInfoJson set from autoRun")
+                                }
+                                
                                 autoRun?.scheduleGroupId
                             } catch (e: Exception) {
                                 Log.e(TAG, "❌ Failed to get scheduleGroupId from autoRunId: ${e.message}", e)
@@ -439,6 +447,7 @@ class FocusTimerService : Service() {
         FocusAccessibilityService.remainingSeconds = 0
         FocusAccessibilityService.totalSeconds = 0
         FocusAccessibilityService.currentSessionId = null
+        FocusAccessibilityService.currentScheduleInfoJson = null  // 🆕 v9: 초기화
         Log.i(TAG, "✅ AccessibilityService deactivated (isTimerRunning=false)")
 
         // DND 모드 비활성화
@@ -688,6 +697,7 @@ class FocusTimerService : Service() {
         FocusAccessibilityService.remainingSeconds = 0
         FocusAccessibilityService.totalSeconds = 0
         FocusAccessibilityService.currentSessionId = null
+        FocusAccessibilityService.currentScheduleInfoJson = null  // 🆕 v9: 초기화
         Log.i(TAG, "✅ AccessibilityService deactivated on destroy")
         
         // DND 모드 비활성화 (비정상 종료 대응)

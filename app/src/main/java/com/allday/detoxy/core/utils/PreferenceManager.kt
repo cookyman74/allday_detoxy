@@ -17,6 +17,11 @@ class PreferenceManager(context: Context) {
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
         private const val KEY_PENDING_SUCCESS_ANIMATION = "pending_success_animation" // 🆕 성공 애니메이션 대기 플래그
         private const val KEY_LAST_TIMER_STYLE_INDEX = "last_timer_style_index" // 🆕 마지막 타이머 스타일
+        
+        // 🆕 v9: 오버레이 프라이버시 설정 키
+        private const val KEY_SHOW_TODO_OVERLAY = "show_todo_overlay"
+        private const val KEY_SHOW_DETAILED_TODO_OVERLAY = "show_detailed_todo_overlay"
+        private const val KEY_HIDE_GOAL_OVERLAY = "hide_goal_overlay"
     }
 
     /**
@@ -100,5 +105,36 @@ class PreferenceManager(context: Context) {
     fun resetOnboarding() {
         prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETED, false).apply()
     }
+    
+    // ========================================
+    // 🆕 v9: 오버레이 프라이버시 설정
+    // ========================================
+    
+    /**
+     * 오버레이에 목표/할일 표시 여부
+     * true: 목표 표시 (기본값)
+     * false: 목표 숨김
+     */
+    var showTodoOnOverlay: Boolean
+        get() = prefs.getBoolean(KEY_SHOW_TODO_OVERLAY, true)
+        set(value) = prefs.edit().putBoolean(KEY_SHOW_TODO_OVERLAY, value).apply()
+    
+    /**
+     * 오버레이에 상세 할일 목록 표시 여부
+     * true: 목표 + 할일 목록 표시
+     * false: 목표만 표시 (기본값)
+     */
+    var showDetailedTodoOnOverlay: Boolean
+        get() = prefs.getBoolean(KEY_SHOW_DETAILED_TODO_OVERLAY, false)
+        set(value) = prefs.edit().putBoolean(KEY_SHOW_DETAILED_TODO_OVERLAY, value).apply()
+    
+    /**
+     * 오버레이에서 목표 숨기기 (이모지만 표시)
+     * true: 🎯 이모지만 표시 (프라이버시 보호)
+     * false: 텍스트 표시 (기본값)
+     */
+    var hideGoalOnOverlay: Boolean
+        get() = prefs.getBoolean(KEY_HIDE_GOAL_OVERLAY, false)
+        set(value) = prefs.edit().putBoolean(KEY_HIDE_GOAL_OVERLAY, value).apply()
 }
 

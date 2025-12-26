@@ -100,6 +100,13 @@ class FocusAccessibilityService : AccessibilityService() {
 
         @Volatile
         var otherAppsEnabled: Boolean = false
+        
+        /**
+         * 🆕 v9: 현재 스케줄 정보 JSON (목표/할일)
+         * 오버레이에 표시할 스케줄 정보
+         */
+        @Volatile
+        var currentScheduleInfoJson: String? = null
 
         /**
          * 차단 설정 업데이트 (TimerViewModel에서 호출)
@@ -298,7 +305,8 @@ class FocusAccessibilityService : AccessibilityService() {
             LockOverlayService.showOverlay(
                 context = applicationContext,
                 remainingSeconds = remainingSeconds,
-                totalSeconds = totalSeconds
+                totalSeconds = totalSeconds,
+                scheduleInfoJson = currentScheduleInfoJson  // 🆕 v9: 목표/할일 정보 전달
             )
             Log.d(TAG, "🔒 Lock overlay display requested: $remainingSeconds / $totalSeconds seconds")
         } catch (e: Exception) {

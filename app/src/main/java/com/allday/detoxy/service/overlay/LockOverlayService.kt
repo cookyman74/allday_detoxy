@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.graphics.Typeface
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -15,6 +16,7 @@ import android.view.LayoutInflater
 import android.view.WindowManager
 import android.view.View
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.lifecycle.LifecycleService
@@ -22,6 +24,13 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.*
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
+import com.allday.detoxy.core.utils.PreferenceManager
+import com.allday.detoxy.data.local.converter.ScheduleInfoConverter
+import com.allday.detoxy.domain.model.ScheduleInfo
+import com.allday.detoxy.presentation.overlay.OverlayDisplayMode
+import com.allday.detoxy.presentation.overlay.OverlayDisplayRules
+import com.allday.detoxy.presentation.overlay.determineOverlayDisplayMode
+import com.allday.detoxy.presentation.overlay.truncateForOverlay
 import com.allday.detoxy.service.accessibility.FocusAccessibilityService
 
 /**
@@ -45,11 +54,13 @@ class LockOverlayService : LifecycleService() {
 
         const val EXTRA_REMAINING_SECONDS = "remaining_seconds"
         const val EXTRA_TOTAL_SECONDS = "total_seconds"
+        const val EXTRA_SCHEDULE_INFO_JSON = "schedule_info_json"  // 🆕 v9
 
         /**
          * 오버레이 표시
+         * @param scheduleInfoJson 스케줄 정보 JSON (목표/할일)
          */
-        fun showOverlay(context: Context, remainingSeconds: Int, totalSeconds: Int) {
+        fun showOverlay(context: Context, remainingSeconds: Int, totalSeconds: Int, scheduleInfoJson: String? = null) {
             Log.d(TAG, "📞 showOverlay() called - remainingSeconds: $remainingSeconds, totalSeconds: $totalSeconds")
 
             // 🔥 v0.10.1.4: 권한 확인 후 권한 없으면 return
@@ -66,6 +77,7 @@ class LockOverlayService : LifecycleService() {
                 action = ACTION_SHOW_OVERLAY
                 putExtra(EXTRA_REMAINING_SECONDS, remainingSeconds)
                 putExtra(EXTRA_TOTAL_SECONDS, totalSeconds)
+                putExtra(EXTRA_SCHEDULE_INFO_JSON, scheduleInfoJson)  // 🆕 v9
             }
 
             Log.d(TAG, "🚀 Starting LockOverlayService with ACTION_SHOW_OVERLAY")
@@ -100,10 +112,21 @@ class LockOverlayService : LifecycleService() {
     private var overlayView: View? = null
     private var isOverlayShowing = false
     private var timerJob: Job? = null
+    
+    // 🆕 v9: 프라이버시 설정 및 목표/할일
+    private lateinit var preferenceManager: PreferenceManager
+    private val scheduleInfoConverter = ScheduleInfoConverter()
+    private var currentScheduleInfo: ScheduleInfo? = null
 
     // UI 요소
     private var timerTextView: TextView? = null
     private var progressBar: ProgressBar? = null
+    private var goalSection: LinearLayout? = null
+    private var goalHeader: TextView? = null
+    private var goalText: TextView? = null
+    private var todoListContainer: LinearLayout? = null
+    private var todoMoreText: TextView? = null
+    private var emojiOnlyView: TextView? = null
 
     // 타이머 상태
     private var currentRemainingSeconds = 0
@@ -112,6 +135,7 @@ class LockOverlayService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        preferenceManager = PreferenceManager(this)  // 🆕 v9
         createNotificationChannel()
 
         Log.d(TAG, "LockOverlayService created")
@@ -130,7 +154,12 @@ class LockOverlayService : LifecycleService() {
             ACTION_SHOW_OVERLAY -> {
                 val remainingSeconds = intent.getIntExtra(EXTRA_REMAINING_SECONDS, 0)
                 val totalSeconds = intent.getIntExtra(EXTRA_TOTAL_SECONDS, 0)
+                val scheduleInfoJson = intent.getStringExtra(EXTRA_SCHEDULE_INFO_JSON)  // 🆕 v9
                 Log.d(TAG, "📍 ACTION_SHOW_OVERLAY received - remainingSeconds: $remainingSeconds, totalSeconds: $totalSeconds")
+                
+                // 🆕 v9: 스케줄 정보 파싱
+                currentScheduleInfo = scheduleInfoJson?.let { scheduleInfoConverter.toScheduleInfo(it) }
+                
                 showOverlay(remainingSeconds, totalSeconds)
             }
             // ACTION_SHOW_SUCCESS 제거됨 (v0.10.2: 오버레이 애니메이션 삭제)
@@ -202,9 +231,20 @@ class LockOverlayService : LifecycleService() {
             timerTextView = overlayView?.findViewById(R.id.timerText)
             progressBar = overlayView?.findViewById(R.id.progressBar)
             val closeButton = overlayView?.findViewById<Button>(R.id.closeButton)
+            
+            // 🆕 v9: 목표/할일 UI 참조
+            goalSection = overlayView?.findViewById(R.id.goalSection)
+            goalHeader = overlayView?.findViewById(R.id.goalHeader)
+            goalText = overlayView?.findViewById(R.id.goalText)
+            todoListContainer = overlayView?.findViewById(R.id.todoListContainer)
+            todoMoreText = overlayView?.findViewById(R.id.todoMoreText)
+            emojiOnlyView = overlayView?.findViewById(R.id.emojiOnlyView)
 
             // 초기 UI 업데이트
             updateTimerDisplay()
+            
+            // 🆕 v9: 목표/할일 표시
+            updateGoalTodoDisplay()
 
             // 닫기 버튼 클릭 리스너 (오버레이 숨김 + 홈 화면 이동, 타이머는 계속 실행)
             closeButton?.setOnClickListener {
@@ -338,6 +378,13 @@ class LockOverlayService : LifecycleService() {
             overlayView = null
             timerTextView = null
             progressBar = null
+            // 🔧 리뷰 반영: 추가된 뷰 참조 해제
+            goalSection = null
+            goalHeader = null
+            goalText = null
+            todoListContainer = null
+            todoMoreText = null
+            emojiOnlyView = null
             isOverlayShowing = false
             Log.d(TAG, "Overlay hidden (stopTimer: $stopTimer)")
         } catch (e: Exception) {
@@ -416,6 +463,134 @@ class LockOverlayService : LifecycleService() {
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
             .build()
+    }
+
+    /**
+     * 🆕 v9: 목표/할일 표시 업데이트
+     */
+    private fun updateGoalTodoDisplay() {
+        val displayMode = determineOverlayDisplayMode(
+            info = currentScheduleInfo,
+            showTodo = preferenceManager.showTodoOnOverlay,
+            showDetailedTodo = preferenceManager.showDetailedTodoOnOverlay,
+            hideGoal = preferenceManager.hideGoalOnOverlay
+        )
+        
+        Log.d(TAG, "🎯 Goal/Todo display mode: $displayMode")
+        
+        // 모든 관련 뷰 초기화
+        goalSection?.visibility = View.GONE
+        emojiOnlyView?.visibility = View.GONE
+        todoListContainer?.visibility = View.GONE
+        todoMoreText?.visibility = View.GONE
+        
+        when (displayMode) {
+            OverlayDisplayMode.HIDDEN -> {
+                // 아무것도 표시하지 않음
+            }
+            
+            OverlayDisplayMode.EMOJI_ONLY -> {
+                emojiOnlyView?.visibility = View.VISIBLE
+            }
+            
+            OverlayDisplayMode.GOAL_ONLY -> {
+                currentScheduleInfo?.let { info ->
+                    if (info.title.isNotBlank()) {
+                        goalSection?.visibility = View.VISIBLE
+                        goalHeader?.text = "🎯 오늘의 목표"
+                        goalText?.text = truncateForOverlay(info.title, OverlayDisplayRules.MAX_GOAL_TEXT_LENGTH)
+                    }
+                }
+            }
+            
+            OverlayDisplayMode.GOAL_AND_TODOS -> {
+                currentScheduleInfo?.let { info ->
+                    goalSection?.visibility = View.VISIBLE
+                    goalHeader?.text = "📋 지금 해야 할 일"
+                    
+                    if (info.title.isNotBlank()) {
+                        goalText?.visibility = View.VISIBLE
+                        goalText?.text = truncateForOverlay(info.title, OverlayDisplayRules.MAX_GOAL_TEXT_LENGTH)
+                    } else {
+                        goalText?.visibility = View.GONE
+                    }
+                    
+                    // 할일 목록 표시
+                    if (info.todos.isNotEmpty()) {
+                        todoListContainer?.visibility = View.VISIBLE
+                        todoListContainer?.removeAllViews()
+                        
+                        val displayTodos = info.todos.take(OverlayDisplayRules.MAX_TODO_DISPLAY_COUNT)
+                        displayTodos.forEach { todo ->
+                            val todoView = createTodoItemView(todo)
+                            todoListContainer?.addView(todoView)
+                        }
+                        
+                        // 더 있음 표시
+                        val remaining = info.todos.size - OverlayDisplayRules.MAX_TODO_DISPLAY_COUNT
+                        if (remaining > 0) {
+                            todoMoreText?.visibility = View.VISIBLE
+                            todoMoreText?.text = "...외 ${remaining}개"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * 🆕 v9: 개별 할일 항목 뷰 생성
+     */
+    private fun createTodoItemView(todo: com.allday.detoxy.domain.model.ScheduleTodo): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 4.dpToPx()
+            }
+            
+            // 체크박스 아이콘
+            addView(TextView(context).apply {
+                text = "□"
+                setTextColor(0xB3FFFFFF.toInt())
+                textSize = 12f
+            })
+            
+            // 할일 내용
+            addView(TextView(context).apply {
+                text = truncateForOverlay(todo.content, OverlayDisplayRules.MAX_TODO_TEXT_LENGTH)
+                setTextColor(0xFFFFFFFF.toInt())
+                textSize = 13f
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = 8.dpToPx()
+                }
+            })
+            
+            // 필수 뱃지
+            if (todo.isRequired) {
+                addView(TextView(context).apply {
+                    text = "필수"
+                    setTextColor(0xFFFF6B6B.toInt())
+                    textSize = 10f
+                    setTypeface(null, Typeface.BOLD)
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        marginStart = 4.dpToPx()
+                    }
+                })
+            }
+        }
+    }
+    
+    /**
+     * dp를 px로 변환
+     */
+    private fun Int.dpToPx(): Int {
+        return (this * resources.displayMetrics.density).toInt()
     }
 
     override fun onDestroy() {
