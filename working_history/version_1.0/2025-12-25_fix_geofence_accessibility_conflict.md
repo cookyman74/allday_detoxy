@@ -188,3 +188,53 @@ sealed class PermissionError {
 ./gradlew compileDebugKotlin
 # BUILD SUCCESSFUL
 ```
+
+---
+
+## 2026-01-01 추가 업데이트: goAsync() 호출 타이밍 수정 (v0.10.5)
+
+### 발견된 핵심 문제
+
+**`GeofenceTransitionsReceiver`에서 `goAsync()` 호출이 너무 늦음**
+
+```kotlin
+// 문제 코드 (수정 전)
+val entryPoint = EntryPointAccessors.fromApplication(...)  // 동기 작업 (메인 스레드)
+val locationDao = entryPoint.locationBasedAutoRunDao()     // 동기 작업
+val pendingResult = goAsync()  // ❌ 너무 늦음!
+```
+
+**영향**:
+- BroadcastReceiver는 메인 스레드에서 10초 제한
+- Hilt EntryPoint 초기화가 느리면 ANR 발생
+- 장기간 사용 시 시스템이 앱 프로세스를 강제 종료 → 접근성 서비스 크래시
+
+### 수정 내용
+
+**`goAsync()`를 가장 먼저 호출하고, 모든 동기 작업을 코루틴 내부로 이동**
+
+```kotlin
+// 수정 후
+val pendingResult = goAsync()  // ✅ 가장 먼저 호출
+
+scope.launch {
+    try {
+        val entryPoint = EntryPointAccessors.fromApplication(...)
+        // ... 나머지 로직
+    } finally {
+        pendingResult.finish()
+    }
+}
+```
+
+### 수정된 함수
+
+1. `handleGeofenceTrigger()` - Geofence 진입 처리
+2. `handleGeofenceExit()` - Geofence 이탈 처리
+
+### 빌드 검증
+
+```bash
+./gradlew compileDebugKotlin
+# BUILD SUCCESSFUL
+```

@@ -149,28 +149,30 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         Log.i(TAG, "📡 GPS Accuracy: ${gpsAccuracyMeters}m")
         Log.i(TAG, "📍 User location: (${userLocation.latitude}, ${userLocation.longitude})")
         
-        // EntryPoint를 통해 필요한 의존성 가져오기
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            GeofenceReceiverEntryPoint::class.java
-        )
+        // 🔧 v0.10.5 Critical Fix: goAsync()를 가장 먼저 호출하여 ANR 방지
+        // BroadcastReceiver는 메인 스레드에서 10초 제한이 있음
+        // EntryPoint 접근 등 동기 작업을 코루틴 내부로 이동해야 함
+        val pendingResult = goAsync()
         
+        // 🔧 v0.10.4: 디버깅 로그 강화
+        Log.i(TAG, "📍 [GEOFENCE_ENTER] Processing ${triggeringGeofences.size} geofence(s)")
+        val startTime = System.currentTimeMillis()
+                
+        scope.launch {
+            try {
+                Log.d(TAG, "⏱️ [GEOFENCE_ENTER] Coroutine started (${System.currentTimeMillis() - startTime}ms after trigger)")
+                
+                // 🔧 v0.10.5: EntryPoint 접근을 코루틴 내부로 이동 (메인 스레드 블로킹 방지)
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    GeofenceReceiverEntryPoint::class.java
+                )
+                
                 val locationDao = entryPoint.locationBasedAutoRunDao()
                 val scheduleManager = entryPoint.scheduleGroupManager()
                 val autoRunLogDao = entryPoint.autoRunLogDao()
                 val conflictResolver = entryPoint.locationConflictResolver()
                 val scheduleGroupDao = entryPoint.scheduleGroupDao()  // v8: manualOverrideState 확인용
-                
-                // 비동기 작업 (goAsync)
-                val pendingResult = goAsync()
-                
-                // 🔧 v0.10.4: 디버깅 로그 강화
-                Log.i(TAG, "📍 [GEOFENCE_ENTER] Processing ${triggeringGeofences.size} geofence(s)")
-                val startTime = System.currentTimeMillis()
-                
-        scope.launch {
-            try {
-                Log.d(TAG, "⏱️ [GEOFENCE_ENTER] Coroutine started (${System.currentTimeMillis() - startTime}ms after trigger)")
                 
                 // 🆕 Phase 3: 반경 내 모든 위치 수집 (충돌 해소를 위해)
                 val locationIds = triggeringGeofences.map { it.requestId }
@@ -422,18 +424,9 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         
         Log.i(TAG, "🚪 Geofence EXIT detected: ${triggeringGeofences.size} location(s)")
         
-        // EntryPoint를 통해 필요한 의존성 가져오기
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            GeofenceReceiverEntryPoint::class.java
-        )
-        
-        val locationDao = entryPoint.locationBasedAutoRunDao()
-        val scheduleManager = entryPoint.scheduleGroupManager()
-        val nonLocationScheduleManager = entryPoint.nonLocationScheduleManager()  // 🆕 Phase 4
-        val scheduleGroupDao = entryPoint.scheduleGroupDao()  // v8: manualOverrideState 확인용
-        
-        // 비동기 작업 (goAsync)
+        // 🔧 v0.10.5 Critical Fix: goAsync()를 가장 먼저 호출하여 ANR 방지
+        // BroadcastReceiver는 메인 스레드에서 10초 제한이 있음
+        // EntryPoint 접근 등 동기 작업을 코루틴 내부로 이동해야 함
         val pendingResult = goAsync()
         
         // 🔧 v0.10.4: 디버깅 로그 강화
@@ -443,6 +436,17 @@ class GeofenceTransitionsReceiver : BroadcastReceiver() {
         scope.launch {
             try {
                 Log.d(TAG, "⏱️ [GEOFENCE_EXIT] Coroutine started (${System.currentTimeMillis() - startTime}ms after trigger)")
+                
+                // 🔧 v0.10.5: EntryPoint 접근을 코루틴 내부로 이동 (메인 스레드 블로킹 방지)
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    GeofenceReceiverEntryPoint::class.java
+                )
+                
+                val locationDao = entryPoint.locationBasedAutoRunDao()
+                val scheduleManager = entryPoint.scheduleGroupManager()
+                val nonLocationScheduleManager = entryPoint.nonLocationScheduleManager()  // 🆕 Phase 4
+                val scheduleGroupDao = entryPoint.scheduleGroupDao()  // v8: manualOverrideState 확인용
                 
                 var anyScheduleDeactivated = false
                 
