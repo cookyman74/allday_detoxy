@@ -62,6 +62,13 @@ class FocusAccessibilityService : AccessibilityService() {
 
         @Volatile
         private var lastBlockTime: Long = 0
+        
+        /**
+         * 🆕 v0.10.4: 서비스 연결 상태 추적
+         * 크래시 감지를 위해 서비스가 실제로 연결되어 있는지 추적
+         */
+        @Volatile
+        var isServiceConnected: Boolean = false
 
         /**
          * 타이머 실행 상태
@@ -180,7 +187,11 @@ class FocusAccessibilityService : AccessibilityService() {
             
             // super.onServiceConnected() 호출 - 시스템에 서비스 연결 성공 알림
             super.onServiceConnected()
-            Log.i(TAG, "✅ [CONNECT] AccessibilityService connected successfully")
+            
+            // 🆕 v0.10.4: 서비스 연결 상태 추적 (크래시 감지용)
+            isServiceConnected = true
+            
+            Log.i(TAG, "✅ [CONNECT] AccessibilityService connected successfully (isServiceConnected=true)")
             
             // 서비스 상태 로깅
             Log.i(TAG, "📊 [CONNECT] Service state: isTimerRunning=$isTimerRunning, categories=${enabledCategories.size}, otherApps=$otherAppsEnabled")
@@ -347,6 +358,10 @@ class FocusAccessibilityService : AccessibilityService() {
     override fun onUnbind(intent: Intent?): Boolean {
         Log.i(TAG, "🔌 [UNBIND] AccessibilityService unbind (Thread: ${Thread.currentThread().name})")
         Log.i(TAG, "🔌 [UNBIND] Final state: isTimerRunning=$isTimerRunning, sessionId=$currentSessionId")
+        
+        // 🆕 v0.10.4: 서비스 연결 상태 초기화 (크래시 감지용)
+        isServiceConnected = false
+        
         return super.onUnbind(intent)
     }
 }

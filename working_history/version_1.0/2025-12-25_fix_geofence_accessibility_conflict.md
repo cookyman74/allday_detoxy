@@ -1,7 +1,8 @@
 # 작업 기록: 위치 기반 자동 스케줄 ↔ 접근성 서비스 충돌 수정
 
-**작업 일시**: 2025-12-25
-**작업 범위**: Geofence 기반 자동 스케줄과 접근성 서비스 간 충돌 해결 및 디버깅 로그 강화
+**최초 작업 일시**: 2025-12-25  
+**추가 업데이트**: 2025-12-31 (접근성 서비스 크래시 감지 및 사용자 알림 기능 추가)  
+**작업 범위**: Geofence 기반 자동 스케줄과 접근성 서비스 간 충돌 해결, 디버깅 로그 강화, 사용자 알림 기능
 
 ## 문제 상황
 
@@ -117,3 +118,73 @@ adb logcat | grep -E "GEOFENCE_ENTER|GEOFENCE_EXIT|AUTO_MODE|CONNECT|INTERRUPT|U
 1. `app/src/main/java/com/allday/detoxy/receiver/GeofenceTransitionsReceiver.kt`
 2. `app/src/main/java/com/allday/detoxy/core/manager/ScheduleGroupManager.kt`
 3. `app/src/main/java/com/allday/detoxy/service/accessibility/FocusAccessibilityService.kt`
+
+---
+
+## 2025-12-31 추가 업데이트: 접근성 서비스 크래시 감지 및 사용자 알림
+
+### 문제 재발
+
+12/25 수정 후에도 접근성 서비스 크래시가 다시 발생함. 
+시스템 로그에 명확한 크래시 원인은 없었으나 `dumpsys accessibility`에서 `Crashed services`에 앱이 표시됨.
+
+### 추가 해결 방안
+
+**사용자가 문제를 인지하고 직접 조치할 수 있도록 UI 알림 기능 구현**
+
+### 추가 수정 내용
+
+#### 1. `PermissionUtils` - 크래시 감지 함수 추가
+
+```kotlin
+fun isAccessibilityServiceCrashed(context: Context): Boolean
+fun getAccessibilityServiceStatus(context: Context): AccessibilityServiceStatus
+enum class AccessibilityServiceStatus { RUNNING, DISABLED, CRASHED }
+```
+
+#### 2. `FocusAccessibilityService` - 연결 상태 추적 플래그 추가
+
+```kotlin
+companion object {
+    @Volatile
+    var isServiceConnected: Boolean = false  // 크래시 감지용
+}
+// onServiceConnected: isServiceConnected = true
+// onUnbind: isServiceConnected = false
+```
+
+#### 3. `TimerViewModel` - 크래시 에러 타입 추가
+
+```kotlin
+sealed class PermissionError {
+    object AccessibilityServiceDisabled : PermissionError()
+    object AccessibilityServiceCrashed : PermissionError()  // 🆕
+    object OverlayPermissionDenied : PermissionError()
+}
+```
+
+#### 4. `TimerScreen` - 크래시 알림 다이얼로그 추가
+
+- 타이머 시작 시 크래시 상태 감지
+- 사용자에게 "앱 차단 기능 재시작 필요" 다이얼로그 표시
+- 접근성 설정 화면으로 이동 버튼 제공
+
+### 사용자 경험
+
+1. 타이머 시작 시 접근성 서비스 크래시 상태 자동 감지
+2. 다이얼로그로 사용자에게 문제 알림
+3. "설정으로 이동" 버튼으로 접근성 설정 화면 바로 이동
+4. 사용자가 서비스를 껐다 켜면 문제 해결
+
+### 추가된 파일
+
+4. `app/src/main/java/com/allday/detoxy/core/utils/PermissionUtils.kt` (수정)
+5. `app/src/main/java/com/allday/detoxy/presentation/viewmodel/TimerViewModel.kt` (수정)
+6. `app/src/main/java/com/allday/detoxy/presentation/ui/timer/TimerScreen.kt` (수정)
+
+### 빌드 검증
+
+```bash
+./gradlew compileDebugKotlin
+# BUILD SUCCESSFUL
+```

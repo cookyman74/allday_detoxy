@@ -104,7 +104,9 @@ fun TimerScreen(
             onDismiss = { viewModel.clearPermissionError() },
             onOpenSettings = {
                 when (error) {
-                    is TimerViewModel.PermissionError.AccessibilityServiceDisabled -> {
+                    is TimerViewModel.PermissionError.AccessibilityServiceDisabled,
+                    is TimerViewModel.PermissionError.AccessibilityServiceCrashed -> {
+                        // 둘 다 접근성 설정으로 이동
                         PermissionUtils.openAccessibilitySettings(context)
                     }
                     is TimerViewModel.PermissionError.OverlayPermissionDenied -> {
@@ -661,6 +663,12 @@ fun PermissionErrorDialog(
         is TimerViewModel.PermissionError.AccessibilityServiceDisabled -> {
             "앱 차단 기능 권한 필요" to "집중 타이머를 사용하려면 앱 차단 기능(접근성 서비스)을 활성화해야 합니다.\n\n" +
                     "설정 화면에서 'ScreenSence'를 찾아 활성화해주세요."
+        }
+        is TimerViewModel.PermissionError.AccessibilityServiceCrashed -> {
+            // 🆕 v0.10.4: 크래시 상태 안내
+            "⚠️ 앱 차단 기능 재시작 필요" to "앱 차단 기능(접근성 서비스)이 일시적으로 중지되었습니다.\n\n" +
+                    "설정 화면에서 'ScreenSence'를 꺼다가 다시 켜주세요.\n\n" +
+                    "이 문제가 반복되면 기기를 재부팅해 보세요."
         }
         is TimerViewModel.PermissionError.OverlayPermissionDenied -> {
             "잠금 화면 표시 권한 필요" to "집중 타이머를 사용하려면 잠금 화면 표시 권한(다른 앱 위에 표시)이 필요합니다.\n\n" +

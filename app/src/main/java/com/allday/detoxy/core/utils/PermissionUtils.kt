@@ -82,6 +82,82 @@ object PermissionUtils {
             false
         }
     }
+    
+    /**
+     * 접근성 서비스가 활성화되어 있으나 실제로 작동하지 않는 상태(크래시 상태) 감지
+     *
+     * 시스템에서 접근성 서비스가 크래시되었거나 강제 종료된 경우,
+     * 설정에서는 활성화로 표시되지만 실제로는 작동하지 않을 수 있습니다.
+     * 
+     * 이 함수는 서비스가 활성화되어 있는데 실제 인스턴스가 생성되지 않은 경우를 감지합니다.
+     *
+     * @param context Android Context
+     * @return true: 서비스가 크래시 상태로 추정됨, false: 정상 또는 비활성화 상태
+     */
+    fun isAccessibilityServiceCrashed(context: Context): Boolean {
+        // 1. 먼저 설정에서 활성화 여부 확인
+        if (!isAccessibilityServiceEnabled(context)) {
+            // 비활성화 상태이면 크래시 상태가 아님
+            return false
+        }
+        
+        // 2. 서비스가 활성화되어 있다면, 실제로 작동하는지 확인
+        // FocusAccessibilityService의 static 변수를 통해 확인
+        // 서비스가 연결되면 onServiceConnected에서 true로 설정되는 플래그 확인
+        return try {
+            // 서비스가 연결된 적이 있는지 확인 (companion object에서 추적)
+            val serviceClass = Class.forName("com.allday.detoxy.service.accessibility.FocusAccessibilityService")
+            val companionField = serviceClass.getDeclaredField("Companion")
+            companionField.isAccessible = true
+            val companion = companionField.get(null)
+            
+            // isServiceConnected 필드 확인
+            val connectedField = companion.javaClass.getDeclaredField("isServiceConnected")
+            connectedField.isAccessible = true
+            val isConnected = connectedField.getBoolean(companion)
+            
+            // 설정에서 활성화되어 있는데, 실제로 연결되지 않았다면 크래시 상태
+            val isCrashed = !isConnected
+            
+            if (isCrashed) {
+                Log.w(TAG, "⚠️ Accessibility service appears to be CRASHED (enabled but not connected)")
+            }
+            
+            isCrashed
+        } catch (e: Exception) {
+            // 리플렉션 실패 시 정상으로 간주
+            Log.d(TAG, "Could not check service connection state: ${e.message}")
+            false
+        }
+    }
+    
+    /**
+     * 접근성 서비스 상태 요약 반환
+     *
+     * UI에서 접근성 서비스 상태를 표시할 때 사용합니다.
+     *
+     * @param context Android Context
+     * @return 상태 문자열 ("정상 작동 중", "꺼져 있음", "재시작 필요")
+     */
+    fun getAccessibilityServiceStatus(context: Context): AccessibilityServiceStatus {
+        val isEnabled = isAccessibilityServiceEnabled(context)
+        val isCrashed = if (isEnabled) isAccessibilityServiceCrashed(context) else false
+        
+        return when {
+            !isEnabled -> AccessibilityServiceStatus.DISABLED
+            isCrashed -> AccessibilityServiceStatus.CRASHED
+            else -> AccessibilityServiceStatus.RUNNING
+        }
+    }
+    
+    /**
+     * 접근성 서비스 상태 열거형
+     */
+    enum class AccessibilityServiceStatus {
+        RUNNING,    // 정상 작동 중
+        DISABLED,   // 비활성화됨
+        CRASHED     // 활성화되어 있으나 크래시 상태 (재시작 필요)
+    }
 
     /**
      * 접근성 설정 화면으로 이동

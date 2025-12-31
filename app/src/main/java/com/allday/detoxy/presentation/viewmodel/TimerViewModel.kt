@@ -121,6 +121,7 @@ class TimerViewModel @Inject constructor(
      */
     sealed class PermissionError {
         object AccessibilityServiceDisabled : PermissionError()
+        object AccessibilityServiceCrashed : PermissionError()  // 🆕 v0.10.4: 크래시 상태
         object OverlayPermissionDenied : PermissionError()
     }
 
@@ -259,6 +260,13 @@ class TimerViewModel @Inject constructor(
         if (!PermissionUtils.isAccessibilityServiceEnabled(application)) {
             Log.e(TAG, "❌ 접근성 서비스가 비활성화되어 있습니다")
             _permissionError.value = PermissionError.AccessibilityServiceDisabled
+            return
+        }
+        
+        // 🆕 v0.10.4: 접근성 서비스 크래시 상태 확인
+        if (PermissionUtils.isAccessibilityServiceCrashed(application)) {
+            Log.e(TAG, "⚠️ 접근성 서비스가 크래시 상태입니다. 재시작이 필요합니다.")
+            _permissionError.value = PermissionError.AccessibilityServiceCrashed
             return
         }
 
