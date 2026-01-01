@@ -187,9 +187,11 @@ object WeeklyHeatmapCalculator {
         val rows = DayOfWeek.values().flatMap { day ->
             listOf(
                 createRow(day, Period.AM, dayHourMinutes[day] ?: emptyMap(),
-                    dayPeriodTimeSlots[Pair(day, Period.AM)] ?: emptyList()),
+                    (dayPeriodTimeSlots[Pair(day, Period.AM)] ?: emptyList())
+                        .sortedWith(compareBy({ it.hour }, { it.minute }))),
                 createRow(day, Period.PM, dayHourMinutes[day] ?: emptyMap(),
-                    dayPeriodTimeSlots[Pair(day, Period.PM)] ?: emptyList())
+                    (dayPeriodTimeSlots[Pair(day, Period.PM)] ?: emptyList())
+                        .sortedWith(compareBy({ it.hour }, { it.minute })))
             )
         }
 
