@@ -136,7 +136,9 @@ object WeeklyHeatmapCalculator {
 
         // 요일별, 시간별 분 합산
         val dayHourMinutes = mutableMapOf<DayOfWeek, MutableMap<Int, Int>>()
-        val dayTimeSlots = mutableMapOf<DayOfWeek, MutableList<TimeSlotInfo>>()
+        // 요일+Period별 TimeSlotInfo 저장 (AM/PM 분리)
+        // Key: Pair<DayOfWeek, Period>
+        val dayPeriodTimeSlots = mutableMapOf<Pair<DayOfWeek, Period>, MutableList<TimeSlotInfo>>()
 
         enabledAutoRuns.forEach { autoRun ->
             val days = parseEnabledDays(autoRun.enabledDays)
@@ -153,7 +155,8 @@ object WeeklyHeatmapCalculator {
                     )
                 }
 
-                // TimeSlotInfo 저장 (자정 넘김 시 다음 요일에도 저장)
+                // TimeSlotInfo를 분배된 슬롯 기준으로 요일+Period에 저장
+                // 자정 넘김 시 다음 요일 AM에도 정확히 포함됨
                 val timeSlotInfo = TimeSlotInfo(
                     id = autoRun.id,
                     hour = autoRun.hour,
@@ -163,14 +166,19 @@ object WeeklyHeatmapCalculator {
                     label = autoRun.label
                 )
 
-                // 시작 요일에 저장
-                dayTimeSlots.getOrPut(day) { mutableListOf() }.add(timeSlotInfo)
+                // 기여하는 모든 요일+Period 조합에 저장
+                val contributedDayPeriods = slots.map { slot ->
+                    val targetDay = day.plus(slot.dayOffset.toLong())
+                    val period = if (slot.hour in 0..11) Period.AM else Period.PM
+                    Pair(targetDay, period)
+                }.toSet()
 
-                // 자정 넘김 시 다음 요일(AM)에도 저장 (상세 시트에서 누락 방지)
-                val hasNextDaySlots = slots.any { it.dayOffset > 0 }
-                if (hasNextDaySlots) {
-                    val nextDay = day.plus(1)
-                    dayTimeSlots.getOrPut(nextDay) { mutableListOf() }.add(timeSlotInfo)
+                contributedDayPeriods.forEach { key ->
+                    val list = dayPeriodTimeSlots.getOrPut(key) { mutableListOf() }
+                    // 중복 방지 (동일 ID가 이미 있으면 추가하지 않음)
+                    if (list.none { it.id == timeSlotInfo.id }) {
+                        list.add(timeSlotInfo)
+                    }
                 }
             }
         }
@@ -179,9 +187,9 @@ object WeeklyHeatmapCalculator {
         val rows = DayOfWeek.values().flatMap { day ->
             listOf(
                 createRow(day, Period.AM, dayHourMinutes[day] ?: emptyMap(),
-                    dayTimeSlots[day] ?: emptyList()),
+                    dayPeriodTimeSlots[Pair(day, Period.AM)] ?: emptyList()),
                 createRow(day, Period.PM, dayHourMinutes[day] ?: emptyMap(),
-                    dayTimeSlots[day] ?: emptyList())
+                    dayPeriodTimeSlots[Pair(day, Period.PM)] ?: emptyList())
             )
         }
 
@@ -197,12 +205,17 @@ object WeeklyHeatmapCalculator {
 
     /**
      * 히트맵 행 생성
+     * 
+     * @param day 요일
+     * @param period AM 또는 PM
+     * @param hourMinutes 해당 요일의 시간별 분 맵
+     * @param periodTimeSlots 해당 요일+Period에 기여하는 TimeSlotInfo 목록 (이미 필터링됨)
      */
     private fun createRow(
         day: DayOfWeek,
         period: Period,
         hourMinutes: Map<Int, Int>,
-        timeSlots: List<TimeSlotInfo>
+        periodTimeSlots: List<TimeSlotInfo>
     ): HeatmapRow {
         val hourRange = if (period == Period.AM) 0..11 else 12..23
         val cells = hourRange.map { hour ->
@@ -210,16 +223,11 @@ object WeeklyHeatmapCalculator {
             HeatmapCell(hour, minutes, HeatmapLevel.fromMinutes(minutes))
         }
 
-        val periodSlots = timeSlots.filter { slot ->
-            val slotHour = slot.hour
-            if (period == Period.AM) slotHour in 0..11 else slotHour in 12..23
-        }
-
         return HeatmapRow(
             dayOfWeek = day,
             period = period,
             cells = cells,
-            timeSlots = periodSlots,
+            timeSlots = periodTimeSlots,  // 이미 해당 Period에 기여하는 슬롯만 포함됨
             totalMinutes = cells.sumOf { it.totalMinutes }
         )
     }

@@ -138,6 +138,101 @@ class WeeklyHeatmapCalculatorTest {
         assertEquals(30, result[2].minutes)
     }
 
+    // ==================== 4-2-1. 자정 넘김 상세 리스트 노출 테스트 ====================
+
+    @Test
+    fun `자정 넘김 스케줄은 당일 PM과 다음날 AM 모두 상세 리스트에 포함`() {
+        // Given: 월요일 23시 30분 시작 60분 스케줄 (자정을 넘김)
+        val autoRuns = listOf(
+            createAutoRun(
+                hour = 23,
+                minute = 30,
+                durationMinutes = 60,
+                enabledDays = """["MON"]""",
+                label = "야간 집중"
+            )
+        )
+
+        // When
+        val result = WeeklyHeatmapCalculator.calculate(autoRuns)
+
+        // Then: 월요일 PM 상세 리스트에 포함
+        val mondayPmRow = result.rows.find { it.dayOfWeek == DayOfWeek.MONDAY && it.period == Period.PM }
+        assertNotNull("Monday PM row should exist", mondayPmRow)
+        assertEquals(
+            "Monday PM should have 1 timeSlot",
+            1, mondayPmRow!!.timeSlots.size
+        )
+        assertEquals("야간 집중", mondayPmRow.timeSlots[0].label)
+
+        // Then: 화요일 AM 상세 리스트에도 포함 (자정 넘김 기여)
+        val tuesdayAmRow = result.rows.find { it.dayOfWeek == DayOfWeek.TUESDAY && it.period == Period.AM }
+        assertNotNull("Tuesday AM row should exist", tuesdayAmRow)
+        assertEquals(
+            "Tuesday AM should have 1 timeSlot (midnight crossing contribution)",
+            1, tuesdayAmRow!!.timeSlots.size
+        )
+        assertEquals("야간 집중", tuesdayAmRow.timeSlots[0].label)
+
+        // Then: 셀 데이터도 정확한지 확인
+        val monday23Cell = mondayPmRow.cells.find { it.hour == 23 }
+        assertEquals(30, monday23Cell!!.totalMinutes)
+        val tuesday0Cell = tuesdayAmRow.cells.find { it.hour == 0 }
+        assertEquals(30, tuesday0Cell!!.totalMinutes)
+    }
+
+    @Test
+    fun `자정 넘김 스케줄이 당일 PM에만 있고 AM에는 없어야 할 때 정확히 분리`() {
+        // Given: 월요일 23시 시작 30분 스케줄 (자정 안 넘김)
+        val autoRuns = listOf(
+            createAutoRun(
+                hour = 23,
+                minute = 0,
+                durationMinutes = 30,
+                enabledDays = """["MON"]"""
+            )
+        )
+
+        // When
+        val result = WeeklyHeatmapCalculator.calculate(autoRuns)
+
+        // Then: 월요일 PM에만 포함
+        val mondayPmRow = result.rows.find { it.dayOfWeek == DayOfWeek.MONDAY && it.period == Period.PM }
+        assertEquals(1, mondayPmRow!!.timeSlots.size)
+
+        // Then: 화요일 AM에는 포함되지 않음
+        val tuesdayAmRow = result.rows.find { it.dayOfWeek == DayOfWeek.TUESDAY && it.period == Period.AM }
+        assertEquals(0, tuesdayAmRow!!.timeSlots.size)
+    }
+
+    @Test
+    fun `자정 넘김 시 동일 스케줄이 중복 저장되지 않음`() {
+        // Given: 월요일 22시 시작 180분 스케줄 (22, 23, 0시에 분배 - PM과 AM 모두 기여)
+        val autoRuns = listOf(
+            createAutoRun(
+                hour = 22,
+                minute = 0,
+                durationMinutes = 180,
+                enabledDays = """["MON"]""",
+                label = "장시간 집중"
+            )
+        )
+
+        // When
+        val result = WeeklyHeatmapCalculator.calculate(autoRuns)
+
+        // Then: 월요일 PM (22시, 23시 기여)
+        val mondayPmRow = result.rows.find { it.dayOfWeek == DayOfWeek.MONDAY && it.period == Period.PM }
+        assertEquals("Monday PM should have exactly 1 unique timeSlot", 1, mondayPmRow!!.timeSlots.size)
+
+        // Then: 화요일 AM (0시 기여)
+        val tuesdayAmRow = result.rows.find { it.dayOfWeek == DayOfWeek.TUESDAY && it.period == Period.AM }
+        assertEquals("Tuesday AM should have exactly 1 unique timeSlot", 1, tuesdayAmRow!!.timeSlots.size)
+
+        // Then: 동일한 ID인지 확인 (같은 스케줄)
+        assertEquals(mondayPmRow.timeSlots[0].id, tuesdayAmRow.timeSlots[0].id)
+    }
+
     // ==================== enabledDays 파싱 테스트 ====================
 
     @Test
