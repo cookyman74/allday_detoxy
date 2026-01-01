@@ -11,9 +11,12 @@ import com.allday.detoxy.data.repository.UserSettingsRepository
 import com.allday.detoxy.domain.repository.AutoRunSettingsRepository
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -53,6 +56,17 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     // 에러 상태
     private val _errorState = MutableStateFlow<String?>(null)
     val errorState: StateFlow<String?> = _errorState.asStateFlow()
+
+    // ==================== v1.1: 히트맵 갱신 이벤트 ====================
+
+    /**
+     * 시간대 변경 시 발행되는 이벤트
+     *
+     * 시간대 추가/수정/삭제/토글 후 scheduleGroupId를 emit합니다.
+     * ScheduleGroupViewModel.refreshHeatmapData()를 호출하여 히트맵을 갱신할 수 있습니다.
+     */
+    private val _timeSlotUpdated = MutableSharedFlow<String>()
+    val timeSlotUpdated: SharedFlow<String> = _timeSlotUpdated.asSharedFlow()
 
     // ==================== 글로벌 옵션 ====================
 
@@ -173,7 +187,7 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     fun addAutoRun(autoRun: TimeBasedAutoRun) {
         viewModelScope.launch {
             try {
-                // 🐛 버그 수정: 디버깅 로그 추가
+                // 디버깅 로그
                 android.util.Log.d("TimeBasedAutoRunViewModel", "=== addAutoRun ===")
                 android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.id: ${autoRun.id}")
                 android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.scheduleGroupId: ${autoRun.scheduleGroupId}")
@@ -184,6 +198,11 @@ class TimeBasedAutoRunViewModel @Inject constructor(
                 if (autoRun.isEnabled) {
                     val scheduled = alarmManager.scheduleTimeBasedAutoRun(autoRun)
                     android.util.Log.d("TimeBasedAutoRunViewModel", "알람 등록 결과: $scheduled")
+                }
+                
+                // v1.1: 히트맵 갱신 이벤트 발행
+                autoRun.scheduleGroupId?.let { groupId ->
+                    _timeSlotUpdated.emit(groupId)
                 }
                 
                 // Analytics 로깅
@@ -200,7 +219,7 @@ class TimeBasedAutoRunViewModel @Inject constructor(
                     presetType = autoRun.presetType,
                     enabledDaysCount = enabledDaysCount,
                     hasLabel = !autoRun.label.isNullOrEmpty(),
-                    isFromTemplate = false, // TODO: 템플릿 기능 추가 시 업데이트
+                    isFromTemplate = false,
                     templateType = null
                 )
             } catch (e: Exception) {
@@ -217,7 +236,7 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     fun updateAutoRun(autoRun: TimeBasedAutoRun) {
         viewModelScope.launch {
             try {
-                // 🐛 버그 수정: 디버깅 로그 추가
+                // 디버깅 로그
                 android.util.Log.d("TimeBasedAutoRunViewModel", "=== updateAutoRun ===")
                 android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.id: ${autoRun.id}")
                 android.util.Log.d("TimeBasedAutoRunViewModel", "autoRun.scheduleGroupId: ${autoRun.scheduleGroupId}")
@@ -230,6 +249,11 @@ class TimeBasedAutoRunViewModel @Inject constructor(
                 if (autoRun.isEnabled) {
                     val scheduled = alarmManager.scheduleTimeBasedAutoRun(autoRun)
                     android.util.Log.d("TimeBasedAutoRunViewModel", "알람 등록 결과: $scheduled")
+                }
+                
+                // v1.1: 히트맵 갱신 이벤트 발행
+                autoRun.scheduleGroupId?.let { groupId ->
+                    _timeSlotUpdated.emit(groupId)
                 }
             } catch (e: Exception) {
                 _errorState.value = "자동 실행 수정 실패: ${e.message}"
@@ -247,15 +271,19 @@ class TimeBasedAutoRunViewModel @Inject constructor(
             try {
                 // Analytics 로깅용 데이터 수집 (삭제 전)
                 val autoRun = _autoRuns.value.find { it.id == autoRunId }
+                val groupId = autoRun?.scheduleGroupId  // v1.1: 히트맵 갱신용
                 
                 alarmManager.cancelTimeBasedAutoRun(autoRunId)
                 repository.delete(autoRunId)
+                
+                // v1.1: 히트맵 갱신 이벤트 발행
+                groupId?.let { _timeSlotUpdated.emit(it) }
                 
                 // Analytics 로깅
                 if (autoRun != null) {
                     val daysActive = ((System.currentTimeMillis() - autoRun.createdAt) / (1000 * 60 * 60 * 24)).toInt()
                     AnalyticsHelper.logTimeBasedAutoRunDeleted(
-                        usageCount = 0, // TODO: usageCount 필드 추가 필요
+                        usageCount = 0,
                         daysActive = daysActive
                     )
                 }
@@ -274,8 +302,7 @@ class TimeBasedAutoRunViewModel @Inject constructor(
     fun toggleAutoRun(autoRunId: String, isEnabled: Boolean) {
         viewModelScope.launch {
             try {
-                // 🔧 Critical Fix: stale data 문제 해결
-                // DB 업데이트 전에 현재 엔티티를 복사하여 isEnabled 업데이트
+                // stale data 문제 해결: DB 업데이트 전에 현재 엔티티를 복사
                 val currentAutoRun = _autoRuns.value.find { it.id == autoRunId }
                 if (currentAutoRun == null) {
                     _errorState.value = "자동 실행을 찾을 수 없습니다"
@@ -286,10 +313,14 @@ class TimeBasedAutoRunViewModel @Inject constructor(
                 
                 // 활성화 시 알람 등록, 비활성화 시 알람 취소
                 if (isEnabled) {
-                    // 복사한 엔티티의 isEnabled를 업데이트하여 전달
                     alarmManager.scheduleTimeBasedAutoRun(currentAutoRun.copy(isEnabled = true))
                 } else {
                     alarmManager.cancelTimeBasedAutoRun(autoRunId)
+                }
+                
+                // v1.1: 히트맵 갱신 이벤트 발행
+                currentAutoRun.scheduleGroupId?.let { groupId ->
+                    _timeSlotUpdated.emit(groupId)
                 }
                 
                 // Analytics 로깅

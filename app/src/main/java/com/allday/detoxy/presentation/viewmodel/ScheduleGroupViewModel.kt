@@ -12,6 +12,8 @@ import com.allday.detoxy.domain.model.ScheduleGroupControlState
 import com.allday.detoxy.domain.model.ScheduleTemplate
 import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.domain.repository.ScheduleGroupRepository
+import com.allday.detoxy.presentation.model.WeeklyHeatmapUiModel
+import com.allday.detoxy.presentation.util.WeeklyHeatmapCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -447,6 +449,77 @@ class ScheduleGroupViewModel @Inject constructor(
                 _errorState.value = "위치 정보 갱신 실패: ${e.message}"
             }
         }
+    }
+
+    // ==================== v1.1: 히트맵 지원 ====================
+
+    /**
+     * 히트맵 표시를 위다 선택된 그룹 ID
+     */
+    private val _selectedGroupIdForHeatmap = MutableStateFlow<String?>(null)
+
+    /**
+     * 선택된 그룹의 히트맵 데이터
+     *
+     * 기존 _linkedTimeBasedAutoRuns를 활용하여 히트맵을 계산합니다.
+     * 그룹 선택 시 또는 시간대 변경 시 자동으로 재계산됩니다.
+     */
+    val selectedGroupHeatmap: StateFlow<WeeklyHeatmapUiModel> = combine(
+        _selectedGroupIdForHeatmap,
+        _linkedTimeBasedAutoRuns
+    ) { groupId, autoRunsMap ->
+        if (groupId == null) {
+            WeeklyHeatmapUiModel.EMPTY
+        } else {
+            val autoRuns = autoRunsMap[groupId] ?: emptyList()
+            WeeklyHeatmapCalculator.calculate(autoRuns)
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = WeeklyHeatmapUiModel.EMPTY
+    )
+
+    /**
+     * 히트맵 표시를 위한 그룹 선택
+     *
+     * 선택 시 해당 그룹의 시간대 데이터를 로드하고 히트맵을 계산합니다.
+     *
+     * @param groupId 스케쥴 그룹 ID (UUID)
+     */
+    fun selectGroupForHeatmap(groupId: String) {
+        _selectedGroupIdForHeatmap.value = groupId
+        // 선택 시 해당 그룹의 시간대 데이터 로드
+        refreshHeatmapData(groupId)
+    }
+
+    /**
+     * 히트맵 데이터 갱신
+     *
+     * 시간대 추가/수정/삭제 후 호출하여 히트맵을 갱신합니다.
+     * loadAllLinkedCounts()를 통해 _linkedTimeBasedAutoRuns가 업데이트되면
+     * selectedGroupHeatmap이 자동으로 재계산됩니다.
+     *
+     * @param groupId 그룹 ID
+     */
+    fun refreshHeatmapData(groupId: String) {
+        viewModelScope.launch {
+            try {
+                val autoRuns = repository.getLinkedTimeBasedAutoRuns(groupId)
+                _linkedTimeBasedAutoRuns.update { current ->
+                    current.toMutableMap().apply { this[groupId] = autoRuns }
+                }
+            } catch (e: Exception) {
+                _errorState.value = "히트맵 데이터 갱신 실패: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * 히트맵 표시 해제
+     */
+    fun clearHeatmapSelection() {
+        _selectedGroupIdForHeatmap.value = null
     }
 
     /**

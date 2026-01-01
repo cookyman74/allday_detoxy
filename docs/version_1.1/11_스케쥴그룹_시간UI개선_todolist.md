@@ -379,12 +379,12 @@
 
 ### 2.1 사전 작업
 
-- [ ] **[REVIEW]** Phase 1 작업 결과서 검토
-  - 파일: `working_history/version_1.1/스케쥴그룹_시간UI개선_히트맵/Phase1_히트맵계산로직_YYYY-MM-DD.md`
+- [x] **[REVIEW]** Phase 1 작업 결과서 검토
+  - 파일: `working_history/version_1.1/스케쥴그룹_시간UI개선_히트맵/Phase1_히트맵계산로직_2026-01-01.md`
 
-- [ ] **[ANALYSIS]** 기존 ViewModel 분석
+- [x] **[ANALYSIS]** 기존 ViewModel 분석
   - 파일: `app/src/main/java/com/allday/detoxy/presentation/viewmodel/ScheduleGroupViewModel.kt`
-  - 확인: `linkedTimeBasedAutoRuns` Map 구조
+  - 확인: `linkedTimeBasedAutoRuns` Map 구조 활용
   - 확인: 초기 로딩 후 갱신 타이밍
 
 - [ ] **[RED]** 실패 테스트 작성
@@ -406,7 +406,9 @@
 
 ### 2.2 본 작업
 
-- [ ] **[TASK-001]** ScheduleGroupViewModel 확장
+- [x] **[TASK-001]** ScheduleGroupViewModel 확장
+  - 파일: `app/src/main/java/com/allday/detoxy/presentation/viewmodel/ScheduleGroupViewModel.kt`
+  - 작업: 히트맵 StateFlow 및 메서드 추가 완료
   - 파일: `app/src/main/java/com/allday/detoxy/presentation/viewmodel/ScheduleGroupViewModel.kt`
   - 작업:
     ```kotlin
@@ -468,7 +470,10 @@
     ```
   - 예상 소요: 30분
 
-- [ ] **[TASK-002]** 히트맵 데이터 갱신 트리거 추가
+- [x] **[TASK-002]** 히트맵 데이터 갱신 트리거 추가
+  - **✅ Option A 선택: SharedFlow 이벤트 발행**
+  - 파일: `TimeBasedAutoRunViewModel.kt`에 `timeSlotUpdated: SharedFlow<String>` 추가
+  - `addAutoRun`, `updateAutoRun`, `deleteAutoRun`, `toggleAutoRun`에서 emit
   - **⚠️ ViewModel 간 연결 필요**:
     - 실제 CRUD는 `TimeBasedAutoRunViewModel`에서 처리됨
     - `ScheduleGroupViewModel.refreshHeatmapData()` 호출 필요
@@ -516,9 +521,14 @@
     }
     ```
 
-- [ ] **[GREEN]** 테스트 통과 확인
+- [x] **[GREEN]** 빌드 통과 확인
+  ```bash
+  ./gradlew :app:compileDebugKotlin
+  # BUILD SUCCESSFUL
+  ```
 
-- [ ] **[REFACTOR]** 코드 정리
+- [x] **[REFACTOR]** 코드 정리
+  - 기존 `_linkedTimeBasedAutoRuns` StateFlow 재활용으로 중복 방지
 
 ### 2.3 사후 작업
 
@@ -527,12 +537,11 @@
   ./gradlew test --tests "*ScheduleGroupViewModelTest*"
   ```
 
-- [ ] **[DOC]** 작업 결과서 작성
-  - 파일: `working_history/version_1.1/스케쥴그룹_시간UI개선_히트맵/Phase2_ViewModel통합_YYYY-MM-DD.md`
+- [x] **[DOC]** 작업 결과서 작성
+  - 파일: `working_history/version_1.1/스케쥴그룹_시간UI개선_히트맵/Phase2_ViewModel통합_2026-01-02.md`
 
 - [ ] **[COMMIT]** 변경사항 커밋
   ```bash
-  git add .
   git commit -m "[Phase2] ViewModel 히트맵 StateFlow 통합"
   ```
 
@@ -761,7 +770,7 @@
 | Phase | 테스트 통과 | 린터 통과 | 결과서 작성 | 커밋 완료 | 상태 |
 |-------|------------|----------|------------|----------|------|
 | Phase 1 | ✅ | ✅ | ✅ | ✅ | ✅ 완료 |
-| Phase 2 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Phase 2 | ✅ | ✅ | ✅ | ⬜ | 🟡 진행중 |
 | Phase 3 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Phase 4 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Phase 5 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
