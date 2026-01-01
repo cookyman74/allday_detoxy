@@ -34,17 +34,17 @@
 
 ### 1.1 사전 작업
 
-- [ ] **[CONTEXT]** 작업 목적 및 배경 확인
+- [x] **[CONTEXT]** 작업 목적 및 배경 확인
   - PRD 문서 검토: [11_스케쥴그룹_시간UI개선_prd.md](./11_스케쥴그룹_시간UI개선_prd.md)
   - PRD 섹션 4️⃣ "데이터 집계 규칙" 핵심 숙지
 
-- [ ] **[ANALYSIS]** 기존 엔티티 및 유틸 분석
+- [x] **[ANALYSIS]** 기존 엔티티 및 유틸 분석
   - 파일: `app/src/main/java/com/allday/detoxy/data/local/entity/TimeBasedAutoRun.kt`
   - 파일: `app/src/main/java/com/allday/detoxy/data/local/entity/ScheduleGroup.kt`
   - 파일: `app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/AddTimeBasedAutoRunDialog.kt`
   - 확인: hour, minute, durationMinutes, enabledDays(JSON), isEnabled 필드
 
-- [ ] **[RED]** 실패 테스트 작성 (시간 슬롯 분배)
+- [x] **[RED]** 실패 테스트 작성 (시간 슬롯 분배)
   ```kotlin
   // WeeklyHeatmapCalculatorTest.kt
   @Test
@@ -62,7 +62,7 @@
 
 ### 1.2 본 작업
 
-- [ ] **[TASK-001]** UI 모델 생성 (Presentation 레이어)
+- [x] **[TASK-001]** UI 모델 생성 (Presentation 레이어)
   - 파일: `app/src/main/java/com/allday/detoxy/presentation/model/WeeklyHeatmapModels.kt`
   - 작업:
     ```kotlin
@@ -132,7 +132,7 @@
     ```
   - 예상 소요: 20분
 
-- [ ] **[TASK-002]** 시간 슬롯 분배 로직 구현
+- [x] **[TASK-002]** 시간 슬롯 분배 로직 구현
   - 파일: `app/src/main/java/com/allday/detoxy/presentation/util/WeeklyHeatmapCalculator.kt`
   - 작업:
     ```kotlin
@@ -340,34 +340,34 @@
     ```
   - 예상 소요: 60분
 
-- [ ] **[GREEN]** 테스트 통과 확인
+- [x] **[GREEN]** 테스트 통과 확인
   ```bash
-  ./gradlew test --tests "*WeeklyHeatmapCalculatorTest*"
+  ./gradlew :app:testDebugUnitTest --tests "*WeeklyHeatmapCalculatorTest*"
   ```
 
-- [ ] **[REFACTOR]** 코드 정리
-  - 중복 시간 계산 로직 추출
+- [x] **[REFACTOR]** 코드 정리
+  - 정규식 기반 enabledDays 파싱 적용 (org.json.JSONArray 대체)
   - 상수 정의 확인
 
 ### 1.3 사후 작업
 
-- [ ] **[TEST]** 단위 테스트 실행
+- [x] **[TEST]** 단위 테스트 실행
   ```bash
-  ./gradlew test --tests "*WeeklyHeatmap*"
+  ./gradlew :app:testDebugUnitTest --tests "*WeeklyHeatmap*"
+  # 15개 테스트 전체 통과
   ```
 
-- [ ] **[TEST]** 엣지 케이스 테스트 추가
-  - 자정 넘김: 23시 30분 시작 120분
-  - 빈 시간대: autoRuns 없음
-  - 전체 비활성: isEnabled=false
+- [x] **[TEST]** 엣지 케이스 테스트 추가
+  - 자정 넘김: 23시 30분 시작 120분 ✅
+  - 빈 시간대: autoRuns 없음 ✅
+  - 전체 비활성: isEnabled=false ✅
 
-- [ ] **[DOC]** 작업 결과서 작성
-  - 파일: `working_history/version_1.1/스케쥴그룹_시간UI개선_히트맵/Phase1_히트맵계산로직_YYYY-MM-DD.md`
+- [x] **[DOC]** 작업 결과서 작성
+  - 파일: `working_history/version_1.1/스케쥴그룹_시간UI개선_히트맵/Phase1_히트맵계산로직_2026-01-01.md`
   - 템플릿: [template.md](../../working_history/version_1.1/template.md)
 
-- [ ] **[COMMIT]** 변경사항 커밋
+- [x] **[COMMIT]** 변경사항 커밋
   ```bash
-  git add .
   git commit -m "[Phase1] 히트맵 UI 모델 및 계산 로직 구현"
   ```
 
@@ -760,7 +760,7 @@
 ### Phase 완료 조건
 | Phase | 테스트 통과 | 린터 통과 | 결과서 작성 | 커밋 완료 | 상태 |
 |-------|------------|----------|------------|----------|------|
-| Phase 1 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Phase 1 | ✅ | ✅ | ✅ | ✅ | ✅ 완료 |
 | Phase 2 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Phase 3 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Phase 4 | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
