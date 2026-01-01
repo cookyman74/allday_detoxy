@@ -113,3 +113,26 @@ BUILD SUCCESSFUL in 3s
   - `HeatmapRow.kt` - 히트맵 행 Composable (Row 단위 탭 가능)
   - `WeeklyHeatmap.kt` - 히트맵 전체 Composable
   - `HeatmapDetailSheet.kt` - 행 탭 시 상세 정보 BottomSheet
+
+---
+
+## 📝 리뷰 피드백 반영 (2026-01-02)
+
+### 발견된 이슈
+
+| 우선순위 | 이슈 | 원인 |
+|----------|------|------|
+| Medium | emit() 무한 대기 가능 | `MutableSharedFlow()`에 버퍼 없음 |
+
+### 수정 내용
+
+**backpressure 방지 설정 추가**
+```kotlin
+private val _timeSlotUpdated = MutableSharedFlow<String>(
+    extraBufferCapacity = 1,
+    onBufferOverflow = BufferOverflow.DROP_OLDEST
+)
+```
+
+- `extraBufferCapacity = 1`: collector 없어도 1개 이벤트 버퍼링
+- `DROP_OLDEST`: 버퍼 초과 시 오래된 이벤트 삭제

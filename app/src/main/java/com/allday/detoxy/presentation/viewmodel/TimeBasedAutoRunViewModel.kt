@@ -64,8 +64,14 @@ class TimeBasedAutoRunViewModel @Inject constructor(
      *
      * 시간대 추가/수정/삭제/토글 후 scheduleGroupId를 emit합니다.
      * ScheduleGroupViewModel.refreshHeatmapData()를 호출하여 히트맵을 갱신할 수 있습니다.
+     *
+     * ⚠️ backpressure 방지: extraBufferCapacity=1로 설정하여
+     * collector가 없어도 emit()이 suspend되지 않음
      */
-    private val _timeSlotUpdated = MutableSharedFlow<String>()
+    private val _timeSlotUpdated = MutableSharedFlow<String>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+    )
     val timeSlotUpdated: SharedFlow<String> = _timeSlotUpdated.asSharedFlow()
 
     // ==================== 글로벌 옵션 ====================
