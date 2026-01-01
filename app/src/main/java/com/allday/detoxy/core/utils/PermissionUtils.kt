@@ -98,37 +98,24 @@ object PermissionUtils {
         // 1. 먼저 설정에서 활성화 여부 확인
         if (!isAccessibilityServiceEnabled(context)) {
             // 비활성화 상태이면 크래시 상태가 아님
+            Log.d(TAG, "🔍 isAccessibilityServiceCrashed: Service is disabled, not crashed")
             return false
         }
         
         // 2. 서비스가 활성화되어 있다면, 실제로 작동하는지 확인
-        // FocusAccessibilityService의 static 변수를 통해 확인
-        // 서비스가 연결되면 onServiceConnected에서 true로 설정되는 플래그 확인
-        return try {
-            // 서비스가 연결된 적이 있는지 확인 (companion object에서 추적)
-            val serviceClass = Class.forName("com.allday.detoxy.service.accessibility.FocusAccessibilityService")
-            val companionField = serviceClass.getDeclaredField("Companion")
-            companionField.isAccessible = true
-            val companion = companionField.get(null)
-            
-            // isServiceConnected 필드 확인
-            val connectedField = companion.javaClass.getDeclaredField("isServiceConnected")
-            connectedField.isAccessible = true
-            val isConnected = connectedField.getBoolean(companion)
-            
-            // 설정에서 활성화되어 있는데, 실제로 연결되지 않았다면 크래시 상태
-            val isCrashed = !isConnected
-            
-            if (isCrashed) {
-                Log.w(TAG, "⚠️ Accessibility service appears to be CRASHED (enabled but not connected)")
-            }
-            
-            isCrashed
-        } catch (e: Exception) {
-            // 리플렉션 실패 시 정상으로 간주
-            Log.d(TAG, "Could not check service connection state: ${e.message}")
-            false
+        // FocusAccessibilityService.isServiceConnected 직접 확인 (리플렉션 사용 안함)
+        val isConnected = com.allday.detoxy.service.accessibility.FocusAccessibilityService.isServiceConnected
+        
+        // 설정에서 활성화되어 있는데, 실제로 연결되지 않았다면 크래시 상태
+        val isCrashed = !isConnected
+        
+        Log.d(TAG, "🔍 isAccessibilityServiceCrashed: enabled=true, isConnected=$isConnected, isCrashed=$isCrashed")
+        
+        if (isCrashed) {
+            Log.w(TAG, "⚠️ Accessibility service appears to be CRASHED (enabled but not connected)")
         }
+        
+        return isCrashed
     }
     
     /**
