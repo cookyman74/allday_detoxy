@@ -635,15 +635,26 @@
 
 ### 4.1 사전 작업
 
-- [ ] **[REVIEW]** Phase 3 작업 결과서 검토
+- [x] **[REVIEW]** Phase 3 작업 결과서 검토
 
-- [ ] **[ANALYSIS]** 기존 카드 구조 분석
+- [x] **[ANALYSIS]** 기존 카드 구조 분석
   - 파일: `app/src/main/java/com/allday/detoxy/presentation/ui/autorun/components/ScheduleGroupCard.kt`
   - 확인: 현재 시간 리스트 위치 및 구조
 
 ### 4.2 본 작업
 
-- [ ] **[TASK-001]** 카드 확장 상태 관리
+- [x] **[TASK-001]** 카드 확장 상태 관리
+  - `isHeatmapExpanded` 상태 추가
+
+- [x] **[TASK-002]** 히트맵 토글 버튼 추가
+  - 시간 섹션에 "히트맵 보기/접기" 버튼
+
+- [x] **[TASK-003]** 히트맵 영역 추가
+  - AnimatedVisibility로 확장/축소 애니메이션
+
+- [x] **[TASK-004]** 빈 상태 UI 구현
+  - `HeatmapEmptyState.kt` 생성
+  - CTA 버튼 → TimeBasedAutoRunScreen 이동
   - 파일: `ScheduleGroupCard.kt`
   - 작업: `isHeatmapExpanded` 상태 추가
 
@@ -683,7 +694,7 @@
     }
     ```
 
-- [ ] **[GREEN]** 테스트 통과 확인
+- [x] **[GREEN]** 빌드 통과 확인
 
 ### 4.3 사후 작업
 

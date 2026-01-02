@@ -1,5 +1,8 @@
 package com.allday.detoxy.presentation.ui.autorun.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -14,11 +17,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.dp
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.domain.model.PauseDuration
 import com.allday.detoxy.domain.model.ScheduleGroupControlState
+import com.allday.detoxy.presentation.model.HeatmapRow
+import com.allday.detoxy.presentation.model.WeeklyHeatmapUiModel
 import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
+import com.allday.detoxy.presentation.ui.heatmap.HeatmapEmptyState
+import com.allday.detoxy.presentation.ui.heatmap.WeeklyHeatmap
 
 /**
  * ScheduleGroup 카드 컴포넌트 (v8.1 UX 개선)
@@ -52,6 +58,9 @@ import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
  * @param onDelete 삭제 콜백
  * @param onLocationClick 위치 정보 클릭 콜백
  * @param onTimeClick 시간 정보 클릭 콜백
+ * @param heatmap 히트맵 데이터 (v1.1)
+ * @param onHeatmapRowClick 히트맵 행 클릭 콜백 (v1.1)
+ * @param onNavigateToTimeScreen 시간표 관리 화면 이동 콜백 (v1.1)
  * @param modifier Modifier
  *
  * @see ScheduleGroupControlState
@@ -70,15 +79,21 @@ fun ScheduleGroupCard(
     onDelete: () -> Unit,
     onLocationClick: () -> Unit = {},
     onTimeClick: () -> Unit = {},
+    // v1.1: 히트맵 통합
+    heatmap: WeeklyHeatmapUiModel = WeeklyHeatmapUiModel.EMPTY,
+    onHeatmapRowClick: (HeatmapRow) -> Unit = {},
+    onNavigateToTimeScreen: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    // 상태별 카드 배경색
     // 상태별 카드 Tint 색상
     val cardTint = when (controlState) {
         ScheduleGroupControlState.ACTIVE -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
         ScheduleGroupControlState.PAUSED -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
         ScheduleGroupControlState.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     }
+    
+    // v1.1: 히트맵 확장 상태
+    var isHeatmapExpanded by remember { mutableStateOf(false) }
     
     SimpleGlassSurface(
         modifier = modifier.fillMaxWidth(),
@@ -309,26 +324,86 @@ fun ScheduleGroupCard(
                     }
                 }
                 
-                // 시간대 목록 (클릭 시 상세)
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = timeBasedAutoRuns.isNotEmpty(), onClick = onTimeClick),
-                    color = Color.Transparent
+                // 시간대 목록 (v1.1: 히트맵 토글 버튼 추가)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    if (timeBasedAutoRuns.isEmpty()) {
-                        Text(
-                            text = "설정된 시간대 없음",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    } else {
-                        timeBasedAutoRuns.forEach { autoRun ->
-                            Text(
-                                text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
-                                style = MaterialTheme.typography.bodyMedium
+                    // 히트맵 토글 버튼
+                    if (timeBasedAutoRuns.isNotEmpty()) {
+                        TextButton(
+                            onClick = { isHeatmapExpanded = !isHeatmapExpanded }
+                        ) {
+                            Icon(
+                                imageVector = if (isHeatmapExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (isHeatmapExpanded) "히트맵 접기" else "히트맵 펜치기",
+                                modifier = Modifier.size(18.dp)
                             )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = if (isHeatmapExpanded) "히트맵 접기" else "히트맵 보기",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
+                    
+                    Spacer(Modifier.weight(1f))
+                    
+                    // 시간 상세 버튼
+                    if (timeBasedAutoRuns.isNotEmpty()) {
+                        TextButton(onClick = onTimeClick) {
+                            Text(
+                                text = "상세 보기",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "상세보기",
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+                
+                // v1.1: 히트맵 영역 (AnimatedVisibility)
+                AnimatedVisibility(
+                    visible = isHeatmapExpanded && timeBasedAutoRuns.isNotEmpty(),
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    WeeklyHeatmap(
+                        heatmap = heatmap,
+                        onRowClick = onHeatmapRowClick
+                    )
+                }
+                
+                // 빈 상태 UI
+                if (timeBasedAutoRuns.isEmpty()) {
+                    HeatmapEmptyState(
+                        onNavigateToTimeScreen = onNavigateToTimeScreen
+                    )
+                } else if (!isHeatmapExpanded) {
+                    // 히트맵 접힘 상태: 요약 정보 표시
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(onClick = onTimeClick),
+                        color = Color.Transparent
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            timeBasedAutoRuns.take(3).forEach { autoRun ->
+                                Text(
+                                    text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            if (timeBasedAutoRuns.size > 3) {
+                                Text(
+                                    text = "외 ${timeBasedAutoRuns.size - 3}개...",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
