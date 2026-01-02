@@ -127,10 +127,10 @@ object WeeklyHeatmapCalculator {
      * @return WeeklyHeatmapUiModel
      */
     fun calculate(autoRuns: List<TimeBasedAutoRun>): WeeklyHeatmapUiModel {
-        // isEnabled=true만 필터링
-        val enabledAutoRuns = autoRuns.filter { it.isEnabled }
+        // v1.1 Fix: 비활성화된 스케줄도 히트맵에 표시 (사용자가 시간표 구성을 볼 수 있도록)
+        val targetAutoRuns = autoRuns // .filter { it.isEnabled } 제거
         
-        android.util.Log.d("WeeklyHeatmapCalculator", "Calculating heatmap for ${autoRuns.size} autoRuns (${enabledAutoRuns.size} enabled)")
+        android.util.Log.d("WeeklyHeatmapCalculator", "Calculating heatmap for ${autoRuns.size} autoRuns")
 
         // v1.1: 빈 데이터일 때도 14개 빈 행 생성 (early return 제거)
         // 요일별, 시간별 분 합산
@@ -139,7 +139,7 @@ object WeeklyHeatmapCalculator {
         // Key: Pair<DayOfWeek, Period>
         val dayPeriodTimeSlots = mutableMapOf<Pair<DayOfWeek, Period>, MutableList<TimeSlotInfo>>()
 
-        enabledAutoRuns.forEach { autoRun ->
+        targetAutoRuns.forEach { autoRun ->
             val days = parseEnabledDays(autoRun.enabledDays)
             val slots = distributeToSlots(autoRun.hour, autoRun.minute, autoRun.durationMinutes)
 

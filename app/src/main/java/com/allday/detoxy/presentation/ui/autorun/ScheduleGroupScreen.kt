@@ -33,6 +33,11 @@ import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.presentation.model.WeeklyHeatmapUiModel
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Arrangement
 
 /**
  * 스케줄 그룹 관리 화면
@@ -64,9 +69,9 @@ fun ScheduleGroupScreen(
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsStateWithLifecycle()
-    val linkedLocations by viewModel.linkedLocations.collectAsStateWithLifecycle()  // 🆕
-    val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsStateWithLifecycle()
-    val groupHeatmaps by viewModel.groupHeatmaps.collectAsStateWithLifecycle()  // v1.1: 히트맵
+    // val linkedLocations by viewModel.linkedLocations.collectAsStateWithLifecycle()  // 목록에서 안씀
+    // val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsStateWithLifecycle()
+    // val groupHeatmaps by viewModel.groupHeatmaps.collectAsStateWithLifecycle()  // 목록에서 안씀
     
     val listState = androidx.compose.foundation.lazy.rememberLazyListState() // 🆕 스크롤 상태 관리
     val scope = rememberCoroutineScope()
@@ -397,9 +402,9 @@ fun ScheduleGroupScreen(
                     ) { group ->
                         // 🆕 3차 고도화 개선: ViewModel에서 데이터를 미리 준비해서 전달
                         val timeBasedAutoRunsList = linkedTimeBasedAutoRuns[group.id] ?: emptyList()
-                        val linkedLocationsList = linkedLocations[group.id] ?: emptyList()  // 🆕
-                        val locationCount = linkedLocationCounts[group.id] ?: 0
-                        val heatmap = groupHeatmaps[group.id] ?: WeeklyHeatmapUiModel.EMPTY  // v1.1: 히트맵
+                        // val linkedLocationsList = linkedLocations[group.id] ?: emptyList()  // 목록에서 위치 정보 제거
+                        // val locationCount = linkedLocationCounts[group.id] ?: 0
+                        // val heatmap = groupHeatmaps[group.id] ?: WeeklyHeatmapUiModel.EMPTY  // 목록에서 히트맵 제거
                         
                         // v8: controlState 계산
                         val controlState = ScheduleGroupControlState.fromEntity(
@@ -407,45 +412,16 @@ fun ScheduleGroupScreen(
                             pauseUntil = group.pauseUntil
                         )
                         
-                        ScheduleGroupCard(
+                        // v1.1 Refactor: 복잡한 카드 대신 심플한 리스트 아이템 사용
+                        SimpleScheduleGroupItem(
                             group = group,
                             controlState = controlState,
-                            pauseUntil = group.pauseUntil,
-                            timeBasedAutoRuns = timeBasedAutoRunsList,
-                            linkedLocations = linkedLocationsList,
-                            linkedLocationCount = locationCount,
+                            timeCount = timeBasedAutoRunsList.size,
                             onStateChange = { newState ->
                                 viewModel.changeControlState(group.id, newState)
                             },
-                            onPause = { duration ->
-                                viewModel.pauseScheduleGroup(group.id, duration)
-                            },
-                            onEdit = {
-                                editingGroup = group
-                            },
-                            onDelete = {
-                                deletingGroupId = group.id
-                            },
-                            onLocationClick = {
-                                val location = linkedLocationsList.firstOrNull()
-                                if (location != null) {
-                                    editingLocation = location
-                                    showLocationEditDialog = true
-                                }
-                            },
-                            onTimeClick = {
-                                Log.d("ScheduleGroupScreen", "Time clicked: ${group.name} (ID: ${group.id})")
-                                onNavigateToTimeBasedAutoRun(group.id, group.name)
-                            },
-                            // v1.1: 카드 클릭 시 상세 페이지로 이동
                             onClick = {
                                 onNavigateToDetail(group.id)
-                            },
-                            // 히트맵은 상세 페이지로 이동 (성능 최적화)
-                            heatmap = WeeklyHeatmapUiModel.EMPTY,
-                            onHeatmapRowClick = {},
-                            onNavigateToTimeScreen = {
-                                onNavigateToTimeBasedAutoRun(group.id, group.name)
                             }
                         )
                     }
@@ -457,7 +433,8 @@ fun ScheduleGroupScreen(
                 }
             }
         } // 내부 Box 끝
-        } // Column 끝
+    } // Column 끝
+
         
         // FAB (Box 내 BoxScope)
         if (scheduleGroups.size < 10) {
@@ -486,4 +463,95 @@ fun ScheduleGroupScreen(
         )
     } // 외부 Box 끝
 }
+
+/**
+ * 목록용 심플 스케줄 그룹 아이템
+ */
+@Composable
+private fun SimpleScheduleGroupItem(
+    group: ScheduleGroup,
+    controlState: ScheduleGroupControlState,
+    timeCount: Int,
+    onStateChange: (ScheduleGroupControlState) -> Unit,
+    onClick: () -> Unit
+) {
+    val cardTint = when (controlState) {
+        ScheduleGroupControlState.ACTIVE -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        ScheduleGroupControlState.PAUSED -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+        ScheduleGroupControlState.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+    }
+
+    SimpleGlassSurface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        backgroundColor = cardTint,
+        alpha = 0.3f
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 20.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                // 아이콘
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.DateRange,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = group.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "시간 스케줄 ${timeCount}개",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (controlState == ScheduleGroupControlState.PAUSED && group.pauseUntil != null) {
+                        Text(
+                            text = "일시중지됨",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
+                }
+            }
+
+            Switch(
+                checked = controlState == ScheduleGroupControlState.ACTIVE,
+                onCheckedChange = { isOn ->
+                    val newState = if (isOn) {
+                        ScheduleGroupControlState.ACTIVE
+                    } else {
+                        ScheduleGroupControlState.INACTIVE
+                    }
+                    onStateChange(newState)
+                }
+            )
+        }
+    }
+}
+
+
 
