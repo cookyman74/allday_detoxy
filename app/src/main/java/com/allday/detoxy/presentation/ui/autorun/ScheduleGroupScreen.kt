@@ -25,12 +25,13 @@ import android.util.Log
 import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleCreationDialog
 import com.allday.detoxy.presentation.ui.autorun.components.ScheduleGroupCard
-import com.allday.detoxy.presentation.ui.autorun.components.LocationEditDialog  // 🆕
+import com.allday.detoxy.presentation.ui.autorun.components.LocationEditDialog
 import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel  // 🆕
-import com.allday.detoxy.data.local.entity.LocationBasedAutoRun  // 🆕
+import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
+import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
+import com.allday.detoxy.presentation.model.WeeklyHeatmapUiModel
 import kotlinx.coroutines.launch
 
 /**
@@ -64,6 +65,7 @@ fun ScheduleGroupScreen(
     val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsStateWithLifecycle()
     val linkedLocations by viewModel.linkedLocations.collectAsStateWithLifecycle()  // 🆕
     val linkedLocationCounts by viewModel.linkedLocationCounts.collectAsStateWithLifecycle()
+    val groupHeatmaps by viewModel.groupHeatmaps.collectAsStateWithLifecycle()  // v1.1: 히트맵
     
     val listState = androidx.compose.foundation.lazy.rememberLazyListState() // 🆕 스크롤 상태 관리
     val scope = rememberCoroutineScope()
@@ -396,6 +398,7 @@ fun ScheduleGroupScreen(
                         val timeBasedAutoRunsList = linkedTimeBasedAutoRuns[group.id] ?: emptyList()
                         val linkedLocationsList = linkedLocations[group.id] ?: emptyList()  // 🆕
                         val locationCount = linkedLocationCounts[group.id] ?: 0
+                        val heatmap = groupHeatmaps[group.id] ?: WeeklyHeatmapUiModel.EMPTY  // v1.1: 히트맵
                         
                         // v8: controlState 계산
                         val controlState = ScheduleGroupControlState.fromEntity(
@@ -435,6 +438,15 @@ fun ScheduleGroupScreen(
                             onTimeClick = {
                                 // 스케줄 그룹 정보와 함께 TimeBasedAutoRunScreen으로 이동
                                 Log.d("ScheduleGroupScreen", "Time clicked: ${group.name} (ID: ${group.id})")
+                                onNavigateToTimeBasedAutoRun(group.id, group.name)
+                            },
+                            // v1.1: 히트맵 데이터 전달
+                            heatmap = heatmap,
+                            onHeatmapRowClick = { row ->
+                                // 히트맵 행 클릭 시 상세 정보 표시 (추후 구현)
+                                Log.d("ScheduleGroupScreen", "Heatmap row clicked: ${row.dayOfWeek} ${row.period}")
+                            },
+                            onNavigateToTimeScreen = {
                                 onNavigateToTimeBasedAutoRun(group.id, group.name)
                             }
                         )

@@ -351,6 +351,25 @@ class ScheduleGroupViewModel @Inject constructor(
     val linkedTimeBasedAutoRuns: StateFlow<Map<String, List<TimeBasedAutoRun>>> = _linkedTimeBasedAutoRuns.asStateFlow()
 
     /**
+     * v1.1: 각 ScheduleGroup의 히트맵 데이터 (Map 기반)
+     * 
+     * linkedTimeBasedAutoRuns를 기반으로 자동 계산됩니다.
+     * Key: ScheduleGroup ID
+     * Value: 해당 그룹의 WeeklyHeatmapUiModel
+     */
+    val groupHeatmaps: StateFlow<Map<String, WeeklyHeatmapUiModel>> = _linkedTimeBasedAutoRuns
+        .map { linkedMap ->
+            linkedMap.mapValues { (_, autoRuns) ->
+                WeeklyHeatmapCalculator.calculate(autoRuns)
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyMap()
+        )
+
+    /**
      * 특정 ScheduleGroup의 연결된 TimeBasedAutoRun 개수 로드
      *
      * @param scheduleGroupId ScheduleGroup ID
