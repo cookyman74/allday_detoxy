@@ -2,8 +2,8 @@ package com.allday.detoxy.presentation.ui.heatmap
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -18,6 +18,11 @@ import com.allday.detoxy.presentation.model.HeatmapCell
  * 히트맵 셀 Composable
  *
  * 1시간 슬롯의 집중 계획 밀도를 색상으로 표현합니다.
+ *
+ * ## 크기 정책
+ * - 높이: 32dp 고정
+ * - 폭: 호출부에서 Modifier.weight(1f)로 유동 조정 (화면 적응형)
+ * - 패딩: 1dp (셀 간 간격)
  *
  * ## 색상 레벨 (HeatmapLevel)
  * - NONE: 계획 없음 (#E0E0E0)
@@ -42,7 +47,7 @@ fun HeatmapCell(
     
     Box(
         modifier = modifier
-            .size(width = 24.dp, height = 32.dp)
+            .height(32.dp)
             .padding(1.dp)
             .clip(RoundedCornerShape(2.dp))
             .background(backgroundColor)
