@@ -130,10 +130,7 @@ object WeeklyHeatmapCalculator {
         // isEnabled=true만 필터링
         val enabledAutoRuns = autoRuns.filter { it.isEnabled }
 
-        if (enabledAutoRuns.isEmpty()) {
-            return WeeklyHeatmapUiModel.EMPTY
-        }
-
+        // v1.1: 빈 데이터일 때도 14개 빈 행 생성 (early return 제거)
         // 요일별, 시간별 분 합산
         val dayHourMinutes = mutableMapOf<DayOfWeek, MutableMap<Int, Int>>()
         // 요일+Period별 TimeSlotInfo 저장 (AM/PM 분리)
