@@ -315,7 +315,7 @@ fun MainScreenWithNavigation() {
                             groupId = selectedScheduleGroupId ?: "",
                             onBack = { 
                                 selectedScheduleGroupId = null
-                                showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP 
+                                showAutoRunScreen = AutoRunScreenType.NONE  // 스케줄 탭(메인)으로 직접 이동
                             },
                             onNavigateToTimeBasedAutoRun = { scheduleGroupId, scheduleGroupName ->
                                 selectedScheduleGroupId = scheduleGroupId
