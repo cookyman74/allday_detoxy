@@ -23,19 +23,17 @@ data class WeeklyHeatmapUiModel(
 }
 
 /**
- * 히트맵 행 모델
+ * 히트맵 행 모델 (v1.1 컴팩트 구조)
  *
- * 하나의 요일 + 시간대(AM/PM)에 해당하는 12개 셀 정보와 상세 시간 슬롯 정보를 포함합니다.
+ * 하나의 요일에 해당하는 24개 셀 정보와 상세 시간 슬롯 정보를 포함합니다.
  *
  * @property dayOfWeek 요일
- * @property period 시간대 (AM: 0~11시, PM: 12~23시)
- * @property cells 12개의 히트맵 셀 (1시간 단위)
+ * @property cells 24개의 히트맵 셀 (0시~23시)
  * @property timeSlots 해당 행에 속하는 시간 스케줄 상세 정보 (행 탭 시 표시용)
  * @property totalMinutes 해당 행의 총 계획 시간 (분)
  */
 data class HeatmapRow(
     val dayOfWeek: DayOfWeek,
-    val period: Period,
     val cells: List<HeatmapCell>,
     val timeSlots: List<TimeSlotInfo>,
     val totalMinutes: Int

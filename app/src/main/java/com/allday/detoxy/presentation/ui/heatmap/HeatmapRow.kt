@@ -15,20 +15,18 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.presentation.model.HeatmapRow
-import com.allday.detoxy.presentation.model.Period
-import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Locale
 
 /**
- * 히트맵 행 Composable
+ * 히트맵 행 Composable (v1.1: 7행 × 24셀 컴팩트 구조)
  *
- * 하나의 요일+시간대(AM/PM)를 표시하며, 12개의 셀과 라벨을 포함합니다.
- * 행 전체를 탭하면 해당 시간대의 상세 정보를 표시합니다.
+ * 하나의 요일을 표시하며, 24개의 셀(0~23시)과 라벨을 포함합니다.
+ * 행 전체를 탭하면 해당 요일의 상세 정보를 표시합니다.
  *
  * ## 접근성
  * - 최소 터치 타겟: 48dp 높이
- * - 스크린 리더: "월 AM, 총 60분 계획됨" 형식으로 읽기
+ * - 스크린 리더: "월, 총 60분 계획됨" 형식으로 읽기
  *
  * @param row 히트맵 행 데이터
  * @param onRowClick 행 클릭 콜백 (상세 정보 표시용)
@@ -41,31 +39,27 @@ fun HeatmapRowItem(
     modifier: Modifier = Modifier
 ) {
     val dayLabel = row.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.KOREAN)
-    val periodLabel = when (row.period) {
-        Period.AM -> "오전"
-        Period.PM -> "오후"
-    }
     
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .height(36.dp)  // v1.1: 더 컴팩트한 높이
             .clickable { onRowClick(row) }
             .semantics {
-                contentDescription = "$dayLabel $periodLabel, 총 ${row.totalMinutes}분 계획됨"
+                contentDescription = "$dayLabel, 총 ${row.totalMinutes}분 계획됨"
             },
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(1.dp),  // v1.1: 셀 간격 줄임
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 라벨: "월 AM"
+        // 라벨: "월"
         Text(
-            text = "$dayLabel $periodLabel",
-            modifier = Modifier.width(56.dp),
+            text = dayLabel,
+            modifier = Modifier.width(32.dp),  // v1.1: 더 컴팩트한 라벨
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        // 12개 셀
+        // 24개 셀 (0~23시)
         row.cells.forEach { cell ->
             HeatmapCell(
                 cell = cell,

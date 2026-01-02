@@ -444,7 +444,7 @@ fun ScheduleGroupScreen(
                             heatmap = heatmap,
                             onHeatmapRowClick = { row ->
                                 // 히트맵 행 클릭 시 상세 정보 표시 (추후 구현)
-                                Log.d("ScheduleGroupScreen", "Heatmap row clicked: ${row.dayOfWeek} ${row.period}")
+                                Log.d("ScheduleGroupScreen", "Heatmap row clicked: ${row.dayOfWeek}")
                             },
                             onNavigateToTimeScreen = {
                                 onNavigateToTimeBasedAutoRun(group.id, group.name)
