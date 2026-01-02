@@ -215,7 +215,7 @@ enum class AutoRunScreenType {
     NONE,           // 자동 실행 화면 없음
     TIME_BASED,     // 시간 기반 자동 실행
     LOCATION_BASED, // 위치 기반 자동 실행
-    SCHEDULE_GROUP,  // 스케쥴 그룹 목록
+    // SCHEDULE_GROUP,  // 스케쥴 그룹 목록 (v1.1: 제거 - 스케줄 탭에서 상세 페이지로 직접 이동)
     SCHEDULE_GROUP_DETAIL  // v1.1: 스케쥴 그룹 상세 페이지
 }
 
@@ -269,17 +269,13 @@ fun MainScreenWithNavigation() {
                     AutoRunScreenType.TIME_BASED -> {
                         TimeBasedAutoRunScreen(
                             onBack = {
-                                // 🆕 스케줄 그룹에서 온 경우 다시 스케줄 그룹으로, 아니면 설정으로
-                                if (selectedScheduleGroupId != null) {
-                                    showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP
-                                    selectedScheduleGroupId = null
-                                    selectedScheduleGroupName = null
-                                } else {
-                                    showAutoRunScreen = AutoRunScreenType.NONE
-                                }
+                                // v1.1: 항상 스케줄 탭(메인)으로 돌아감 (SCHEDULE_GROUP 화면 제거)
+                                selectedScheduleGroupId = null
+                                selectedScheduleGroupName = null
+                                showAutoRunScreen = AutoRunScreenType.NONE
                             },
                             onNavigateToLocationBased = { showAutoRunScreen = AutoRunScreenType.LOCATION_BASED },
-                            onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP },
+                            // onNavigateToScheduleGroup 제거 (v1.1: 불필요)
                             scheduleGroupId = selectedScheduleGroupId,  // 🆕 스케줄 그룹 ID 전달
                             scheduleGroupName = selectedScheduleGroupName  // 🆕 스케줄 그룹 이름 전달
                         )
@@ -288,27 +284,12 @@ fun MainScreenWithNavigation() {
                     AutoRunScreenType.LOCATION_BASED -> {
                         LocationBasedAutoRunScreen(
                             onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
-                            onNavigateToTimeBased = { showAutoRunScreen = AutoRunScreenType.TIME_BASED },
-                            onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP }  // 🆕 3차 고도화
+                            onNavigateToTimeBased = { showAutoRunScreen = AutoRunScreenType.TIME_BASED }
+                            // onNavigateToScheduleGroup 제거 (v1.1: 불필요)
                         )
                     }
-                    // 스케줄 그룹 목록 화면
-                    AutoRunScreenType.SCHEDULE_GROUP -> {
-                        ScheduleGroupScreen(
-                            onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
-                            onNavigateToTimeBasedAutoRun = { scheduleGroupId, scheduleGroupName ->
-                                selectedScheduleGroupId = scheduleGroupId
-                                selectedScheduleGroupName = scheduleGroupName
-                                showAutoRunScreen = AutoRunScreenType.TIME_BASED
-                            },
-                            initialScrollToGroupId = selectedScheduleGroupId,
-                            // v1.1: 카드 클릭 시 상세 페이지로 이동
-                            onNavigateToDetail = { groupId ->
-                                selectedScheduleGroupId = groupId
-                                showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP_DETAIL
-                            }
-                        )
-                    }
+                    // 스케줄 그룹 목록 화면 (v1.1: 제거 - 스케줄 탭에서 상세 페이지로 직접 이동)
+                    // AutoRunScreenType.SCHEDULE_GROUP -> { ... }
                     // v1.1: 스케줄 그룹 상세 페이지
                     AutoRunScreenType.SCHEDULE_GROUP_DETAIL -> {
                         ScheduleGroupDetailScreen(
