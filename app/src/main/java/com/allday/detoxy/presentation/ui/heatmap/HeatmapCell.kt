@@ -24,12 +24,12 @@ import com.allday.detoxy.presentation.model.HeatmapCell
  * - 폭: 호출부에서 Modifier.weight(1f)로 유동 조정 (화면 적응형)
  * - 패딩: 1dp (셀 간 간격)
  *
- * ## 색상 레벨 (HeatmapLevel)
- * - NONE: 계획 없음 (#E0E0E0)
- * - LIGHT: 1~15분 (#90CAF9)
- * - MEDIUM: 16~30분 (#42A5F5)
- * - HIGH: 31~45분 (#1976D2)
- * - MAX: 46~60분 (#0D47A1)
+ * ## 색상 레벨 (HeatmapLevel) - 청록색(Teal) 계열
+ * - NONE: 계획 없음 (#E0F2F1 - Teal 50)
+ * - LIGHT: 1~15분 (#80CBC4 - Teal 200)
+ * - MEDIUM: 16~30분 (#26A69A - Teal 400)
+ * - HIGH: 31~45분 (#00897B - Teal 600)
+ * - MAX: 46~60분 (#004D40 - Teal 900)
  *
  * @param cell 히트맵 셀 데이터
  * @param modifier Modifier
