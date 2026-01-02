@@ -129,6 +129,8 @@ object WeeklyHeatmapCalculator {
     fun calculate(autoRuns: List<TimeBasedAutoRun>): WeeklyHeatmapUiModel {
         // isEnabled=true만 필터링
         val enabledAutoRuns = autoRuns.filter { it.isEnabled }
+        
+        android.util.Log.d("WeeklyHeatmapCalculator", "Calculating heatmap for ${autoRuns.size} autoRuns (${enabledAutoRuns.size} enabled)")
 
         // v1.1: 빈 데이터일 때도 14개 빈 행 생성 (early return 제거)
         // 요일별, 시간별 분 합산

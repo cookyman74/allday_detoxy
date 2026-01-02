@@ -69,8 +69,10 @@ fun ScheduleGroupDetailScreen(
     // 히트맵 계산 (해당 그룹의 데이터로만)
     val heatmap = remember(timeBasedAutoRuns) {
         if (timeBasedAutoRuns.isNotEmpty()) {
+            Log.d("ScheduleGroupDetailScreen", "Calculating heatmapWith ${timeBasedAutoRuns.size} items")
             WeeklyHeatmapCalculator.calculate(timeBasedAutoRuns)
         } else {
+            Log.d("ScheduleGroupDetailScreen", "timeBasedAutoRuns is empty, returning EMPTY heatmap")
             WeeklyHeatmapUiModel.EMPTY
         }
     }
