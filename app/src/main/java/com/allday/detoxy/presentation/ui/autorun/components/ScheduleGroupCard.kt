@@ -92,9 +92,6 @@ fun ScheduleGroupCard(
         ScheduleGroupControlState.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     }
     
-    // v1.1: 히트맵 확장 상태
-    var isHeatmapExpanded by remember { mutableStateOf(false) }
-    
     SimpleGlassSurface(
         modifier = modifier.fillMaxWidth(),
         backgroundColor = cardTint,
@@ -324,58 +321,65 @@ fun ScheduleGroupCard(
                     }
                 }
                 
-                // 시간대 목록 (v1.1: 히트맵 토글 버튼 추가)
+                // 시간대 목록 (v1.1: 시간 목록 접기/펼치기)
+                // 시간 스케줄 목록 접기 상태
+                var isTimeListExpanded by remember { mutableStateOf(false) }
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 히트맵 토글 버튼
+                    Spacer(Modifier.weight(1f))
+                    
+                    // 시간 스케줄 목록 토글 버튼 (기본 접힘)
                     if (timeBasedAutoRuns.isNotEmpty()) {
                         TextButton(
-                            onClick = { isHeatmapExpanded = !isHeatmapExpanded }
+                            onClick = { isTimeListExpanded = !isTimeListExpanded }
                         ) {
                             Icon(
-                                imageVector = if (isHeatmapExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (isHeatmapExpanded) "히트맵 접기" else "히트맵 펜치기",
+                                imageVector = if (isTimeListExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                contentDescription = if (isTimeListExpanded) "시간 목록 접기" else "시간 목록 펼치기",
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                text = if (isHeatmapExpanded) "히트맵 접기" else "히트맵 보기",
+                                text = if (isTimeListExpanded) "목록 접기" else "목록 보기 (${timeBasedAutoRuns.size}개)",
                                 style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-                    
-                    Spacer(Modifier.weight(1f))
-                    
-                    // 시간 상세 버튼
-                    if (timeBasedAutoRuns.isNotEmpty()) {
-                        TextButton(onClick = onTimeClick) {
-                            Text(
-                                text = "상세 보기",
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = "상세보기",
-                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 }
                 
-                // v1.1: 히트맵 영역 (AnimatedVisibility)
-                AnimatedVisibility(
-                    visible = isHeatmapExpanded && timeBasedAutoRuns.isNotEmpty(),
-                    enter = expandVertically(),
-                    exit = shrinkVertically()
-                ) {
+                // v1.1: 히트맵 영역 (항상 표시)
+                if (timeBasedAutoRuns.isNotEmpty()) {
                     WeeklyHeatmap(
                         heatmap = heatmap,
                         onRowClick = onHeatmapRowClick
                     )
+                }
+                
+                // 시간 스케줄 목록 (AnimatedVisibility로 접기/펼치기)
+                AnimatedVisibility(
+                    visible = isTimeListExpanded && timeBasedAutoRuns.isNotEmpty(),
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        color = Color.Transparent
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            timeBasedAutoRuns.forEach { autoRun ->
+                                Text(
+                                    text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
                 }
                 
                 // 빈 상태 UI
@@ -383,30 +387,6 @@ fun ScheduleGroupCard(
                     HeatmapEmptyState(
                         onNavigateToTimeScreen = onNavigateToTimeScreen
                     )
-                } else if (!isHeatmapExpanded) {
-                    // 히트맵 접힘 상태: 요약 정보 표시
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(onClick = onTimeClick),
-                        color = Color.Transparent
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            timeBasedAutoRuns.take(3).forEach { autoRun ->
-                                Text(
-                                    text = "• ${formatTime(autoRun.hour, autoRun.minute)} - ${autoRun.durationMinutes}분",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            if (timeBasedAutoRuns.size > 3) {
-                                Text(
-                                    text = "외 ${timeBasedAutoRuns.size - 3}개...",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
                 }
             }
             
