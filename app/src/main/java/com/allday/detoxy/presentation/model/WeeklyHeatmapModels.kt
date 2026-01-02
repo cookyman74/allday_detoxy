@@ -15,10 +15,35 @@ data class WeeklyHeatmapUiModel(
     val summary: HeatmapSummary
 ) {
     companion object {
-        val EMPTY = WeeklyHeatmapUiModel(
-            rows = emptyList(),
-            summary = HeatmapSummary(0, 0, "")
-        )
+        /**
+         * 빈 히트맵 모델 (14개 빈 행 포함)
+         * 
+         * 데이터가 없을 때도 히트맵 그리드가 표시되도록 14개 빈 행을 포함합니다.
+         */
+        val EMPTY: WeeklyHeatmapUiModel by lazy {
+            val emptyRows = java.time.DayOfWeek.values().flatMap { day ->
+                listOf(
+                    HeatmapRow(
+                        dayOfWeek = day,
+                        period = Period.AM,
+                        cells = (0..11).map { hour -> HeatmapCell(hour, 0, HeatmapLevel.NONE) },
+                        timeSlots = emptyList(),
+                        totalMinutes = 0
+                    ),
+                    HeatmapRow(
+                        dayOfWeek = day,
+                        period = Period.PM,
+                        cells = (12..23).map { hour -> HeatmapCell(hour, 0, HeatmapLevel.NONE) },
+                        timeSlots = emptyList(),
+                        totalMinutes = 0
+                    )
+                )
+            }
+            WeeklyHeatmapUiModel(
+                rows = emptyRows,
+                summary = HeatmapSummary(0, 0, "")
+            )
+        }
     }
 }
 
