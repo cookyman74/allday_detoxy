@@ -333,7 +333,8 @@ fun MainScreenWithNavigation() {
                                 ScheduleTabScreen(
                                     onNavigateToDetail = { groupId ->
                                         selectedScheduleGroupId = groupId
-                                        showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP
+                                        // v1.1: 상세 페이지로 직접 이동
+                                        showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP_DETAIL
                                     }
                                 )
                             }
