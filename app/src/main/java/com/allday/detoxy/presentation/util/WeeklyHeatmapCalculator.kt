@@ -180,23 +180,21 @@ object WeeklyHeatmapCalculator {
             }
         }
 
-        // v1.1: HeatmapRow 생성 (7행 × 24셀 컴팩트 구조)
-        val rows = DayOfWeek.values().map { day ->
-            createRow(
-                day = day,
-                hourMinutes = dayHourMinutes[day] ?: emptyMap(),
-                allTimeSlots = (dayPeriodTimeSlots[Pair(day, Period.AM)] ?: emptyList()) +
-                        (dayPeriodTimeSlots[Pair(day, Period.PM)] ?: emptyList())
+        // HeatmapRow 생성 (14행: 7요일 × AM/PM)
+        val rows = DayOfWeek.values().flatMap { day ->
+            listOf(
+                createRow(day, Period.AM, dayHourMinutes[day] ?: emptyMap(),
+                    (dayPeriodTimeSlots[Pair(day, Period.AM)] ?: emptyList())
+                        .sortedWith(compareBy({ it.hour }, { it.minute }))),
+                createRow(day, Period.PM, dayHourMinutes[day] ?: emptyMap(),
+                    (dayPeriodTimeSlots[Pair(day, Period.PM)] ?: emptyList())
+                        .sortedWith(compareBy({ it.hour }, { it.minute })))
             )
         }
 
         // Summary 계산
-        val amTotal = rows.sumOf { row ->
-            row.cells.filter { it.hour in 0..11 }.sumOf { it.totalMinutes }
-        }
-        val pmTotal = rows.sumOf { row ->
-            row.cells.filter { it.hour in 12..23 }.sumOf { it.totalMinutes }
-        }
+        val amTotal = rows.filter { it.period == Period.AM }.sumOf { it.totalMinutes }
+        val pmTotal = rows.filter { it.period == Period.PM }.sumOf { it.totalMinutes }
 
         return WeeklyHeatmapUiModel(
             rows = rows,
@@ -205,26 +203,30 @@ object WeeklyHeatmapCalculator {
     }
 
     /**
-     * 히트맵 행 생성 (v1.1: 24셀 컴팩트 구조)
+     * 히트맵 행 생성
      * 
      * @param day 요일
+     * @param period AM 또는 PM
      * @param hourMinutes 해당 요일의 시간별 분 맵
-     * @param allTimeSlots 해당 요일의 전체 TimeSlotInfo 목록
+     * @param periodTimeSlots 해당 요일+Period에 기여하는 TimeSlotInfo 목록
      */
     private fun createRow(
         day: DayOfWeek,
+        period: Period,
         hourMinutes: Map<Int, Int>,
-        allTimeSlots: List<TimeSlotInfo>
+        periodTimeSlots: List<TimeSlotInfo>
     ): HeatmapRow {
-        val cells = (0..23).map { hour ->
+        val hourRange = if (period == Period.AM) 0..11 else 12..23
+        val cells = hourRange.map { hour ->
             val minutes = hourMinutes[hour] ?: 0
             HeatmapCell(hour, minutes, HeatmapLevel.fromMinutes(minutes))
         }
 
         return HeatmapRow(
             dayOfWeek = day,
+            period = period,
             cells = cells,
-            timeSlots = allTimeSlots.sortedWith(compareBy({ it.hour }, { it.minute })),
+            timeSlots = periodTimeSlots,
             totalMinutes = cells.sumOf { it.totalMinutes }
         )
     }

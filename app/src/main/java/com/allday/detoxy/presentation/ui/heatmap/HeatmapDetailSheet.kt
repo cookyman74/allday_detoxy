@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.presentation.model.HeatmapRow
+import com.allday.detoxy.presentation.model.Period
 import com.allday.detoxy.presentation.model.TimeSlotInfo
 import java.time.format.TextStyle
 import java.util.Locale
@@ -53,6 +54,10 @@ fun HeatmapDetailSheet(
     val sheetState = rememberModalBottomSheetState()
     
     val dayLabel = row.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.KOREAN)
+    val periodLabel = when (row.period) {
+        Period.AM -> "오전"
+        Period.PM -> "오후"
+    }
     
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -67,7 +72,7 @@ fun HeatmapDetailSheet(
         ) {
             // 헤더
             Text(
-                text = dayLabel,
+                text = "$dayLabel $periodLabel",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )

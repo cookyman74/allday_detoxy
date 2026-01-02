@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.presentation.model.HeatmapRow
+import com.allday.detoxy.presentation.model.Period
 import com.allday.detoxy.presentation.model.WeeklyHeatmapUiModel
 
 /**
@@ -42,8 +43,7 @@ fun WeeklyHeatmap(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+            .padding(8.dp)
     ) {
         // 요약 정보
         if (heatmap.summary.amTotalMinutes > 0 || heatmap.summary.pmTotalMinutes > 0) {
@@ -56,12 +56,17 @@ fun WeeklyHeatmap(
             Spacer(modifier = Modifier.height(8.dp))
         }
         
-        // 히트맵 행들
-        heatmap.rows.forEach { row ->
+        // 히트맵 행들 (같은 요일 AM/PM 붙이기, 요일 사이 구분선)
+        heatmap.rows.forEachIndexed { index, row ->
             HeatmapRowItem(
                 row = row,
                 onRowClick = onRowClick
             )
+            
+            // PM 행 다음(다른 요일 시작 전)에 구분선 추가 (마지막 요일 제외)
+            if (row.period == Period.PM && index < heatmap.rows.size - 1) {
+                Spacer(modifier = Modifier.height(2.dp))
+            }
         }
         
         Spacer(modifier = Modifier.height(8.dp))
