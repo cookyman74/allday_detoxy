@@ -312,6 +312,7 @@ fun MainScreenWithNavigation() {
                             1 -> {
                                 // 🆕 스케줄 탭 (v0.10 UI/UX 개선)
                                 ScheduleTabScreen(
+                                    onBack = { selectedTab = 0 },  // 집중 타이머로 이동
                                     onNavigateToDetail = { groupId ->
                                         selectedScheduleGroupId = groupId
                                         // v1.1: 상세 페이지로 직접 이동
@@ -319,7 +320,9 @@ fun MainScreenWithNavigation() {
                                     }
                                 )
                             }
-                            2 -> ReportScreen()  // 기존 1 → 2
+                            2 -> ReportScreen(
+                                onBack = { selectedTab = 0 }  // 집중 타이머로 이동
+                            )
                             3 -> DetoxyControlSettingsScreen(  // 기존 2 → 3
                                 onBack = { selectedTab = 0 }  // 뒤로 가기 시 타이머로
                             )
