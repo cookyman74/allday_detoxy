@@ -94,7 +94,9 @@ fun ScheduleGroupCard(
     }
     
     SimpleGlassSurface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },  // v1.1: 카드 클릭 시 상세 페이지로 이동
         backgroundColor = cardTint,
         alpha = 0.4f
     ) {
