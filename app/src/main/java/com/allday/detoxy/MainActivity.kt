@@ -29,6 +29,7 @@ import com.allday.detoxy.core.utils.PreferenceManager
 import com.allday.detoxy.presentation.ui.autorun.TimeBasedAutoRunScreen
 import com.allday.detoxy.presentation.ui.autorun.LocationBasedAutoRunScreen
 import com.allday.detoxy.presentation.ui.autorun.ScheduleGroupScreen
+import com.allday.detoxy.presentation.ui.autorun.ScheduleGroupDetailScreen
 import com.allday.detoxy.presentation.ui.component.GlassBottomNavigation
 import com.allday.detoxy.presentation.ui.component.GlassNavigationItem
 import com.allday.detoxy.presentation.ui.component.GlassScaffold
@@ -214,7 +215,8 @@ enum class AutoRunScreenType {
     NONE,           // 자동 실행 화면 없음
     TIME_BASED,     // 시간 기반 자동 실행
     LOCATION_BASED, // 위치 기반 자동 실행
-    SCHEDULE_GROUP  // 🆕 3차 고도화: 시간표 그룹 관리
+    SCHEDULE_GROUP,  // 스케쥴 그룹 목록
+    SCHEDULE_GROUP_DETAIL  // v1.1: 스케쥴 그룹 상세 페이지
 }
 
 /**
@@ -290,17 +292,36 @@ fun MainScreenWithNavigation() {
                             onNavigateToScheduleGroup = { showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP }  // 🆕 3차 고도화
                         )
                     }
-                    // 🆕 3차 고도화: 시간표 그룹 관리 화면
+                    // 스케줄 그룹 목록 화면
                     AutoRunScreenType.SCHEDULE_GROUP -> {
                         ScheduleGroupScreen(
                             onBack = { showAutoRunScreen = AutoRunScreenType.NONE },
                             onNavigateToTimeBasedAutoRun = { scheduleGroupId, scheduleGroupName ->
-                                // 🆕 스케줄 그룹 정보 저장 후 TimeBasedAutoRunScreen으로 이동
                                 selectedScheduleGroupId = scheduleGroupId
                                 selectedScheduleGroupName = scheduleGroupName
                                 showAutoRunScreen = AutoRunScreenType.TIME_BASED
                             },
-                            initialScrollToGroupId = selectedScheduleGroupId // 🆕 선택된 그룹으로 스크롤 이동
+                            initialScrollToGroupId = selectedScheduleGroupId,
+                            // v1.1: 카드 클릭 시 상세 페이지로 이동
+                            onNavigateToDetail = { groupId ->
+                                selectedScheduleGroupId = groupId
+                                showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP_DETAIL
+                            }
+                        )
+                    }
+                    // v1.1: 스케줄 그룹 상세 페이지
+                    AutoRunScreenType.SCHEDULE_GROUP_DETAIL -> {
+                        ScheduleGroupDetailScreen(
+                            groupId = selectedScheduleGroupId ?: "",
+                            onBack = { 
+                                selectedScheduleGroupId = null
+                                showAutoRunScreen = AutoRunScreenType.SCHEDULE_GROUP 
+                            },
+                            onNavigateToTimeBasedAutoRun = { scheduleGroupId, scheduleGroupName ->
+                                selectedScheduleGroupId = scheduleGroupId
+                                selectedScheduleGroupName = scheduleGroupName
+                                showAutoRunScreen = AutoRunScreenType.TIME_BASED
+                            }
                         )
                     }
                     // 탭별 화면

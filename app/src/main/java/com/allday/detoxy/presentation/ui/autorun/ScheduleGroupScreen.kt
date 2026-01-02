@@ -54,10 +54,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun ScheduleGroupScreen(
     onBack: () -> Unit = {},
-    onNavigateToTimeBasedAutoRun: (scheduleGroupId: String, scheduleGroupName: String) -> Unit = { _, _ -> },  // 🆕 스케줄 그룹 정보 전달
-    initialScrollToGroupId: String? = null, // 🆕 초기 스크롤 위치 (특정 스케줄 그룹 ID)
+    onNavigateToTimeBasedAutoRun: (scheduleGroupId: String, scheduleGroupName: String) -> Unit = { _, _ -> },
+    initialScrollToGroupId: String? = null,
+    onNavigateToDetail: (groupId: String) -> Unit = {},  // v1.1: 상세 페이지 이동
     viewModel: ScheduleGroupViewModel = hiltViewModel(),
-    locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()  // 🆕
+    locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()
 ) {
     val scheduleGroups by viewModel.scheduleGroups.collectAsStateWithLifecycle()
     val errorState by viewModel.errorState.collectAsStateWithLifecycle()
@@ -408,17 +409,15 @@ fun ScheduleGroupScreen(
                         
                         ScheduleGroupCard(
                             group = group,
-                            controlState = controlState,  // v8: 통합 제어 상태
-                            pauseUntil = group.pauseUntil,  // v8: 일시중지 해제 시각
+                            controlState = controlState,
+                            pauseUntil = group.pauseUntil,
                             timeBasedAutoRuns = timeBasedAutoRunsList,
                             linkedLocations = linkedLocationsList,
                             linkedLocationCount = locationCount,
                             onStateChange = { newState ->
-                                // v8: 상태 변경 처리
                                 viewModel.changeControlState(group.id, newState)
                             },
                             onPause = { duration ->
-                                // v8: 일시중지 처리
                                 viewModel.pauseScheduleGroup(group.id, duration)
                             },
                             onEdit = {
@@ -428,7 +427,6 @@ fun ScheduleGroupScreen(
                                 deletingGroupId = group.id
                             },
                             onLocationClick = {
-                                // 위치 정보 수정 다이얼로그 표시
                                 val location = linkedLocationsList.firstOrNull()
                                 if (location != null) {
                                     editingLocation = location
@@ -436,16 +434,16 @@ fun ScheduleGroupScreen(
                                 }
                             },
                             onTimeClick = {
-                                // 스케줄 그룹 정보와 함께 TimeBasedAutoRunScreen으로 이동
                                 Log.d("ScheduleGroupScreen", "Time clicked: ${group.name} (ID: ${group.id})")
                                 onNavigateToTimeBasedAutoRun(group.id, group.name)
                             },
-                            // v1.1: 히트맵 데이터 전달
-                            heatmap = heatmap,
-                            onHeatmapRowClick = { row ->
-                                // 히트맵 행 클릭 시 상세 정보 표시 (추후 구현)
-                                Log.d("ScheduleGroupScreen", "Heatmap row clicked: ${row.dayOfWeek}")
+                            // v1.1: 카드 클릭 시 상세 페이지로 이동
+                            onClick = {
+                                onNavigateToDetail(group.id)
                             },
+                            // 히트맵은 상세 페이지로 이동 (성능 최적화)
+                            heatmap = WeeklyHeatmapUiModel.EMPTY,
+                            onHeatmapRowClick = {},
                             onNavigateToTimeScreen = {
                                 onNavigateToTimeBasedAutoRun(group.id, group.name)
                             }

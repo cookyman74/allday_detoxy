@@ -386,6 +386,31 @@ class ScheduleGroupViewModel @Inject constructor(
     }
 
     /**
+     * 특정 ScheduleGroup의 연결된 TimeBasedAutoRun 목록 로드
+     * 
+     * 상세 페이지에서 호출하여 해당 그룹의 시간대 목록을 로드합니다.
+     *
+     * @param scheduleGroupId ScheduleGroup ID
+     */
+    fun loadLinkedTimeBasedAutoRuns(scheduleGroupId: String) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("ScheduleGroupViewModel", "Loading TimeBasedAutoRuns for group: $scheduleGroupId")
+                val autoRuns = repository.getLinkedTimeBasedAutoRuns(scheduleGroupId)
+                android.util.Log.d("ScheduleGroupViewModel", "Loaded ${autoRuns.size} TimeBasedAutoRuns")
+                
+                // Map 업데이트
+                val updated = _linkedTimeBasedAutoRuns.value.toMutableMap()
+                updated[scheduleGroupId] = autoRuns
+                _linkedTimeBasedAutoRuns.value = updated
+            } catch (e: Exception) {
+                android.util.Log.e("ScheduleGroupViewModel", "Failed to load TimeBasedAutoRuns", e)
+                _errorState.value = "연결된 시간표 조회 실패: ${e.message}"
+            }
+        }
+    }
+
+    /**
      * 특정 ScheduleGroup의 연결된 LocationBasedAutoRun 개수 로드
      *
      * @param scheduleGroupId ScheduleGroup ID

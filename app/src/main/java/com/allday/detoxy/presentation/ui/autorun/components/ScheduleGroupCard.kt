@@ -79,6 +79,7 @@ fun ScheduleGroupCard(
     onDelete: () -> Unit,
     onLocationClick: () -> Unit = {},
     onTimeClick: () -> Unit = {},
+    onClick: () -> Unit = {},  // v1.1: 카드 클릭 시 상세 페이지로 이동
     // v1.1: 히트맵 통합
     heatmap: WeeklyHeatmapUiModel = WeeklyHeatmapUiModel.EMPTY,
     onHeatmapRowClick: (HeatmapRow) -> Unit = {},
