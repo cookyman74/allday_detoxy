@@ -58,6 +58,13 @@
             </intent-filter>
         </activity>
 
+        <!-- GrayscaleSettingsActivity for AutomaticZenRule configuration (Android 15+) -->
+        <activity
+            android:name=".presentation.ui.settings.GrayscaleSettingsActivity"
+            android:exported="true"
+            android:label="흑백 모드 설정"
+            android:theme="@style/Theme.AlldayDetoxy" />
+
         <!-- AccessibilityService for app blocking -->
         <service
             android:name=".service.accessibility.FocusAccessibilityService"
