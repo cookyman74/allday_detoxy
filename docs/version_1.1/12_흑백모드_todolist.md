@@ -1,9 +1,9 @@
-# 흑백 모드 자동 전환 기능 작업 계획서 (v1.4)
+# 흑백 모드 자동 전환 기능 작업 계획서 (v1.7)
 
 > **TDD 방법론 기반**: Red → Green → Refactor 사이클 적용  
 > **작업 원칙**: 테스트 먼저 작성 → 최소 코드 구현 → 리팩터링  
 > **참고 문서**: [99_TDD_plan.md](../99_TDD_plan.md)  
-> **버전**: v1.4 (코드 리뷰 v2 반영 - ViewModel 연동, 실제 서비스 메서드 수정)
+> **버전**: v1.7 (코드 리뷰 v5 반영 - DI 패턴 최종 통일)
 
 ---
 
@@ -19,7 +19,24 @@
 
 ---
 
-## ⚠️ v1.4 주요 수정사항 (코드 리뷰 v2)
+## ⚠️ v1.7 주요 수정사항 (코드 리뷰 v5)
+
+| 항목 | 수정 내용 |
+|------|----------|
+| **DI 패턴 통일** | Phase 7의 정적 호출(`GrayscaleManager.xxx(this)`) → EntryPoint DI 주입으로 통일 |
+| **메서드 시그니처 통일** | 모든 메서드에서 `context` 파라미터 제거 (클래스가 보유) |
+| **@ApplicationContext 명시** | DI 클래스에 `@ApplicationContext` 사용 명시 (누수 위험 방지) |
+
+### v1.6 수정사항 (이전)
+
+| 항목 | 수정 내용 |
+|------|----------|
+| **Application Scope 수정** | `viewModelScope` → `applicationScope` (DetoxyApplication 기존 패턴 사용) |
+| **집중 상태 확인 수정** | `focusStateRepository.isAnyFocusActive()` → `FocusTimerService.state` (StateFlow) |
+| **GrayscaleSettingsActivity** | Phase 2에 스텁 생성 필요 메모 추가 (setConfigurationActivity 참조) |
+| **테스트 케이스 보강** | Phase 4-6 테스트 상세화 (서비스/UI 테스트 분리) |
+
+### v1.4 수정사항 (이전)
 
 | 항목 | 수정 내용 |
 |------|----------|
@@ -103,8 +120,8 @@
 
 - [ ] **[TEST]** 단위 테스트 실행
 - [ ] **[DOC]** 작업 결과서 작성
-  - 파일: `docs/working_history/v1.1/Phase1_흑백모드_저장소_{작업일자}.md`
-- [ ] **[COMMIT]** `[Phase1] 흑백 모드 저장소 + ViewModel 연동`
+  - 파일: `working_history/2026-01-XX_grayscale_phase1.md`
+- [ ] **[COMMIT]** `feat(settings): add grayscale mode setting to repository and ViewModel`
 
 ---
 
@@ -137,45 +154,57 @@
 
 - [ ] **[TASK-001]** GrayscaleResult sealed class
   - 파일: `core/manager/GrayscaleResult.kt`
+  - ⚠️ **용도**: 에러 타입 분류 (Success, PermissionDenied, NotSupported 등)
+  - 내부 메서드는 Boolean 반환, UI 레이어에서 Result 타입 활용
 
 - [ ] **[TASK-002]** GrayscaleManager 핵심 구현
   - 파일: `core/manager/GrayscaleManager.kt`
+  - ⚠️ **패턴**: `class` (DI 주입) - 기존 `DndManager` 패턴과 통일
   - **필수 메서드** (Phase 4에서 사용):
     ```kotlin
-    object GrayscaleManager {
+    // ⚠️ class로 정의 (object 아님) - DndManager 패턴 준수
+    // ⚠️ @ApplicationContext로 Context 주입 (누수 방지)
+    class GrayscaleManager @Inject constructor(
+        @ApplicationContext private val context: Context
+    ) {
         private var isGrayscaleActive = false
         
         // 조건 확인 후 활성화 (중복 방지)
-        fun enableGrayscaleIfNeeded(context: Context): Boolean
+        // ⚠️ API 레벨 게이트 필수: Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
+        fun enableGrayscaleIfNeeded(): Boolean
         
         // 조건 확인 후 비활성화 (중복 방지)
-        fun disableGrayscaleIfNeeded(context: Context): Boolean
+        fun disableGrayscaleIfNeeded(): Boolean
         
         // 룰 존재 여부 검증 (시스템에서 삭제됐는지 확인)
-        fun validateRuleExists(context: Context): Boolean
+        fun validateRuleExists(): Boolean
         
         // 앱 시작 시 복원
-        fun restoreRuleId(context: Context)
+        fun restoreRuleId()
         
         // 상태 확인
         fun isActive(): Boolean = isGrayscaleActive
     }
     ```
+  - ⚠️ **GrayscaleSettingsActivity 필요** (빈 스텁이라도 Phase 7 전에 생성)
+  - `setConfigurationActivity()`에서 참조되므로 빌드 오류 방지용
 
 - [ ] **[TASK-003]** AutomaticZenRule 파라미터 검증
   - ⚠️ `TYPE_SCHEDULE` + `Uri.EMPTY` 조합 실제 기기 테스트
 
 - [ ] **[TASK-004]** 룰 정합성 검증 로직
   - 시스템에서 룰 삭제 시 `isGrayscaleActive` 동기화
+  - ⚠️ **시그니처**: 파라미터 없음 (context는 클래스가 보유)
   ```kotlin
-  fun validateRuleExists(context: Context): Boolean {
+  // context는 생성자에서 주입받아 보유 중
+  fun validateRuleExists(): Boolean {
       ruleId?.let { id ->
           val nm = context.getSystemService(NotificationManager::class.java)
           val rules = nm.automaticZenRules
           if (!rules.containsKey(id)) {
               // 시스템에서 삭제됨 → 상태 정리
               isGrayscaleActive = false
-              clearRuleId(context)
+              clearRuleId()
               return false
           }
       }
@@ -190,8 +219,8 @@
 
 - [ ] **[TEST]** androidTest 실행 (Android 15 에뮬레이터)
 - [ ] **[DOC]** 작업 결과서 작성
-  - 파일: `docs/working_history/v1.1/Phase2_GrayscaleManager_{작업일자}.md`
-- [ ] **[COMMIT]** `[Phase2] GrayscaleManager 구현`
+  - 파일: `working_history/2026-01-XX_grayscale_phase2.md`
+- [ ] **[COMMIT]** `feat(manager): implement GrayscaleManager with ZenDeviceEffects API`
 
 ---
 
@@ -225,11 +254,21 @@
 
 - [ ] **[TASK-002]** 토글 롤백 로직 (ViewModel)
   - 파일: `FocusSettingsViewModel.kt`
+  - ⚠️ **참고**: `FocusSettingsViewModel`은 `AndroidViewModel` 확장 (`getApplication<Application>()` 사용 가능)
   - `toggleGrayscaleMode()` 메서드:
     ```kotlin
+    // FocusSettingsViewModel : AndroidViewModel(application)
     fun toggleGrayscaleMode(enabled: Boolean) {
         if (enabled) {
-            // 권한 확인
+            // ⚠️ API 레벨 게이트 먼저 확인
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                // Android 14 이하: 설정은 저장하되 경고 배너 표시
+                _uiState.update { it.copy(grayscaleModeEnabled = enabled) }
+                saveGrayscaleSetting(enabled)
+                return
+            }
+            
+            // Android 15+: 권한 확인
             val nm = getApplication<Application>()
                 .getSystemService(NotificationManager::class.java)
             if (!nm.isNotificationPolicyAccessGranted) {
@@ -262,7 +301,8 @@
 
 - [ ] **[VERIFY]** 권한 플로우 수동 검증
 - [ ] **[DOC]** 작업 결과서 작성
-- [ ] **[COMMIT]** `[Phase3] 권한 관리 및 토글 롤백`
+  - 파일: `working_history/2026-01-XX_grayscale_phase3.md`
+- [ ] **[COMMIT]** `feat(settings): add grayscale permission check and toggle rollback`
 
 ---
 
@@ -281,12 +321,19 @@
   - 종료: `stopTimerInternal()` (라인 439)
 
 - [ ] **[RED]** 실패 테스트 작성
+  - ⚠️ **테스트 전략**: Robolectric 또는 Mock 기반 (Service 단위 테스트)
   ```kotlin
   @Test
-  fun `startTimerInternal calls enableGrayscaleIfNeeded`()
+  fun `startTimerInternal calls enableGrayscaleIfNeeded when setting enabled`()
+  
+  @Test
+  fun `startTimerInternal skips grayscale when setting disabled`()
   
   @Test
   fun `stopTimerInternal calls disableGrayscaleIfNeeded`()
+  
+  @Test
+  fun `stopTimerInternal handles grayscale already inactive`()
   ```
 
 ### 4.2 본 작업
@@ -301,7 +348,8 @@
   - 추가:
     ```kotlin
     // 흑백 모드 활성화 (설정 ON + Android 15+ + 권한 있음만)
-    grayscaleManager.enableGrayscaleIfNeeded(this)
+    // ⚠️ API 레벨 게이트는 GrayscaleManager 내부에서 처리
+    grayscaleManager.enableGrayscaleIfNeeded()
     ```
 
 - [ ] **[TASK-003]** stopTimerInternal() 연동
@@ -310,7 +358,7 @@
   - 추가:
     ```kotlin
     // 흑백 모드 비활성화
-    grayscaleManager.disableGrayscaleIfNeeded(this)
+    grayscaleManager.disableGrayscaleIfNeeded()
     ```
 
 - [ ] **[GREEN]** 테스트 통과 확인
@@ -319,7 +367,8 @@
 
 - [ ] **[VERIFY]** 실제 기기에서 흑백 전환 확인
 - [ ] **[DOC]** 작업 결과서 작성
-- [ ] **[COMMIT]** `[Phase4] FocusTimerService 흑백 모드 연동`
+  - 파일: `working_history/2026-01-XX_grayscale_phase4.md`
+- [ ] **[COMMIT]** `feat(timer): integrate grayscale mode with FocusTimerService`
 
 ---
 
@@ -334,13 +383,22 @@
 - [ ] **[REVIEW]** Phase 4 결과서 검토
 - [ ] **[ANALYSIS]** DetoxyControlSettingsScreen 구조 분석
 
-- [ ] **[RED]** UI 테스트 작성
+- [ ] **[RED]** UI 테스트 작성 (Compose UI Test)
   ```kotlin
   @Test
   fun `GrayscaleSettingItem shows toggle OFF by default`()
   
   @Test
+  fun `GrayscaleSettingItem toggle triggers permission dialog when not granted`()
+  
+  @Test
+  fun `GrayscaleWarningBanner visible on Android 14-`()
+  
+  @Test
   fun `GrayscaleWarningBanner hidden on Android 15+`()
+  
+  @Test
+  fun `GrayscaleWarningBanner button opens system settings`()
   ```
 
 ### 5.2 본 작업
@@ -362,7 +420,8 @@
 
 - [ ] **[VERIFY]** UI 수동 검증
 - [ ] **[DOC]** 작업 결과서 작성
-- [ ] **[COMMIT]** `[Phase5] 설정 페이지 UI`
+  - 파일: `working_history/2026-01-XX_grayscale_phase5.md`
+- [ ] **[COMMIT]** `feat(ui): add grayscale mode toggle and warning banner to settings`
 
 ---
 
@@ -370,7 +429,9 @@
 
 > 📄 **목표**: 집중 타이머 페이지에 흑백 모드 안내 배너
 > 📄 **PRD 참조**: 섹션 3-3
-> ⚠️ **"다시 보지 않기" 저장**: PreferencesDataStore 별도 키 사용 (UX 설정 분리)
+> ⚠️ **"다시 보지 않기" 저장**: `FocusSettingsRepositoryImpl` DataStore에 통합
+> - 키 정의: `KEY_GRAYSCALE_TIP_DISMISSED = booleanPreferencesKey("grayscale_tip_dismissed")`
+> - `FocusSettingsRepository` 인터페이스에 메서드 추가
 
 ### 6.1 사전 작업
 
@@ -383,8 +444,14 @@
   - 파일: `presentation/ui/timer/GrayscaleTipBanner.kt`
 
 - [ ] **[TASK-002]** "다시 보지 않기" 상태 저장
-  - ⚠️ **별도 키**: `UiPreferences.GRAYSCALE_TIP_DISMISSED`
-  - FocusSettingsRepository와 분리 (UX vs 기능 설정)
+  - 파일: `FocusSettingsRepositoryImpl.kt`
+  - 키: `KEY_GRAYSCALE_TIP_DISMISSED`
+  - 인터페이스 확장:
+    ```kotlin
+    // FocusSettingsRepository.kt
+    val grayscaleTipDismissedFlow: Flow<Boolean>
+    suspend fun saveGrayscaleTipDismissed(dismissed: Boolean)
+    ```
 
 - [ ] **[TASK-003]** 타이머 화면 통합
   - Android 14 이하 + 흑백 모드 ON + 최초 1회
@@ -395,7 +462,8 @@
 
 - [ ] **[VERIFY]** 배너 동작 확인
 - [ ] **[DOC]** 작업 결과서 작성
-- [ ] **[COMMIT]** `[Phase6] 타이머 화면 안내 배너`
+  - 파일: `working_history/2026-01-XX_grayscale_phase6.md`
+- [ ] **[COMMIT]** `feat(ui): add grayscale tip banner to timer screen`
 
 ---
 
@@ -412,23 +480,42 @@
 
 - [ ] **[TASK-002]** DetoxyApplication 상태 복원 (완전 로직)
   - 파일: `DetoxyApplication.kt`
+  - ⚠️ **코드 수정**: `viewModelScope` 대신 기존 `applicationScope` 패턴 사용
+  - ⚠️ **상태 확인**: `FocusTimerService.state.value == FocusState.RUNNING` 사용
   - **PRD 6-B-2 전체 로직**:
     ```kotlin
-    // 1) 룰 ID 복원
-    GrayscaleManager.restoreRuleId(this)
+    // 기존 applicationScope 활용 (라인 63)
+    // private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
-    // 2) 룰 정합성 검증 (시스템에서 삭제됐는지)
-    GrayscaleManager.validateRuleExists(this)
-    
-    // 3) 집중 모드 진행 중 + 설정 ON → 재적용
-    viewModelScope.launch {
-        val isFocusActive = focusStateRepository.isAnyFocusActive()
-        val isGrayscaleEnabled = settingsRepository.grayscaleModeEnabledFlow.first()
+    // ⚠️ 모든 GrayscaleManager 호출은 EntryPoint를 통한 DI 주입으로 통일
+    applicationScope.launch {
+        // EntryPoint를 통해 의존성 가져오기
+        val entryPoint = EntryPointAccessors.fromApplication(
+            this@DetoxyApplication,
+            DetoxyApplicationEntryPoint::class.java
+        )
+        val grayscaleManager = entryPoint.grayscaleManager()
+        
+        // 1) 룰 ID 복원
+        grayscaleManager.restoreRuleId()
+        
+        // 2) 룰 정합성 검증 (시스템에서 삭제됐는지)
+        grayscaleManager.validateRuleExists()
+        
+        // 3) 집중 모드 진행 중 + 설정 ON → 재적용
+        val isFocusActive = FocusTimerService.state.value == FocusState.RUNNING
+        val isGrayscaleEnabled = entryPoint.focusSettingsRepository()
+            .grayscaleModeEnabledFlow.first()
         
         if (isFocusActive && isGrayscaleEnabled) {
-            GrayscaleManager.enableGrayscaleIfNeeded(this@DetoxyApplication)
+            grayscaleManager.enableGrayscaleIfNeeded()
         }
     }
+    ```
+  - **EntryPoint 확장 필요**: `DetoxyApplicationEntryPoint`에 추가
+    ```kotlin
+    fun focusSettingsRepository(): FocusSettingsRepository
+    fun grayscaleManager(): GrayscaleManager
     ```
 
 ### 7.2 사후 작업
@@ -440,7 +527,8 @@
   - 앱 재시작: 상태 복원
   - 시스템에서 룰 삭제: 상태 동기화
 - [ ] **[DOC]** 최종 작업 결과서 작성
-- [ ] **[COMMIT]** `[Phase7] 상태 복원 및 최종 통합`
+  - 파일: `working_history/2026-01-XX_grayscale_phase7_final.md`
+- [ ] **[COMMIT]** `feat(app): add grayscale state restoration on app start`
 
 ---
 
@@ -487,6 +575,6 @@
 ---
 
 **작성일**: 2026-01-05  
-**버전**: v1.4 (코드 리뷰 v2 반영)  
+**버전**: v1.7 (코드 리뷰 v5 반영 - DI 패턴 최종 통일)  
 **상태**: ⬜ 작성 완료
 
