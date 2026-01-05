@@ -49,6 +49,14 @@ interface FocusSettingsRepository {
      */
     val currentPresetFlow: Flow<AppCategoryMapper.DetoxyPreset?>
 
+    /**
+     * 흑백 모드 활성화 여부 Flow
+     * 
+     * Android 15+ 에서 집중 모드 시작 시 화면을 그레이스케일로 전환
+     * 기본값: false (사용자가 명시적으로 활성화해야 함)
+     */
+    val grayscaleModeEnabledFlow: Flow<Boolean>
+
     // ==================== 저장 메서드 ====================
 
     /**
@@ -75,6 +83,11 @@ interface FocusSettingsRepository {
      * 프리셋 적용
      */
     suspend fun applyPreset(preset: AppCategoryMapper.DetoxyPreset)
+
+    /**
+     * 흑백 모드 활성화 여부 저장
+     */
+    suspend fun saveGrayscaleModeEnabled(enabled: Boolean)
 
     // ==================== 동기 조회 (suspend) ====================
 

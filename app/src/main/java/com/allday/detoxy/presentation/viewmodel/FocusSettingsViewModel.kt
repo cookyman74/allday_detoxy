@@ -1,6 +1,8 @@
 package com.allday.detoxy.presentation.viewmodel
 
 import android.app.Application
+import android.app.NotificationManager
+import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
@@ -76,6 +78,12 @@ class FocusSettingsViewModel @Inject constructor(
             launch {
                 settingsRepository.routineEnabledFlow.collect { routineEnabled ->
                     _uiState.update { it.copy(routineEnabled = routineEnabled) }
+                }
+            }
+            // 흑백 모드 설정 수집
+            launch {
+                settingsRepository.grayscaleModeEnabledFlow.collect { enabled ->
+                    _uiState.update { it.copy(grayscaleModeEnabled = enabled) }
                 }
             }
         }
@@ -233,6 +241,87 @@ class FocusSettingsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 흑백 모드 토글
+     * 
+     * Android 15+ 에서만 실제 흑백 전환 동작
+     * 권한 체크 후 미승인 시 다이얼로그 표시
+     * 
+     * ⚠️ UI 정책: uiState.grayscaleModeEnabled는 "실제 활성화 상태"만 반영
+     * - 권한 미승인 시 grayscaleModeEnabled는 false 유지 (낙관적 업데이트 안 함)
+     * - 다이얼로그 닫힘 후 onGrayscalePermissionResult()에서 최종 상태 결정
+     */
+    fun toggleGrayscaleMode(enabled: Boolean) {
+        // ⚠️ 토글 OFF 시: 다이얼로그가 열려있다면 닫기 (리뷰 피드백 반영)
+        if (!enabled) {
+            _uiState.update { 
+                it.copy(
+                    grayscaleModeEnabled = false, 
+                    showGrayscalePermissionDialog = false  // 다이얼로그도 닫기
+                ) 
+            }
+            saveGrayscaleSetting(false)
+            Log.d(TAG, "Grayscale mode toggled OFF")
+            return
+        }
+        
+        // 토글 ON 시: API 레벨 게이트 확인
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            // Android 14 이하: 설정은 저장하되 경고 배너 표시 (자동 전환 불가)
+            _uiState.update { it.copy(grayscaleModeEnabled = true) }
+            saveGrayscaleSetting(true)
+            Log.d(TAG, "Grayscale mode toggled ON (Android 14-)")
+            return
+        }
+        
+        // Android 15+: 권한 확인
+        val nm = getApplication<Application>()
+            .getSystemService(NotificationManager::class.java)
+        if (!nm.isNotificationPolicyAccessGranted) {
+            // ⚠️ 권한 미승인: grayscaleModeEnabled를 명시적으로 false 설정
+            // (저장값이 true인 상태에서 권한이 철회된 경우에도 false로 강제 동기화)
+            _uiState.update { 
+                it.copy(
+                    grayscaleModeEnabled = false,  // 명시적 false (리뷰 피드백 반영)
+                    showGrayscalePermissionDialog = true
+                ) 
+            }
+            // 저장값도 false로 동기화 (권한 없으면 기능 사용 불가)
+            saveGrayscaleSetting(false)
+            Log.d(TAG, "Grayscale permission not granted, mode forced to OFF, showing dialog")
+            return
+        }
+        
+        // 권한 있음: 정상 토글 ON
+        _uiState.update { it.copy(grayscaleModeEnabled = true) }
+        saveGrayscaleSetting(true)
+        Log.d(TAG, "Grayscale mode toggled ON (permission granted)")
+    }
+
+    /**
+     * 흑백 모드 권한 요청 결과 처리
+     */
+    fun onGrayscalePermissionResult(granted: Boolean) {
+        if (granted) {
+            _uiState.update { it.copy(grayscaleModeEnabled = true) }
+            saveGrayscaleSetting(true)
+            Log.d(TAG, "Grayscale permission granted, mode enabled")
+        } else {
+            Log.d(TAG, "Grayscale permission denied, mode stays OFF")
+        }
+        // 다이얼로그 닫기
+        _uiState.update { it.copy(showGrayscalePermissionDialog = false) }
+    }
+
+    /**
+     * 흑백 모드 설정 저장
+     */
+    private fun saveGrayscaleSetting(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveGrayscaleModeEnabled(enabled)
+        }
+    }
+
 }
 
 /**
@@ -259,5 +348,9 @@ data class FocusSettingsUiState(
     val overlayEnabled: Boolean = false,
 
     // 디톡시 루틴
-    val routineEnabled: Boolean = false
+    val routineEnabled: Boolean = false,
+
+    // 흑백 모드 설정 (v1.1)
+    val grayscaleModeEnabled: Boolean = false,
+    val showGrayscalePermissionDialog: Boolean = false
 )

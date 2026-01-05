@@ -34,6 +34,7 @@ class FocusSettingsRepositoryImpl(private val context: Context) : FocusSettingsR
         private val KEY_OTHER_APPS_ENABLED = booleanPreferencesKey("other_apps_enabled")
         private val KEY_MESSENGER_HAS_BEEN_ENABLED = booleanPreferencesKey("messenger_has_been_enabled")
         private val KEY_ROUTINE_ENABLED = booleanPreferencesKey("routine_enabled")
+        private val KEY_GRAYSCALE_MODE_ENABLED = booleanPreferencesKey("grayscale_mode_enabled")
     }
 
     // DataStore 인스턴스
@@ -94,6 +95,15 @@ class FocusSettingsRepositoryImpl(private val context: Context) : FocusSettingsR
         AppCategoryMapper.detectPreset(categories, otherApps)
     }
 
+    /**
+     * 흑백 모드 활성화 여부 Flow
+     * 
+     * 기본값: false (사용자가 명시적으로 활성화해야 함)
+     */
+    override val grayscaleModeEnabledFlow: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[KEY_GRAYSCALE_MODE_ENABLED] ?: false
+    }
+
     // ==================== 저장 메서드 ====================
 
     /**
@@ -146,6 +156,16 @@ class FocusSettingsRepositoryImpl(private val context: Context) : FocusSettingsR
             preferences[KEY_OTHER_APPS_ENABLED] = otherApps
         }
         Log.i(TAG, "Preset applied: ${preset.displayName}")
+    }
+
+    /**
+     * 흑백 모드 활성화 여부 저장
+     */
+    override suspend fun saveGrayscaleModeEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[KEY_GRAYSCALE_MODE_ENABLED] = enabled
+        }
+        Log.d(TAG, "Grayscale mode enabled saved: $enabled")
     }
 
     // ==================== 동기 조회 메서드 (suspend) ====================
