@@ -178,6 +178,21 @@ class GrayscaleManager @Inject constructor(
         return nm.isNotificationPolicyAccessGranted
     }
 
+    /**
+     * 그레이스케일 적용 가능 여부 확인
+     * 
+     * 다음 조건을 모두 만족해야 true:
+     * 1. Android 15+ (API 35)
+     * 2. ACCESS_NOTIFICATION_POLICY 권한 부여됨
+     * 
+     * ⚠️ 설정 ON 상태는 별도로 확인 필요 (Repository에서 관리)
+     * 
+     * @return 그레이스케일 적용 가능 여부
+     */
+    fun shouldApplyGrayscale(): Boolean {
+        return isSupported() && hasPermission()
+    }
+
     // ==================== 내부 메서드 (Android 15+) ====================
 
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)

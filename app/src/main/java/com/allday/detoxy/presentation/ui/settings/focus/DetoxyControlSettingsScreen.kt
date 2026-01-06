@@ -170,6 +170,26 @@ fun DetoxyControlSettingsScreen(
                 overlayEnabled = uiState.overlayEnabled
             )
 
+            // 🆕 Section 5: 흑백 모드 설정 (Phase 5)
+            GrayscaleSettingSection(
+                grayscaleModeEnabled = uiState.grayscaleModeEnabled,
+                showPermissionDialog = uiState.showGrayscalePermissionDialog,
+                onToggle = { enabled -> viewModel.toggleGrayscaleMode(enabled) },
+                onDismissDialog = { viewModel.onGrayscalePermissionResult(false) },
+                onNavigateToSettings = {
+                    // ⚠️ 리뷰 반영: Android 14 이하용 접근성 설정으로 이동
+                    try {
+                        context.startActivity(
+                            Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        )
+                    } catch (e: Exception) {
+                        context.startActivity(
+                            Intent(android.provider.Settings.ACTION_SETTINGS)
+                        )
+                    }
+                }
+            )
+
             // 🆕 스케줄 탭 안내 (v0.10 UI/UX 개선)
             ScheduleTabInfoCard()
 

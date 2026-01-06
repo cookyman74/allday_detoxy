@@ -14,6 +14,7 @@ import android.util.Log
 import com.allday.detoxy.MainActivity
 import com.allday.detoxy.R
 import com.allday.detoxy.core.manager.DndManager
+import com.allday.detoxy.core.manager.GrayscaleManager
 import com.allday.detoxy.core.utils.AppCategoryMapper
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.domain.repository.FocusRepository
@@ -52,6 +53,9 @@ class FocusTimerService : Service() {
 
     @Inject
     lateinit var locationBasedAutoRunDao: com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao  // 🆕 위치 기반 AutoRunLog 업데이트용
+
+    @Inject
+    lateinit var grayscaleManager: GrayscaleManager  // 🆕 흑백 모드 관리자
 
     companion object {
         private const val TAG = "FocusTimerService"
@@ -136,8 +140,9 @@ class FocusTimerService : Service() {
 
     private var serviceScope: CoroutineScope? = null
     private var timerJob: Job? = null
+    private var grayscaleEnableJob: Job? = null  // 흑백 모드 활성화 Job (레이스 컨디션 방지)
     private lateinit var dndManager: DndManager
-    private var wakeLock: PowerManager.WakeLock? = null  // 🔥 v0.10.1.3: WakeLock
+    private var wakeLock: PowerManager.WakeLock? = null  // WakeLock
     
     // 🆕 onCreate()에서 미리 생성한 간단한 알림 (startForeground() 즉시 호출용)
     private var preCreatedNotification: Notification? = null
@@ -380,6 +385,23 @@ class FocusTimerService : Service() {
             Log.d(TAG, "✅ DND mode enabled")
         }
 
+        // 흑백 모드 활성화 (설정 ON + Android 15+ + 권한 있음만)
+        // ⚠️ API 레벨 게이트는 GrayscaleManager 내부에서 처리
+        // ⚠️ 리뷰 반영: 레이스 컨디션 방지를 위해 Job을 추적하고 상태 확인
+        grayscaleEnableJob?.cancel()
+        grayscaleEnableJob = serviceScope?.launch {
+            try {
+                val isGrayscaleEnabled = settingsRepository.grayscaleModeEnabledFlow.first()
+                // 상태 확인: 타이머가 여전히 실행 중인지 확인 (레이스 컨디션 방지)
+                if (isGrayscaleEnabled && _state.value == FocusState.RUNNING) {
+                    val grayscaleResult = grayscaleManager.enableGrayscaleIfNeeded()
+                    Log.d(TAG, "✅ Grayscale mode enable attempted: result=$grayscaleResult")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to enable grayscale mode: ${e.message}", e)
+            }
+        }
+
         // 타이머 Job 시작 (Dispatchers.Default에서 실행하여 메인 스레드 부하 방지)
         timerJob?.cancel()
         timerJob = serviceScope?.launch {
@@ -468,6 +490,13 @@ class FocusTimerService : Service() {
             dndManager.disableDnd()
             Log.d(TAG, "✅ DND mode disabled")
         }
+
+        // 흑백 모드 비활성화
+        // ⚠️ 리뷰 반영: 활성화 Job 취소 (레이스 컨디션 방지)
+        grayscaleEnableJob?.cancel()
+        grayscaleEnableJob = null
+        val grayscaleResult = grayscaleManager.disableGrayscaleIfNeeded()
+        Log.d(TAG, "✅ Grayscale mode disable attempted: result=$grayscaleResult")
 
         // 타이머 완료/포기 브로드캐스트
         if (previousState == FocusState.RUNNING) {
