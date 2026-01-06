@@ -236,3 +236,48 @@ nm.setAutomaticZenRuleState(resultRuleId, condition)
    # 앱 로그 확인
    adb logcat -d | grep -iE "GrayscaleManager"
    ```
+
+---
+
+## 🔧 추가 수정: 연속 스케줄 흑백 모드 문제 (2026-01-06 17:20)
+
+### 증상
+- 스케줄 1 시작 → 흑백 모드 ON ✅
+- 스케줄 1 종료 → 흑백 모드 OFF ✅
+- 스케줄 2 시작 (폰 꺼진 상태) → **흑백 모드가 켜지지 않음** ❌
+
+### 원인 분석
+`disableGrayscaleInternal()`에서 룰을 `setEnabled(false)`로만 비활성화하고, **`setAutomaticZenRuleState()`로 조건 상태를 리셋하지 않았음**.
+
+시스템은 `Condition.STATE_TRUE`가 설정된 상태로 남아있어서, 두 번째 스케줄에서 `setAutomaticZenRuleState(STATE_TRUE)`를 호출해도 시스템이 "이미 활성화됨"으로 판단.
+
+### 해결책
+`disableGrayscaleInternal()`에 `setAutomaticZenRuleState(STATE_FALSE)` 호출 추가:
+
+```kotlin
+ruleId?.let { id ->
+    // ⚠️ 핵심 수정: 먼저 setAutomaticZenRuleState로 조건을 비활성화
+    val conditionId = Uri.parse("condition://com.allday.detoxy/grayscale")
+    val condition = android.service.notification.Condition(
+        conditionId,
+        "Grayscale Inactive",
+        android.service.notification.Condition.STATE_FALSE
+    )
+    nm.setAutomaticZenRuleState(id, condition)
+    Log.d(TAG, "Rule state set to inactive: $id")
+    
+    // 룰 비활성화 (삭제하지 않고 비활성화)
+    val existingRules = nm.automaticZenRules
+    existingRules[id]?.let { existingRule ->
+        val disabledRule = AutomaticZenRule.Builder(existingRule)
+            .setEnabled(false)
+            .build()
+        nm.updateAutomaticZenRule(id, disabledRule)
+    }
+}
+```
+
+### 핵심 포인트
+- `enable` 시: `setAutomaticZenRuleState(STATE_TRUE)` 호출
+- `disable` 시: `setAutomaticZenRuleState(STATE_FALSE)` 호출
+- **조건 상태의 대칭적 관리**가 필수

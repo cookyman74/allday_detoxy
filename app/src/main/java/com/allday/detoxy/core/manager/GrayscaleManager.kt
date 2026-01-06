@@ -287,6 +287,17 @@ class GrayscaleManager @Inject constructor(
         
         return try {
             ruleId?.let { id ->
+                // ⚠️ 핵심 수정: 먼저 setAutomaticZenRuleState로 조건을 비활성화
+                // 이렇게 해야 다음 enable 시 setAutomaticZenRuleState(STATE_TRUE)가 제대로 작동함
+                val conditionId = Uri.parse("condition://com.allday.detoxy/grayscale")
+                val condition = android.service.notification.Condition(
+                    conditionId,
+                    "Grayscale Inactive",
+                    android.service.notification.Condition.STATE_FALSE
+                )
+                nm.setAutomaticZenRuleState(id, condition)
+                Log.d(TAG, "Rule state set to inactive: $id")
+                
                 // 룰 비활성화 (삭제하지 않고 비활성화)
                 val existingRules = nm.automaticZenRules
                 existingRules[id]?.let { existingRule ->
