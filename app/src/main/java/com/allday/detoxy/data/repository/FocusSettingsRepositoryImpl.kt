@@ -35,6 +35,7 @@ class FocusSettingsRepositoryImpl(private val context: Context) : FocusSettingsR
         private val KEY_MESSENGER_HAS_BEEN_ENABLED = booleanPreferencesKey("messenger_has_been_enabled")
         private val KEY_ROUTINE_ENABLED = booleanPreferencesKey("routine_enabled")
         private val KEY_GRAYSCALE_MODE_ENABLED = booleanPreferencesKey("grayscale_mode_enabled")
+        private val KEY_GRAYSCALE_TIP_DISMISSED = booleanPreferencesKey("grayscale_tip_dismissed")
     }
 
     // DataStore 인스턴스
@@ -104,6 +105,13 @@ class FocusSettingsRepositoryImpl(private val context: Context) : FocusSettingsR
         preferences[KEY_GRAYSCALE_MODE_ENABLED] ?: false
     }
 
+    /**
+     * 흑백 모드 팁 배너 "다시 보지 않기" 상태 Flow
+     */
+    override val grayscaleTipDismissedFlow: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[KEY_GRAYSCALE_TIP_DISMISSED] ?: false
+    }
+
     // ==================== 저장 메서드 ====================
 
     /**
@@ -166,6 +174,16 @@ class FocusSettingsRepositoryImpl(private val context: Context) : FocusSettingsR
             preferences[KEY_GRAYSCALE_MODE_ENABLED] = enabled
         }
         Log.d(TAG, "Grayscale mode enabled saved: $enabled")
+    }
+
+    /**
+     * 흑백 모드 팁 배너 "다시 보지 않기" 상태 저장
+     */
+    override suspend fun saveGrayscaleTipDismissed(dismissed: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[KEY_GRAYSCALE_TIP_DISMISSED] = dismissed
+        }
+        Log.d(TAG, "Grayscale tip dismissed saved: $dismissed")
     }
 
     // ==================== 동기 조회 메서드 (suspend) ====================

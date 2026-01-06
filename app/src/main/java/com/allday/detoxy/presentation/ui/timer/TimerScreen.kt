@@ -200,6 +200,28 @@ fun TimerScreen(
             fontWeight = FontWeight.Bold
         )
 
+        // 🆕 흑백 모드 팁 배너 (Phase 6)
+        // 조건: Android 14 이하 + 흑백 모드 ON + "다시 보지 않기" 상태가 false
+        val grayscaleModeEnabled by viewModel.grayscaleModeEnabled.collectAsState()
+        val grayscaleTipDismissed by viewModel.grayscaleTipDismissed.collectAsState()
+        
+        if (grayscaleModeEnabled && !grayscaleTipDismissed) {
+            GrayscaleTipBanner(
+                onDismiss = { viewModel.dismissGrayscaleTip() },
+                onNavigateToSettings = {
+                    try {
+                        context.startActivity(
+                            android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        )
+                    } catch (e: Exception) {
+                        context.startActivity(
+                            android.content.Intent(android.provider.Settings.ACTION_SETTINGS)
+                        )
+                    }
+                }
+            )
+        }
+
         // 타이머 상태에 따른 UI 표시
         when (timerState) {
             FocusState.IDLE -> {

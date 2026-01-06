@@ -151,6 +151,21 @@ class TimerViewModel @Inject constructor(
     
     private val scheduleInfoConverter = ScheduleInfoConverter()
 
+    // 🆕 흑백 모드 팁 배너 상태 (Phase 6)
+    val grayscaleModeEnabled: StateFlow<Boolean> = settingsRepository.grayscaleModeEnabledFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+    
+    val grayscaleTipDismissed: StateFlow<Boolean> = settingsRepository.grayscaleTipDismissedFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     init {
         // 사용자 설정 초기화 (최초 실행 시)
         viewModelScope.launch {
@@ -643,6 +658,16 @@ class TimerViewModel @Inject constructor(
      */
     fun clearPermissionError() {
         _permissionError.value = null
+    }
+
+    /**
+     * 흑백 모드 팁 배너 "다시 보지 않기" 처리 (Phase 6)
+     */
+    fun dismissGrayscaleTip() {
+        viewModelScope.launch {
+            settingsRepository.saveGrayscaleTipDismissed(true)
+            Log.d(TAG, "✅ Grayscale tip dismissed")
+        }
     }
 
     /**

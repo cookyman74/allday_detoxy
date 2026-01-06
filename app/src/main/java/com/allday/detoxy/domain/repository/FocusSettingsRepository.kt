@@ -89,6 +89,19 @@ interface FocusSettingsRepository {
      */
     suspend fun saveGrayscaleModeEnabled(enabled: Boolean)
 
+    /**
+     * 흑백 모드 팁 배너 "다시 보지 않기" 상태 Flow
+     * 
+     * Android 14 이하에서 흑백 모드가 활성화된 경우 타이머 화면에 안내 배너 표시
+     * 사용자가 "다시 보지 않기"를 누르면 더 이상 표시하지 않음
+     */
+    val grayscaleTipDismissedFlow: Flow<Boolean>
+
+    /**
+     * 흑백 모드 팁 배너 "다시 보지 않기" 상태 저장
+     */
+    suspend fun saveGrayscaleTipDismissed(dismissed: Boolean)
+
     // ==================== 동기 조회 (suspend) ====================
 
     /**
