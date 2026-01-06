@@ -6,9 +6,13 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.allday.detoxy.core.manager.AutoRunAlarmManager
 import com.allday.detoxy.core.manager.AutoRunGeofenceManager
+import com.allday.detoxy.core.manager.GrayscaleManager
 import com.allday.detoxy.core.utils.AnalyticsHelper
 import com.allday.detoxy.data.local.dao.LocationBasedAutoRunDao
 import com.allday.detoxy.data.local.dao.TimeBasedAutoRunDao
+import com.allday.detoxy.domain.model.FocusState
+import com.allday.detoxy.domain.repository.FocusSettingsRepository
+import com.allday.detoxy.service.timer.FocusTimerService
 import dagger.hilt.android.HiltAndroidApp
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -17,6 +21,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -58,6 +63,9 @@ class DetoxyApplication : Application(), Configuration.Provider {
         fun geofenceManager(): AutoRunGeofenceManager
         fun timeBasedAutoRunDao(): TimeBasedAutoRunDao
         fun locationBasedAutoRunDao(): LocationBasedAutoRunDao
+        // 흑백 모드 상태 복원용 (Phase 7)
+        fun grayscaleManager(): GrayscaleManager
+        fun focusSettingsRepository(): FocusSettingsRepository
     }
     
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -83,6 +91,9 @@ class DetoxyApplication : Application(), Configuration.Provider {
         
         // 🆕 앱 시작 시 자동 실행 재등록 (앱이 종료된 후 다시 시작될 때)
         rescheduleAutoRunsOnAppStart()
+        
+        // 🆕 흑백 모드 상태 복원 (Phase 7)
+        restoreGrayscaleStateOnAppStart()
     }
     
     /**
@@ -144,6 +155,54 @@ class DetoxyApplication : Application(), Configuration.Provider {
                 Log.e(TAG, "❌ Failed to reschedule auto-runs on app start: ${e.message}", e)
                 e.printStackTrace()
                 // 실패해도 앱은 정상 작동 (다음 부팅 시 BootCompletedReceiver가 재등록)
+            }
+        }
+    }
+    
+    /**
+     * 앱 시작 시 흑백 모드 상태 복원 (Phase 7)
+     *
+     * 1) 룰 ID 복원 (DataStore에서)
+     * 2) 룰 정합성 검증 (시스템에서 삭제됐는지)
+     * 3) 집중 모드 진행 중 + 설정 ON → 재적용
+     */
+    private fun restoreGrayscaleStateOnAppStart() {
+        Log.d(TAG, "⚫ restoreGrayscaleStateOnAppStart() called")
+        applicationScope.launch {
+            try {
+                // Hilt 초기화를 기다리기 위해 짧은 지연
+                kotlinx.coroutines.delay(600)
+                
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    this@DetoxyApplication,
+                    DetoxyApplicationEntryPoint::class.java
+                )
+                val grayscaleManager = entryPoint.grayscaleManager()
+                val settingsRepository = entryPoint.focusSettingsRepository()
+                
+                // 1) 룰 ID 복원
+                grayscaleManager.restoreRuleId()
+                Log.d(TAG, "✅ Grayscale rule ID restored")
+                
+                // 2) 룰 정합성 검증 (시스템에서 삭제됐는지)
+                grayscaleManager.validateRuleExists()
+                Log.d(TAG, "✅ Grayscale rule validated")
+                
+                // 3) 집중 모드 진행 중 + 설정 ON → 재적용
+                val isFocusActive = FocusTimerService.state.value == FocusState.RUNNING
+                val isGrayscaleEnabled = settingsRepository.grayscaleModeEnabledFlow.first()
+                
+                Log.d(TAG, "   isFocusActive=$isFocusActive, isGrayscaleEnabled=$isGrayscaleEnabled")
+                
+                if (isFocusActive && isGrayscaleEnabled) {
+                    val result = grayscaleManager.enableGrayscaleIfNeeded()
+                    Log.i(TAG, "✅ Grayscale mode re-applied on app start: result=$result")
+                } else {
+                    Log.d(TAG, "ℹ️ Grayscale re-apply skipped: focus=${isFocusActive}, enabled=${isGrayscaleEnabled}")
+                }
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to restore grayscale state: ${e.message}", e)
             }
         }
     }

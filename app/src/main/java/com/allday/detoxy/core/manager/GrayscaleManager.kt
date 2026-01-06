@@ -217,17 +217,14 @@ class GrayscaleManager @Inject constructor(
                 .setShouldDisplayGrayscale(true)
                 .build()
             
-            // ZenPolicy - 알림 차단 없이 효과만 적용
-            val policy = ZenPolicy.Builder()
-                .allowAllSounds()
-                .build()
+            // ⚠️ 핵심 수정: conditionId는 setAutomaticZenRuleState에서 사용할 Uri와 동일해야 함
+            val conditionId = Uri.parse("condition://com.allday.detoxy/grayscale")
             
             // ⚠️ 리뷰 반영: ComponentName 클래스 참조 사용 (문자열 대신)
-            // AutomaticZenRule 생성
-            val rule = AutomaticZenRule.Builder(RULE_NAME, Uri.EMPTY)
-                .setType(AutomaticZenRule.TYPE_SCHEDULE_TIME)  // Android 15+ API
+            // AutomaticZenRule 생성 - conditionId를 명시적으로 설정
+            val rule = AutomaticZenRule.Builder(RULE_NAME, conditionId)
+                .setType(AutomaticZenRule.TYPE_OTHER)  // TYPE_OTHER로 변경 (앱 자체 제어)
                 .setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
-                .setZenPolicy(policy)
                 .setDeviceEffects(effects)
                 .setConfigurationActivity(
                     ComponentName(context, GrayscaleSettingsActivity::class.java)
@@ -259,6 +256,17 @@ class GrayscaleManager @Inject constructor(
             
             ruleId = resultRuleId
             Log.d(TAG, "Created new rule: $resultRuleId")
+            
+            // ⚠️ 핵심: 룰을 명시적으로 활성화 (setAutomaticZenRuleState 호출)
+            // addAutomaticZenRule만으로는 룰이 활성화되지 않음!
+            // Condition.STATE_TRUE를 사용하여 조건이 충족되었음을 시스템에 알림
+            val condition = android.service.notification.Condition(
+                Uri.parse("condition://com.allday.detoxy/grayscale"),
+                "Grayscale Active",
+                android.service.notification.Condition.STATE_TRUE
+            )
+            nm.setAutomaticZenRuleState(resultRuleId, condition)
+            Log.d(TAG, "Rule state set to active: $resultRuleId")
             
             // 룰 ID 저장 (비동기)
             saveRuleIdAsync(ruleId)
