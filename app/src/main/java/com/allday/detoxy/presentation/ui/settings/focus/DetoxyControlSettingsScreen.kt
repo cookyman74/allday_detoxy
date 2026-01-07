@@ -169,6 +169,9 @@ fun DetoxyControlSettingsScreen(
                 accessibilityEnabled = uiState.accessibilityEnabled,
                 overlayEnabled = uiState.overlayEnabled
             )
+            
+            // 🆕 v0.10.7: 배터리 최적화 설정 섹션
+            BatteryOptimizationSection()
 
             // 🆕 Section 5: 흑백 모드 설정 (Phase 5)
             GrayscaleSettingSection(
@@ -466,8 +469,7 @@ fun SettingsPreviewSection(
 ) {
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        alpha = 0.25f,
-        tint = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        alpha = 0.30f  // 정보 카드: 설정 카드(0.35f)보다 약간 연하게
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -719,8 +721,7 @@ fun DetoxyRoutineSection(
 ) {
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        alpha = 0.25f,
-        tint = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+        alpha = 0.25f  // 비활성 카드: 더 연하게
     ) {
         Row(
             modifier = Modifier
@@ -772,8 +773,7 @@ fun DetoxyRoutineSection(
 fun ScheduleTabInfoCard() {
     GlassSurface(
         modifier = Modifier.fillMaxWidth(),
-        alpha = 0.25f,
-        tint = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+        alpha = 0.30f  // 정보 카드: 설정 카드(0.35f)보다 약간 연하게
     ) {
         Row(
             modifier = Modifier
@@ -902,6 +902,109 @@ fun MessengerCategoryDialog(
             }
         }
     )
+}
+
+/**
+ * 배터리 최적화 설정 섹션 (v0.10.7)
+ * 
+ * 제조사별 배터리 최적화 해제 안내를 표시합니다.
+ * 적극적인 배터리 최적화 제조사(Xiaomi, Samsung 등)에서만 표시됩니다.
+ */
+@Composable
+fun BatteryOptimizationSection() {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val isAggressiveManufacturer = com.allday.detoxy.core.utils.BatteryOptimizationUtils.isAggressiveBatteryOptimizationManufacturer()
+    
+    // 🆕 v0.10.7: 배터리 상태를 mutableState로 관리하여 갱신 가능하도록 함
+    var batteryStatus by remember { 
+        mutableStateOf(com.allday.detoxy.core.utils.BatteryOptimizationUtils.getBatteryOptimizationStatus(context)) 
+    }
+    var showBatteryGuideDialog by remember { mutableStateOf(false) }
+    
+    // 🆕 v0.10.7: ON_RESUME 시 배터리 상태 갱신
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                batteryStatus = com.allday.detoxy.core.utils.BatteryOptimizationUtils.getBatteryOptimizationStatus(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    
+    // 배터리 가이드 다이얼로그
+    if (showBatteryGuideDialog) {
+        com.allday.detoxy.presentation.ui.component.BatteryOptimizationGuideDialog(
+            onDismiss = { showBatteryGuideDialog = false }
+        )
+    }
+    
+    // 적극적 최적화 제조사에서만 표시
+    if (isAggressiveManufacturer) {
+        val isWhitelisted = batteryStatus == com.allday.detoxy.core.utils.BatteryOptimizationUtils.BatteryOptimizationStatus.WHITELISTED
+        val manufacturerName = com.allday.detoxy.core.utils.BatteryOptimizationUtils.getGuideTitle()
+        
+        GlassSurface(
+            modifier = Modifier.fillMaxWidth(),
+            alpha = 0.35f  // 설정 카드: 다른 설정 카드와 동일
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = if (isWhitelisted) "🔋" else "⚠️",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = manufacturerName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (isWhitelisted) 
+                                "배터리 최적화에서 제외됨"
+                            else 
+                                "배터리 최적화 설정이 필요합니다",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isWhitelisted)
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            else
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+                
+                if (!isWhitelisted) {
+                    Text(
+                        text = "앱 차단 기능이 정상 작동하려면 배터리 최적화에서 제외해야 합니다.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    OutlinedButton(
+                        onClick = { showBatteryGuideDialog = true }
+                    ) {
+                        Text(if (isWhitelisted) "설정 확인" else "설정 가이드")
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true)

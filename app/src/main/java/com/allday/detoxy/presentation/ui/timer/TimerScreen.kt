@@ -681,16 +681,26 @@ fun PermissionErrorDialog(
     onDismiss: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
+    val context = LocalContext.current
+    var showBatteryGuide by remember { mutableStateOf(false) }
+    
+    // 배터리 최적화 가이드 다이얼로그
+    if (showBatteryGuide) {
+        com.allday.detoxy.presentation.ui.component.BatteryOptimizationGuideDialog(
+            onDismiss = { showBatteryGuide = false }
+        )
+    }
+    
     val (title, message) = when (error) {
         is TimerViewModel.PermissionError.AccessibilityServiceDisabled -> {
             "앱 차단 기능 권한 필요" to "집중 타이머를 사용하려면 앱 차단 기능(접근성 서비스)을 활성화해야 합니다.\n\n" +
                     "설정 화면에서 'ScreenSence'를 찾아 활성화해주세요."
         }
         is TimerViewModel.PermissionError.AccessibilityServiceCrashed -> {
-            // 🆕 v0.10.4: 크래시 상태 안내
+            // 🆕 v0.10.4: 크래시 상태 안내 (v0.10.7: 배터리 최적화 안내 추가)
             "⚠️ 앱 차단 기능 재시작 필요" to "앱 차단 기능(접근성 서비스)이 일시적으로 중지되었습니다.\n\n" +
-                    "설정 화면에서 'ScreenSence'를 꺼다가 다시 켜주세요.\n\n" +
-                    "이 문제가 반복되면 기기를 재부팅해 보세요."
+                    "1️⃣ 설정 화면에서 'ScreenSence'를 꺼다가 다시 켜주세요.\n\n" +
+                    "2️⃣ 이 문제가 반복되면 아래 '배터리 설정 가이드'를 확인하세요."
         }
         is TimerViewModel.PermissionError.OverlayPermissionDenied -> {
             "잠금 화면 표시 권한 필요" to "집중 타이머를 사용하려면 잠금 화면 표시 권한(다른 앱 위에 표시)이 필요합니다.\n\n" +
@@ -703,7 +713,7 @@ fun PermissionErrorDialog(
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = title,
@@ -715,6 +725,19 @@ fun PermissionErrorDialog(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium
             )
+            
+            // 🆕 v0.10.7: 크래시 상태에서 배터리 최적화 가이드 버튼 표시
+            if (error is TimerViewModel.PermissionError.AccessibilityServiceCrashed) {
+                val isAggressiveManufacturer = com.allday.detoxy.core.utils.BatteryOptimizationUtils.isAggressiveBatteryOptimizationManufacturer()
+                if (isAggressiveManufacturer) {
+                    OutlinedButton(
+                        onClick = { showBatteryGuide = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("🔋 배터리 설정 가이드")
+                    }
+                }
+            }
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -731,3 +754,4 @@ fun PermissionErrorDialog(
         }
     }
 }
+
