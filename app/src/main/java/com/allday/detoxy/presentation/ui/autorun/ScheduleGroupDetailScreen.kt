@@ -26,7 +26,14 @@ import com.allday.detoxy.presentation.model.WeeklyHeatmapUiModel
 import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
 import com.allday.detoxy.presentation.ui.heatmap.WeeklyHeatmap
 import com.allday.detoxy.presentation.util.WeeklyHeatmapCalculator
+import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDialog
+import com.allday.detoxy.presentation.ui.autorun.components.LocationEditDialog
+import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
+import com.allday.detoxy.presentation.viewmodel.LocationBasedAutoRunViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -52,7 +59,8 @@ fun ScheduleGroupDetailScreen(
     groupId: String,
     onBack: () -> Unit = {},
     onNavigateToTimeBasedAutoRun: (scheduleGroupId: String, scheduleGroupName: String) -> Unit = { _, _ -> },
-    viewModel: ScheduleGroupViewModel = hiltViewModel()
+    viewModel: ScheduleGroupViewModel = hiltViewModel(),
+    locationViewModel: LocationBasedAutoRunViewModel = hiltViewModel()
 ) {
     val scheduleGroups by viewModel.scheduleGroups.collectAsStateWithLifecycle()
     val linkedTimeBasedAutoRuns by viewModel.linkedTimeBasedAutoRuns.collectAsStateWithLifecycle()
@@ -60,6 +68,16 @@ fun ScheduleGroupDetailScreen(
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
+    
+    // 수정/삭제 다이얼로그 상태
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    
+    // 위치 수정 다이얼로그 상태
+    var showLocationEditDialog by remember { mutableStateOf(false) }
+    var editingLocation by remember { mutableStateOf<LocationBasedAutoRun?>(null) }
+    
+    val scope = rememberCoroutineScope()
     
     // 해당 그룹 찾기
     val group = scheduleGroups.find { it.id == groupId }
@@ -139,7 +157,7 @@ fun ScheduleGroupDetailScreen(
                 )
                 
                 // 수정 버튼
-                IconButton(onClick = { /* TODO: 수정 다이얼로그 */ }) {
+                IconButton(onClick = { showEditDialog = true }) {
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = "수정",
@@ -148,7 +166,7 @@ fun ScheduleGroupDetailScreen(
                 }
                 
                 // 삭제 버튼
-                IconButton(onClick = { /* TODO: 삭제 확인 */ }) {
+                IconButton(onClick = { showDeleteDialog = true }) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "삭제",
@@ -244,17 +262,38 @@ fun ScheduleGroupDetailScreen(
                             }
                             
                             locations.forEach { location ->
-                                Column {
-                                    Text(
-                                        text = location.label ?: "위치",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = location.address ?: "",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            editingLocation = location
+                                            showLocationEditDialog = true
+                                        }
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = location.label ?: "위치",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = location.address ?: "",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Icon(
+                                            Icons.Default.KeyboardArrowRight,
+                                            contentDescription = "수정",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -367,6 +406,117 @@ fun ScheduleGroupDetailScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
+        )
+    }
+    
+    // 수정 다이얼로그
+    if (showEditDialog) {
+        AddScheduleGroupDialog(
+            onDismiss = { showEditDialog = false },
+            onConfirm = { name, description ->
+                viewModel.updateScheduleGroup(
+                    group.copy(
+                        name = name,
+                        description = description
+                    )
+                )
+                showEditDialog = false
+            },
+            existingGroup = group
+        )
+    }
+    
+    // 삭제 확인 다이얼로그
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("스케줄 그룹 삭제") },
+            text = {
+                Column {
+                    Text("이 스케줄 그룹을 삭제하시겠습니까?")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "연결된 시간표와 위치의 참조는 해제되지만, 설정 자체는 삭제되지 않습니다.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                viewModel.deleteScheduleGroupSuspend(groupId)
+                                showDeleteDialog = false
+                                onBack()
+                            } catch (e: Exception) {
+                                showDeleteDialog = false
+                                snackbarHostState.showSnackbar(
+                                    message = "그룹 삭제 실패: ${e.message}",
+                                    duration = SnackbarDuration.Long
+                                )
+                                Log.e("ScheduleGroupDetailScreen", "❌ Failed to delete group", e)
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+    
+    // 위치 수정 다이얼로그
+    if (showLocationEditDialog && editingLocation != null) {
+        LocationEditDialog(
+            location = editingLocation!!,
+            onDismiss = {
+                showLocationEditDialog = false
+                editingLocation = null
+            },
+            onSave = { updatedLocation ->
+                Log.d("ScheduleGroupDetailScreen", "📍 onSave called for location: ${updatedLocation.label}")
+                
+                // 즉시 다이얼로그 닫기
+                showLocationEditDialog = false
+                editingLocation = null
+                
+                // 비동기 작업 시작 (NonCancellable로 화면 제거시에도 완료 보장)
+                scope.launch {
+                    withContext(NonCancellable) {
+                        try {
+                            // 1. LocationBasedAutoRun 업데이트
+                            locationViewModel.updateLocation(updatedLocation)
+                            Log.d("ScheduleGroupDetailScreen", "✅ Location updated successfully")
+                            
+                            // 2. 연결된 스케줄 그룹의 위치 정보 갱신
+                            viewModel.loadLinkedLocations(groupId)
+                            Log.d("ScheduleGroupDetailScreen", "✅ Linked locations reloaded")
+                            
+                            // 3. 성공 메시지 표시
+                            snackbarHostState.showSnackbar(
+                                message = "위치 정보가 수정되었습니다",
+                                duration = SnackbarDuration.Short
+                            )
+                        } catch (e: Exception) {
+                            snackbarHostState.showSnackbar(
+                                message = "위치 정보 수정 실패: ${e.message}",
+                                duration = SnackbarDuration.Long
+                            )
+                            Log.e("ScheduleGroupDetailScreen", "❌ Failed to update location", e)
+                        }
+                    }
+                }
+            }
         )
     }
 }

@@ -182,6 +182,24 @@ class ScheduleGroupViewModel @Inject constructor(
             }
         }
     }
+    
+    /**
+     * ScheduleGroup 삭제 (suspend 버전)
+     *
+     * UI에서 삭제 완료를 기다릴 수 있는 suspend 함수입니다.
+     * 삭제 실패 시 예외를 throw합니다.
+     *
+     * @param scheduleGroupId 삭제할 ScheduleGroup ID
+     * @throws Exception 삭제 실패 시
+     */
+    suspend fun deleteScheduleGroupSuspend(scheduleGroupId: String) {
+        try {
+            _isLoading.value = true
+            repository.delete(scheduleGroupId)
+        } finally {
+            _isLoading.value = false
+        }
+    }
 
     /**
      * ScheduleGroup 활성화/비활성화 토글
