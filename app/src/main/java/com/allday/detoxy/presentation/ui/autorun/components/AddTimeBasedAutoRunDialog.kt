@@ -45,7 +45,7 @@ fun AddTimeBasedAutoRunDialog(
     onSave: (TimeBasedAutoRun) -> Unit,
     scheduleViewModel: ScheduleGroupViewModel = hiltViewModel(),  // 🆕 3차 고도화
     initialScheduleGroupId: String? = null,  // 🆕 특정 스케줄 그룹에 시간대 추가 시 사용
-    isLocationBased: Boolean = false  // 🐛 버그 수정: 위치기반 스케쥴 여부
+    @Suppress("UNUSED_PARAMETER") isLocationBased: Boolean = false  // ⏸️ API 호환성 유지 (UI 제거됨)
 ) {
     // 상태 관리
     var selectedHour by remember { mutableStateOf(existingAutoRun?.hour ?: 9) }
@@ -64,34 +64,19 @@ fun AddTimeBasedAutoRunDialog(
     }
     var showTodoSection by remember { mutableStateOf(scheduleInfo.todos.isNotEmpty()) }
     
-    // 🆕 3차 고도화: 시간표 연결 상태
-    // 🆕 특정 스케줄 그룹에서 호출된 경우 해당 그룹 ID로 초기화
-    // 🐛 버그 수정: initialScheduleGroupId가 있으면 위치기반으로 간주 (isLocationBased가 false여도)
-    val actualIsLocationBased = remember(initialScheduleGroupId, isLocationBased, existingAutoRun?.scheduleGroupId) {
-        isLocationBased || (initialScheduleGroupId != null) || (existingAutoRun?.scheduleGroupId != null && !existingAutoRun.isIndependent)
-    }
-    
-    var selectedScheduleGroupId by remember { 
-        mutableStateOf(existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId) 
-    }
-    var isIndependent by remember { 
-        mutableStateOf(existingAutoRun?.isIndependent ?: (initialScheduleGroupId == null)) 
-    }
-    
-    // 🆕 3차 고도화: 시간표 목록
+    // 🆕 3차 고도화: 시간표 목록 (기본 요일 계산에 사용)
     val scheduleGroups by scheduleViewModel.scheduleGroups.collectAsStateWithLifecycle()
     
     // 요일 선택 상태 (MON, TUE, WED, THU, FRI, SAT, SUN)
-    val enabledDays = remember(existingAutoRun) {
+    // 🔧 리뷰 반영: scheduleGroups를 키에 포함하여 로딩 완료 후 기본값 재계산
+    val targetGroupId = existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId
+    val targetGroup = scheduleGroups.find { it.id == targetGroupId }
+    val isDaily = targetGroup?.name?.contains("매일") == true || 
+                  targetGroup?.name?.contains("Daily", ignoreCase = true) == true
+    
+    val enabledDays = remember(existingAutoRun, isDaily) {
         mutableStateMapOf<String, Boolean>().apply {
             val existing = existingAutoRun?.let { parseEnabledDays(it.enabledDays) } ?: emptySet()
-            
-            // 🆕 v8.1: 그룹 이름에 '매일' 또는 'Daily'가 포함되면 기본값을 전체 요일로 설정
-            val targetGroupId = existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId
-            val targetGroup = scheduleGroups.find { it.id == targetGroupId }
-            
-            val isDaily = targetGroup?.name?.contains("매일") == true || 
-                          targetGroup?.name?.contains("Daily", ignoreCase = true) == true
             
             val defaultDays = if (isDaily) {
                 // 매일 스케줄이면 월~일 모두 선택
@@ -106,6 +91,7 @@ fun AddTimeBasedAutoRunDialog(
             }
         }
     }
+
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -235,69 +221,22 @@ fun AddTimeBasedAutoRunDialog(
                     )
                 }
                 
-                // 🆕 3차 고도화: 시간표 연결 설정
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                
-                Text(
-                    text = "시간표 연결",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                ScheduleLinkSection(
-                    scheduleGroups = scheduleGroups,
-                    selectedScheduleGroupId = selectedScheduleGroupId,
-                    onScheduleGroupSelected = { groupId ->
-                        // 🐛 버그 수정: 위치기반 스케쥴인 경우 scheduleGroupId 변경 불가
-                        if (!actualIsLocationBased) {
-                        selectedScheduleGroupId = groupId
-                        isIndependent = groupId == null
-                        }
-                    },
-                    isIndependent = isIndependent,
-                    onIndependentChange = { independent ->
-                        // 🐛 버그 수정: 위치기반 스케쥴인 경우 독립 실행 모드 변경 불가
-                        if (!actualIsLocationBased) {
-                        isIndependent = independent
-                        if (independent) {
-                            selectedScheduleGroupId = null
-                        }
-                    }
-                    },
-                    isLocationBased = actualIsLocationBased  // 🐛 버그 수정: 위치기반 여부 전달 (actualIsLocationBased 사용)
-                )
+
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     val selectedDays = enabledDays.filter { it.value }.keys.toList()
-                    // 🐛 버그 수정: 위치기반 스케쥴인 경우 scheduleGroupId와 isIndependent 강제 설정
-                    // actualIsLocationBased 사용 (initialScheduleGroupId가 있으면 위치기반으로 간주)
-                    val finalScheduleGroupId = if (actualIsLocationBased) {
-                        // 위치기반 스케쥴인 경우: 기존 값이 있으면 유지, 없으면 initialScheduleGroupId 사용
-                        existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId
-                    } else {
-                        selectedScheduleGroupId
-                    }
-                    val finalIsIndependent = if (actualIsLocationBased) {
-                        // 위치기반 스케쥴인 경우: 그룹에 종속되어야 하므로 false
-                        existingAutoRun?.isIndependent ?: false
-                    } else {
-                        isIndependent
-                    }
+                    // 🔧 리뷰 반영: 직접 계산 (불필요한 상태 변수 제거)
+                    val finalScheduleGroupId = existingAutoRun?.scheduleGroupId ?: initialScheduleGroupId
+                    val finalIsIndependent = existingAutoRun?.isIndependent ?: (initialScheduleGroupId == null)
+
                     
-                    // 🐛 버그 수정: 디버깅 로그 추가
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "=== 저장 데이터 확인 ===")
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "isLocationBased 파라미터: $isLocationBased")
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "actualIsLocationBased: $actualIsLocationBased")
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "existingAutoRun?.scheduleGroupId: ${existingAutoRun?.scheduleGroupId}")
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "initialScheduleGroupId: $initialScheduleGroupId")
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "selectedScheduleGroupId: $selectedScheduleGroupId")
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "finalScheduleGroupId: $finalScheduleGroupId")
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "existingAutoRun?.isIndependent: ${existingAutoRun?.isIndependent}")
-                    android.util.Log.d("AddTimeBasedAutoRunDialog", "finalIsIndependent: $finalIsIndependent")
+                    // 디버깅 로그 (필요시 활성화)
+                    android.util.Log.d("AddTimeBasedAutoRunDialog", "저장: scheduleGroupId=$finalScheduleGroupId, isIndependent=$finalIsIndependent")
                     
+
                     // 🔧 리뷰 반영: 빈 할일 필터링 및 검증
                     val filteredInfo = if (scheduleInfo.hasContent()) {
                         val validTodos = scheduleInfo.todos.filter { it.content.isNotBlank() }
@@ -654,134 +593,6 @@ private fun parseEnabledDays(enabledDaysJson: String): Set<String> {
         days
     } catch (e: Exception) {
         emptySet()
-    }
-}
-
-/**
- * 🆕 3차 고도화: 시간표 연결 섹션
- */
-@Composable
-private fun ScheduleLinkSection(
-    scheduleGroups: List<com.allday.detoxy.data.local.entity.ScheduleGroup>,
-    selectedScheduleGroupId: String?,
-    onScheduleGroupSelected: (String?) -> Unit,
-    isIndependent: Boolean,
-    onIndependentChange: (Boolean) -> Unit,
-    isLocationBased: Boolean = false  // 🐛 버그 수정: 위치기반 여부
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // 🐛 버그 수정: 위치기반 스케쥴인 경우 안내 메시지 표시
-        if (isLocationBased) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
-                Text(
-                    text = "📍 위치기반 스케쥴입니다. 시간표 연결은 변경할 수 없습니다.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-        }
-        
-        // 독립 실행 옵션
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .toggleable(
-                    value = isIndependent,
-                    role = Role.Checkbox,
-                    onValueChange = onIndependentChange,
-                    enabled = !isLocationBased  // 🐛 버그 수정: 위치기반인 경우 비활성화
-                ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "독립 실행",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "시간표와 관계없이 항상 실행",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Checkbox(
-                checked = isIndependent,
-                onCheckedChange = null
-            )
-        }
-        
-        // 시간표 목록 (독립 실행이 아닐 때만 표시, 위치기반이 아닐 때만 편집 가능)
-        if (!isIndependent) {
-            if (scheduleGroups.isEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Text(
-                        text = "⚠️ 시간표가 없습니다. '스케줄 그룹' 화면에서 시간표를 만들어주세요.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            } else {
-                Text(
-                    text = "시간표 선택",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                scheduleGroups.forEach { group ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .toggleable(
-                                value = group.id == selectedScheduleGroupId,
-                                role = Role.RadioButton,
-                                onValueChange = { selected ->
-                                    if (selected && !isLocationBased) {  // 🐛 버그 수정: 위치기반인 경우 변경 불가
-                                        onScheduleGroupSelected(group.id)
-                                    }
-                                },
-                                enabled = !isLocationBased  // 🐛 버그 수정: 위치기반인 경우 비활성화
-                            ),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = group.name,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            if (group.isActive) {
-                                Text(
-                                    text = "⚡ 현재 활성화 중",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        RadioButton(
-                            selected = group.id == selectedScheduleGroupId,
-                            onClick = null
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 
