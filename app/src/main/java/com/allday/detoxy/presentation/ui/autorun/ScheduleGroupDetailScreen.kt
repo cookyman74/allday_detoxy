@@ -26,6 +26,7 @@ import com.allday.detoxy.presentation.model.WeeklyHeatmapUiModel
 import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
 import com.allday.detoxy.presentation.ui.heatmap.WeeklyHeatmap
 import com.allday.detoxy.presentation.util.WeeklyHeatmapCalculator
+import com.allday.detoxy.presentation.ui.autorun.components.AddScheduleGroupDialog
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import java.time.Instant
 import java.time.LocalDateTime
@@ -60,6 +61,10 @@ fun ScheduleGroupDetailScreen(
     
     val snackbarHostState = remember { SnackbarHostState() }
     val scrollState = rememberScrollState()
+    
+    // 수정/삭제 다이얼로그 상태
+    var showEditDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     
     // 해당 그룹 찾기
     val group = scheduleGroups.find { it.id == groupId }
@@ -139,7 +144,7 @@ fun ScheduleGroupDetailScreen(
                 )
                 
                 // 수정 버튼
-                IconButton(onClick = { /* TODO: 수정 다이얼로그 */ }) {
+                IconButton(onClick = { showEditDialog = true }) {
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = "수정",
@@ -148,7 +153,7 @@ fun ScheduleGroupDetailScreen(
                 }
                 
                 // 삭제 버튼
-                IconButton(onClick = { /* TODO: 삭제 확인 */ }) {
+                IconButton(onClick = { showDeleteDialog = true }) {
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "삭제",
@@ -367,6 +372,61 @@ fun ScheduleGroupDetailScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .navigationBarsPadding()
+        )
+    }
+    
+    // 수정 다이얼로그
+    if (showEditDialog) {
+        AddScheduleGroupDialog(
+            onDismiss = { showEditDialog = false },
+            onConfirm = { name, description ->
+                viewModel.updateScheduleGroup(
+                    group.copy(
+                        name = name,
+                        description = description
+                    )
+                )
+                showEditDialog = false
+            },
+            existingGroup = group
+        )
+    }
+    
+    // 삭제 확인 다이얼로그
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("스케줄 그룹 삭제") },
+            text = {
+                Column {
+                    Text("이 스케줄 그룹을 삭제하시겠습니까?")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "연결된 시간표와 위치의 참조는 해제되지만, 설정 자체는 삭제되지 않습니다.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteScheduleGroup(groupId)
+                        showDeleteDialog = false
+                        onBack()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("삭제")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("취소")
+                }
+            }
         )
     }
 }
