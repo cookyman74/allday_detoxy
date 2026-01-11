@@ -379,26 +379,49 @@ class FocusTimerService : Service() {
             }
         }
 
-        // DND 모드 활성화 (Android 6.0 이상, 권한 있을 경우만)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            dndManager.enableDnd()
-            Log.d(TAG, "✅ DND mode enabled")
-        }
-
-        // 흑백 모드 활성화 (설정 ON + Android 15+ + 권한 있음만)
-        // ⚠️ API 레벨 게이트는 GrayscaleManager 내부에서 처리
-        // ⚠️ 리뷰 반영: 레이스 컨디션 방지를 위해 Job을 추적하고 상태 확인
+        // ⚠️ 핫픽스 v5: 흑백 모드와 DND 순서 변경 및 통합
+        // 흑백 모드 룰이 INTERRUPTION_FILTER_ALARMS를 포함하므로, 흑백이 활성화되면 DND 별도 호출 불필요
+        var grayscaleEnabled = false
         grayscaleEnableJob?.cancel()
         grayscaleEnableJob = serviceScope?.launch {
             try {
-                val isGrayscaleEnabled = settingsRepository.grayscaleModeEnabledFlow.first()
+                val isGrayscaleSettingEnabled = settingsRepository.grayscaleModeEnabledFlow.first()
                 // 상태 확인: 타이머가 여전히 실행 중인지 확인 (레이스 컨디션 방지)
-                if (isGrayscaleEnabled && _state.value == FocusState.RUNNING) {
+                if (isGrayscaleSettingEnabled && _state.value == FocusState.RUNNING) {
                     val grayscaleResult = grayscaleManager.enableGrayscaleIfNeeded()
+                    grayscaleEnabled = grayscaleResult
                     Log.d(TAG, "✅ Grayscale mode enable attempted: result=$grayscaleResult")
+                    
+                    // 흑백 모드가 성공하면 DND는 이미 포함되어 있으므로 별도 호출 불필요
+                    if (!grayscaleResult) {
+                        // 흑백 모드 실패 시에만 별도 DND 활성화
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            withContext(Dispatchers.Main) {
+                                dndManager.enableDnd()
+                                Log.d(TAG, "✅ DND mode enabled (grayscale was disabled)")
+                            }
+                        }
+                    } else {
+                        Log.d(TAG, "ℹ️ DND skipped - included in grayscale rule")
+                    }
+                } else {
+                    // 흑백 모드 설정 OFF일 때만 별도 DND 활성화
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        withContext(Dispatchers.Main) {
+                            dndManager.enableDnd()
+                            Log.d(TAG, "✅ DND mode enabled (grayscale setting off)")
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "❌ Failed to enable grayscale mode: ${e.message}", e)
+                // 실패 시에도 DND는 활성화 시도
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    withContext(Dispatchers.Main) {
+                        dndManager.enableDnd()
+                        Log.d(TAG, "✅ DND mode enabled (fallback)")
+                    }
+                }
             }
         }
 

@@ -56,6 +56,8 @@ class GrayscaleManager @Inject constructor(
     private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // 현재 활성화 상태
+    // ⚠️ 핫픽스 v3: @Volatile 추가 - IO 스레드(restoreRuleId)와 Main 스레드 간 가시성 보장
+    @Volatile
     private var isGrayscaleActive = false
     
     // 현재 룰 ID (메모리 캐시)
@@ -134,6 +136,7 @@ class GrayscaleManager @Inject constructor(
      * 앱 시작 시 룰 ID 복원 (비동기)
      * 
      * ⚠️ 리뷰 반영: runBlocking 제거, 비동기 처리로 ANR 방지
+     * ⚠️ 핫픽스 v3: 이미 활성화 중이면 validate 건너뛰기 (레이스 컨디션 방지)
      */
     fun restoreRuleId() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
@@ -144,6 +147,14 @@ class GrayscaleManager @Inject constructor(
             try {
                 ruleId = context.dataStore.data.first()[KEY_RULE_ID]
                 Log.d(TAG, "Restored ruleId: $ruleId")
+                
+                // ⚠️ 핫픽스 v3: 이미 활성화 상태면 validate 불필요 (레이스 컨디션 방지)
+                // enableGrayscaleIfNeeded()가 이미 룰을 활성화한 상태에서
+                // 비동기 restoreRuleId가 늦게 실행되어 상태를 덮어쓰는 것을 방지
+                if (isGrayscaleActive) {
+                    Log.d(TAG, "⚠️ Skipping validateRuleExists - already active")
+                    return@launch
+                }
                 
                 // 룰이 존재하는지 확인하고 상태 동기화 (메인 스레드에서 실행)
                 if (ruleId != null) {
@@ -220,11 +231,11 @@ class GrayscaleManager @Inject constructor(
             // ⚠️ 핵심 수정: conditionId는 setAutomaticZenRuleState에서 사용할 Uri와 동일해야 함
             val conditionId = Uri.parse("condition://com.allday.detoxy/grayscale")
             
-            // ⚠️ 리뷰 반영: ComponentName 클래스 참조 사용 (문자열 대신)
-            // AutomaticZenRule 생성 - conditionId를 명시적으로 설정
+            // ⚠️ 핫픽스 v5: INTERRUPTION_FILTER_ALARMS로 변경하여 DND 기능 통합
+            // DndManager.enableDnd()가 생성하는 암묵적 ZenRule과의 충돌 방지
             val rule = AutomaticZenRule.Builder(RULE_NAME, conditionId)
                 .setType(AutomaticZenRule.TYPE_OTHER)  // TYPE_OTHER로 변경 (앱 자체 제어)
-                .setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
+                .setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALARMS)  // DND 기능 포함
                 .setDeviceEffects(effects)
                 .setConfigurationActivity(
                     ComponentName(context, GrayscaleSettingsActivity::class.java)
@@ -232,15 +243,30 @@ class GrayscaleManager @Inject constructor(
                 .setEnabled(true)
                 .build()
             
-            // ⚠️ 리뷰 반영: 룰 추가/업데이트 후 null 체크 추가
+            // ⚠️ 핫픽스 v4: 룰 추가/업데이트 로직 개선
+            // 기존 룰이 비활성화 상태이면 삭제 후 새로 생성 (ZenDeviceEffects 재적용 보장)
             val resultRuleId: String? = if (ruleId != null) {
                 try {
-                    nm.updateAutomaticZenRule(ruleId!!, rule)
-                    Log.d(TAG, "Updated existing rule: $ruleId")
-                    ruleId
+                    // 기존 룰 상태 확인
+                    val existingRules = nm.automaticZenRules
+                    val existingRule = existingRules[ruleId]
+                    
+                    if (existingRule != null && !existingRule.isEnabled) {
+                        // ⚠️ 비활성화된 룰은 삭제 후 새로 생성 (효과 재적용 보장)
+                        Log.d(TAG, "Existing rule is disabled, deleting and recreating: $ruleId")
+                        nm.removeAutomaticZenRule(ruleId!!)
+                        ruleId = null
+                        nm.addAutomaticZenRule(rule)
+                    } else {
+                        // 활성화된 룰은 업데이트
+                        nm.updateAutomaticZenRule(ruleId!!, rule)
+                        Log.d(TAG, "Updated existing rule: $ruleId")
+                        ruleId
+                    }
                 } catch (e: Exception) {
                     // 기존 룰이 삭제됐을 수 있음 → 새로 생성 시도
                     Log.w(TAG, "Failed to update rule, creating new: ${e.message}")
+                    ruleId = null
                     nm.addAutomaticZenRule(rule)
                 }
             } else {
@@ -335,9 +361,10 @@ class GrayscaleManager @Inject constructor(
                 
                 // 룰 활성화 상태 동기화
                 val rule = rules[id]
-                isGrayscaleActive = rule?.isEnabled == true
-                Log.d(TAG, "Rule exists, isEnabled=${rule?.isEnabled}")
-                return isGrayscaleActive
+                val ruleEnabled = rule?.isEnabled == true
+                isGrayscaleActive = ruleEnabled
+                Log.d(TAG, "Rule exists, synced isGrayscaleActive=$ruleEnabled")
+                return ruleEnabled
             }
             
             // ruleId가 null이면 활성화된 룰 없음

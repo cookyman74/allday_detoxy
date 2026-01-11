@@ -185,8 +185,13 @@ class DetoxyApplication : Application(), Configuration.Provider {
                 Log.d(TAG, "✅ Grayscale rule ID restored")
                 
                 // 2) 룰 정합성 검증 (시스템에서 삭제됐는지)
-                grayscaleManager.validateRuleExists()
-                Log.d(TAG, "✅ Grayscale rule validated")
+                // ⚠️ 핫픽스 v3: 이미 활성화 상태면 validate 건너뛰기 (레이스 컨디션 방지)
+                if (!grayscaleManager.isActive()) {
+                    grayscaleManager.validateRuleExists()
+                    Log.d(TAG, "✅ Grayscale rule validated")
+                } else {
+                    Log.d(TAG, "⚠️ Skipping validateRuleExists - already active")
+                }
                 
                 // 3) 집중 모드 진행 중 + 설정 ON → 재적용
                 val isFocusActive = FocusTimerService.state.value == FocusState.RUNNING
