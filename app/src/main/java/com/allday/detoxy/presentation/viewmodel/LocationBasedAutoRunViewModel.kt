@@ -121,8 +121,40 @@ class LocationBasedAutoRunViewModel @Inject constructor(
     private val _errorState = MutableStateFlow<LocationError?>(null)
     val errorState: StateFlow<LocationError?> = _errorState.asStateFlow()
 
+    // ==================== Phase 3: UX 표시용 활성화 개수 ====================
+    
+    /**
+     * 추가 활성화 가능 여부 (UX 표시용)
+     * 
+     * ⚠️ Flow 기반으로 일시적인 지연이 있을 수 있음
+     * 정책 체크는 getEnabledCount() 직접 호출로 수행
+     */
+    private val _canActivateMore = MutableStateFlow(true)
+    val canActivateMore: StateFlow<Boolean> = _canActivateMore.asStateFlow()
+    
+    /**
+     * 현재 활성화된 위치 개수 (UX 표시용)
+     * 
+     * UI에서 "활성화: 3/5" 등의 형태로 표시 가능
+     */
+    private val _enabledCount = MutableStateFlow(0)
+    val enabledCount: StateFlow<Int> = _enabledCount.asStateFlow()
+    
+    /**
+     * 최대 활성화 가능 개수
+     */
+    val maxGeofences: Int = AutoRunGeofenceManager.MAX_GEOFENCES
+
     init {
         checkPermissions()
+        
+        // ⚠️ 핫픽스 Phase 3: 활성화 개수 Flow 수집 (UX 표시용)
+        viewModelScope.launch {
+            repository.getEnabled().collect { list ->
+                _enabledCount.value = list.size
+                _canActivateMore.value = list.size < AutoRunGeofenceManager.MAX_GEOFENCES
+            }
+        }
     }
 
     /**
@@ -182,7 +214,7 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      * 위치 기반 자동 실행 추가
      *
      * 트랜잭션 순서:
-     * 1. Geofence 등록 (활성화된 경우만) - 실패 시 DB 저장 안 함
+     * 1. Geofence 등록 (활성화된 경우만) - 실패 시 isEnabled=false로 DB 저장
      * 2. DB 저장 - 실패 시 Geofence 롤백
      * 3. Analytics 로깅
      *
@@ -193,6 +225,18 @@ class LocationBasedAutoRunViewModel @Inject constructor(
             Log.d(TAG, "🔵 addLocation called: label=${location.label}, linkedScheduleGroupId=${location.linkedScheduleGroupId}")
             Log.d(TAG, "   isEnabled=${location.isEnabled}, latitude=${location.latitude}, longitude=${location.longitude}")
             
+            // ⚠️ 핫픽스: 활성화된 상태로 등록 시 선제 개수 체크 (UX 빠른 피드백)
+            if (location.isEnabled) {
+                val currentEnabledCount = repository.getEnabledCount()
+                if (currentEnabledCount >= AutoRunGeofenceManager.MAX_GEOFENCES) {
+                    Log.w(TAG, "⚠️ Pre-check: Max geofences limit reached ($currentEnabledCount >= ${AutoRunGeofenceManager.MAX_GEOFENCES})")
+                    _errorState.value = LocationError.GeofenceError(
+                        "최대 ${AutoRunGeofenceManager.MAX_GEOFENCES}개까지만 활성화할 수 있습니다."
+                    )
+                    return
+                }
+            }
+            
             // 1. Geofence 등록 먼저 시도 (활성화된 경우만)
             if (location.isEnabled) {
                 Log.d(TAG, "📍 Attempting to add Geofence...")
@@ -200,16 +244,16 @@ class LocationBasedAutoRunViewModel @Inject constructor(
                 if (result.isFailure) {
                     val exception = result.exceptionOrNull()
                     Log.e(TAG, "❌ Geofence registration FAILED: ${exception?.message}", exception)
-                    _errorState.value = LocationError.GeofenceError(
-                        exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
-                    )
                     
-                    // 🐛 버그 수정: Geofence 실패해도 사용자가 설정한 isEnabled 값 유지
-                    // 나중에 권한을 허용하면 자동으로 Geofence가 등록될 수 있도록 설정값 보존
-                    Log.w(TAG, "⚠️ Geofence registration failed, but keeping user's isEnabled setting: ${location.isEnabled}")
-                    repository.insert(location)  // 사용자가 설정한 값 그대로 저장
-                    Log.d(TAG, "✅ Location saved to DB (isEnabled=${location.isEnabled}): ${location.id}")
-                    Log.d(TAG, "   activateScheduleOnEnter=${location.activateScheduleOnEnter}, deactivateScheduleOnExit=${location.deactivateScheduleOnExit}")
+                    // ⚠️ 핫픽스: Geofence 실패 시 isEnabled=false로 저장
+                    val disabledLocation = location.copy(isEnabled = false)
+                    repository.insert(disabledLocation)
+                    Log.w(TAG, "⚠️ Location saved with isEnabled=false due to Geofence failure: ${location.id}")
+                    
+                    _errorState.value = LocationError.GeofenceError(
+                        "위치가 등록되었지만 모니터링 활성화에 실패했습니다.\n" +
+                        "설정에서 다시 활성화를 시도해주세요."
+                    )
                     return
                 }
                 Log.d(TAG, "✅ Geofence registered successfully")
@@ -264,7 +308,7 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      * 
      * 트랜잭션 순서:
      * 1. 기존 Geofence 제거
-     * 2. 새 Geofence 등록 (활성화된 경우만) - 실패 시 DB 업데이트 안 함
+     * 2. 새 Geofence 등록 (활성화된 경우만) - 실패 시 isEnabled=false로 DB 업데이트
      * 3. DB 업데이트 - 실패 시 Geofence 롤백
      *
      * @param location 업데이트할 위치 기반 자동 실행
@@ -273,6 +317,23 @@ class LocationBasedAutoRunViewModel @Inject constructor(
         try {
             Log.d(TAG, "🔵 updateLocation called: id=${location.id}, isEnabled=${location.isEnabled}")
             Log.d(TAG, "   activateScheduleOnEnter=${location.activateScheduleOnEnter}, deactivateScheduleOnExit=${location.deactivateScheduleOnExit}")
+            
+            // ⚠️ 핫픽스: 활성화 상태로 업데이트 시 선제 개수 체크 (자기 자신 제외)
+            // 기존에 비활성화였다가 활성화로 변경하는 경우를 위한 체크
+            if (location.isEnabled) {
+                val currentEnabledCount = repository.getEnabledCount()
+                // 자기 자신이 이미 활성화 상태면 카운트에서 1을 빼야 함
+                val existing = repository.getById(location.id).first()
+                val adjustedCount = maxOf(0, if (existing?.isEnabled == true) currentEnabledCount - 1 else currentEnabledCount)
+                
+                if (adjustedCount >= AutoRunGeofenceManager.MAX_GEOFENCES) {
+                    Log.w(TAG, "⚠️ Pre-check: Max geofences limit reached (adjusted: $adjustedCount >= ${AutoRunGeofenceManager.MAX_GEOFENCES})")
+                    _errorState.value = LocationError.GeofenceError(
+                        "최대 ${AutoRunGeofenceManager.MAX_GEOFENCES}개까지만 활성화할 수 있습니다."
+                    )
+                    return
+                }
+            }
             
             // 1. 기존 Geofence 제거
             geofenceManager.removeGeofence(location.id)
@@ -284,16 +345,16 @@ class LocationBasedAutoRunViewModel @Inject constructor(
                 if (result.isFailure) {
                     val exception = result.exceptionOrNull()
                     Log.e(TAG, "❌ Geofence registration FAILED: ${exception?.message}", exception)
-                    _errorState.value = LocationError.GeofenceError(
-                        exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
-                    )
                     
-                    // 🐛 버그 수정: Geofence 실패해도 사용자가 설정한 isEnabled 값 유지
-                    // 나중에 권한을 허용하면 자동으로 Geofence가 등록될 수 있도록 설정값 보존
-                    Log.w(TAG, "⚠️ Geofence registration failed, but keeping user's isEnabled setting: ${location.isEnabled}")
-                    repository.update(location)  // 사용자가 설정한 값 그대로 저장
-                    Log.d(TAG, "✅ Location updated in DB (isEnabled=${location.isEnabled}): ${location.id}")
-                    Log.d(TAG, "   activateScheduleOnEnter=${location.activateScheduleOnEnter}, deactivateScheduleOnExit=${location.deactivateScheduleOnExit}")
+                    // ⚠️ 핫픽스: Geofence 실패 시 isEnabled=false로 저장
+                    val disabledLocation = location.copy(isEnabled = false)
+                    repository.update(disabledLocation)
+                    Log.w(TAG, "⚠️ Location updated with isEnabled=false due to Geofence failure: ${location.id}")
+                    
+                    _errorState.value = LocationError.GeofenceError(
+                        "위치가 업데이트되었지만 모니터링 활성화에 실패했습니다.\n" +
+                        "설정에서 다시 활성화를 시도해주세요."
+                    )
                     return
                 }
                 Log.d(TAG, "✅ Geofence registered successfully")
@@ -466,20 +527,40 @@ class LocationBasedAutoRunViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 if (isEnabled) {
-                    // 활성화: Geofence 먼저 등록
+                    // ⚠️ 핫픽스: 활성화 시도 시 선제 개수 체크 (자기 자신 제외 보정)
+                    // UI와 DB 상태가 일시적으로 불일치하거나, 동일 상태 토글 요청이 들어올 수 있음
                     val location = repository.getById(locationId).first()
-                    if (location != null) {
-                        val result = geofenceManager.addGeofence(location)
-                        if (result.isFailure) {
-                            val exception = result.exceptionOrNull()
-                            _errorState.value = LocationError.GeofenceError(
-                                exception?.message ?: "Geofence 등록 실패. 위치 권한과 Play Services를 확인해주세요."
-                            )
-                            return@launch  // 실패 시 DB 토글 안 함
-                        }
+                    if (location == null) {
+                        Log.w(TAG, "⚠️ Toggle: Location not found: $locationId")
+                        return@launch
+                    }
+                    
+                    val currentEnabledCount = repository.getEnabledCount()
+                    // 자기 자신이 이미 활성화 상태면 카운트에서 제외해야 함
+                    val adjustedCount = maxOf(0, if (location.isEnabled) currentEnabledCount - 1 else currentEnabledCount)
+                    
+                    if (adjustedCount >= AutoRunGeofenceManager.MAX_GEOFENCES) {
+                        Log.w(TAG, "⚠️ Toggle pre-check: Max geofences limit reached (adjusted: $adjustedCount >= ${AutoRunGeofenceManager.MAX_GEOFENCES})")
+                        _errorState.value = LocationError.GeofenceError(
+                            "최대 ${AutoRunGeofenceManager.MAX_GEOFENCES}개까지만 활성화할 수 있습니다."
+                        )
+                        return@launch
+                    }
+                    
+                    // 활성화: Geofence 먼저 등록
+                    val result = geofenceManager.addGeofence(location)
+                    if (result.isFailure) {
+                        val exception = result.exceptionOrNull()
+                        Log.e(TAG, "❌ Toggle Geofence registration FAILED: ${exception?.message}")
+                        // ⚠️ 핫픽스: Geofence 실패 시 DB 토글 안 함, 에러 표시
+                        _errorState.value = LocationError.GeofenceError(
+                            "위치 모니터링 활성화에 실패했습니다.\n" +
+                            "설정에서 다시 시도해주세요."
+                        )
+                        return@launch  // DB 토글 안 함
                     }
 
-                    // Geofence 성공 후 DB 토글
+                    // Geofence 성공 시에만 DB 토글
                     repository.toggleEnabled(locationId, isEnabled)
 
                 } else {
