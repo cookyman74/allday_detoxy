@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="ko"/>           <!-- 한국어 (기본) -->
+    <locale android:name="en"/>           <!-- 영어 -->
+    <locale android:name="es"/>           <!-- 스페인어 -->
+    <locale android:name="ja"/>           <!-- 일본어 -->
+    <locale android:name="zh-Hans"/>      <!-- 중국어 간체 -->
+</locale-config>

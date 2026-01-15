@@ -38,21 +38,21 @@
 
 ### 1.1 사전 작업
 
-- [ ] **[CONTEXT]** PRD 문서 검토
+- [x] **[CONTEXT]** PRD 문서 검토
   - 파일: [13_언어세팅_prd.md](./13_언어세팅_prd.md)
   - 확인: 지원 언어, BCP-47 태그, 폴더 구조
 
-- [ ] **[ANALYSIS]** 현재 리소스 구조 분석
+- [x] **[ANALYSIS]** 현재 리소스 구조 분석
   - 파일: `app/src/main/res/values/strings.xml`
   - 확인: 기존 문자열 리소스 현황
 
-- [ ] **[ANALYSIS]** AndroidManifest.xml 확인
+- [x] **[ANALYSIS]** AndroidManifest.xml 확인
   - 파일: `app/src/main/AndroidManifest.xml`
   - 확인: `android:localeConfig` 미설정 상태 확인
 
 ### 1.2 본 작업
 
-- [ ] **[TASK-001]** locale_config.xml 생성
+- [x] **[TASK-001]** locale_config.xml 생성
   - 파일: `app/src/main/res/xml/locale_config.xml`
   - 내용:
     ```xml
@@ -66,18 +66,18 @@
     </locale-config>
     ```
 
-- [ ] **[TASK-002]** AndroidManifest.xml에 localeConfig 추가
+- [x] **[TASK-002]** AndroidManifest.xml에 localeConfig 추가
   - 파일: `app/src/main/AndroidManifest.xml`
   - 추가: `android:localeConfig="@xml/locale_config"`
 
-- [ ] **[TASK-003]** AppLocaleManager 유틸리티 생성
+- [x] **[TASK-003]** AppLocaleManager 유틸리티 생성
   - 파일: `core/locale/AppLocaleManager.kt`
   - 메서드:
     - `setAppLocale(languageTag: String?)` - 앱 언어 설정
     - `getAppLocale(): String?` - 현재 앱 언어 조회
     - `getSystemPrimaryLocale(): Locale` - 시스템 1순위 로케일
 
-- [ ] **[TASK-004]** 리소스 폴더 생성
+- [x] **[TASK-004]** 리소스 폴더 생성
   - 폴더 생성:
     - `app/src/main/res/values-en/`
     - `app/src/main/res/values-es/`
@@ -85,7 +85,7 @@
     - `app/src/main/res/values-b+zh+Hans/`
   - 각 폴더에 빈 `strings.xml` 생성
 
-- [ ] **[GREEN]** 빌드 검증
+- [x] **[GREEN]** 빌드 검증
   ```bash
   ./gradlew compileDebugKotlin
   ```
@@ -95,8 +95,8 @@
 - [ ] **[VERIFY]** locale_config.xml 정상 로드 확인
   - Android 13+ 에뮬레이터에서 시스템 설정 > 앱 > 언어 확인
 
-- [ ] **[DOC]** 작업 결과서 작성
-  - 파일: `working_history/version_1.1/언어세팅/Phase1_기반구조_YYYY-MM-DD.md`
+- [x] **[DOC]** 작업 결과서 작성
+  - 파일: `working_history/version_1.1/언어세팅/Phase1_기반구조_2026-01-15.md`
 
 - [ ] **[COMMIT]** 변경사항 커밋
   ```bash
@@ -395,7 +395,7 @@
 ### Phase 완료 조건
 | Phase | 빌드 통과 | 린터 통과 | 결과서 작성 | 커밋 완료 | 상태 |
 |-------|----------|----------|------------|----------|------|
-| Phase 1 (기반 구조) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Phase 1 (기반 구조) | ✅ | ⬜ | ✅ | ⬜ | 🟡 진행중 |
 | Phase 2 (문자열 추출) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Phase 3 (번역 파일) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Phase 4 (설정 UI) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
