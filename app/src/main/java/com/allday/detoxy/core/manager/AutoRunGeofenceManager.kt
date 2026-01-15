@@ -143,9 +143,10 @@ class AutoRunGeofenceManager @Inject constructor(
      * Geofence 등록
      *
      * @param autoRun 위치 기반 자동 실행 설정
+     * @param skipCountCheck true: 개수 제한 체크 생략 (reschedule 시), false: 개수 제한 체크 수행 (신규 등록 시)
      * @return Result<Unit> 성공 시 Success, 실패 시 Failure with Exception
      */
-    suspend fun addGeofence(autoRun: LocationBasedAutoRun): Result<Unit> {
+    suspend fun addGeofence(autoRun: LocationBasedAutoRun, skipCountCheck: Boolean = false): Result<Unit> {
         return try {
             // 사전 조건 체크
             if (!isPlayServicesAvailable()) {
@@ -173,16 +174,17 @@ class AutoRunGeofenceManager @Inject constructor(
             }
             
             // 현재 등록된 Geofence 수 체크 (자기 자신 제외)
-            // 신규 등록: DB에 이미 저장되었지만 Geofence는 아직 미등록 → otherCount로 정확히 판단
-            // 재등록: 이미 Geofence가 등록되어 있음 → otherCount로 정확히 판단
-            val otherEnabledCount = locationBasedAutoRunDao.getEnabledCountExcept(autoRun.id)
-            
-            // 자기 자신을 제외한 활성화된 개수가 MAX_GEOFENCES 이상이면 제한
-            if (otherEnabledCount >= MAX_GEOFENCES) {
-                Log.w(TAG, "⚠️ Max geofences limit reached: Others=$otherEnabledCount, MAX=$MAX_GEOFENCES")
-                return Result.failure(
-                    GeofenceException("최대 ${MAX_GEOFENCES}개까지만 등록할 수 있습니다. 기존 위치를 삭제한 후 다시 시도해주세요.")
-                )
+            // skipCountCheck가 true면 reschedule 상황이므로 체크 생략
+            if (!skipCountCheck) {
+                val otherEnabledCount = locationBasedAutoRunDao.getEnabledCountExcept(autoRun.id)
+                
+                // 자기 자신을 제외한 활성화된 개수가 MAX_GEOFENCES 이상이면 제한
+                if (otherEnabledCount >= MAX_GEOFENCES) {
+                    Log.w(TAG, "⚠️ Max geofences limit reached: Others=$otherEnabledCount, MAX=$MAX_GEOFENCES")
+                    return Result.failure(
+                        GeofenceException("최대 ${MAX_GEOFENCES}개까지만 등록할 수 있습니다. 기존 위치를 삭제한 후 다시 시도해주세요.")
+                    )
+                }
             }
             
             // Geofence 생성
@@ -193,9 +195,7 @@ class AutoRunGeofenceManager @Inject constructor(
             // Geofence 등록
             geofencingClient.addGeofences(geofencingRequest, pendingIntent).await()
             
-            // 등록 후 최종 개수 (자기 자신 포함)
-            val finalCount = otherEnabledCount + 1
-            Log.i(TAG, "✅ Geofence added successfully for ${autoRun.label} (ID: ${autoRun.id}, Count: $finalCount/$MAX_GEOFENCES)")
+            Log.i(TAG, "✅ Geofence added successfully for ${autoRun.label} (ID: ${autoRun.id})")
             Result.success(Unit)
             
         } catch (e: SecurityException) {
@@ -270,10 +270,18 @@ class AutoRunGeofenceManager @Inject constructor(
             return
         }
         
-        Log.i(TAG, "🔄 Rescheduling ${enabledLocations.size} geofences")
+        // ⚠️ 핫픽스: 최대 MAX_GEOFENCES개만 등록 (초과분은 무시)
+        val locationsToRegister = enabledLocations.take(MAX_GEOFENCES)
+        val skippedCount = enabledLocations.size - locationsToRegister.size
         
-        // 🆕 기존 Geofence를 먼저 제거 (중복 등록 방지)
-        val locationIds = enabledLocations.map { it.id }
+        if (skippedCount > 0) {
+            Log.w(TAG, "⚠️ ${skippedCount}개 위치가 제한 초과로 등록 제외됨 (MAX=$MAX_GEOFENCES)")
+        }
+        
+        Log.i(TAG, "🔄 Rescheduling ${locationsToRegister.size} geofences (of ${enabledLocations.size} enabled)")
+        
+        // 기존 Geofence를 먼저 제거 (중복 등록 방지)
+        val locationIds = locationsToRegister.map { it.id }
         try {
             Log.d(TAG, "🗑️ Removing existing geofences before rescheduling: ${locationIds.size} locations")
             geofencingClient.removeGeofences(locationIds).await()
@@ -286,8 +294,9 @@ class AutoRunGeofenceManager @Inject constructor(
         var successCount = 0
         var failureCount = 0
         
-        enabledLocations.forEach { location ->
-            val result = addGeofence(location)
+        locationsToRegister.forEach { location ->
+            // skipCountCheck=true: reschedule 상황에서는 개수 체크 생략
+            val result = addGeofence(location, skipCountCheck = true)
             if (result.isSuccess) {
                 successCount++
                 Log.d(TAG, "✅ Geofence rescheduled: ${location.label} (ID: ${location.id})")

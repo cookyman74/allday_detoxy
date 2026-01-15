@@ -5,8 +5,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -146,6 +148,9 @@ class FocusTimerService : Service() {
     
     // 🆕 onCreate()에서 미리 생성한 간단한 알림 (startForeground() 즉시 호출용)
     private var preCreatedNotification: Notification? = null
+    
+    // ⚠️ 핫픽스 v6: 화면 켜짐 이벤트 감지용 BroadcastReceiver
+    private var screenOnReceiver: BroadcastReceiver? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -388,24 +393,22 @@ class FocusTimerService : Service() {
                 val isGrayscaleSettingEnabled = settingsRepository.grayscaleModeEnabledFlow.first()
                 // 상태 확인: 타이머가 여전히 실행 중인지 확인 (레이스 컨디션 방지)
                 if (isGrayscaleSettingEnabled && _state.value == FocusState.RUNNING) {
+                    // 흑백 모드 활성화 시도
                     val grayscaleResult = grayscaleManager.enableGrayscaleIfNeeded()
                     grayscaleEnabled = grayscaleResult
                     Log.d(TAG, "✅ Grayscale mode enable attempted: result=$grayscaleResult")
                     
-                    // 흑백 모드가 성공하면 DND는 이미 포함되어 있으므로 별도 호출 불필요
-                    if (!grayscaleResult) {
-                        // 흑백 모드 실패 시에만 별도 DND 활성화
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            withContext(Dispatchers.Main) {
-                                dndManager.enableDnd()
-                                Log.d(TAG, "✅ DND mode enabled (grayscale was disabled)")
-                            }
+                    // ⚠️ v14: 흑백 모드 결과와 상관없이 DND는 항상 별도로 활성화
+                    // GrayscaleManager v14에서 DND 기능을 분리했으므로 (알림 방지용)
+                    // DndManager를 통해 명시적으로 DND를 켜야 함
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        withContext(Dispatchers.Main) {
+                            dndManager.enableDnd()
+                            Log.d(TAG, "✅ DND mode enabled (independent of grayscale)")
                         }
-                    } else {
-                        Log.d(TAG, "ℹ️ DND skipped - included in grayscale rule")
                     }
                 } else {
-                    // 흑백 모드 설정 OFF일 때만 별도 DND 활성화
+                    // 흑백 모드 설정 OFF일 때도 DND 활성화
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         withContext(Dispatchers.Main) {
                             dndManager.enableDnd()
@@ -424,6 +427,9 @@ class FocusTimerService : Service() {
                 }
             }
         }
+
+        // ⚠️ 핫픽스 v6: 화면 켜짐 이벤트 감지 등록 (그레이스케일 재적용용)
+        registerScreenOnReceiver()
 
         // 타이머 Job 시작 (Dispatchers.Default에서 실행하여 메인 스레드 부하 방지)
         timerJob?.cancel()
@@ -513,6 +519,9 @@ class FocusTimerService : Service() {
             dndManager.disableDnd()
             Log.d(TAG, "✅ DND mode disabled")
         }
+
+        // ⚠️ 핫픽스 v6: 화면 켜짐 이벤트 감지 해제
+        unregisterScreenOnReceiver()
 
         // 흑백 모드 비활성화
         // ⚠️ 리뷰 반영: 활성화 Job 취소 (레이스 컨디션 방지)
@@ -852,6 +861,75 @@ class FocusTimerService : Service() {
             Log.e(TAG, "❌ Failed to update location-based AutoRunLog: ${e.message}", e)
             throw e
         }
+    }
+
+    // ==================== 화면 켜짐 이벤트 감지 (핫픽스 v6) ====================
+
+    /**
+     * ⚠️ 핫픽스 v10: 화면 켜짐/잠금해제 시 그레이스케일 효과 재적용
+     * 
+     * Android 시스템에서 화면이 켜질 때 ZenDeviceEffects가 리셋될 수 있어
+     * 화면 켜짐/잠금해제 이벤트를 감지하여 그레이스케일 룰을 다시 적용합니다.
+     */
+    private fun registerScreenOnReceiver() {
+        if (screenOnReceiver != null) {
+            Log.d(TAG, "ScreenOnReceiver already registered")
+            return
+        }
+
+        screenOnReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                val action = intent?.action
+                if (action == Intent.ACTION_SCREEN_ON || action == Intent.ACTION_USER_PRESENT) {
+                    Log.d(TAG, "📱 Screen event: $action - checking grayscale state")
+                    
+                    // 타이머가 실행 중이고 그레이스케일 설정이 ON인 경우에만 재적용
+                    if (_state.value == FocusState.RUNNING) {
+                        serviceScope?.launch {
+                            try {
+                                val isGrayscaleSettingEnabled = settingsRepository.grayscaleModeEnabledFlow.first()
+                                if (isGrayscaleSettingEnabled) {
+                                    // 약간의 딜레이 후 재적용 (시스템 안정화 대기)
+                                    delay(500)
+                                    // ⚠️ v10: forceReapply=true로 실제 시스템 상태 기반 재적용
+                                    val result = grayscaleManager.reapplyGrayscaleState(forceReapply = true)
+                                    Log.d(TAG, "✅ Grayscale re-applied on $action: result=$result")
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "❌ Failed to re-apply grayscale on $action: ${e.message}", e)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ⚠️ v10: ACTION_SCREEN_ON + ACTION_USER_PRESENT 모두 등록
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(screenOnReceiver, filter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenOnReceiver, filter)
+        }
+        Log.d(TAG, "✅ ScreenOnReceiver registered (SCREEN_ON + USER_PRESENT)")
+    }
+
+    /**
+     * 화면 켜짐 이벤트 감지 해제
+     */
+    private fun unregisterScreenOnReceiver() {
+        screenOnReceiver?.let {
+            try {
+                unregisterReceiver(it)
+                Log.d(TAG, "✅ ScreenOnReceiver unregistered")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Failed to unregister ScreenOnReceiver: ${e.message}", e)
+            }
+        }
+        screenOnReceiver = null
     }
 }
 
