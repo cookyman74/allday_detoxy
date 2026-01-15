@@ -1,6 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ScreenSence</string>
 
-    <!-- Accessibility Service -->
+    <!-- ==================== Common / General ==================== -->
+    <!-- Buttons -->
+    <string name="btn_cancel">취소</string>
+    <string name="btn_confirm">확인</string>
+    <string name="btn_save">저장</string>
+    <string name="btn_delete">삭제</string>
+    <string name="btn_edit">수정</string>
+    <string name="btn_start">시작하기</string>
+    <string name="btn_close">닫기</string>
+    <string name="btn_later">나중에</string>
+    <string name="btn_settings">설정하기</string>
+    <string name="btn_go_to_settings">설정으로 이동</string>
+    <string name="btn_go_to_system_settings">시스템 설정으로 이동</string>
+    <string name="btn_manage">관리</string>
+    <string name="btn_add">추가</string>
+    <string name="btn_create">만들기</string>
+    <string name="btn_collapse">접기</string>
+    <string name="btn_expand">펼치기</string>
+    
+    <!-- Common Labels -->
+    <string name="label_required">필수</string>
+    <string name="label_optional">선택</string>
+    <string name="label_custom">커스텀</string>
+    <string name="label_template">템플릿</string>
+    <string name="label_recommended">권장</string>
+    
+    <!-- Time Units -->
+    <string name="time_minutes">분</string>
+    <string name="time_hours">시간</string>
+    <string name="time_seconds">초</string>
+    <string name="time_remaining">남은 시간</string>
+    
+    <!-- Days of Week -->
+    <string name="day_monday">월</string>
+    <string name="day_tuesday">화</string>
+    <string name="day_wednesday">수</string>
+    <string name="day_thursday">목</string>
+    <string name="day_friday">금</string>
+    <string name="day_saturday">토</string>
+    <string name="day_sunday">일</string>
+    <string name="day_weekday">평일</string>
+    <string name="day_weekend">주말</string>
+    <string name="day_everyday">매일</string>
+
+    <!-- ==================== Navigation / Tabs ==================== -->
+    <string name="tab_timer">타이머</string>
+    <string name="tab_schedule">스케줄</string>
+    <string name="tab_report">리포트</string>
+    <string name="tab_settings">설정</string>
+    <string name="tab_todo">할일 관리</string>
+
+    <!-- ==================== Timer Screen ==================== -->
+    <string name="timer_title">집중 타이머</string>
+    <string name="timer_start">타이머 시작</string>
+    <string name="timer_stop">타이머 중지</string>
+    <string name="timer_give_up">포기하기</string>
+    <string name="timer_starting">타이머 시작 중…</string>
+    <string name="timer_remaining_format">남은 시간: %1$s</string>
+    <string name="timer_completed">목표를 달성했습니다. 축하합니다!</string>
+    <string name="timer_running_title">집중 모드 실행 중</string>
+    <string name="timer_running_message">타이머가 실행 중입니다. 앱을 종료하시겠습니까? (타이머는 백그라운드에서 계속 실행됩니다)</string>
+    <string name="timer_background_continue">백그라운드 실행</string>
+    <string name="timer_preset_save">프리셋 저장</string>
+    <string name="timer_preset_name">프리셋 이름</string>
+    <string name="timer_custom_input_hint">직접 입력 (1–180분)</string>
+
+    <!-- ==================== Focus Mode / Detoxy Settings ==================== -->
+    <string name="detoxy_control_title">디톡시 제어 설정</string>
+    <string name="detoxy_preset_title">디톡시 강도 프리셋</string>
+    <string name="detoxy_block_category_title">차단 앱 카테고리</string>
+    <string name="detoxy_current_summary">현재 설정 요약</string>
+    <string name="detoxy_custom_settings">커스텀 설정</string>
+    <string name="detoxy_all_apps_except_default">기본 차단 앱 이외 모든 앱</string>
+    <string name="detoxy_messenger_notice">메신저는 긴급 연락을 위해 사용 가능합니다.</string>
+    
+    <!-- Preset Types -->
+    <string name="preset_full_block">완전 차단</string>
+    <string name="preset_standard">표준</string>
+    <string name="preset_relaxed">여유</string>
+    
+    <!-- Messenger Block Dialog -->
+    <string name="messenger_block_title">메신저 차단 안내</string>
+    <string name="messenger_block_desc1">메신저 앱은 긴급 연락이 필요할 수 있어 기본적으로 차단하지 않습니다.</string>
+    <string name="messenger_block_desc2">디지털 중독 회복을 위해 완전한 디톡시가 필요하다면 메신저도 차단할 수 있습니다.</string>
+    <string name="messenger_block_warning">긴급 연락이 불가능해질 수 있으니 신중히 선택하세요.</string>
+    <string name="messenger_block_confirm">메신저도 차단</string>
+    <string name="messenger_keep_allowed">허용 유지 (권장)</string>
+
+    <!-- ==================== Permissions ==================== -->
+    <string name="permission_status_title">권한 상태</string>
+    <string name="permission_app_block">앱 차단 기능</string>
+    <string name="permission_lock_screen">잠금 화면 표시</string>
+    <string name="permission_notification_block">알림 차단 (선택)</string>
+    <string name="permission_required">권한 설정하기</string>
+    <string name="permission_grayscale_title">흑백 모드 권한 필요</string>
+    
+    <!-- ==================== Grayscale Mode ==================== -->
+    <string name="grayscale_title">흑백 모드</string>
+    <string name="grayscale_auto_enable">집중 모드 시 자동 활성화</string>
+    <string name="grayscale_description">타이머 시작 시 화면이 흑백으로 전환됩니다</string>
+    <string name="grayscale_manual_guide">수동 흑백 모드 안내</string>
+    <string name="grayscale_settings_title">흑백 모드 설정</string>
+
+    <!-- ==================== Schedule / Auto-Run ==================== -->
+    <string name="schedule_title">스케줄</string>
+    <string name="schedule_group_title">스케줄 그룹</string>
+    <string name="schedule_group_delete_title">스케줄 그룹 삭제</string>
+    <string name="schedule_group_delete_message">이 스케줄 그룹을 삭제하시겠습니까?</string>
+    <string name="schedule_create_first">첫 시간표 만들기</string>
+    <string name="schedule_create_first_group">첫 그룹 만들기</string>
+    <string name="schedule_add_time">시간 추가</string>
+    <string name="schedule_name_label">시간표 이름 *</string>
+    <string name="schedule_name_placeholder">예: 업무 시간표, 공부 루틴</string>
+    <string name="schedule_template_select">템플릿 선택</string>
+    <string name="schedule_timeslot_add">시간대 추가</string>
+    <string name="schedule_setting_title">예약설정</string>
+    <string name="schedule_setting_description">원하는 시간에 자동으로 집중모드 시작</string>
+    <string name="schedule_go_to_tab">하단의 [스케줄] 탭에서 시간표를 관리하세요</string>
+    
+    <!-- Auto-Run -->
+    <string name="autorun_delete_title">삭제 확인</string>
+    <string name="autorun_label_placeholder">예: 오전 업무 집중</string>
+    <string name="autorun_history_title">자동 실행 기록</string>
+    
+    <!-- Detoxy Routine -->
+    <string name="detoxy_routine_title">디톡시 루틴 (예정)</string>
+    <string name="detoxy_routine_description">매일 정해진 시간에 자동으로 디톡시 시작</string>
+
+    <!-- ==================== Todo List ==================== -->
+    <string name="todo_add">할일 추가 (%1$d개 남음)</string>
+    <string name="todo_input_placeholder">할일 입력</string>
+    <string name="todo_today_title">오늘의 할일</string>
+
+    <!-- ==================== Overlay / Lock Screen ==================== -->
+    <string name="overlay_show_goal">오버레이에 목표 표시</string>
+    <string name="overlay_show_goal_desc">차단 화면에 집중 목표를 표시합니다</string>
+    <string name="overlay_show_todos">세부 할일 표시</string>
+    <string name="overlay_show_todos_desc">개별 할일 항목까지 표시합니다</string>
+    <string name="overlay_hide_goal">목표 숨기기 (이모지만)</string>
+    <string name="overlay_hide_goal_desc">민감한 목표를 숨기고 🎯 이모지만 표시합니다</string>
+    <string name="overlay_block_message">차단 앱 사용 시 잠금 화면이 표시됩니다</string>
+
+    <!-- ==================== Location-Based ==================== -->
+    <string name="location_permission_title">위치 권한</string>
+    <string name="location_add_title">장소 추가</string>
+    <string name="location_edit_title">장소 수정</string>
+    <string name="location_time_based_settings">시간 기반 설정으로 이동</string>
+
+    <!-- ==================== Report ==================== -->
+    <string name="report_title">리포트</string>
+    <string name="report_summary">요약</string>
+    <string name="report_daily">일간</string>
+    <string name="report_weekly">주간</string>
+    <string name="report_monthly">월간</string>
+
+    <!-- ==================== Coach / Recommendations ==================== -->
+    <string name="coach_keep_going_title">목표 유지하기</string>
+    <string name="coach_keep_going_desc">지금의 습관을 꾸준히 이어가세요</string>
+    <string name="coach_increase_difficulty_title">난이도 높이기</string>
+    <string name="coach_increase_difficulty_desc">차단 시간을 10분 늘려보세요</string>
+    <string name="coach_new_category_title">새로운 카테고리 차단 시도</string>
+    <string name="coach_new_category_desc">한 가지 카테고리를 추가로 차단해 보세요</string>
+    <string name="coach_adjust_session_title">세션 시간 조정하기</string>
+    <string name="coach_adjust_session_desc">일시적으로 세션 시간을 줄여보세요 (예: 25분 → 15분)</string>
+    <string name="coach_night_block_title">야간 차단 시간 설정</string>
+    <string name="coach_emergency_title">긴급 디톡시 모드</string>
+    <string name="coach_reset_title">기본 설정으로 되돌리기</string>
+    <string name="coach_reset_desc">너무 어려운 목표를 설정했을 수 있어요. 5분부터 다시 시작해 보세요</string>
+    <string name="coach_ask_help_title">지원 요청하기</string>
+    <string name="coach_ask_help_desc">가족이나 친구에게 도움을 요청하는 것도 좋은 방법입니다</string>
+    <string name="coach_remove_app_desc">당장 %1$s 앱을 제거하거나 24시간 차단하세요</string>
+
+    <!-- ==================== Notifications ==================== -->
+    <string name="notification_channel_focus">집중 모드</string>
+    <string name="notification_channel_focus_desc">집중 타이머 진행 상태를 알립니다</string>
+    <string name="notification_channel_autorun">자동 실행</string>
+    <string name="notification_channel_autorun_desc">예약된 집중 모드 알림</string>
+    <string name="notification_start_soon">%1$d분 후 집중 모드가 시작됩니다</string>
+    <string name="notification_action_start">시작하기</string>
+    <string name="notification_action_snooze">10분 후</string>
+    <string name="notification_action_skip">건너뛰기</string>
+
+    <!-- ==================== Accessibility Service ==================== -->
     <string name="accessibility_service_description">ScreenSence는 집중 타이머 실행 중 특정 앱(Instagram, TikTok, YouTube, Facebook)을 차단하여 집중력 향상을 돕습니다. 이 서비스는 차단된 앱 실행 시 홈 화면으로 이동시킵니다.</string>
+
+    <!-- ==================== Language Settings ==================== -->
+    <string name="language_settings_title">언어 설정</string>
+    <string name="language_system_default">시스템 기본값 (자동)</string>
+
+    <!-- ==================== Errors & Warnings ==================== -->
+    <string name="error_permission_denied">권한이 거부되었습니다</string>
+    <string name="error_general">오류가 발생했습니다</string>
+    <string name="warning_data_loss">데이터가 손실될 수 있습니다</string>
+
+    <!-- ==================== Empty States ==================== -->
+    <string name="empty_no_schedule">등록된 스케줄이 없습니다</string>
+    <string name="empty_no_history">기록이 없습니다</string>
+    <string name="empty_no_todos">할일이 없습니다</string>
+
 </resources>

@@ -24,6 +24,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.allday.detoxy.core.utils.PreferenceManager
 import com.allday.detoxy.presentation.ui.autorun.TimeBasedAutoRunScreen
@@ -158,8 +159,8 @@ fun MainScreen(timerViewModel: TimerViewModel) {
     if (showExitDialog) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { showExitDialog = false },
-            title = { Text("집중 모드 실행 중") },
-            text = { Text("타이머가 실행 중입니다. 앱을 종료하시겠습니까? (타이머는 백그라운드에서 계속 실행됩니다)") },
+            title = { Text(stringResource(R.string.timer_running_title)) },
+            text = { Text(stringResource(R.string.timer_running_message)) },
             confirmButton = {
                 androidx.compose.material3.TextButton(
                     onClick = {
@@ -168,14 +169,14 @@ fun MainScreen(timerViewModel: TimerViewModel) {
                         (context as? android.app.Activity)?.moveTaskToBack(true)
                     }
                 ) {
-                    Text("백그라운드 실행")
+                    Text(stringResource(R.string.timer_background_continue))
                 }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(
                     onClick = { showExitDialog = false }
                 ) {
-                    Text("취소")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )
@@ -246,10 +247,10 @@ fun MainScreenWithNavigation() {
     }
 
     val tabs = listOf(
-        GlassNavigationItem(Icons.Default.PlayArrow, "타이머"),
-        GlassNavigationItem(Icons.Filled.DateRange, "스케줄"),
-        GlassNavigationItem(Icons.Default.Star, "리포트"),
-        GlassNavigationItem(Icons.Default.Settings, "설정")
+        GlassNavigationItem(Icons.Default.PlayArrow, stringResource(R.string.tab_timer)),
+        GlassNavigationItem(Icons.Filled.DateRange, stringResource(R.string.tab_schedule)),
+        GlassNavigationItem(Icons.Default.Star, stringResource(R.string.tab_report)),
+        GlassNavigationItem(Icons.Default.Settings, stringResource(R.string.tab_settings))
     )
 
     GlassScaffold(
