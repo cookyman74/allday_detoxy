@@ -84,6 +84,10 @@ fun ScheduleTabScreen(
     val runningScheduleGroup = scheduleGroups.find { it.id == runningScheduleGroupId }
     val remainingSeconds by com.allday.detoxy.service.timer.FocusTimerService.remainingSeconds.collectAsState()
     
+    // 🆕 Phase 3: 위치 활성화 개수 상태
+    val enabledGeofenceCount by locationViewModel.enabledCount.collectAsState()
+    val maxGeofences = locationViewModel.maxGeofences
+    
     // 🆕 위치 권한 상태
     val locationPermissionGranted by locationViewModel.locationPermissionGranted.collectAsState()
     val backgroundLocationPermissionGranted by locationViewModel.backgroundLocationPermissionGranted.collectAsState()
@@ -306,6 +310,23 @@ fun ScheduleTabScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // 🆕 Phase 3: 위치 알림 사용 현황 배지
+                        if (enabledGeofenceCount > 0) {
+                            item(key = "geofence_count") {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    val isLimitReached = enabledGeofenceCount >= maxGeofences
+                                    Text(
+                                        text = "위치 모니터링: $enabledGeofenceCount/$maxGeofences",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (isLimitReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
                         // 🆕 v0.10.1: 1. 작동 중인 스케줄 카드 (타이머 실행 중)
                         if (timerState == com.allday.detoxy.domain.model.FocusState.RUNNING && runningScheduleGroup != null) {
                             item(key = "running_schedule") {

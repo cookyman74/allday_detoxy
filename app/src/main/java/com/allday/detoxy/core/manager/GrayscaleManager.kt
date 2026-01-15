@@ -7,7 +7,6 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.service.notification.ZenDeviceEffects
-import android.service.notification.ZenPolicy
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.datastore.preferences.core.edit
@@ -18,9 +17,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -62,6 +63,11 @@ class GrayscaleManager @Inject constructor(
     
     // 현재 룰 ID (메모리 캐시)
     private var ruleId: String? = null
+    
+    // ⚠️ 핫픽스 v13: 재적용 쿨다운 (연속 호출 방지) - 5초로 증가
+    @Volatile
+    private var lastReapplyTime: Long = 0
+    private val REAPPLY_COOLDOWN_MS = 5000L  // 5초 (SCREEN_ON + USER_PRESENT 묶기)
 
     // ==================== 공개 메서드 ====================
 
@@ -174,6 +180,153 @@ class GrayscaleManager @Inject constructor(
     fun isActive(): Boolean = isGrayscaleActive
 
     /**
+     * ⚠️ 핫픽스 v6: 그레이스케일 효과 재적용
+     * 
+     * 화면이 켜질 때 시스템이 ZenDeviceEffects를 리셋할 수 있으므로
+     * 이미 활성화된 상태라면 setAutomaticZenRuleState(STATE_TRUE)를 다시 호출하여
+     * 효과를 재적용합니다.
+     * 
+     * @return 재적용 성공 여부
+     */
+    /**
+     * ⚠️ 핫픽스 v16: Async Suspend + AtomicBoolean
+     * - AtomicBoolean으로 중복 실행 방지 (Thread Safety)
+     * - Suspend Function + delay로 Non-blocking 대기
+     * - Toggle 방식 사용 (State False -> Delay -> State True)
+     */
+    // ⚠️ v16: 재적용 실행 중 여부 (AtomicBoolean for thread safety)
+    private val isReapplying = AtomicBoolean(false)
+
+    // ⚠️ v16: Suspend function으로 변경 (비동기 처리, Thread.sleep 제거)
+    suspend fun reapplyGrayscaleState(forceReapply: Boolean = false): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            return false
+        }
+        
+        // 실행 중이면 스킵 (Debounce)
+        if (isReapplying.getAndSet(true)) {
+            Log.d(TAG, "reapply skipped - already running")
+            return true
+        }
+
+        try {
+            return reapplyGrayscaleStateInternal(forceReapply)
+        } finally {
+            isReapplying.set(false)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private suspend fun reapplyGrayscaleStateInternal(forceReapply: Boolean): Boolean {
+        // ⚠️ v16: 쿨다운 제거 (AtomicBoolean으로 실행 중 중복만 방지)
+        
+        val nm = context.getSystemService(NotificationManager::class.java)
+        val currentRuleId = ruleId
+        
+        // 실제 시스템 룰 상태 확인
+        val existingRules = nm.automaticZenRules
+        val existingRule = currentRuleId?.let { existingRules[it] }
+        
+        Log.d(TAG, "reapply check: forceReapply=$forceReapply, isGrayscaleActive=$isGrayscaleActive, " +
+                "ruleId=$currentRuleId, ruleExists=${existingRule != null}, ruleEnabled=${existingRule?.isEnabled}")
+        
+        // 1. 플래그와 실제 상태 모두 비활성이면 스킵 (forceReapply가 아닐 때만)
+        if (!forceReapply && !isGrayscaleActive && existingRule == null) {
+            Log.d(TAG, "Grayscale is not active and no rule exists, skipping reapply")
+            return false
+        }
+        
+        return try {
+            val conditionUri = Uri.parse("condition://com.allday.detoxy/grayscale")
+            
+            // ⚠️ v16: 룰이 존재하고 enabled면 → STATE 토글로 효과 강제 재적용
+            if (existingRule != null && existingRule.isEnabled) {
+                Log.d(TAG, "Rule exists and enabled - applying STATE toggle to force effect (FILTER_ALL)")
+                
+                // 1. STATE_FALSE (잠시 끄기)
+                val conditionFalse = android.service.notification.Condition(
+                    conditionUri,
+                    "Grayscale Inactive",
+                    android.service.notification.Condition.STATE_FALSE
+                )
+                nm.setAutomaticZenRuleState(currentRuleId!!, conditionFalse)
+                Log.d(TAG, "Toggle: Set STATE_FALSE")
+                
+                // 2. 잠시 대기 (Suspend delay)
+                delay(100)
+                
+                // 3. STATE_TRUE (다시 켜기 - 강제 재적용)
+                val conditionTrue = android.service.notification.Condition(
+                    conditionUri,
+                    "Grayscale Active",
+                    android.service.notification.Condition.STATE_TRUE
+                )
+                nm.setAutomaticZenRuleState(currentRuleId, conditionTrue)
+                Log.d(TAG, "Toggle: Set STATE_TRUE")
+                
+                isGrayscaleActive = true
+                Log.i(TAG, "✅ Grayscale ensured active (via toggle, suspend)")
+                true
+            } 
+            // 룰이 없거나 disabled면 → 재생성 (최초 또는 비정상 상태)
+            else {
+                Log.d(TAG, "Rule missing or disabled, recreating")
+                
+                // 기존 룰이 있으면 삭제
+                currentRuleId?.let {
+                    try {
+                        nm.removeAutomaticZenRule(it)
+                        Log.d(TAG, "Removed old rule: $it")
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to remove old rule: ${e.message}")
+                    }
+                }
+                
+                // 새 룰 생성 (v14: FILTER_ALL 유지)
+                val effects = ZenDeviceEffects.Builder()
+                    .setShouldDisplayGrayscale(true)
+                    .build()
+                
+                val rule = AutomaticZenRule.Builder(RULE_NAME, conditionUri)
+                    .setType(AutomaticZenRule.TYPE_OTHER)
+                    .setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)  // DND 분리
+                    .setDeviceEffects(effects)
+                    .setConfigurationActivity(
+                        ComponentName(context, GrayscaleSettingsActivity::class.java)
+                    )
+                    .setEnabled(true)
+                    .build()
+                
+                val newRuleId = nm.addAutomaticZenRule(rule)
+                
+                if (newRuleId != null) {
+                    ruleId = newRuleId
+                    saveRuleIdAsync(newRuleId)
+                    
+                    // 새 룰 활성화
+                    val condition = android.service.notification.Condition(
+                        conditionUri,
+                        "Grayscale Active",
+                        android.service.notification.Condition.STATE_TRUE
+                    )
+                    nm.setAutomaticZenRuleState(newRuleId, condition)
+                    
+                    isGrayscaleActive = true
+                    Log.i(TAG, "✅ Grayscale rule recreated: $newRuleId")
+                    true
+                } else {
+                    Log.e(TAG, "❌ Failed to create new rule")
+                    isGrayscaleActive = false
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to re-apply grayscale state: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
      * 그레이스케일 지원 여부 확인
      */
     fun isSupported(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
@@ -235,7 +388,7 @@ class GrayscaleManager @Inject constructor(
             // DndManager.enableDnd()가 생성하는 암묵적 ZenRule과의 충돌 방지
             val rule = AutomaticZenRule.Builder(RULE_NAME, conditionId)
                 .setType(AutomaticZenRule.TYPE_OTHER)  // TYPE_OTHER로 변경 (앱 자체 제어)
-                .setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALARMS)  // DND 기능 포함
+                .setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)  // ⚠️ v14: DND 분리 (알림 없음)
                 .setDeviceEffects(effects)
                 .setConfigurationActivity(
                     ComponentName(context, GrayscaleSettingsActivity::class.java)
@@ -409,4 +562,3 @@ class GrayscaleManager @Inject constructor(
         Log.d(TAG, "Cleared ruleId")
     }
 }
-
