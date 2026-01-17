@@ -20,6 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.res.stringResource
+import com.allday.detoxy.R
 import com.allday.detoxy.core.utils.PermissionUtils
 import com.allday.detoxy.domain.model.FocusState
 import com.allday.detoxy.presentation.viewmodel.TimerViewModel
@@ -195,7 +197,7 @@ fun TimerScreen(
     ) {
         // 제목
         Text(
-            text = "집중 타이머",
+            text = stringResource(R.string.timer_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
@@ -410,7 +412,7 @@ fun TimerScreen(
                                 onClick = { showSaveDialog = true },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                            Text(if (existingPreset != null) "프리셋 업데이트" else "프리셋으로 저장")
+                            Text(if (existingPreset != null) stringResource(R.string.timer_preset_update) else stringResource(R.string.timer_preset_save))
                         }
                         
                         // 프리셋 버튼
@@ -438,7 +440,7 @@ fun TimerScreen(
                                 .height(56.dp)
                         ) {
                             Text(
-                                text = "시작하기",
+                                text = stringResource(R.string.timer_start),
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
@@ -547,7 +549,7 @@ fun TimerScreen(
                                 .fillMaxWidth(0.8f) // 버튼 너비 조정
                                 .height(56.dp)
                         ) {
-                            Text("포기하기")
+                            Text(stringResource(R.string.timer_give_up))
                         }
                     }
                 }
@@ -560,12 +562,12 @@ fun TimerScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "🎉 타이머 완료!",
+                        text = stringResource(R.string.timer_finished_title),
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "집중 시간을 성공적으로 완료했습니다.",
+                        text = stringResource(R.string.timer_finished_desc),
                         style = MaterialTheme.typography.bodyLarge
                     )
                     
@@ -577,7 +579,7 @@ fun TimerScreen(
                             .fillMaxWidth()
                             .height(56.dp)
                     ) {
-                        Text("새 타이머 시작")
+                        Text(stringResource(R.string.timer_start_new))
                     }
                 }
             }
@@ -589,12 +591,12 @@ fun TimerScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "타이머 포기",
+                        text = stringResource(R.string.timer_failed_title),
                         style = MaterialTheme.typography.displaySmall,
                         color = MaterialTheme.colorScheme.error
                     )
                     Text(
-                        text = "다음엔 더 잘할 수 있어요!",
+                        text = stringResource(R.string.timer_failed_desc),
                         style = MaterialTheme.typography.bodyLarge
                     )
                     
@@ -606,7 +608,7 @@ fun TimerScreen(
                             .fillMaxWidth()
                             .height(56.dp)
                     ) {
-                        Text("다시 시작")
+                        Text(stringResource(R.string.timer_restart))
                     }
                 }
             }
@@ -634,7 +636,7 @@ fun SuccessCelebrationDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "🎉 집중 성공!",
+                text = stringResource(R.string.timer_success_title),
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -645,11 +647,11 @@ fun SuccessCelebrationDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "목표를 달성했습니다!",
+                    text = stringResource(R.string.timer_goal_achieved),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "집중 시간을 성공적으로 완료했어요.\n계속해서 좋은 습관을 만들어가세요!",
+                    text = stringResource(R.string.timer_success_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -662,7 +664,7 @@ fun SuccessCelebrationDialog(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("확인")
+                Text(stringResource(R.string.btn_confirm))
             }
         }
     }
@@ -693,18 +695,14 @@ fun PermissionErrorDialog(
     
     val (title, message) = when (error) {
         is TimerViewModel.PermissionError.AccessibilityServiceDisabled -> {
-            "앱 차단 기능 권한 필요" to "집중 타이머를 사용하려면 앱 차단 기능(접근성 서비스)을 활성화해야 합니다.\n\n" +
-                    "설정 화면에서 'ScreenSence'를 찾아 활성화해주세요."
+            stringResource(R.string.permission_accessibility_needed_title) to stringResource(R.string.permission_accessibility_needed_desc)
         }
         is TimerViewModel.PermissionError.AccessibilityServiceCrashed -> {
             // 🆕 v0.10.4: 크래시 상태 안내 (v0.10.7: 배터리 최적화 안내 추가)
-            "⚠️ 앱 차단 기능 재시작 필요" to "앱 차단 기능(접근성 서비스)이 일시적으로 중지되었습니다.\n\n" +
-                    "1️⃣ 설정 화면에서 'ScreenSence'를 꺼다가 다시 켜주세요.\n\n" +
-                    "2️⃣ 이 문제가 반복되면 아래 '배터리 설정 가이드'를 확인하세요."
+            stringResource(R.string.permission_accessibility_disabled_title) to stringResource(R.string.permission_accessibility_disabled_desc)
         }
         is TimerViewModel.PermissionError.OverlayPermissionDenied -> {
-            "잠금 화면 표시 권한 필요" to "집중 타이머를 사용하려면 잠금 화면 표시 권한(다른 앱 위에 표시)이 필요합니다.\n\n" +
-                    "설정 화면에서 권한을 허용해주세요."
+            stringResource(R.string.permission_overlay_needed_title) to stringResource(R.string.permission_overlay_needed_desc)
         }
     }
 
@@ -734,7 +732,7 @@ fun PermissionErrorDialog(
                         onClick = { showBatteryGuide = true },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("🔋 배터리 설정 가이드")
+                        Text(stringResource(R.string.btn_battery_guide))
                     }
                 }
             }
@@ -744,11 +742,11 @@ fun PermissionErrorDialog(
                 horizontalArrangement = Arrangement.End
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text("취소")
+                    Text(stringResource(R.string.btn_cancel))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(onClick = onOpenSettings) {
-                    Text("설정으로 이동")
+                    Text(stringResource(R.string.btn_go_to_settings))
                 }
             }
         }

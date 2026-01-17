@@ -219,10 +219,10 @@
 | ✅ | `TimeBasedAutoRunCard.kt` | 23 | 자동실행 UI |
 | ✅ | `AutoRunHistoryItem.kt` | 22 | 자동실행 UI |
 | ✅ | `ScheduleGroupScreen.kt` | 17 | 자동실행 UI |
-| ⬜ | `ReportScreen.kt` | 21 | 리포트 UI |
-| ⬜ | `TimeBasedAutoRunScreen.kt` | 21 | 자동실행 UI |
-| ⬜ | `LocationPermissionDialogs.kt` | 21 | 권한 UI |
-| ⬜ | `TimerScreen.kt` | 20 | 타이머 UI |
+| ✅ | `ReportScreen.kt` | 21 | 리포트 UI |
+| ✅ | `TimeBasedAutoRunScreen.kt` | 21 | 자동실행 UI |
+| ✅ | `LocationPermissionDialogs.kt` | 21 | 권한 UI |
+| ✅ | `TimerScreen.kt` | 20 | 타이머 UI |
 | ⬜ | `SavePresetDialog.kt` | 20 | 타이머 UI |
 | ⬜ | `ScheduleGroupCard.kt` | 19 | 자동실행 UI |
 | ⬜ | `TemplateSelectionDialog.kt` | 18 | 자동실행 UI |

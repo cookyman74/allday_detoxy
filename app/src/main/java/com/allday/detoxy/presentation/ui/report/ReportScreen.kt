@@ -31,15 +31,13 @@ import com.allday.detoxy.presentation.ui.component.GlassScaffold
 import com.allday.detoxy.presentation.ui.component.GlassSurface
 import com.allday.detoxy.presentation.ui.component.SimpleGlassSurface
 import com.allday.detoxy.presentation.ui.component.liquidGlass
-import com.allday.detoxy.presentation.ui.report.components.DetoxyRiskCard
-import com.allday.detoxy.presentation.ui.report.components.RecoveryTrendCard
-import com.allday.detoxy.presentation.ui.report.components.DistractionTopCard
-import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationCard
-import com.allday.detoxy.presentation.ui.report.components.CoachRecommendationDialog
-import com.allday.detoxy.presentation.ui.report.components.DistractionAvoidanceCard
-import com.allday.detoxy.presentation.ui.report.components.AllowedAppDwellCard
+import com.allday.detoxy.presentation.ui.report.components.*
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
+import java.util.Date
+import androidx.compose.ui.res.stringResource
+import com.allday.detoxy.R
+
 
 /**
  * 리포트 화면
@@ -85,12 +83,12 @@ fun ReportScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "뒤로",
+                            contentDescription = stringResource(R.string.back_button_desc),
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
                     Text(
-                        text = "디톡시 리포트",
+                        text = stringResource(R.string.report_screen_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.Bold
@@ -117,7 +115,7 @@ fun ReportScreen(
                                 // 총 집중 시간
                                 GlassStatCard(
                                     modifier = Modifier.weight(1f),
-                                    title = "총 집중 시간",
+                                    title = stringResource(R.string.report_total_focus_time),
                                     value = "${uiState.getTotalFocusMinutes()}",
                                     unit = "분",
                                     icon = Icons.Default.PlayArrow,
@@ -127,7 +125,7 @@ fun ReportScreen(
                                 // 성공 세션
                                 GlassStatCard(
                                     modifier = Modifier.weight(1f),
-                                    title = "성공 세션",
+                                    title = stringResource(R.string.report_success_session),
                                     value = "${uiState.getSuccessSessionCount()}",
                                     unit = "회",
                                     icon = Icons.Default.CheckCircle,
@@ -144,7 +142,7 @@ fun ReportScreen(
                                 // 현재 스트릭
                                 GlassStatCard(
                                     modifier = Modifier.weight(1f),
-                                    title = "연속 성공",
+                                    title = stringResource(R.string.report_current_streak),
                                     value = "${uiState.settings.currentStreak}",
                                     unit = "일",
                                     icon = Icons.Default.Favorite,
@@ -154,7 +152,7 @@ fun ReportScreen(
                                 // 총 포인트
                                 GlassStatCard(
                                     modifier = Modifier.weight(1f),
-                                    title = "총 포인트",
+                                    title = stringResource(R.string.report_total_points),
                                     value = "${uiState.settings.totalPoints}",
                                     unit = "P",
                                     icon = Icons.Default.Star,
@@ -179,7 +177,7 @@ fun ReportScreen(
                                     ) {
                                         Column {
                                             Text(
-                                                text = "오늘의 성공률",
+                                                text = stringResource(R.string.report_daily_success_rate),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
@@ -213,7 +211,7 @@ fun ReportScreen(
                         // 신규 고급 통계 카드들 (Week 2B) - Task 2B.3.3 최종 통합
                         item {
                             Text(
-                                text = "주간 인사이트",
+                                text = stringResource(R.string.report_weekly_insight),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(vertical = 8.dp)
@@ -265,7 +263,7 @@ fun ReportScreen(
                         if (uiState.todaySessions.isNotEmpty()) {
                             item {
                                 Text(
-                                    text = "오늘의 세션",
+                                    text = stringResource(R.string.report_daily_session),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(vertical = 8.dp)
@@ -337,7 +335,7 @@ private fun EmptyStateCard() {
 
             // 제목
             Text(
-                text = "첫 디톡시 세션을 시작해보세요!",
+                text = stringResource(R.string.empty_report_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -348,7 +346,7 @@ private fun EmptyStateCard() {
 
             // 설명
             Text(
-                text = "디톡시 세션을 시작하면\n다음과 같은 인사이트를 받을 수 있어요:",
+                text = stringResource(R.string.empty_report_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -364,22 +362,22 @@ private fun EmptyStateCard() {
             ) {
                 EmptyStateFeatureItem(
                     icon = Icons.Default.CheckCircle,
-                    text = "위험 지수 분석",
+                    text = stringResource(R.string.empty_report_feature_risk),
                     color = Color(0xFFF44336)
                 )
                 EmptyStateFeatureItem(
                     icon = Icons.Default.PlayArrow,
-                    text = "회복률 추세 그래프",
+                    text = stringResource(R.string.empty_report_feature_trend),
                     color = Color(0xFF4CAF50)
                 )
                 EmptyStateFeatureItem(
                     icon = Icons.Default.Info,
-                    text = "방해요인 Top 3",
+                    text = stringResource(R.string.empty_report_feature_distraction),
                     color = Color(0xFFFFA726)
                 )
                 EmptyStateFeatureItem(
                     icon = Icons.Default.Favorite,
-                    text = "맞춤형 코치 추천",
+                    text = stringResource(R.string.empty_report_feature_coach),
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -388,7 +386,7 @@ private fun EmptyStateCard() {
 
             // 안내 텍스트
             Text(
-                text = "타이머 탭에서 집중 모드를 시작해보세요!",
+                text = stringResource(R.string.empty_report_guide),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium,
@@ -528,7 +526,7 @@ private fun GlassSessionCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (session.success) "성공 세션" else "실패 세션",
+                    text = if (session.success) stringResource(R.string.report_session_success) else stringResource(R.string.report_session_fail),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface

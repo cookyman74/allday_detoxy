@@ -59,7 +59,7 @@
 
     <!-- ==================== Timer Screen ==================== -->
     <string name="timer_title">집중 타이머</string>
-    <string name="timer_start">타이머 시작</string>
+    <string name="timer_start">시작하기</string>
     <string name="timer_stop">타이머 중지</string>
     <string name="timer_give_up">포기하기</string>
     <string name="timer_starting">타이머 시작 중…</string>
@@ -68,7 +68,7 @@
     <string name="timer_running_title">집중 모드 실행 중</string>
     <string name="timer_running_message">타이머가 실행 중입니다. 앱을 종료하시겠습니까? (타이머는 백그라운드에서 계속 실행됩니다)</string>
     <string name="timer_background_continue">백그라운드 실행</string>
-    <string name="timer_preset_save">프리셋 저장</string>
+    <string name="timer_preset_save">프리셋으로 저장</string>
     <string name="timer_preset_name">프리셋 이름</string>
     <string name="timer_custom_input_hint">직접 입력 (1–180분)</string>
 
@@ -495,4 +495,87 @@
     <string name="empty_no_history">기록이 없습니다</string>
     <string name="empty_no_todos">할일이 없습니다</string>
 
+
+    <!-- TimeBasedAutoRunScreen -->
+    <string name="autorun_list_title">예약설정</string>
+    <string name="autorun_list_title_format">%s 예약설정</string>
+    <string name="autorun_manage_schedule">시간표 관리</string>
+    <string name="autorun_add_timeslot">시간대 추가</string>
+    <string name="autorun_max_limit_desc">최대 10개까지 등록 가능합니다</string>
+    <string name="autorun_count_format">등록된 시간대 (%1$d/10)</string>
+    <string name="autorun_creation_custom">커스텀</string>
+    <string name="autorun_creation_template">템플릿</string>
+    <string name="autorun_delete_confirm_time">"%1$s" 자동 실행을 삭제하시겠습니까?\n알람도 함께 취소됩니다.</string>
+    <string name="autorun_delete_confirm_generic">이 자동 실행을 삭제하시겠습니까?</string>
+    <string name="msg_schedule_created_global">시간표가 생성되었습니다 (어디서나 적용)</string>
+    <string name="msg_schedule_created_location">위치 기반 시간표가 생성되었습니다</string>
+    
+    <!-- Location Permission Dialogs -->
+    <string name="permission_bg_location_title">백그라운드 위치 권한이 필요합니다</string>
+    <string name="permission_bg_location_desc">위치 기반 자동 실행을 사용하려면 백그라운드 위치 권한이 필요합니다.</string>
+    <string name="permission_bg_location_guide">다음 화면에서 \'항상 허용\'을 선택해 주세요.</string>
+    <string name="permission_bg_location_privacy">이 권한은 등록한 장소(회사, 학교 등)에 도착할 때만 사용되며, 위치 데이터는 로컬에만 저장됩니다.</string>
+    <string name="permission_location_needed_title">위치 권한이 필요합니다</string>
+    <string name="permission_location_needed_desc">위치 권한이 없으면 위치 기반 자동 실행을 사용할 수 없습니다.</string>
+    <string name="permission_suggestion_time_based">💡 대신 시간 기반 자동 실행을 사용해보세요!</string>
+    <string name="permission_suggestion_time_based_desc">특정 시간대에 자동으로 집중 모드를 시작할 수 있습니다.</string>
+    <string name="permission_settings_title">설정에서 권한을 허용해주세요</string>
+    <string name="permission_settings_desc">백그라운드 위치 권한을 허용하려면 설정 화면으로 이동해야 합니다.</string>
+    <string name="permission_settings_step_1">1. \'권한\' 탭 선택</string>
+    <string name="permission_settings_step_2">2. \'위치\' 선택</string>
+    <string name="permission_settings_step_3">3. \'항상 허용\' 선택</string>
+    <string name="permission_revoked_title">위치 권한이 해제되었습니다</string>
+    <string name="permission_revoked_desc">위치 권한이 해제되어 위치 기반 자동 실행이 비활성화되었습니다.</string>
+    <string name="permission_revoked_guide">다시 사용하려면 위치 권한을 \'항상 허용\'으로 설정해주세요.</string>
+
+    <!-- Timer Screen -->
+    <string name="timer_finished_title">🎉 타이머 완료!</string>
+    <string name="timer_finished_desc">집중 시간을 성공적으로 완료했습니다.</string>
+    <string name="timer_start_new">새 타이머 시작</string>
+    <string name="timer_failed_title">타이머 포기</string>
+    <string name="timer_failed_desc">다음엔 더 잘할 수 있어요!</string>
+    <string name="timer_restart">다시 시작</string>
+    <string name="timer_success_title">🎉 집중 성공!</string>
+    <string name="timer_goal_achieved">목표를 달성했습니다!</string>
+    <string name="timer_success_desc">집중 시간을 성공적으로 완료했어요.\n계속해서 좋은 습관을 만들어가세요!</string>
+    <string name="permission_accessibility_needed_title">앱 차단 기능 권한 필요</string>
+    <string name="permission_accessibility_needed_desc">집중 타이머를 사용하려면 앱 차단 기능(접근성 서비스)을 활성화해야 합니다.\n\n설정 화면에서 \'ScreenSence\'를 찾아 활성화해주세요.</string>
+    <string name="permission_accessibility_disabled_title">⚠️ 앱 차단 기능 재시작 필요</string>
+    <string name="permission_accessibility_disabled_desc">앱 차단 기능(접근성 서비스)이 일시적으로 중지되었습니다.\n\n1️⃣ 설정 화면에서 \'ScreenSence\'를 꺼다가 다시 켜주세요.\n\n2️⃣ 이 문제가 반복되면 아래 \'배터리 설정 가이드\'를 확인하세요.</string>
+    <string name="permission_overlay_needed_title">잠금 화면 표시 권한 필요</string>
+    <string name="permission_overlay_needed_desc">집중 타이머를 사용하려면 잠금 화면 표시 권한(다른 앱 위에 표시)이 필요합니다.\n\n설정 화면에서 권한을 허용해주세요.</string>
+    <string name="btn_battery_guide">🔋 배터리 설정 가이드</string>
+    <string name="timer_preset_update">프리셋 업데이트</string>
+    
+    <!-- Report Screen -->
+    <string name="report_screen_title">디톡시 리포트</string>
+    <string name="report_total_focus_time">총 집중 시간</string>
+    <string name="report_success_session">성공 세션</string>
+    <string name="report_current_streak">연속 성공</string>
+    <string name="report_total_points">총 포인트</string>
+    <string name="report_daily_success_rate">오늘의 성공률</string>
+    <string name="report_weekly_insight">주간 인사이트</string>
+    <string name="report_daily_session">오늘의 세션</string>
+    <string name="report_session_success">성공 세션</string>
+    <string name="report_session_fail">실패 세션</string>
+    
+    <string name="empty_report_title">첫 디톡시 세션을 시작해보세요!</string>
+    <string name="empty_report_desc">디톡시 세션을 시작하면\n다음과 같은 인사이트를 받을 수 있어요:</string>
+    <string name="empty_report_feature_risk">위험 지수 분석</string>
+    <string name="empty_report_feature_trend">회복률 추세 그래프</string>
+    <string name="empty_report_feature_distraction">방해요인 Top 3</string>
+    <string name="empty_report_feature_coach">맞춤형 코치 추천</string>
+    <string name="empty_report_guide">타이머 탭에서 집중 모드를 시작해보세요!</string>
+    
+    <!-- Generic Buttons -->
+    <string name="btn_retry_permission">권한 재요청</string>
+    <string name="btn_move_to_time_based">시간 기반으로 이동</string>
+
+    <string name="btn_next">다음</string>
+    <string name="autorun_delete_confirm_title">예약 삭제</string>
+    
+    <string name="battery_impact_minimal">최소</string>
+    <string name="battery_impact_percentage_minimal">&lt; 1%/일</string>
+    <string name="battery_impact_desc_time_based">시간 기반 자동 실행은 배터리에 거의 영향을 주지 않습니다.</string>
+    
 </resources>

@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.allday.detoxy.R
 
 /**
  * 백그라운드 위치 권한 설명 다이얼로그
@@ -25,7 +27,7 @@ fun BackgroundLocationRationaleDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "백그라운드 위치 권한이 필요합니다",
+                text = stringResource(R.string.permission_bg_location_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -35,19 +37,19 @@ fun BackgroundLocationRationaleDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "위치 기반 자동 실행을 사용하려면 백그라운드 위치 권한이 필요합니다.",
+                    text = stringResource(R.string.permission_bg_location_desc),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
                 Text(
-                    text = "다음 화면에서 '항상 허용'을 선택해 주세요.",
+                    text = stringResource(R.string.permission_bg_location_guide),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 
                 Text(
-                    text = "이 권한은 등록한 장소(회사, 학교 등)에 도착할 때만 사용되며, 위치 데이터는 로컬에만 저장됩니다.",
+                    text = stringResource(R.string.permission_bg_location_privacy),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -55,12 +57,12 @@ fun BackgroundLocationRationaleDialog(
         },
         confirmButton = {
             Button(onClick = onProceed) {
-                Text("다음")
+                Text(stringResource(R.string.btn_next))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("나중에")
+                Text(stringResource(R.string.btn_later))
             }
         }
     )
@@ -86,7 +88,7 @@ fun LocationPermissionDeniedDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "위치 권한이 필요합니다",
+                text = stringResource(R.string.permission_location_needed_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -96,21 +98,21 @@ fun LocationPermissionDeniedDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "위치 권한이 없으면 위치 기반 자동 실행을 사용할 수 없습니다.",
+                    text = stringResource(R.string.permission_location_needed_desc),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 
                 Text(
-                    text = "💡 대신 시간 기반 자동 실행을 사용해보세요!",
+                    text = stringResource(R.string.permission_suggestion_time_based),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 
                 Text(
-                    text = "특정 시간대에 자동으로 집중 모드를 시작할 수 있습니다.",
+                    text = stringResource(R.string.permission_suggestion_time_based_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -118,16 +120,16 @@ fun LocationPermissionDeniedDialog(
         },
         confirmButton = {
             Button(onClick = onRetry) {
-                Text("권한 재요청")
+                Text(stringResource(R.string.btn_retry_permission))
             }
         },
         dismissButton = {
             Column {
                 TextButton(onClick = onNavigateToTimeBased) {
-                    Text("시간 기반으로 이동")
+                    Text(stringResource(R.string.btn_move_to_time_based))
                 }
                 TextButton(onClick = onDismiss) {
-                    Text("닫기")
+                    Text(stringResource(R.string.btn_close))
                 }
             }
         }
@@ -151,7 +153,7 @@ fun OpenSettingsDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "설정에서 권한을 허용해주세요",
+                text = stringResource(R.string.permission_settings_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -161,24 +163,24 @@ fun OpenSettingsDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "백그라운드 위치 권한을 허용하려면 설정 화면으로 이동해야 합니다.",
+                    text = stringResource(R.string.permission_settings_desc),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
                 Text(
-                    text = "1. '권한' 탭 선택",
+                    text = stringResource(R.string.permission_settings_step_1),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
                 Text(
-                    text = "2. '위치' 선택",
+                    text = stringResource(R.string.permission_settings_step_2),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
                 Text(
-                    text = "3. '항상 허용' 선택",
+                    text = stringResource(R.string.permission_settings_step_3),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -187,12 +189,12 @@ fun OpenSettingsDialog(
         },
         confirmButton = {
             Button(onClick = onOpenSettings) {
-                Text("설정으로 이동")
+                Text(stringResource(R.string.btn_go_to_settings))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("나중에")
+                Text(stringResource(R.string.btn_later))
             }
         }
     )
@@ -216,7 +218,7 @@ fun LocationPermissionRevokedDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "위치 권한이 해제되었습니다",
+                text = stringResource(R.string.permission_revoked_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -226,12 +228,12 @@ fun LocationPermissionRevokedDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "위치 권한이 해제되어 위치 기반 자동 실행이 비활성화되었습니다.",
+                    text = stringResource(R.string.permission_revoked_desc),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
                 Text(
-                    text = "다시 사용하려면 위치 권한을 '항상 허용'으로 설정해주세요.",
+                    text = stringResource(R.string.permission_revoked_guide),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -239,12 +241,12 @@ fun LocationPermissionRevokedDialog(
         },
         confirmButton = {
             Button(onClick = onOpenSettings) {
-                Text("설정으로 이동")
+                Text(stringResource(R.string.btn_go_to_settings))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("확인")
+                Text(stringResource(R.string.btn_confirm))
             }
         }
     )

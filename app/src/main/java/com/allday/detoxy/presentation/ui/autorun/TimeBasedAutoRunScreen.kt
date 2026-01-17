@@ -31,6 +31,8 @@ import com.allday.detoxy.presentation.ui.autorun.components.*
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import com.allday.detoxy.presentation.viewmodel.TimeBasedAutoRunViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.allday.detoxy.R
 
 /**
  * 예약설정 화면 (시간 기반 자동 실행)
@@ -145,9 +147,9 @@ fun TimeBasedAutoRunScreen(
                     // 🆕 스케줄 그룹 이름이 있으면 "{그룹명} 예약설정", 없으면 "예약설정"
                     Text(
                         text = if (scheduleGroupName != null) {
-                            "$scheduleGroupName 예약설정"
+                            stringResource(R.string.autorun_list_title_format, scheduleGroupName)
                         } else {
-                            "예약설정"
+                            stringResource(R.string.autorun_list_title)
                         }
                     )
                 },
@@ -155,7 +157,7 @@ fun TimeBasedAutoRunScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "뒤로가기"
+                            contentDescription = stringResource(R.string.back_button_desc)
                         )
                     }
                 },
@@ -164,7 +166,7 @@ fun TimeBasedAutoRunScreen(
                     IconButton(onClick = onNavigateToScheduleGroup) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.List,
-                            contentDescription = "시간표 관리"
+                            contentDescription = stringResource(R.string.autorun_manage_schedule)
                         )
                     }
                 }
@@ -177,7 +179,7 @@ fun TimeBasedAutoRunScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "시간대 추가"
+                        contentDescription = stringResource(R.string.autorun_add_timeslot)
                     )
                 }
             }
@@ -240,7 +242,7 @@ fun TimeBasedAutoRunScreen(
                     ) {
                         Icon(Icons.AutoMirrored.Filled.List, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("템플릿")
+                        Text(stringResource(R.string.autorun_creation_template))
                     }
                     
                     // 커스텀 추가
@@ -251,13 +253,13 @@ fun TimeBasedAutoRunScreen(
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("커스텀")
+                        Text(stringResource(R.string.autorun_creation_custom))
                     }
                 }
                 
                 if (autoRuns.size >= 10) {
                     Text(
-                        text = "최대 10개까지 등록 가능합니다",
+                        text = stringResource(R.string.autorun_max_limit_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp)
@@ -268,7 +270,7 @@ fun TimeBasedAutoRunScreen(
             // 4. 시간대 리스트
             if (autoRuns.isNotEmpty()) {
                 Text(
-                    text = "등록된 시간대 (${autoRuns.size}/10)",
+                    text = stringResource(R.string.autorun_count_format, autoRuns.size),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -303,9 +305,9 @@ fun TimeBasedAutoRunScreen(
 
             // 6. 배터리 영향 안내 카드
             BatteryImpactInfoCard(
-                impactLevel = "최소",
-                estimatedPercentage = "< 1%/일",
-                description = "시간 기반 자동 실행은 배터리에 거의 영향을 주지 않습니다."
+                impactLevel = stringResource(R.string.battery_impact_minimal),
+                estimatedPercentage = stringResource(R.string.battery_impact_percentage_minimal),
+                description = stringResource(R.string.battery_impact_desc_time_based)
             )
         }
     }
@@ -351,7 +353,7 @@ fun TimeBasedAutoRunScreen(
                             }
                         }
                         snackbarHostState.showSnackbar(
-                            message = "시간표가 생성되었습니다 (어디서나 적용)",
+                            message = context.getString(R.string.msg_schedule_created_global),
                             duration = SnackbarDuration.Short
                         )
                     } else {
@@ -375,7 +377,7 @@ fun TimeBasedAutoRunScreen(
                         // locationViewModel.createLocationWithSchedule(locationInfo, createdScheduleGroupId)
                         
                         snackbarHostState.showSnackbar(
-                            message = "위치 기반 시간표가 생성되었습니다",
+                            message = context.getString(R.string.msg_schedule_created_location),
                             duration = SnackbarDuration.Short
                         )
                     }
@@ -422,7 +424,7 @@ fun TimeBasedAutoRunScreen(
                             }
                         }
                         snackbarHostState.showSnackbar(
-                            message = "시간표가 생성되었습니다 (어디서나 적용)",
+                            message = context.getString(R.string.msg_schedule_created_global),
                             duration = SnackbarDuration.Short
                         )
                     } else {
@@ -446,7 +448,7 @@ fun TimeBasedAutoRunScreen(
                         // locationViewModel.createLocationWithSchedule(locationInfo, createdScheduleGroupId)
                         
                         snackbarHostState.showSnackbar(
-                            message = "위치 기반 시간표가 생성되었습니다",
+                            message = context.getString(R.string.msg_schedule_created_location),
                             duration = SnackbarDuration.Short
                         )
                     }
@@ -468,14 +470,14 @@ fun TimeBasedAutoRunScreen(
                     contentDescription = null
                 )
             },
-            title = { Text("삭제 확인") },
+            title = { Text(stringResource(R.string.autorun_delete_confirm_title)) },
             text = {
                 Text(
                     if (autoRun != null) {
                         val timeString = String.format("%02d:%02d", autoRun.hour, autoRun.minute)
-                        "\"$timeString\" 자동 실행을 삭제하시겠습니까?\n알람도 함께 취소됩니다."
+                        stringResource(R.string.autorun_delete_confirm_time, timeString)
                     } else {
-                        "이 자동 실행을 삭제하시겠습니까?"
+                        stringResource(R.string.autorun_delete_confirm_generic)
                     }
                 )
             },
@@ -486,12 +488,12 @@ fun TimeBasedAutoRunScreen(
                         deletingAutoRunId = null
                     }
                 ) {
-                    Text("삭제", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.btn_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deletingAutoRunId = null }) {
-                    Text("취소")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )
