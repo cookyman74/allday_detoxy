@@ -13,8 +13,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.allday.detoxy.R
 import com.allday.detoxy.presentation.ui.autorun.components.AutoRunHistoryItem
 import com.allday.detoxy.presentation.ui.autorun.components.StatisticsCard
 import com.allday.detoxy.presentation.viewmodel.AutoRunHistoryViewModel
@@ -52,7 +54,7 @@ fun AutoRunHistoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "자동 실행 이력",
+                        text = stringResource(R.string.autorun_history_title),
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -60,7 +62,7 @@ fun AutoRunHistoryScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "뒤로가기"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 },
@@ -68,7 +70,7 @@ fun AutoRunHistoryScreen(
                     IconButton(onClick = { showFilterDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "필터"
+                            contentDescription = stringResource(R.string.autorun_filter)
                         )
                     }
                 }
@@ -189,7 +191,7 @@ private fun FilterSummaryCard(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "필터 적용 중",
+                        text = stringResource(R.string.autorun_filter_active),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -202,7 +204,7 @@ private fun FilterSummaryCard(
                 }
 
                 TextButton(onClick = onClearFilters) {
-                    Text("초기화")
+                    Text(stringResource(R.string.autorun_filter_reset))
                 }
             }
         }
@@ -225,13 +227,13 @@ private fun EmptyHistoryCard() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "자동 실행 이력이 없습니다",
+                text = stringResource(R.string.autorun_empty_title),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "자동 실행이 트리거되면 이력이 표시됩니다",
+                text = stringResource(R.string.autorun_empty_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -255,7 +257,7 @@ private fun FilterDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("필터 설정")
+            Text(stringResource(R.string.autorun_filter_settings))
         },
         text = {
             Column(
@@ -263,7 +265,7 @@ private fun FilterDialog(
             ) {
                 // 트리거 타입 필터
                 Text(
-                    text = "트리거 타입",
+                    text = stringResource(R.string.autorun_filter_trigger_type),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -275,17 +277,17 @@ private fun FilterDialog(
                     FilterChip(
                         selected = triggerTypeFilter == "ALL",
                         onClick = { onTriggerTypeChange("ALL") },
-                        label = { Text("전체") }
+                        label = { Text(stringResource(R.string.autorun_filter_all)) }
                     )
                     FilterChip(
                         selected = triggerTypeFilter == "TIME",
                         onClick = { onTriggerTypeChange("TIME") },
-                        label = { Text("시간") }
+                        label = { Text(stringResource(R.string.autorun_filter_time)) }
                     )
                     FilterChip(
                         selected = triggerTypeFilter == "LOCATION",
                         onClick = { onTriggerTypeChange("LOCATION") },
-                        label = { Text("위치") }
+                        label = { Text(stringResource(R.string.autorun_filter_location)) }
                     )
                 }
 
@@ -293,7 +295,7 @@ private fun FilterDialog(
 
                 // 결과 필터
                 Text(
-                    text = "결과",
+                    text = stringResource(R.string.autorun_filter_result),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -305,12 +307,12 @@ private fun FilterDialog(
                     FilterChip(
                         selected = resultFilter == "ALL",
                         onClick = { onResultChange("ALL") },
-                        label = { Text("전체") }
+                        label = { Text(stringResource(R.string.autorun_filter_all)) }
                     )
                     FilterChip(
                         selected = resultFilter == "STARTED",
                         onClick = { onResultChange("STARTED") },
-                        label = { Text("성공") }
+                        label = { Text(stringResource(R.string.autorun_filter_success)) }
                     )
                 }
                 Row(
@@ -320,12 +322,12 @@ private fun FilterDialog(
                     FilterChip(
                         selected = resultFilter == "SKIPPED",
                         onClick = { onResultChange("SKIPPED") },
-                        label = { Text("건너뜀") }
+                        label = { Text(stringResource(R.string.autorun_filter_skipped)) }
                     )
                     FilterChip(
                         selected = resultFilter == "FAILED",
                         onClick = { onResultChange("FAILED") },
-                        label = { Text("실패") }
+                        label = { Text(stringResource(R.string.autorun_filter_failed)) }
                     )
                 }
 
@@ -333,7 +335,7 @@ private fun FilterDialog(
 
                 // 날짜 범위 필터
                 Text(
-                    text = "날짜 범위",
+                    text = stringResource(R.string.autorun_filter_date_range),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -345,24 +347,24 @@ private fun FilterDialog(
                     FilterChip(
                         selected = dateRangeFilter == "WEEK",
                         onClick = { onDateRangeChange("WEEK") },
-                        label = { Text("이번 주") }
+                        label = { Text(stringResource(R.string.autorun_filter_this_week)) }
                     )
                     FilterChip(
                         selected = dateRangeFilter == "MONTH",
                         onClick = { onDateRangeChange("MONTH") },
-                        label = { Text("이번 달") }
+                        label = { Text(stringResource(R.string.autorun_filter_this_month)) }
                     )
                     FilterChip(
                         selected = dateRangeFilter == "ALL",
                         onClick = { onDateRangeChange("ALL") },
-                        label = { Text("전체") }
+                        label = { Text(stringResource(R.string.autorun_filter_all)) }
                     )
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("확인")
+                Text(stringResource(R.string.btn_confirm))
             }
         }
     )

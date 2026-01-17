@@ -149,6 +149,26 @@
     <string name="autorun_delete_title">삭제 확인</string>
     <string name="autorun_label_placeholder">예: 오전 업무 집중</string>
     <string name="autorun_history_title">자동 실행 기록</string>
+    <string name="autorun_filter">필터</string>
+    <string name="autorun_filter_settings">필터 설정</string>
+    <string name="autorun_filter_active">필터 적용 중</string>
+    <string name="autorun_filter_reset">초기화</string>
+    <string name="autorun_filter_trigger_type">트리거 타입</string>
+    <string name="autorun_filter_result">결과</string>
+    <string name="autorun_filter_date_range">날짜 범위</string>
+    <string name="autorun_filter_all">전체</string>
+    <string name="autorun_filter_time">시간</string>
+    <string name="autorun_filter_location">위치</string>
+    <string name="autorun_filter_success">성공</string>
+    <string name="autorun_filter_skipped">건너뜀</string>
+    <string name="autorun_filter_failed">실패</string>
+    <string name="autorun_filter_this_week">이번 주</string>
+    <string name="autorun_filter_this_month">이번 달</string>
+    <string name="autorun_filter_all_period">전체 기간</string>
+    <string name="autorun_trigger_time">시간 기반</string>
+    <string name="autorun_trigger_location">위치 기반</string>
+    <string name="autorun_empty_title">자동 실행 이력이 없습니다</string>
+    <string name="autorun_empty_desc">자동 실행이 트리거되면 이력이 표시됩니다</string>
     
     <!-- Detoxy Routine -->
     <string name="detoxy_routine_title">디톡시 루틴 (예정)</string>
