@@ -8,9 +8,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.allday.detoxy.R
 import com.allday.detoxy.data.local.entity.ScheduleGroup
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import org.json.JSONArray
@@ -141,7 +143,7 @@ fun TimeBasedAutoRunCard(
                     
                     if (!scheduleGroup.isActive) {
                         Badge {
-                            Text("비활성", style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.autorun_card_inactive_badge), style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
@@ -150,7 +152,7 @@ fun TimeBasedAutoRunCard(
             // 🆕 3차 고도화: 독립 실행 안내
             if (!autoRun.isIndependent) {
                 Text(
-                    text = "이 시간대는 시간표가 활성화되었을 때만 실행됩니다",
+                    text = stringResource(R.string.autorun_card_independent_warning),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontStyle = FontStyle.Italic
@@ -188,8 +190,8 @@ fun TimeBasedAutoRunCard(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("자동 실행 삭제") },
-            text = { Text("이 시간대를 삭제하시겠습니까?") },
+            title = { Text(stringResource(R.string.autorun_delete_dialog_title)) },
+            text = { Text(stringResource(R.string.autorun_delete_dialog_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -211,24 +213,27 @@ fun TimeBasedAutoRunCard(
 
 /**
  * 시간을 12시간 형식으로 포맷 (예: "오전 10:00", "오후 2:30")
+ * 
+ * v_multi: Locale.KOREAN -> Locale.getDefault()
  */
 private fun formatTime(hour: Int, minute: Int): String {
     val calendar = Calendar.getInstance().apply {
         set(Calendar.HOUR_OF_DAY, hour)
         set(Calendar.MINUTE, minute)
     }
-    val sdf = SimpleDateFormat("a h:mm", Locale.KOREAN)
+    val sdf = SimpleDateFormat("a h:mm", Locale.getDefault())
     return sdf.format(calendar.time)
 }
 
 /**
  * 차단 프리셋 표시 이름 변환
  */
+@Composable
 private fun getPresetDisplayName(presetType: String): String {
     return when (presetType) {
-        "FULL_BLOCK" -> "완전 차단"
-        "STANDARD" -> "표준 디톡시"
-        "RELAXED" -> "완화 디톡시"
+        "FULL_BLOCK" -> stringResource(R.string.preset_full_block_display)
+        "STANDARD" -> stringResource(R.string.preset_standard_display)
+        "RELAXED" -> stringResource(R.string.preset_relaxed_display)
         else -> presetType
     }
 }
@@ -236,40 +241,45 @@ private fun getPresetDisplayName(presetType: String): String {
 /**
  * 활성화된 요일 포맷 (예: "월, 화, 수, 목, 금")
  */
+@Composable
 private fun formatEnabledDays(enabledDaysJson: String): String {
-    return try {
+    // 1. JSON Parsing (Non-Composable logic inside try-catch)
+    val days = try {
         val jsonArray = JSONArray(enabledDaysJson)
-        val dayNames = mutableListOf<String>()
-        
+        val list = mutableListOf<String>()
         for (i in 0 until jsonArray.length()) {
-            val dayCode = jsonArray.getString(i)
-            dayNames.add(getDayDisplayName(dayCode))
+            list.add(jsonArray.getString(i))
         }
-        
-        if (dayNames.isEmpty()) {
-            "선택된 요일 없음"
-        } else if (dayNames.size == 7) {
-            "매일"
-        } else {
-            dayNames.joinToString(", ")
-        }
+        list
     } catch (e: Exception) {
-        "요일 정보 없음"
+        emptyList()
+    }
+
+    // 2. String Composition (Composable logic outside try-catch)
+    val dayNames = days.map { getDayDisplayName(it) }
+
+    return if (days.isEmpty()) {
+        stringResource(R.string.day_none_selected)
+    } else if (days.size == 7) {
+        stringResource(R.string.day_daily)
+    } else {
+        dayNames.joinToString(", ")
     }
 }
 
 /**
  * 요일 코드를 한글 표시 이름으로 변환
  */
+@Composable
 private fun getDayDisplayName(dayCode: String): String {
     return when (dayCode.uppercase()) {
-        "MON" -> "월"
-        "TUE" -> "화"
-        "WED" -> "수"
-        "THU" -> "목"
-        "FRI" -> "금"
-        "SAT" -> "토"
-        "SUN" -> "일"
+        "MON" -> stringResource(R.string.day_mon)
+        "TUE" -> stringResource(R.string.day_tue)
+        "WED" -> stringResource(R.string.day_wed)
+        "THU" -> stringResource(R.string.day_thu)
+        "FRI" -> stringResource(R.string.day_fri)
+        "SAT" -> stringResource(R.string.day_sat)
+        "SUN" -> stringResource(R.string.day_sun)
         else -> dayCode
     }
 }

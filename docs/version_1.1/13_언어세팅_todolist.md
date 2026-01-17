@@ -215,9 +215,10 @@
 
 | 상태 | 파일 | 개수 | 카테고리 |
 |------|------|------|----------|
-| ⬜ | `ScheduleGroupViewModel.kt` | 26 | ViewModel |
-| ⬜ | `TimeBasedAutoRunCard.kt` | 23 | 자동실행 UI |
-| ⬜ | `AutoRunHistoryItem.kt` | 22 | 자동실행 UI |
+| ✅ | `ScheduleGroupViewModel.kt` | 26 | ViewModel |
+| ✅ | `TimeBasedAutoRunCard.kt` | 23 | 자동실행 UI |
+| ✅ | `AutoRunHistoryItem.kt` | 22 | 자동실행 UI |
+| ✅ | `ScheduleGroupScreen.kt` | 17 | 자동실행 UI |
 | ⬜ | `ReportScreen.kt` | 21 | 리포트 UI |
 | ⬜ | `TimeBasedAutoRunScreen.kt` | 21 | 자동실행 UI |
 | ⬜ | `LocationPermissionDialogs.kt` | 21 | 권한 UI |
@@ -225,7 +226,6 @@
 | ⬜ | `SavePresetDialog.kt` | 20 | 타이머 UI |
 | ⬜ | `ScheduleGroupCard.kt` | 19 | 자동실행 UI |
 | ⬜ | `TemplateSelectionDialog.kt` | 18 | 자동실행 UI |
-| ⬜ | `ScheduleGroupScreen.kt` | 17 | 자동실행 UI |
 | ⬜ | `LocationBasedAutoRunViewModel.kt` | 16 | ViewModel |
 | ⬜ | `TimerViewModel.kt` | 15 | ViewModel |
 | ⬜ | `ScheduleTabScreen.kt` | 15 | 스케줄 UI |

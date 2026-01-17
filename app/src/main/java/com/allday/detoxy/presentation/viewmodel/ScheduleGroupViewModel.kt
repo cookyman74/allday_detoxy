@@ -20,6 +20,8 @@ import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalTime
 import javax.inject.Inject
+import com.allday.detoxy.R
+import com.allday.detoxy.core.utils.UiText
 
 /**
  * ScheduleGroup 화면 ViewModel
@@ -75,8 +77,8 @@ class ScheduleGroupViewModel @Inject constructor(
     /**
      * 에러 상태
      */
-    private val _errorState = MutableStateFlow<String?>(null)
-    val errorState: StateFlow<String?> = _errorState.asStateFlow()
+    private val _errorState = MutableStateFlow<UiText?>(null)
+    val errorState: StateFlow<UiText?> = _errorState.asStateFlow()
 
     /**
      * 로딩 상태
@@ -120,7 +122,7 @@ class ScheduleGroupViewModel @Inject constructor(
      */
     suspend fun createScheduleGroup(name: String, description: String?): String {
         if (name.isBlank()) {
-            _errorState.value = "그룹 이름을 입력해주세요"
+            _errorState.value = UiText.StringResource(R.string.error_group_name_empty)
             throw IllegalArgumentException("그룹 이름을 입력해주세요")
         }
 
@@ -133,7 +135,7 @@ class ScheduleGroupViewModel @Inject constructor(
             repository.insert(scheduleGroup)
             return scheduleGroup.id
         } catch (e: Exception) {
-            _errorState.value = "그룹 생성 실패: ${e.message}"
+            _errorState.value = UiText.StringResource(R.string.error_group_create_failed, e.message ?: "")
             throw e
         } finally {
             _isLoading.value = false
@@ -147,7 +149,7 @@ class ScheduleGroupViewModel @Inject constructor(
      */
     fun updateScheduleGroup(scheduleGroup: ScheduleGroup) {
         if (scheduleGroup.name.isBlank()) {
-            _errorState.value = "그룹 이름을 입력해주세요"
+            _errorState.value = UiText.StringResource(R.string.error_group_name_empty)
             return
         }
 
@@ -156,7 +158,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 _isLoading.value = true
                 repository.update(scheduleGroup)
             } catch (e: Exception) {
-                _errorState.value = "그룹 수정 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_group_update_failed, e.message ?: "")
             } finally {
                 _isLoading.value = false
             }
@@ -176,7 +178,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 _isLoading.value = true
                 repository.delete(scheduleGroupId)
             } catch (e: Exception) {
-                _errorState.value = "그룹 삭제 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_group_delete_failed, e.message ?: "")
             } finally {
                 _isLoading.value = false
             }
@@ -214,7 +216,7 @@ class ScheduleGroupViewModel @Inject constructor(
             try {
                 repository.toggleActive(scheduleGroupId, isActive)
             } catch (e: Exception) {
-                _errorState.value = "그룹 상태 변경 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_group_toggle_failed, e.message ?: "")
             }
         }
     }
@@ -234,10 +236,10 @@ class ScheduleGroupViewModel @Inject constructor(
                 _isLoading.value = true
                 val result = scheduleManager.activateGroup(scheduleGroupId)
                 if (result.isFailure) {
-                    _errorState.value = "시간표 활성화 실패: ${result.exceptionOrNull()?.message}"
+                    _errorState.value = UiText.StringResource(R.string.error_group_activate_failed, result.exceptionOrNull()?.message ?: "")
                 }
             } catch (e: Exception) {
-                _errorState.value = "시간표 활성화 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_group_activate_failed, e.message ?: "")
             } finally {
                 _isLoading.value = false
             }
@@ -260,10 +262,10 @@ class ScheduleGroupViewModel @Inject constructor(
                 // → manualOverrideState가 'INACTIVE'로 설정되어 자동 실행이 차단됨
                 val result = scheduleManager.deactivateGroup(scheduleGroupId, isUserAction = true)
                 if (result.isFailure) {
-                    _errorState.value = "시간표 비활성화 실패: ${result.exceptionOrNull()?.message}"
+                    _errorState.value = UiText.StringResource(R.string.error_group_deactivate_failed, result.exceptionOrNull()?.message ?: "")
                 }
             } catch (e: Exception) {
-                _errorState.value = "시간표 비활성화 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_group_deactivate_failed, e.message ?: "")
             } finally {
                 _isLoading.value = false
             }
@@ -309,7 +311,7 @@ class ScheduleGroupViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                _errorState.value = "상태 변경 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_state_change_failed, e.message ?: "")
             } finally {
                 _isLoading.value = false
             }
@@ -332,7 +334,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 val pauseUntil = duration.calculatePauseUntil()
                 repository.updateManualOverride(groupId, "PAUSED", pauseUntil)
             } catch (e: Exception) {
-                _errorState.value = "일시중지 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_pause_failed, e.message ?: "")
             } finally {
                 _isLoading.value = false
             }
@@ -398,7 +400,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 val count = repository.getLinkedTimeBasedAutoRunCount(scheduleGroupId)
                 _linkedTimeBasedAutoRunCounts.value = _linkedTimeBasedAutoRunCounts.value + (scheduleGroupId to count)
             } catch (e: Exception) {
-                _errorState.value = "연결된 시간표 조회 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_linked_autorun_load_failed, e.message ?: "")
             }
         }
     }
@@ -423,7 +425,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 _linkedTimeBasedAutoRuns.value = updated
             } catch (e: Exception) {
                 android.util.Log.e("ScheduleGroupViewModel", "Failed to load TimeBasedAutoRuns", e)
-                _errorState.value = "연결된 시간표 조회 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_linked_autorun_load_failed, e.message ?: "")
             }
         }
     }
@@ -439,7 +441,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 val count = repository.getLinkedLocationCount(scheduleGroupId)
                 _linkedLocationCounts.value = _linkedLocationCounts.value + (scheduleGroupId to count)
             } catch (e: Exception) {
-                _errorState.value = "연결된 위치 조회 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_linked_location_load_failed, e.message ?: "")
             }
         }
     }
@@ -479,7 +481,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 _linkedLocations.value = locations  // 🆕
                 _linkedLocationCounts.value = locationCounts
             } catch (e: Exception) {
-                _errorState.value = "연결된 설정 조회 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_linked_autorun_load_failed, e.message ?: "")
             }
         }
     }
@@ -508,7 +510,7 @@ class ScheduleGroupViewModel @Inject constructor(
                 updatedCounts[groupId] = linkedLocations.size
                 _linkedLocationCounts.value = updatedCounts
             } catch (e: Exception) {
-                _errorState.value = "위치 정보 갱신 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_location_refresh_failed, e.message ?: "")
             }
         }
     }
@@ -572,7 +574,7 @@ class ScheduleGroupViewModel @Inject constructor(
                     current.toMutableMap().apply { this[groupId] = autoRuns }
                 }
             } catch (e: Exception) {
-                _errorState.value = "히트맵 데이터 갱신 실패: ${e.message}"
+                _errorState.value = UiText.StringResource(R.string.error_heatmap_refresh_failed, e.message ?: "")
             }
         }
     }
@@ -609,12 +611,12 @@ class ScheduleGroupViewModel @Inject constructor(
         isLocationBased: Boolean = false  // 🐛 버그 수정: 위치기반 여부에 따라 초기 활성화 상태 결정
     ): String {
         if (name.isBlank()) {
-            _errorState.value = "그룹 이름을 입력해주세요"
+            _errorState.value = UiText.StringResource(R.string.error_group_name_empty)
             throw IllegalArgumentException("그룹 이름을 입력해주세요")
         }
         
         if (timeSlots.isEmpty()) {
-            _errorState.value = "최소 1개 이상의 시간대를 추가해주세요"
+            _errorState.value = UiText.StringResource(R.string.error_timeslot_empty)
             throw IllegalArgumentException("최소 1개 이상의 시간대를 추가해주세요")
         }
         
@@ -650,7 +652,7 @@ class ScheduleGroupViewModel @Inject constructor(
             
             return scheduleGroup.id
         } catch (e: Exception) {
-            _errorState.value = "그룹 생성 실패: ${e.message}"
+            _errorState.value = UiText.StringResource(R.string.error_group_create_failed, e.message ?: "")
             throw e
         } finally {
             _isLoading.value = false

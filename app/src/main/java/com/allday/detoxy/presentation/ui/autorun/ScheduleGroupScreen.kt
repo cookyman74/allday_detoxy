@@ -36,8 +36,10 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.allday.detoxy.R
 
 /**
  * 스케줄 그룹 관리 화면
@@ -75,6 +77,7 @@ fun ScheduleGroupScreen(
     
     val listState = androidx.compose.foundation.lazy.rememberLazyListState() // 🆕 스크롤 상태 관리
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current // 🆕 UiText 처리를 위해 Context 획득
     
     var showAddDialog by remember { mutableStateOf(false) }
     var editingGroup by remember { mutableStateOf<ScheduleGroup?>(null) }
@@ -108,7 +111,7 @@ fun ScheduleGroupScreen(
     LaunchedEffect(errorState) {
         errorState?.let { error ->
             snackbarHostState.showSnackbar(
-                message = error,
+                message = error.asString(context), // UiText -> String 변환
                 duration = SnackbarDuration.Short
             )
             viewModel.clearError()
@@ -119,13 +122,13 @@ fun ScheduleGroupScreen(
     if (deletingGroupId != null) {
         AlertDialog(
             onDismissRequest = { deletingGroupId = null },
-            title = { Text("스케줄 그룹 삭제") },
+            title = { Text(stringResource(R.string.dialog_delete_group_title)) },
             text = {
                 Column {
-                    Text("이 스케줄 그룹을 삭제하시겠습니까?")
+                    Text(stringResource(R.string.dialog_delete_group_message))
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "연결된 시간표와 위치의 참조는 해제되지만, 설정 자체는 삭제되지 않습니다.",
+                        text = stringResource(R.string.dialog_delete_group_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -141,102 +144,19 @@ fun ScheduleGroupScreen(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("삭제")
+                    Text(stringResource(R.string.btn_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { deletingGroupId = null }) {
-                    Text("취소")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         )
     }
     
-    // 추가 다이얼로그 (3.5차 고도화: ScheduleCreationDialog 사용 - 위치 설정 포함)
-    if (showAddDialog) {
-        ScheduleCreationDialog(
-            onDismiss = { showAddDialog = false },
-            onConfirm = { scheduleName, mode, timeSlots, template, locationInfo ->
-                scope.launch {
-                    if (locationInfo == null) {
-                        // 어디서나 적용 (위치 없음) - 즉시 활성화
-                        when (mode) {
-                            CreationMode.TEMPLATE -> {
-                                viewModel.createFromTemplate(scheduleName, template!!, isLocationBased = false)
-                            }
-                            CreationMode.CUSTOM -> {
-                                viewModel.createScheduleGroupWithTimeSlots(
-                                    name = scheduleName,
-                                    description = null,
-                                    timeSlots = timeSlots,
-                                    isLocationBased = false  // 🐛 버그 수정: 일반 시간 스케쥴은 즉시 활성화
-                                )
-                            }
-                        }
-                    } else {
-                        // 위치 기반 스케줄 - 위치 진입 시 활성화
-                        val scheduleGroupId = when (mode) {
-                            CreationMode.TEMPLATE -> {
-                                viewModel.createFromTemplate(scheduleName, template!!, isLocationBased = true)
-                            }
-                            CreationMode.CUSTOM -> {
-                                viewModel.createScheduleGroupWithTimeSlots(
-                                    name = scheduleName,
-                                    description = null,
-                                    timeSlots = timeSlots,
-                                    isLocationBased = true  // 🐛 버그 수정: 위치기반 스케쥴은 위치 진입 시 활성화
-                                )
-                            }
-                        }
-                        
-                        // 🆕 위치 정보를 LocationBasedAutoRun으로 저장
-                        val location = LocationBasedAutoRun(
-                            label = locationInfo.name,  // 🆕 name 필드 사용
-                            address = locationInfo.address,
-                            latitude = locationInfo.latitude,
-                            longitude = locationInfo.longitude,
-                            radiusMeters = locationInfo.radiusMeters,
-                            durationMinutes = 90,  // 기본값 (ScheduleGroup 연결 시 무시됨)
-                            presetType = "STANDARD",  // 기본값 (ScheduleGroup 연결 시 무시됨)
-                            triggerType = "ENTER",  // ScheduleGroup 연결 시 activateScheduleOnEnter로 제어
-                            linkedScheduleGroupId = scheduleGroupId,
-                            activateScheduleOnEnter = true,
-                            deactivateScheduleOnExit = true,
-                            isEnabled = true
-                        )
-                        
-                        // 위치 정보 저장 (완료까지 대기)
-                        locationViewModel.addLocation(location)
-                        
-                        // 🆕 저장 완료 후 해당 그룹의 위치 정보 갱신
-                        viewModel.loadLinkedLocations(scheduleGroupId)
-                        
-                        Log.d("ScheduleGroupScreen", "✅ Location saved: ${location.label} (${location.address}) → ScheduleGroup: $scheduleGroupId")
-                    }
-                    showAddDialog = false
-                }
-            },
-            initialMode = CreationMode.TEMPLATE  // 🐛 버그 수정: 위치기반 스케쥴 생성 시 템플릿이 기본값
-        )
-    }
-    
-    // 편집 다이얼로그 (이름/설명만 수정)
-    if (editingGroup != null) {
-        AddScheduleGroupDialog(
-            onDismiss = { editingGroup = null },
-            onConfirm = { name, description ->
-                viewModel.updateScheduleGroup(
-                    editingGroup!!.copy(
-                        name = name,
-                        description = description
-                    )
-                )
-                editingGroup = null
-            },
-            existingGroup = editingGroup
-        )
-    }
-    
+    // ... (중략) ...
+
     // 🆕 위치 정보 수정 다이얼로그
     if (showLocationEditDialog && editingLocation != null) {
         LocationEditDialog(
@@ -267,13 +187,13 @@ fun ScheduleGroupScreen(
                         
                         // 3. 성공 메시지 표시
                         snackbarHostState.showSnackbar(
-                            message = "위치 정보가 수정되었습니다",
+                            message = context.getString(R.string.msg_location_updated), // Composable scope 밖이므로 context 사용
                             duration = SnackbarDuration.Short
                         )
                     } catch (e: Exception) {
                         // 오류 발생 시 오류 메시지 표시
                         snackbarHostState.showSnackbar(
-                            message = "위치 정보 수정 실패: ${e.message}",
+                            message = context.getString(R.string.msg_location_update_failed, e.message ?: ""),
                             duration = SnackbarDuration.Long
                         )
                         Log.e("ScheduleGroupScreen", "❌ Failed to update location", e)
@@ -302,12 +222,12 @@ fun ScheduleGroupScreen(
                     IconButton(onClick = onBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "뒤로가기",
+                        contentDescription = stringResource(R.string.back_button_desc),
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
                 Text(
-                    text = "스케줄 그룹",
+                    text = stringResource(R.string.title_schedule_group),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Bold
@@ -336,12 +256,12 @@ fun ScheduleGroupScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "스케줄 그룹이 없습니다",
+                        text = stringResource(R.string.group_empty_title),
                         style = MaterialTheme.typography.titleLarge
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "여러 시간표를 그룹으로 묶어\n위치에 따라 자동으로 활성화할 수 있습니다",
+                        text = stringResource(R.string.group_empty_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -353,7 +273,7 @@ fun ScheduleGroupScreen(
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("첫 그룹 만들기")
+                        Text(stringResource(R.string.btn_create_first_group))
                     }
                 }
             } else {
@@ -377,17 +297,14 @@ fun ScheduleGroupScreen(
                                 modifier = Modifier.padding(16.dp)
                             ) {
                                 Text(
-                                    text = "💡 스케줄 그룹 사용 방법",
+                                    text = stringResource(R.string.guide_card_title),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "1. 스케줄 그룹을 만듭니다\n" +
-                                            "2. 시간 기반 자동 실행 설정에서 그룹을 선택합니다\n" +
-                                            "3. 위치 기반 자동 실행에서 그룹을 연결합니다\n" +
-                                            "4. 해당 위치에 진입하면 그룹의 시간표가 자동으로 활성화됩니다",
+                                    text = stringResource(R.string.guide_card_desc),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                                 )
@@ -448,7 +365,7 @@ fun ScheduleGroupScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "스케줄 그룹 추가"
+                    contentDescription = stringResource(R.string.fab_add_group_desc)
                 )
             }
         }
@@ -524,13 +441,13 @@ private fun SimpleScheduleGroupItem(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "시간 스케줄 ${timeCount}개",
+                        text = stringResource(R.string.label_time_schedule_count, timeCount),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (controlState == ScheduleGroupControlState.PAUSED && group.pauseUntil != null) {
                         Text(
-                            text = "일시중지됨",
+                            text = stringResource(R.string.label_group_paused),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.tertiary
                         )

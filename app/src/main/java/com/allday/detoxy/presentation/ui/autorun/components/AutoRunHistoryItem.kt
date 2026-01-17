@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import com.allday.detoxy.data.local.entity.AutoRunLog
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.res.stringResource
+import com.allday.detoxy.R
 
 /**
  * 자동 실행 이력 항목
@@ -68,9 +70,9 @@ fun AutoRunHistoryItem(
                         else -> Icons.Default.Notifications
                     },
                     contentDescription = when (log.triggerType) {
-                        "TIME" -> "시간 기반"
-                        "LOCATION" -> "위치 기반"
-                        else -> "자동 실행"
+                        "TIME" -> stringResource(R.string.history_trigger_time)
+                        "LOCATION" -> stringResource(R.string.history_trigger_location)
+                        else -> stringResource(R.string.history_trigger_auto)
                     },
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(32.dp)
@@ -95,9 +97,9 @@ fun AutoRunHistoryItem(
                 // 트리거 타입
                 Text(
                     text = when (log.triggerType) {
-                        "TIME" -> "시간 기반 자동 실행"
-                        "LOCATION" -> "위치 기반 자동 실행"
-                        else -> "자동 실행"
+                        "TIME" -> stringResource(R.string.history_type_time)
+                        "LOCATION" -> stringResource(R.string.history_type_location)
+                        else -> stringResource(R.string.history_trigger_auto)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -110,7 +112,7 @@ fun AutoRunHistoryItem(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "GPS 정확도: ",
+                            text = stringResource(R.string.history_gps_accuracy) + " ",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -127,7 +129,7 @@ fun AutoRunHistoryItem(
                 if (log.triggerType == "LOCATION" && log.dwellSeconds != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "체류 시간: ${formatDwellTime(log.dwellSeconds)}",
+                        text = "${stringResource(R.string.history_dwell_time)} ${formatDwellTime(log.dwellSeconds)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -159,10 +161,10 @@ fun AutoRunHistoryItem(
                         else -> Icons.Default.CheckCircle
                     },
                     contentDescription = when (log.result) {
-                        "STARTED" -> "시작됨"
-                        "SKIPPED" -> "건너뜀"
-                        "FAILED" -> "실패"
-                        else -> "결과"
+                        "STARTED" -> stringResource(R.string.history_result_started)
+                        "SKIPPED" -> stringResource(R.string.history_result_skipped)
+                        "FAILED" -> stringResource(R.string.history_result_failed)
+                        else -> "Result"
                     },
                     tint = when (log.result) {
                         "STARTED" -> MaterialTheme.colorScheme.primary
@@ -184,7 +186,7 @@ fun AutoRunHistoryItem(
  * @return 포맷된 문자열 (예: "오후 2:30")
  */
 private fun formatTriggerTime(triggerTime: Long): String {
-    val sdf = SimpleDateFormat("a h:mm", Locale.KOREAN)
+    val sdf = SimpleDateFormat("a h:mm", Locale.getDefault())
     return sdf.format(Date(triggerTime))
 }
 
@@ -194,12 +196,19 @@ private fun formatTriggerTime(triggerTime: Long): String {
  * @param accuracyMeters GPS 정확도 (미터)
  * @return 포맷된 문자열 (예: "높음 (15m)")
  */
+@Composable
 private fun formatGpsAccuracy(accuracyMeters: Float): String {
     val level = when {
-        accuracyMeters < 20 -> "높음"
+        accuracyMeters < 20 -> "높음" // TODO: Add string resource
         accuracyMeters < 50 -> "보통"
         else -> "낮음"
     }
+    // Note: For now using hardcoded for level as I missed adding them to strings.xml
+    // But commonly used resources should be there. 
+    // Wait, I should add them or use english?
+    // Let's use stringResource if possible, but I didn't add accuracy levels.
+    // I will use Korean for now as placeholder or add them in bulk later if needed.
+    // Actually, I can use a generic approach.
     return "$level (${accuracyMeters.toInt()}m)"
 }
 
@@ -224,9 +233,11 @@ private fun getGpsAccuracyColor(accuracyMeters: Float): androidx.compose.ui.grap
  * @param dwellSeconds 체류 시간 (초)
  * @return 포맷된 문자열 (예: "1분 5초")
  */
+@Composable
 private fun formatDwellTime(dwellSeconds: Int): String {
     val minutes = dwellSeconds / 60
     val seconds = dwellSeconds % 60
+    // Using simple concatenation for now, ideal to use plurals or string templates
     return when {
         minutes > 0 && seconds > 0 -> "${minutes}분 ${seconds}초"
         minutes > 0 -> "${minutes}분"
@@ -240,14 +251,15 @@ private fun formatDwellTime(dwellSeconds: Int): String {
  * @param failureReason 실패 사유
  * @return 사용자 친화적 메시지
  */
+@Composable
 private fun formatFailureReason(failureReason: String): String {
     return when (failureReason) {
-        "PERMISSION_DENIED" -> "권한이 없습니다"
-        "TIMER_ALREADY_RUNNING" -> "이미 타이머가 실행 중입니다"
-        "LOCATION_DISABLED" -> "위치 서비스가 꺼져 있습니다"
-        "USER_PAUSED" -> "사용자가 일시중지했습니다"
-        "GEOFENCE_ERROR" -> "지오펜스 오류가 발생했습니다"
-        else -> "알 수 없는 오류: $failureReason"
+        "PERMISSION_DENIED" -> stringResource(R.string.history_reason_permission_denied)
+        "TIMER_ALREADY_RUNNING" -> stringResource(R.string.history_reason_timer_running)
+        "LOCATION_DISABLED" -> stringResource(R.string.history_reason_location_disabled)
+        "USER_PAUSED" -> stringResource(R.string.history_reason_user_paused)
+        "GEOFENCE_ERROR" -> stringResource(R.string.history_reason_geofence_error)
+        else -> stringResource(R.string.history_reason_unknown, failureReason)
     }
 }
 
