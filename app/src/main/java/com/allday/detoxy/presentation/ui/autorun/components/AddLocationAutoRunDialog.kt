@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,6 +42,7 @@ import com.allday.detoxy.domain.validation.validateScheduleInfo
 import com.allday.detoxy.domain.validation.ValidationResult
 import com.allday.detoxy.presentation.viewmodel.ScheduleGroupViewModel
 import com.google.android.gms.location.LocationServices
+import com.allday.detoxy.R
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -147,7 +149,7 @@ fun AddLocationAutoRunDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (existingLocation != null) "위치 편집" else "위치 추가",
+                text = if (existingLocation != null) stringResource(R.string.location_edit_title) else stringResource(R.string.location_add_btn),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -192,10 +194,10 @@ fun AddLocationAutoRunDialog(
                                             searchQuery = info.address // 주소 자동 입력
                                         }.onFailure {
                                             // 주소 변환 실패해도 좌표만으로 등록 가능하게 처리 (TODO: Fallback UI)
-                                            Toast.makeText(context, "주소를 가져오지 못했지만 좌표를 등록합니다.", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, context.getString(R.string.toast_address_fallback), Toast.LENGTH_SHORT).show()
                                             val fallbackInfo = GeocoderUtils.LocationInfo(
-                                                name = "현재 위치",
-                                                address = "위도: ${location.latitude}, 경도: ${location.longitude}",
+                                                name = context.getString(R.string.location_current),
+                                                address = context.getString(R.string.location_lat_lng_format, location.latitude, location.longitude),
                                                 latitude = location.latitude,
                                                 longitude = location.longitude,
                                                 accuracy = location.accuracy
@@ -203,12 +205,12 @@ fun AddLocationAutoRunDialog(
                                             searchResults = listOf(fallbackInfo) + searchResults
                                         }
                                     }.onFailure {
-                                        Toast.makeText(context, "위치를 찾을 수 없습니다. GPS 설정을 확인해주세요.", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.toast_location_not_found), Toast.LENGTH_SHORT).show()
                                     }
                                     isLocating = false
                                 }
                             } else {
-                                Toast.makeText(context, "현재 위치를 찾으려면 위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.toast_location_permission_required), Toast.LENGTH_SHORT).show()
                             }
                         }
 
@@ -289,7 +291,7 @@ fun AddLocationAutoRunDialog(
                             }
                         }
                     ) {
-                        Text("이전")
+                        Text(stringResource(R.string.nav_previous))
                     }
                 }
                 
@@ -359,8 +361,8 @@ fun AddLocationAutoRunDialog(
                 ) {
                     Text(
                         when (currentStep) {
-                            LocationDialogStep.SCHEDULE -> "저장"
-                            else -> "다음"
+                            LocationDialogStep.SCHEDULE -> stringResource(R.string.btn_save)
+                            else -> stringResource(R.string.nav_next)
                         }
                     )
                 }
@@ -369,7 +371,7 @@ fun AddLocationAutoRunDialog(
         dismissButton = {
             if (currentStep != LocationDialogStep.SEARCH) {
                 TextButton(onClick = onDismiss) {
-                    Text("취소")
+                    Text(stringResource(R.string.btn_cancel))
                 }
             }
         }
@@ -487,7 +489,7 @@ private fun LocationSettingsStep(
                                 onClick = { },
                                 label = { 
                                     Text(
-                                        text = "오차 ±${accuracy.toInt()}m",
+                                        text = stringResource(R.string.location_accuracy_format, accuracy.toInt()),
                                         style = MaterialTheme.typography.labelSmall
                                     ) 
                                 },
@@ -522,7 +524,7 @@ private fun LocationSettingsStep(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "지도에서 확인",
+                                    text = stringResource(R.string.location_open_map),
                                     style = MaterialTheme.typography.labelMedium
                                 )
                             }
@@ -534,7 +536,7 @@ private fun LocationSettingsStep(
 
         // 라벨 입력
         Text(
-            text = "라벨",
+            text = stringResource(R.string.location_label),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -542,13 +544,13 @@ private fun LocationSettingsStep(
             value = label,
             onValueChange = onLabelChange,
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("예: 회사, 도서관") },
+            label = { Text(stringResource(R.string.location_label_placeholder)) },
             singleLine = true
         )
 
         // 반경 선택
         Text(
-            text = "반경",
+            text = stringResource(R.string.location_radius_title),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -568,7 +570,7 @@ private fun LocationSettingsStep(
 
         // 타이머 시간 선택
         Text(
-            text = "타이머 시간",
+            text = stringResource(R.string.location_timer_duration),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -588,25 +590,25 @@ private fun LocationSettingsStep(
 
         // 차단 프리셋 선택
         Text(
-            text = "차단 강도",
+            text = stringResource(R.string.location_block_intensity),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             PresetOption(
-                label = "완전 차단",
-                description = "모든 앱 차단",
+                label = stringResource(R.string.location_preset_full),
+                description = stringResource(R.string.location_preset_full_desc),
                 selected = selectedPreset == "FULL_BLOCK",
                 onClick = { onPresetChange("FULL_BLOCK") }
             )
             PresetOption(
-                label = "표준 디톡시",
-                description = "메신저만 허용",
+                label = stringResource(R.string.location_preset_standard),
+                description = stringResource(R.string.location_preset_standard_desc),
                 selected = selectedPreset == "STANDARD",
                 onClick = { onPresetChange("STANDARD") }
             )
             PresetOption(
-                label = "완화 모드",
+                label = stringResource(R.string.location_preset_relaxed),
                 description = "SNS 일부 허용",
                 selected = selectedPreset == "RELAXED",
                 onClick = { onPresetChange("RELAXED") }
@@ -662,19 +664,19 @@ private fun LocationSettingsStep(
 
         // 진입 조건 섹션
         Text(
-            text = "진입 조건",
+            text = stringResource(R.string.location_entry_condition),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
 
         // 체류 시간 설정
         Text(
-            text = "체류 시간",
+            text = stringResource(R.string.location_dwell_time),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "위치에 도착한 후 N분 체류 확인 시 자동 실행",
+            text = stringResource(R.string.location_dwell_desc),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -686,7 +688,7 @@ private fun LocationSettingsStep(
                 FilterChip(
                     selected = dwellTimeMinutes == dwell,
                     onClick = { onDwellTimeChange(dwell) },
-                    label = { Text(if (dwell == 0) "즉시" else "${dwell}분") },
+                    label = { Text(if (dwell == 0) stringResource(R.string.location_dwell_immediate) else stringResource(R.string.location_dwell_minutes, dwell)) },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -718,12 +720,12 @@ private fun LocationSettingsStep(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "도착 후 알림으로 확인",
+                        text = stringResource(R.string.location_confirm_on_arrival),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "알림을 탭하면 타이머가 시작됩니다 (자동 시작 OFF)",
+                        text = stringResource(R.string.location_confirm_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

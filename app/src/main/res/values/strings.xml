@@ -208,6 +208,27 @@
     <string name="toast_location_not_found">위치를 찾을 수 없습니다. GPS 설정을 확인해주세요.</string>
     <string name="toast_location_permission_required">현재 위치를 찾으려면 위치 권한이 필요합니다.</string>
     <string name="toast_map_app_not_found">지도 앱을 찾을 수 없습니다.</string>
+    
+    <!-- Location Auto-Run Dialog -->
+    <string name="location_add_btn">위치 추가</string>
+    <string name="location_label">라벨</string>
+    <string name="location_label_placeholder">예: 회사, 도서관</string>
+    <string name="location_radius_title">반경</string>
+    <string name="location_timer_duration">타이머 시간</string>
+    <string name="location_block_intensity">차단 강도</string>
+    <string name="location_preset_full">완전 차단</string>
+    <string name="location_preset_full_desc">모든 앱 차단</string>
+    <string name="location_preset_standard">표준 디톡시</string>
+    <string name="location_preset_standard_desc">메신저만 허용</string>
+    <string name="location_preset_relaxed">완화 모드</string>
+    <string name="location_entry_condition">진입 조건</string>
+    <string name="location_dwell_time">체류 시간</string>
+    <string name="location_dwell_desc">위치에 도착한 후 N분 체류 확인 시 자동 실행</string>
+    <string name="location_dwell_immediate">즉시</string>
+    <string name="location_dwell_minutes">%1$d분</string>
+    <string name="location_confirm_on_arrival">도착 후 알림으로 확인</string>
+    <string name="location_confirm_desc">알림을 탭하면 타이머가 시작됩니다 (자동 시작 OFF)</string>
+    <string name="location_fallback">위치</string>
 
     <!-- ==================== Report ==================== -->
     <string name="report_title">리포트</string>
