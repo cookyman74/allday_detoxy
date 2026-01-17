@@ -45,6 +45,10 @@
     <string name="day_weekday">평일</string>
     <string name="day_weekend">주말</string>
     <string name="day_everyday">매일</string>
+    
+    <!-- Common Actions -->
+    <string name="action_edit">편집</string>
+    <string name="action_delete">삭제</string>
 
     <!-- ==================== Navigation / Tabs ==================== -->
     <string name="tab_timer">타이머</string>
@@ -170,6 +174,32 @@
     <string name="autorun_empty_title">자동 실행 이력이 없습니다</string>
     <string name="autorun_empty_desc">자동 실행이 트리거되면 이력이 표시됩니다</string>
     
+    <!-- TimeSlot Dialog -->
+    <string name="timeslot_add">시간대 추가</string>
+    <string name="timeslot_edit">시간대 수정</string>
+    <string name="timeslot_start_time">시작 시간</string>
+    <string name="timeslot_hour">시</string>
+    <string name="timeslot_minute">분</string>
+    <string name="timeslot_duration">기간</string>
+    <string name="timeslot_block_intensity">차단 강도</string>
+    <string name="timeslot_preset_standard">표준</string>
+    <string name="timeslot_preset_medium">중간</string>
+    <string name="timeslot_preset_complete">완전</string>
+    <string name="timeslot_preset_standard_block">표준 차단</string>
+    <string name="timeslot_preset_medium_block">중간 차단</string>
+    <string name="timeslot_preset_complete_block">완전 차단</string>
+    <string name="timeslot_day_selection">요일 선택</string>
+    <string name="timeslot_everyday">매일</string>
+    <string name="timeslot_weekdays">평일</string>
+    <string name="timeslot_weekend">주말</string>
+    <string name="timeslot_day_mon">월</string>
+    <string name="timeslot_day_tue">화</string>
+    <string name="timeslot_day_wed">수</string>
+    <string name="timeslot_day_thu">목</string>
+    <string name="timeslot_day_fri">금</string>
+    <string name="timeslot_day_sat">토</string>
+    <string name="timeslot_day_sun">일</string>
+
     <!-- Detoxy Routine -->
     <string name="detoxy_routine_title">디톡시 루틴 (예정)</string>
     <string name="detoxy_routine_description">매일 정해진 시간에 자동으로 디톡시 시작</string>

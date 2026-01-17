@@ -13,7 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.allday.detoxy.R
 import com.allday.detoxy.domain.model.TimeSlot
 import com.allday.detoxy.presentation.util.formatDuration
 import com.allday.detoxy.presentation.util.formatEnabledDays
@@ -51,7 +53,7 @@ fun TimeSlotInputDialog(
         onDismissRequest = onDismiss,
         title = { 
             Text(
-                text = if (existingSlot == null) "시간대 추가" else "시간대 수정",
+                text = if (existingSlot == null) stringResource(R.string.timeslot_add) else stringResource(R.string.timeslot_edit),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             ) 
@@ -65,7 +67,7 @@ fun TimeSlotInputDialog(
             ) {
                 // 시작 시간
                 Text(
-                    text = "시작 시간",
+                    text = stringResource(R.string.timeslot_start_time),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -90,7 +92,7 @@ fun TimeSlotInputDialog(
                                 }
                             }
                         },
-                        label = { Text("시") },
+                        label = { Text(stringResource(R.string.timeslot_hour)) },
                         placeholder = { Text("0") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
@@ -115,7 +117,7 @@ fun TimeSlotInputDialog(
                                 }
                             }
                         },
-                        label = { Text("분") },
+                        label = { Text(stringResource(R.string.timeslot_minute)) },
                         placeholder = { Text("0") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
@@ -127,7 +129,7 @@ fun TimeSlotInputDialog(
                 
                 // 기간
                 Text(
-                    text = "기간",
+                    text = stringResource(R.string.timeslot_duration),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -149,7 +151,7 @@ fun TimeSlotInputDialog(
                 
                 // 차단 강도
                 Text(
-                    text = "차단 강도",
+                    text = stringResource(R.string.timeslot_block_intensity),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -159,19 +161,19 @@ fun TimeSlotInputDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     PresetChip(
-                        text = "표준",
+                        text = stringResource(R.string.timeslot_preset_standard),
                         selected = preset == "STANDARD",
                         onClick = { preset = "STANDARD" },
                         modifier = Modifier.weight(1f)
                     )
                     PresetChip(
-                        text = "중간",
+                        text = stringResource(R.string.timeslot_preset_medium),
                         selected = preset == "MEDIUM",
                         onClick = { preset = "MEDIUM" },
                         modifier = Modifier.weight(1f)
                     )
                     PresetChip(
-                        text = "완전",
+                        text = stringResource(R.string.timeslot_preset_complete),
                         selected = preset == "COMPLETE",
                         onClick = { preset = "COMPLETE" },
                         modifier = Modifier.weight(1f)
@@ -182,7 +184,7 @@ fun TimeSlotInputDialog(
                 
                 // 요일 선택
                 Text(
-                    text = "요일 선택",
+                    text = stringResource(R.string.timeslot_day_selection),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -195,7 +197,7 @@ fun TimeSlotInputDialog(
                     FilterChip(
                         selected = enabledDays.size == 7,
                         onClick = { enabledDays = DayOfWeek.values().toList() },
-                        label = { Text("매일") }
+                        label = { Text(stringResource(R.string.timeslot_everyday)) }
                     )
                     FilterChip(
                         selected = enabledDays.size == 5 && enabledDays.containsAll(listOf(
@@ -208,7 +210,7 @@ fun TimeSlotInputDialog(
                                 DayOfWeek.THURSDAY, DayOfWeek.FRIDAY
                             )
                         },
-                        label = { Text("평일") }
+                        label = { Text(stringResource(R.string.timeslot_weekdays)) }
                     )
                     FilterChip(
                         selected = enabledDays.size == 2 && enabledDays.containsAll(listOf(
@@ -217,7 +219,7 @@ fun TimeSlotInputDialog(
                         onClick = { 
                             enabledDays = listOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
                         },
-                        label = { Text("주말") }
+                        label = { Text(stringResource(R.string.timeslot_weekend)) }
                     )
                 }
                 
@@ -228,13 +230,13 @@ fun TimeSlotInputDialog(
                 ) {
                     DayOfWeek.values().forEach { day ->
                         val dayLabel = when (day) {
-                            DayOfWeek.MONDAY -> "월"
-                            DayOfWeek.TUESDAY -> "화"
-                            DayOfWeek.WEDNESDAY -> "수"
-                            DayOfWeek.THURSDAY -> "목"
-                            DayOfWeek.FRIDAY -> "금"
-                            DayOfWeek.SATURDAY -> "토"
-                            DayOfWeek.SUNDAY -> "일"
+                            DayOfWeek.MONDAY -> stringResource(R.string.timeslot_day_mon)
+                            DayOfWeek.TUESDAY -> stringResource(R.string.timeslot_day_tue)
+                            DayOfWeek.WEDNESDAY -> stringResource(R.string.timeslot_day_wed)
+                            DayOfWeek.THURSDAY -> stringResource(R.string.timeslot_day_thu)
+                            DayOfWeek.FRIDAY -> stringResource(R.string.timeslot_day_fri)
+                            DayOfWeek.SATURDAY -> stringResource(R.string.timeslot_day_sat)
+                            DayOfWeek.SUNDAY -> stringResource(R.string.timeslot_day_sun)
                         }
                         
                         FilterChip(
@@ -262,12 +264,12 @@ fun TimeSlotInputDialog(
                 },
                 enabled = enabledDays.isNotEmpty() && hourText.isNotEmpty() && minuteText.isNotEmpty()
             ) {
-                Text(if (existingSlot == null) "추가" else "수정")
+                Text(if (existingSlot == null) stringResource(R.string.btn_add) else stringResource(R.string.btn_edit))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("취소")
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )
@@ -335,9 +337,9 @@ fun TimeSlotItem(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = when (slot.presetType) {
-                        "STANDARD" -> "표준 차단"
-                        "MEDIUM" -> "중간 차단"
-                        "COMPLETE" -> "완전 차단"
+                        "STANDARD" -> stringResource(R.string.timeslot_preset_standard_block)
+                        "MEDIUM" -> stringResource(R.string.timeslot_preset_medium_block)
+                        "COMPLETE" -> stringResource(R.string.timeslot_preset_complete_block)
                         else -> slot.presetType
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -352,10 +354,10 @@ fun TimeSlotItem(
             
             Row {
                 IconButton(onClick = { onEdit(slot) }) {
-                    Icon(Icons.Default.Edit, contentDescription = "편집")
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit))
                 }
                 IconButton(onClick = { onDelete(slot) }) {
-                    Icon(Icons.Default.Delete, contentDescription = "삭제")
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.action_delete))
                 }
             }
         }
