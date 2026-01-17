@@ -83,8 +83,13 @@
     
     <!-- Preset Types -->
     <string name="preset_full_block">완전 차단</string>
+    <string name="preset_full_block_desc">모든 앱 차단</string>
     <string name="preset_standard">표준</string>
+    <string name="preset_standard_detoxy">표준 디톡시</string>
     <string name="preset_relaxed">여유</string>
+    <string name="preset_relaxed_detoxy">완화 디톡시</string>
+    <string name="timer_mode_standard_desc">SNS, 영상, Web 차단</string>
+    <string name="timer_mode_light_desc">SNS만 차단</string>
     
     <!-- Messenger Block Dialog -->
     <string name="messenger_block_title">메신저 차단 안내</string>
@@ -143,6 +148,9 @@
     <string name="schedule_add_time">시간 추가</string>
     <string name="schedule_name_label">시간표 이름 *</string>
     <string name="schedule_name_placeholder">예: 업무 시간표, 공부 루틴</string>
+    <string name="schedule_repeat_day">반복 요일</string>
+    <string name="schedule_label_optional">라벨 (선택)</string>
+    <string name="schedule_duration_custom">직접 입력 (1-180분)</string>
     <string name="schedule_template_select">템플릿 선택</string>
     <string name="schedule_timeslot_add">시간대 추가</string>
     <string name="schedule_setting_title">예약설정</string>

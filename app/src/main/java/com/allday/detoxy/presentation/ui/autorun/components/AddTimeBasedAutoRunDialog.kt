@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.allday.detoxy.R
 import com.allday.detoxy.data.local.converter.ScheduleInfoConverter
 import com.allday.detoxy.data.local.entity.TimeBasedAutoRun
 import com.allday.detoxy.domain.model.ScheduleInfo
@@ -97,7 +99,7 @@ fun AddTimeBasedAutoRunDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (existingAutoRun != null) "시간대 편집" else "시간대 추가",
+                text = if (existingAutoRun != null) stringResource(R.string.timeslot_edit) else stringResource(R.string.timeslot_add),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -111,7 +113,7 @@ fun AddTimeBasedAutoRunDialog(
             ) {
                 // 1. 시간 선택
                 Text(
-                    text = "시작 시간",
+                    text = stringResource(R.string.timeslot_start_time),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -125,7 +127,7 @@ fun AddTimeBasedAutoRunDialog(
 
                 // 2. 타이머 시간 선택
                 Text(
-                    text = "타이머 시간",
+                    text = stringResource(R.string.location_timer_duration),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -137,7 +139,7 @@ fun AddTimeBasedAutoRunDialog(
 
                 // 3. 차단 프리셋 선택
                 Text(
-                    text = "차단 강도",
+                    text = stringResource(R.string.timeslot_block_intensity),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -149,7 +151,7 @@ fun AddTimeBasedAutoRunDialog(
 
                 // 4. 요일 선택
                 Text(
-                    text = "반복 요일",
+                    text = stringResource(R.string.schedule_repeat_day),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -163,7 +165,7 @@ fun AddTimeBasedAutoRunDialog(
 
                 // 5. 라벨 입력 (선택 사항)
                 Text(
-                    text = "라벨 (선택)",
+                    text = stringResource(R.string.schedule_label_optional),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -172,7 +174,7 @@ fun AddTimeBasedAutoRunDialog(
                     value = label,
                     onValueChange = { label = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("예: 오전 업무 집중") },
+                    placeholder = { Text(stringResource(R.string.autorun_label_placeholder)) },
                     singleLine = true
                 )
                 
@@ -280,12 +282,12 @@ fun AddTimeBasedAutoRunDialog(
                 },
                 enabled = enabledDays.any { it.value }
             ) {
-                Text(if (existingAutoRun != null) "수정" else "저장")
+                Text(if (existingAutoRun != null) stringResource(R.string.btn_edit) else stringResource(R.string.btn_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("취소")
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )
@@ -323,7 +325,7 @@ private fun TimePickerSection(
         // Hour Selector
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "시",
+                text = stringResource(R.string.timeslot_hour),
                 style = MaterialTheme.typography.labelSmall
             )
             OutlinedTextField(
@@ -358,7 +360,7 @@ private fun TimePickerSection(
         // Minute Selector
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "분",
+                text = stringResource(R.string.timeslot_minute),
                 style = MaterialTheme.typography.labelSmall
             )
             OutlinedTextField(
@@ -452,7 +454,7 @@ private fun DurationSelector(
                     }
                 }
             },
-            label = { Text("직접 입력 (1-180분)") },
+            label = { Text(stringResource(R.string.schedule_duration_custom)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -471,24 +473,24 @@ private fun PresetSelector(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         PresetOption(
-            title = "완전 차단",
-            description = "모든 앱 차단",
+            title = stringResource(R.string.preset_full_block),
+            description = stringResource(R.string.preset_full_block_desc),
             value = "FULL_BLOCK",
             selected = selectedPreset == "FULL_BLOCK",
             onClick = { onPresetChange("FULL_BLOCK") }
         )
         
         PresetOption(
-            title = "표준 디톡시",
-            description = "SNS, 영상, Web 차단",
+            title = stringResource(R.string.preset_standard_detoxy),
+            description = stringResource(R.string.timer_mode_standard_desc),
             value = "STANDARD",
             selected = selectedPreset == "STANDARD",
             onClick = { onPresetChange("STANDARD") }
         )
         
         PresetOption(
-            title = "완화 디톡시",
-            description = "SNS만 차단",
+            title = stringResource(R.string.preset_relaxed_detoxy),
+            description = stringResource(R.string.timer_mode_light_desc),
             value = "RELAXED",
             selected = selectedPreset == "RELAXED",
             onClick = { onPresetChange("RELAXED") }
@@ -556,13 +558,13 @@ private fun DayOfWeekSelector(
     onDayToggle: (String, Boolean) -> Unit
 ) {
     val days = listOf(
-        "MON" to "월",
-        "TUE" to "화",
-        "WED" to "수",
-        "THU" to "목",
-        "FRI" to "금",
-        "SAT" to "토",
-        "SUN" to "일"
+        "MON" to stringResource(R.string.timeslot_day_mon),
+        "TUE" to stringResource(R.string.timeslot_day_tue),
+        "WED" to stringResource(R.string.timeslot_day_wed),
+        "THU" to stringResource(R.string.timeslot_day_thu),
+        "FRI" to stringResource(R.string.timeslot_day_fri),
+        "SAT" to stringResource(R.string.timeslot_day_sat),
+        "SUN" to stringResource(R.string.timeslot_day_sun)
     )
     
     Row(
