@@ -20,7 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.allday.detoxy.R
 import com.allday.detoxy.core.utils.GeocoderUtils
 import com.allday.detoxy.core.utils.LocationUtils
 import com.allday.detoxy.data.local.entity.LocationBasedAutoRun
@@ -85,7 +87,7 @@ fun LocationEditDialog(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "위치 정보 수정",
+                    text = stringResource(R.string.location_info_edit_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -102,8 +104,8 @@ fun LocationEditDialog(
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
-                    label = { Text("위치 이름 *") },
-                    placeholder = { Text("예: 학교, 독서실, 카페") },
+                    label = { Text(stringResource(R.string.location_name_label)) },
+                    placeholder = { Text(stringResource(R.string.location_name_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -113,7 +115,7 @@ fun LocationEditDialog(
                 // 🆕 주소 (수정 가능)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "주소",
+                        text = stringResource(R.string.location_address),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -132,7 +134,7 @@ fun LocationEditDialog(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = if (address.isNotBlank()) address else "주소 없음",
+                                    text = if (address.isNotBlank()) address else stringResource(R.string.location_no_address),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = if (address.isNotBlank()) 
                                         MaterialTheme.colorScheme.onSurfaceVariant
@@ -145,7 +147,7 @@ fun LocationEditDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Search,
-                                    contentDescription = "주소 변경",
+                                    contentDescription = stringResource(R.string.location_change_address),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -161,11 +163,11 @@ fun LocationEditDialog(
                         TextButton(
                             onClick = {
                                 try {
-                                    val uri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(${Uri.encode(label.ifBlank { "위치" })})")
+                                    val uri = Uri.parse("geo:$latitude,$longitude?q=$latitude,$longitude(${Uri.encode(label.ifBlank { context.getString(R.string.location_fallback) })})")
                                     val intent = Intent(Intent.ACTION_VIEW, uri)
                                     context.startActivity(intent)
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "지도 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.toast_map_app_not_found), Toast.LENGTH_SHORT).show()
                                 }
                             },
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
@@ -178,14 +180,14 @@ fun LocationEditDialog(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "지도에서 확인",
+                                text = stringResource(R.string.location_open_map),
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
                     }
 
                     Text(
-                        text = "위치를 변경하려면 검색 버튼을 눌러 새 위치를 선택하세요.",
+                        text = stringResource(R.string.location_change_help),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -208,7 +210,7 @@ fun LocationEditDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "이 반경 내에 진입하면 자동으로 시간표가 활성화됩니다.",
+                        text = stringResource(R.string.location_radius_auto_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -218,7 +220,7 @@ fun LocationEditDialog(
                 
                 // 활성화 설정
                 Text(
-                    text = "자동 활성화 설정",
+                    text = stringResource(R.string.location_auto_settings),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -231,12 +233,12 @@ fun LocationEditDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "위치 기반 자동 실행",
+                            text = stringResource(R.string.location_auto_run),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "이 위치에서 Geofence를 사용합니다",
+                            text = stringResource(R.string.location_auto_run_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -258,12 +260,12 @@ fun LocationEditDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "진입 시 시간표 활성화",
+                            text = stringResource(R.string.location_enter_activate),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "위치에 도착하면 연결된 시간표를 켭니다",
+                            text = stringResource(R.string.location_enter_activate_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -283,12 +285,12 @@ fun LocationEditDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "이탈 시 시간표 비활성화",
+                            text = stringResource(R.string.location_exit_deactivate),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "위치를 벗어나면 연결된 시간표를 끕니다",
+                            text = stringResource(R.string.location_exit_deactivate_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -327,12 +329,12 @@ fun LocationEditDialog(
                 },
                 enabled = label.isNotBlank()
             ) {
-                Text("저장")
+                Text(stringResource(R.string.btn_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("취소")
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )
@@ -390,10 +392,10 @@ private fun LocationSearchDialog(
                         searchResults = listOf(infoWithAccuracy) + searchResults
                         searchQuery = info.address
                     }.onFailure {
-                        Toast.makeText(context, "주소를 가져오지 못했지만 좌표를 등록합니다.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_address_fallback), Toast.LENGTH_SHORT).show()
                         val fallbackInfo = GeocoderUtils.LocationInfo(
-                            name = "현재 위치",
-                            address = "위도: ${location.latitude}, 경도: ${location.longitude}",
+                            name = context.getString(R.string.location_current),
+                            address = context.getString(R.string.location_lat_lng_format, location.latitude, location.longitude),
                             latitude = location.latitude,
                             longitude = location.longitude,
                             accuracy = location.accuracy
@@ -401,12 +403,12 @@ private fun LocationSearchDialog(
                         searchResults = listOf(fallbackInfo) + searchResults
                     }
                 }.onFailure {
-                    Toast.makeText(context, "위치를 찾을 수 없습니다. GPS 설정을 확인해주세요.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_location_not_found), Toast.LENGTH_SHORT).show()
                 }
                 isLocating = false
             }
         } else {
-            Toast.makeText(context, "현재 위치를 찾으려면 위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.toast_location_permission_required), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -426,7 +428,7 @@ private fun LocationSearchDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("위치 검색") },
+        title = { Text(stringResource(R.string.location_search_title)) },
         text = {
             LocationSearchContent(
                 searchQuery = searchQuery,
@@ -474,7 +476,7 @@ private fun LocationSearchDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("취소")
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )

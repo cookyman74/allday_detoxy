@@ -208,7 +208,7 @@
 | ✅ | `AddLocationAutoRunDialog.kt` | 32 | 자동실행 UI |
 | ✅ | `AutoRunHistoryScreen.kt` | 30 | 자동실행 UI |
 | ✅ | `TimeSlotInputDialog.kt` | 29 | 자동실행 UI |
-| ⬜ | `LocationEditDialog.kt` | 28 | 자동실행 UI |
+| ✅ | `LocationEditDialog.kt` | 28 | 자동실행 UI |
 | ⬜ | `AddTimeBasedAutoRunDialog.kt` | 26 | 자동실행 UI |
 
 #### 🟠 우선순위 Medium (10-19개, 16개 파일)
