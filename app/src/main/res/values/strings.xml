@@ -159,6 +159,73 @@
     
     <!-- Auto-Run -->
     <string name="autorun_delete_title">삭제 확인</string>
+
+    <!-- ==================== Coach Recommendation ==================== -->
+    <!-- Recovery Messages -->
+    <string name="coach_recovery_trend_improving">회복률이 계속 상승하고 있어요! 🎉</string>
+    <string name="coach_recovery_trend_stable">안정적인 디톡시를 유지하고 있어요.</string>
+    <string name="coach_recovery_trend_declining">최근 회복률이 다소 하락했지만, 여전히 좋은 상태입니다.</string>
+    <string name="coach_recovery_title">훌륭해요! 디톡시가 잘 진행되고 있습니다 ✨</string>
+    <string name="coach_recovery_message">%s\n현재의 습관을 유지하면서 조금씩 난이도를 높여보는 것은 어떨까요?</string>
+
+    <!-- Warning Messages -->
+    <string name="coach_warning_distraction">%s 카테고리가 가장 큰 방해 요인입니다.</string>
+    <string name="coach_warning_general">주의가 필요한 상황입니다.</string>
+    <string name="coach_warning_title">주의가 필요해요 ⚠️</string>
+    <string name="coach_warning_message">%s\n잠시 페이스를 조정하고, 차단 시간을 늘려보는 것을 추천드려요.</string>
+
+    <!-- High Risk Messages -->
+    <string name="coach_high_risk_failure_rate">최근 실패율이 %d%%로 매우 높습니다.</string>
+    <string name="coach_high_risk_general">디톡시에 어려움을 겪고 있는 것 같아요.</string>
+    <string name="coach_high_risk_distraction">\n특히 %s이(가) 주요 방해 요인입니다.</string>
+    <string name="coach_high_risk_title">즉각적인 개입이 필요합니다 🚨</string>
+    <string name="coach_high_risk_message">%s%s\n디톡시 강도를 일시적으로 낮추거나, 야간 차단 시간을 설정해 보세요.</string>
+
+    <!-- Action Items -->
+    <string name="action_maintain_routine_title">현재 루틴 유지하기</string>
+    <string name="action_maintain_routine_desc">지금의 습관을 꾸준히 이어가세요</string>
+    <string name="action_increase_difficulty_title">난이도 높이기</string>
+    <string name="action_increase_difficulty_desc">차단 시간을 10분 늘려보세요</string>
+    <string name="action_add_category_title">새로운 카테고리 차단 시도</string>
+    <string name="action_add_category_desc">한 가지 카테고리를 추가로 차단해 보세요</string>
+    
+    <string name="action_reduce_session_time_title">세션 시간 조정하기</string>
+    <string name="action_reduce_session_time_desc">일시적으로 세션 시간을 줄여보세요 (예: 25분 → 15분)</string>
+    <string name="action_night_mode_title">야간 차단 시간 설정</string>
+    <string name="action_night_mode_desc">22시~07시 SNS 차단 루틴을 추가하세요</string>
+    <string name="action_focus_on_distraction_title">%s 집중 차단</string>
+    <string name="action_focus_on_distraction_desc">%s 카테고리를 우선적으로 차단하세요</string>
+    
+    <string name="action_emergency_mode_title">긴급 디톡시 모드</string>
+    <string name="action_emergency_mode_desc">24시간 전체 카테고리 차단을 시도해 보세요</string>
+    <string name="action_reset_to_basic_title">기본 설정으로 되돌리기</string>
+    <string name="action_reset_to_basic_desc">너무 어려운 목표를 설정했을 수 있어요. 5분부터 다시 시작해 보세요</string>
+    <string name="action_seek_support_title">지원 요청하기</string>
+    <string name="action_seek_support_desc">가족이나 친구에게 도움을 요청하는 것도 좋은 방법입니다</string>
+    <string name="action_block_distraction_now_title">%s 즉시 차단</string>
+    <string name="action_block_distraction_now_desc">당장 %s 앱을 제거하거나 24시간 차단하세요</string>
+
+    <!-- Action Types -->
+    <string name="action_type_maintain">유지</string>
+    <string name="action_type_challenge">도전</string>
+    <string name="action_type_expand">확장</string>
+    <string name="action_type_adjust">조정</string>
+    <string name="action_type_routine">루틴</string>
+    <string name="action_type_target">집중</string>
+    <string name="action_type_emergency">긴급</string>
+    <string name="action_type_reset">재설정</string>
+    <string name="action_type_support">지원</string>
+    <string name="action_type_immediate">즉시</string>
+
+    <!-- Recommendation Priority -->
+    <string name="priority_low">권장</string>
+    <string name="priority_medium">주의</string>
+    <string name="priority_high">긴급</string>
+
+    <!-- Risk Levels -->
+    <string name="risk_level_recovery">회복 중</string>
+    <string name="risk_level_warning">주의 필요</string>
+    <string name="risk_level_high_risk">고위험</string>
     <string name="autorun_label_placeholder">예: 오전 업무 집중</string>
     <string name="autorun_history_title">자동 실행 기록</string>
     <string name="autorun_filter">필터</string>

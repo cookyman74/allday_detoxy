@@ -1,5 +1,6 @@
 package com.allday.detoxy.presentation.ui.report.components
 
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,10 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.allday.detoxy.R
 import com.allday.detoxy.domain.manager.ActionItem
 import com.allday.detoxy.domain.manager.CoachRecommendation
 import com.allday.detoxy.domain.manager.RiskLevel
@@ -83,7 +86,7 @@ fun CoachRecommendationDialog(
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = recommendation.level.toDisplayString(),
+                                text = recommendation.level.toUiText().asString(),
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                 color = getRecommendationColor(recommendation.level),
                                 fontWeight = FontWeight.Bold,
@@ -95,7 +98,7 @@ fun CoachRecommendationDialog(
 
                         // 제목
                         Text(
-                            text = recommendation.title,
+                            text = recommendation.title.asString(),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = getRecommendationColor(recommendation.level)
@@ -105,7 +108,7 @@ fun CoachRecommendationDialog(
 
                         // 메시지
                         Text(
-                            text = recommendation.message,
+                            text = recommendation.message.asString(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 20.sp
@@ -193,7 +196,7 @@ private fun DetailedActionItem(
                     shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
-                        text = getPriorityText(action.priority),
+                        text = stringResource(getPriorityTextResId(action.priority)),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = getPriorityColor(action.priority),
@@ -205,7 +208,7 @@ private fun DetailedActionItem(
 
                 // 제목
                 Text(
-                    text = action.title,
+                    text = action.title.asString(),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -215,7 +218,7 @@ private fun DetailedActionItem(
 
                 // 설명
                 Text(
-                    text = action.description,
+                    text = action.description.asString(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 20.sp
@@ -262,13 +265,13 @@ private fun getPriorityColor(priority: Int): Color {
 }
 
 /**
- * 우선순위 텍스트
+ * 우선순위 텍스트 리소스 ID
  */
-private fun getPriorityText(priority: Int): String {
+private fun getPriorityTextResId(priority: Int): Int {
     return when (priority) {
-        1 -> "높음"
-        2 -> "중간"
-        else -> "낮음"
+        1 -> R.string.priority_high
+        2 -> R.string.priority_medium
+        else -> R.string.priority_low
     }
 }
 

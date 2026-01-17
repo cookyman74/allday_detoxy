@@ -73,7 +73,7 @@ fun CoachRecommendationCard(
                     ) {
                         // 제목
                         Text(
-                            text = recommendation.title,
+                            text = recommendation.title.asString(),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold,
                             color = getRecommendationColor(recommendation.level)
@@ -83,7 +83,7 @@ fun CoachRecommendationCard(
 
                         // 메시지
                         Text(
-                            text = recommendation.message,
+                            text = recommendation.message.asString(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 20.sp
@@ -168,15 +168,15 @@ private fun ActionItemRow(
         // 텍스트
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = action.title,
+                text = action.title.asString(),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             )
-            if (action.description.isNotEmpty()) {
+            if (action.description.asString().isNotEmpty()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = action.description,
+                    text = action.description.asString(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

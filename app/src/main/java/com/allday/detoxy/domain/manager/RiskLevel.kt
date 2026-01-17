@@ -1,5 +1,8 @@
 package com.allday.detoxy.domain.manager
 
+import com.allday.detoxy.R
+import com.allday.detoxy.core.utils.UiText
+
 /**
  * 디톡시 위험 단계
  *
@@ -15,10 +18,10 @@ enum class RiskLevel {
     /**
      * 사용자에게 표시할 텍스트
      */
-    fun toDisplayString(): String = when (this) {
-        RECOVERY -> "회복 중"
-        WARNING -> "주의 필요"
-        HIGH_RISK -> "고위험"
+    fun toUiText(): UiText = when (this) {
+        RECOVERY -> UiText.StringResource(R.string.risk_level_recovery)
+        WARNING -> UiText.StringResource(R.string.risk_level_warning)
+        HIGH_RISK -> UiText.StringResource(R.string.risk_level_high_risk)
     }
 
     /**

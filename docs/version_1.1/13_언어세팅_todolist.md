@@ -203,7 +203,7 @@
 | 상태 | 파일 | 개수 | 카테고리 |
 |------|------|------|----------|
 | ✅ | `DetoxyControlSettingsScreen.kt` | 40 | 설정 UI |
-| ⬜ | `DetoxyCoachRecommender.kt` | 39 | 도메인 로직 |
+| ✅ | `DetoxyCoachRecommender.kt` | 39 | 도메인 로직 (UiText 적용) |
 | ✅ | `ScheduleCreationDialog.kt` | 33 | 자동실행 UI |
 | ✅ | `AddLocationAutoRunDialog.kt` | 32 | 자동실행 UI |
 | ✅ | `AutoRunHistoryScreen.kt` | 30 | 자동실행 UI |
