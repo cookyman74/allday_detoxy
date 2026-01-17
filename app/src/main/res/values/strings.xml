@@ -97,6 +97,30 @@
     <string name="permission_notification_block">알림 차단 (선택)</string>
     <string name="permission_required">권한 설정하기</string>
     <string name="permission_grayscale_title">흑백 모드 권한 필요</string>
+    <string name="permission_enabled">활성화됨</string>
+    <string name="permission_allowed">허용됨</string>
+    <string name="permission_needs_permission">권한이 필요합니다</string>
+    
+    <!-- Common Actions -->
+    <string name="action_back">뒤로</string>
+    <string name="toast_settings_saved">설정이 저장되었습니다</string>
+    
+    <!-- Categories -->
+    <string name="category_video">영상</string>
+    <string name="category_other_apps">기타 앱</string>
+    <string name="category_no_blocked_apps">차단할 앱이 없습니다.</string>
+    <string name="category_blocked_format">%1$s을(를) 차단합니다.</string>
+    <string name="category_messenger_warning">긴급 연락 유지 권장</string>
+    
+    <!-- Schedule Tab Info -->
+    <string name="schedule_tab_info_title">💡 스케줄 관리는 이제 별도 탭에서</string>
+    
+    <!-- Battery Optimization -->
+    <string name="battery_optimization_exempt">배터리 최적화에서 제외됨</string>
+    <string name="battery_optimization_required">배터리 최적화 설정이 필요합니다</string>
+    <string name="battery_optimization_desc">앱 차단 기능이 정상 작동하려면 배터리 최적화에서 제외해야 합니다.</string>
+    <string name="battery_optimization_settings_check">설정 확인</string>
+    <string name="battery_optimization_settings_guide">설정 가이드</string>
     
     <!-- ==================== Grayscale Mode ==================== -->
     <string name="grayscale_title">흑백 모드</string>

@@ -192,6 +192,114 @@
   ```
   - 부분 커밋: `5e92a6c` (strings.xml 기반 구조 + MainActivity.kt)
 
+### 2.4 세부 파일별 문자열 추출 체크리스트
+
+> ⚠️ **작업량**: 약 90개 파일, ~1,100개 문자열  
+> 📊 **분류 기준**: 문자열 개수 × 사용자 노출 빈도  
+> ✅ **완료 기준**: 파일 내 하드코딩 문자열 0개 + 빌드 성공
+
+#### 🔴 우선순위 High (20개 이상, 8개 파일)
+
+| 상태 | 파일 | 개수 | 카테고리 |
+|------|------|------|----------|
+| ✅ | `DetoxyControlSettingsScreen.kt` | 40 | 설정 UI |
+| ⬜ | `DetoxyCoachRecommender.kt` | 39 | 도메인 로직 |
+| ⬜ | `ScheduleCreationDialog.kt` | 33 | 자동실행 UI |
+| ⬜ | `AddLocationAutoRunDialog.kt` | 32 | 자동실행 UI |
+| ⬜ | `AutoRunHistoryScreen.kt` | 30 | 자동실행 UI |
+| ⬜ | `TimeSlotInputDialog.kt` | 29 | 자동실행 UI |
+| ⬜ | `LocationEditDialog.kt` | 28 | 자동실행 UI |
+| ⬜ | `AddTimeBasedAutoRunDialog.kt` | 26 | 자동실행 UI |
+
+#### 🟠 우선순위 Medium (10-19개, 16개 파일)
+
+| 상태 | 파일 | 개수 | 카테고리 |
+|------|------|------|----------|
+| ⬜ | `ScheduleGroupViewModel.kt` | 26 | ViewModel |
+| ⬜ | `TimeBasedAutoRunCard.kt` | 23 | 자동실행 UI |
+| ⬜ | `AutoRunHistoryItem.kt` | 22 | 자동실행 UI |
+| ⬜ | `ReportScreen.kt` | 21 | 리포트 UI |
+| ⬜ | `TimeBasedAutoRunScreen.kt` | 21 | 자동실행 UI |
+| ⬜ | `LocationPermissionDialogs.kt` | 21 | 권한 UI |
+| ⬜ | `TimerScreen.kt` | 20 | 타이머 UI |
+| ⬜ | `SavePresetDialog.kt` | 20 | 타이머 UI |
+| ⬜ | `ScheduleGroupCard.kt` | 19 | 자동실행 UI |
+| ⬜ | `TemplateSelectionDialog.kt` | 18 | 자동실행 UI |
+| ⬜ | `ScheduleGroupScreen.kt` | 17 | 자동실행 UI |
+| ⬜ | `LocationBasedAutoRunViewModel.kt` | 16 | ViewModel |
+| ⬜ | `TimerViewModel.kt` | 15 | ViewModel |
+| ⬜ | `ScheduleTabScreen.kt` | 15 | 스케줄 UI |
+| ⬜ | `NextAutoRunCalculator.kt` | 15 | 도메인 로직 |
+| ⬜ | `QuickCreateScheduleDialog.kt` | 14 | 자동실행 UI |
+
+#### 🟡 우선순위 Low (5-9개, 31개 파일)
+
+<details>
+<summary>펼쳐서 보기 (31개 파일)</summary>
+
+| 상태 | 파일 | 개수 | 카테고리 |
+|------|------|------|----------|
+| ⬜ | `TimeSlotFormatter.kt` | 14 | 유틸리티 |
+| ⬜ | `NextAutoRunCard.kt` | 14 | 자동실행 UI |
+| ⬜ | `GeocoderUtils.kt` | 14 | 유틸리티 |
+| ⬜ | `TodayTodoScreen.kt` | 13 | 할일 UI |
+| ⬜ | `ScheduleLinkSettingsStep.kt` | 13 | 자동실행 UI |
+| ⬜ | `DefaultTemplates.kt` | 13 | 데이터 |
+| ⬜ | `AppCategory.kt` | 13 | 유틸리티 |
+| ⬜ | `DetoxyRiskCard.kt` | 12 | 리포트 UI |
+| ⬜ | `AllowedAppDwellCard.kt` | 12 | 리포트 UI |
+| ⬜ | `LocationBasedAutoRunCard.kt` | 12 | 자동실행 UI |
+| ⬜ | `PermissionCheckScreen.kt` | 11 | 권한 UI |
+| ⬜ | `LocationBasedAutoRunScreen.kt` | 11 | 자동실행 UI |
+| ⬜ | `AppCategoryMapper.kt` | 11 | 유틸리티 |
+| ⬜ | `AutoRunNotificationManager.kt` | 11 | 알림 |
+| ⬜ | `TimeBasedAutoRunViewModel.kt` | 10 | ViewModel |
+| ⬜ | `GrayscaleSettingSection.kt` | 10 | 설정 UI |
+| ⬜ | `DistractionAvoidanceCard.kt` | 10 | 리포트 UI |
+| ⬜ | `TemplateSelectionBottomSheet.kt` | 10 | 자동실행 UI |
+| ⬜ | `FocusTimerService.kt` | 9 | 서비스 |
+| ⬜ | `DistractionTopCard.kt` | 9 | 리포트 UI |
+| ⬜ | `HeatmapDetailSheet.kt` | 9 | 히트맵 UI |
+| ⬜ | `StatisticsCard.kt` | 9 | 자동실행 UI |
+| ⬜ | `GlobalOptionsSection.kt` | 9 | 자동실행 UI |
+| ⬜ | `AddScheduleGroupDialog.kt` | 9 | 자동실행 UI |
+| ⬜ | `ScheduleGroup.kt` (entity) | 9 | 데이터 |
+| ⬜ | `NonLocationScheduleManager.kt` | 9 | 매니저 |
+| ⬜ | `PermissionDialog.kt` | 8 | 권한 UI |
+| ⬜ | `BatteryOptimizationGuideDialog.kt` | 8 | 설정 UI |
+| ⬜ | `ScheduleControlButton.kt` | 8 | 자동실행 UI |
+| ⬜ | `EmptyStateComponents.kt` | 8 | 공통 UI |
+| ⬜ | `AutoRunControlCard.kt` | 8 | 자동실행 UI |
+
+</details>
+
+#### ⚪ 우선순위 Minimal (1-4개, ~40개 파일)
+
+<details>
+<summary>펼쳐서 보기 (~40개 파일)</summary>
+
+- `RecoveryTrendCard.kt` (7), `CoachRecommendationDialog.kt` (7), `WelcomeScreen.kt` (7)
+- `LocationSearchContent.kt` (7), `LocationPermissionCard.kt` (7), `LocationBatteryImpactCard.kt` (7)
+- `BatteryImpactInfoCard.kt` (7), `LocationBasedAutoRun.kt` (7), `GrayscaleResult.kt` (7), `DndManager.kt` (7)
+- `GeofenceTransitionsReceiver.kt` (6), `AutoRunDashboardViewModel.kt` (6), `GrayscaleTipBanner.kt` (6)
+- `OverlayPrivacySettingsSection.kt` (6), `LockOverlayScreen.kt` (6), `PermissionUtils.kt` (6)
+- `AutoRunGeofenceManager.kt` (6), `AppLocaleManager.kt` (6)
+- `LockOverlayService.kt` (5), `TodoManagementScreen.kt` (5), `GrayscaleSettingsActivity.kt` (5)
+- `CoachRecommendationCard.kt` (5), `TodoListSection.kt` (5), `DetoxyRoutineLog.kt` (5), `ExactAlarmPermissionUtil.kt` (5)
+- 기타 4개 이하 파일 (~20개)
+
+</details>
+
+#### 📊 진행 현황 요약
+
+| 우선순위 | 파일 수 | 문자열 수 | 완료 |
+|----------|---------|-----------|------|
+| 🔴 High | 8 | ~257 | 0/8 |
+| 🟠 Medium | 16 | ~293 | 0/16 |
+| 🟡 Low | 31 | ~320 | 0/31 |
+| ⚪ Minimal | ~40 | ~230 | 0/40 |
+| **Total** | **~95** | **~1,100** | **1/95 (MainActivity.kt)** |
+
 ---
 
 ## 📦 Phase 3: 번역 파일 생성

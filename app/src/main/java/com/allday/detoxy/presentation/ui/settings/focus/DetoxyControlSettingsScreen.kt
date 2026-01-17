@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,6 +36,7 @@ import com.allday.detoxy.presentation.ui.component.GlassSurface
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.viewmodel.FocusSettingsViewModel
 import com.allday.detoxy.presentation.viewmodel.FocusSettingsUiState
+import com.allday.detoxy.R
 
 /**
  * 디톡시 제어 설정 화면
@@ -97,12 +99,12 @@ fun DetoxyControlSettingsScreen(
                     IconButton(onClick = onBack) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "뒤로",
+                                contentDescription = stringResource(R.string.action_back),
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
                     }
                         Text(
-                            text = "디톡시 제어 설정",
+                            text = stringResource(R.string.detoxy_control_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
@@ -111,11 +113,11 @@ fun DetoxyControlSettingsScreen(
                     TextButton(
                         onClick = {
                             viewModel.saveSettings()
-                            Toast.makeText(context, "설정이 저장되었습니다", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.toast_settings_saved), Toast.LENGTH_SHORT).show()
                         }
                     ) {
                         Text(
-                            "저장",
+                            stringResource(R.string.btn_save),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -242,7 +244,7 @@ fun PresetSelectionSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "디톡시 강도 프리셋",
+                text = stringResource(R.string.detoxy_preset_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -308,7 +310,7 @@ fun CategoryTogglesSection(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "차단 앱 카테고리",
+                text = stringResource(R.string.detoxy_block_category_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -332,7 +334,7 @@ fun CategoryTogglesSection(
                 description = "KakaoTalk, WhatsApp, LINE 등",
                 isEnabled = AppCategory.MESSENGER in enabledCategories,
                 showWarning = true,
-                warningText = "긴급 연락 유지 권장",
+                warningText = stringResource(R.string.category_messenger_warning),
                 onToggle = { enabled -> onCategoryToggle(AppCategory.MESSENGER, enabled) }
             )
 
@@ -360,11 +362,10 @@ fun CategoryTogglesSection(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
-            // 기타 앱
             CategoryToggleItem(
                 icon = AppCategory.OTHER.getIcon(),
                 title = AppCategory.OTHER.getDisplayName(),
-                description = "기본 차단 앱 이외 모든 앱",
+                description = stringResource(R.string.detoxy_all_apps_except_default),
                 isEnabled = otherAppsEnabled,
                 onToggle = { enabled -> onOtherAppsToggle(enabled) }
             )
@@ -476,7 +477,7 @@ fun SettingsPreviewSection(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "현재 설정 요약",
+                text = stringResource(R.string.detoxy_current_summary),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
@@ -485,12 +486,13 @@ fun SettingsPreviewSection(
             val blockedCategories = mutableListOf<String>()
             if (AppCategory.SNS in enabledCategories) blockedCategories.add("SNS")
             if (AppCategory.WEB in enabledCategories) blockedCategories.add("Web")
-            if (AppCategory.VIDEO_SHORTS in enabledCategories) blockedCategories.add("영상")
-            if (otherAppsEnabled) blockedCategories.add("기타 앱")
+            if (AppCategory.VIDEO_SHORTS in enabledCategories) blockedCategories.add(stringResource(R.string.category_video))
+            if (otherAppsEnabled) blockedCategories.add(stringResource(R.string.category_other_apps))
 
+            val noBlockedAppsText = stringResource(R.string.category_no_blocked_apps)
             val summaryText = when {
-                blockedCategories.isEmpty() -> "차단할 앱이 없습니다."
-                else -> "${blockedCategories.joinToString(", ")}을(를) 차단합니다."
+                blockedCategories.isEmpty() -> noBlockedAppsText
+                else -> stringResource(R.string.category_blocked_format, blockedCategories.joinToString(", "))
             }
 
             Text(
@@ -501,7 +503,7 @@ fun SettingsPreviewSection(
 
             if (AppCategory.MESSENGER !in enabledCategories) {
                 Text(
-                    text = "메신저는 긴급 연락을 위해 사용 가능합니다.",
+                    text = stringResource(R.string.detoxy_messenger_notice),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -516,7 +518,7 @@ fun SettingsPreviewSection(
                 )
             } ?: run {
                 Text(
-                    text = "커스텀 설정",
+                    text = stringResource(R.string.detoxy_custom_settings),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium
@@ -546,7 +548,7 @@ fun PermissionStatusSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "권한 상태",
+                text = stringResource(R.string.permission_status_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -555,11 +557,11 @@ fun PermissionStatusSection(
             // 접근성 권한
             PermissionStatusItem(
                 icon = if (accessibilityEnabled) "✅" else "❌",
-                title = "앱 차단 기능",
+                title = stringResource(R.string.permission_app_block),
                 description = if (accessibilityEnabled)
-                    "활성화됨"
+                    stringResource(R.string.permission_enabled)
                 else
-                    "권한이 필요합니다",
+                    stringResource(R.string.permission_needs_permission),
                 isGranted = accessibilityEnabled,
                 onSettingsClick = {
                     context.startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
@@ -569,11 +571,11 @@ fun PermissionStatusSection(
             // 오버레이 권한
             PermissionStatusItem(
                 icon = if (overlayEnabled) "✅" else "❌",
-                title = "잠금 화면 표시",
+                title = stringResource(R.string.permission_lock_screen),
                 description = if (overlayEnabled)
-                    "허용됨"
+                    stringResource(R.string.permission_allowed)
                 else
-                    "권한이 필요합니다",
+                    stringResource(R.string.permission_needs_permission),
                 isGranted = overlayEnabled,
                 onSettingsClick = {
                     context.startActivity(
@@ -594,7 +596,7 @@ fun PermissionStatusSection(
 
             PermissionStatusItem(
                 icon = dndIcon,
-                title = "알림 차단 (선택)",
+                title = stringResource(R.string.permission_notification_block),
                 description = dndPermissionState.getDescription(),
                 isGranted = dndPermissionState == DndManager.DndPermissionState.GRANTED,
                 onSettingsClick = {
@@ -655,7 +657,7 @@ fun PermissionStatusItem(
         if (!isGranted) {
             TextButton(onClick = onSettingsClick) {
                 Text(
-                    "설정하기",
+                    stringResource(R.string.btn_settings),
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -691,7 +693,7 @@ fun TimeBasedAutoRunSection(
                 ) {
                     Text(text = "⏰")
                     Text(
-                        text = "예약설정",
+                        text = stringResource(R.string.schedule_setting_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -699,13 +701,13 @@ fun TimeBasedAutoRunSection(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "원하는 시간에 자동으로 집중모드 시작",
+                    text = stringResource(R.string.schedule_setting_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             TextButton(onClick = onNavigateToAutoRun) {
-                Text("설정하기")
+                Text(stringResource(R.string.btn_settings))
             }
         }
     }
@@ -737,14 +739,14 @@ fun DetoxyRoutineSection(
                 ) {
                     Text(text = "🔄")
                     Text(
-                        text = "디톡시 루틴 (예정)",
+                        text = stringResource(R.string.detoxy_routine_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Text(
-                    text = "매일 정해진 시간에 자동으로 디톡시 시작",
+                    text = stringResource(R.string.detoxy_routine_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -784,14 +786,14 @@ fun ScheduleTabInfoCard() {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "💡 스케줄 관리는 이제 별도 탭에서",
+                    text = stringResource(R.string.schedule_tab_info_title),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "하단의 [스케줄] 탭에서 시간표를 관리하세요",
+                    text = stringResource(R.string.schedule_go_to_tab),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -842,7 +844,7 @@ fun MessengerCategoryDialog(
         },
         title = {
             Text(
-                text = "메신저 차단 안내",
+                text = stringResource(R.string.messenger_block_title),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold
@@ -853,12 +855,12 @@ fun MessengerCategoryDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "메신저 앱은 긴급 연락이 필요할 수 있어 기본적으로 차단하지 않습니다.",
+                    text = stringResource(R.string.messenger_block_desc1),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
                 Text(
-                    text = "디지털 중독 회복을 위해 완전한 디톡시가 필요하다면 메신저도 차단할 수 있습니다.",
+                    text = stringResource(R.string.messenger_block_desc2),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -877,7 +879,7 @@ fun MessengerCategoryDialog(
                     ) {
                         Text(text = "⚠️")
                         Text(
-                            text = "긴급 연락이 불가능해질 수 있으니 신중히 선택하세요.",
+                            text = stringResource(R.string.messenger_block_warning),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
@@ -893,12 +895,12 @@ fun MessengerCategoryDialog(
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("메신저도 차단")
+                Text(stringResource(R.string.messenger_block_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("허용 유지 (권장)")
+                Text(stringResource(R.string.messenger_keep_allowed))
             }
         }
     )
@@ -972,9 +974,9 @@ fun BatteryOptimizationSection() {
                         )
                         Text(
                             text = if (isWhitelisted) 
-                                "배터리 최적화에서 제외됨"
+                                stringResource(R.string.battery_optimization_exempt)
                             else 
-                                "배터리 최적화 설정이 필요합니다",
+                                stringResource(R.string.battery_optimization_required),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (isWhitelisted)
                                 MaterialTheme.colorScheme.onSurfaceVariant
@@ -986,7 +988,7 @@ fun BatteryOptimizationSection() {
                 
                 if (!isWhitelisted) {
                     Text(
-                        text = "앱 차단 기능이 정상 작동하려면 배터리 최적화에서 제외해야 합니다.",
+                        text = stringResource(R.string.battery_optimization_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -999,7 +1001,7 @@ fun BatteryOptimizationSection() {
                     OutlinedButton(
                         onClick = { showBatteryGuideDialog = true }
                     ) {
-                        Text(if (isWhitelisted) "설정 확인" else "설정 가이드")
+                        Text(if (isWhitelisted) stringResource(R.string.battery_optimization_settings_check) else stringResource(R.string.battery_optimization_settings_guide))
                     }
                 }
             }
