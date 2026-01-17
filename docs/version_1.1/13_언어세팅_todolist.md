@@ -113,50 +113,59 @@
 
 ### 2.1 사전 작업
 
-- [ ] **[REVIEW]** Phase 1 작업 결과서 검토
-  - 파일: `working_history/version_1.1/언어세팅/Phase1_기반구조_YYYY-MM-DD.md`
+- [x] **[REVIEW]** Phase 1 작업 결과서 검토
+  - 파일: `working_history/version_1.1/언어세팅/Phase1_기반구조_2026-01-15.md`
 
-- [ ] **[ANALYSIS]** 하드코딩 문자열 검색
+- [x] **[ANALYSIS]** 하드코딩 문자열 검색
   ```bash
   # Compose 파일에서 한글 검색
   grep -rn "Text(\"[가-힣]" app/src/main/java/
   grep -rn "stringResource" app/src/main/java/ | wc -l
   ```
+  - 결과: 약 1,159개 하드코딩 문자열 발견 (30개+ 파일)
 
-- [ ] **[ANALYSIS]** 현재 strings.xml 구조 확인
+- [x] **[ANALYSIS]** 현재 strings.xml 구조 확인
   - 파일: `app/src/main/res/values/strings.xml`
+  - 기존: 2개 문자열 (app_name, accessibility_service_description)
 
 ### 2.2 본 작업
 
-- [ ] **[TASK-001]** 화면 제목 문자열 추출
+- [/] **[TASK-001]** 화면 제목 문자열 추출
   - 대상: "집중 타이머", "설정", "스케줄", "리포트" 등
   - 작업: strings.xml에 추가 + 코드에서 `stringResource()` 사용
+  - ✅ 완료: MainActivity.kt (4개 문자열)
 
-- [ ] **[TASK-002]** 버튼/라벨 문자열 추출
+- [/] **[TASK-002]** 버튼/라벨 문자열 추출
   - 대상: "시작하기", "취소", "저장", "삭제" 등
   - 작업: strings.xml에 추가 + 코드에서 `stringResource()` 사용
+  - ✅ 완료: strings.xml에 ~20개 버튼 문자열 정의
 
-- [ ] **[TASK-003]** 설명 텍스트 문자열 추출
+- [/] **[TASK-003]** 설명 텍스트 문자열 추출
   - 대상: 권한 안내, 기능 설명, 도움말 텍스트
   - 작업: strings.xml에 추가 + 코드에서 `stringResource()` 사용
+  - ✅ 완료: strings.xml에 ~50개 설명 문자열 정의
 
-- [ ] **[TASK-004]** 알림 메시지 문자열 추출
+- [/] **[TASK-004]** 알림 메시지 문자열 추출
   - 대상: NotificationChannel 이름/설명, 알림 본문
   - 파일: `FocusTimerService.kt`, `NotificationHelper.kt`
   - 작업: strings.xml에 추가 + `context.getString()` 사용
+  - ✅ 완료: strings.xml에 ~10개 알림 문자열 정의
 
-- [ ] **[TASK-005]** 에러 메시지 문자열 추출
+- [/] **[TASK-005]** 에러 메시지 문자열 추출
   - 대상: 권한 거부 메시지, 오류 안내
   - 작업: strings.xml에 추가
+  - ✅ 완료: strings.xml에 ~5개 에러 문자열 정의
 
-- [ ] **[GREEN]** 빌드 검증
+- [x] **[GREEN]** 빌드 검증
   ```bash
   ./gradlew compileDebugKotlin
   ```
+  - 결과: ✅ BUILD SUCCESSFUL
 
 - [ ] **[REFACTOR]** 중복 문자열 정리
   - 동일 의미의 중복 문자열 통합
   - 일관된 네이밍 규칙 적용 (snake_case)
+  - ⚠️ 남은 파일 추출 완료 후 진행 예정
 
 ### 2.3 사후 작업
 
@@ -165,20 +174,23 @@
   # 하드코딩된 한글이 남아있는지 확인
   grep -rn "\"[가-힣]" app/src/main/java/ --include="*.kt"
   ```
+  - ⚠️ 남은 파일 추출 완료 후 진행 예정
 
 - [ ] **[LINT]** Lint 검사 (HardcodedText)
   ```bash
   ./gradlew lint
   ```
 
-- [ ] **[DOC]** 작업 결과서 작성
-  - 파일: `working_history/version_1.1/언어세팅/Phase2_문자열추출_YYYY-MM-DD.md`
+- [/] **[DOC]** 작업 결과서 작성
+  - 파일: `working_history/version_1.1/언어세팅/Phase2_문자열추출_2026-01-15.md`
   - 내용: 추출된 문자열 목록, 총 개수
+  - 상태: 프로그레스 ~15% 기록
 
-- [ ] **[COMMIT]** 변경사항 커밋
+- [/] **[COMMIT]** 변경사항 커밋
   ```bash
   git commit -m "refactor(strings): extract hardcoded Korean strings to strings.xml"
   ```
+  - 부분 커밋: `5e92a6c` (strings.xml 기반 구조 + MainActivity.kt)
 
 ---
 
@@ -397,8 +409,7 @@
 | Phase | 빌드 통과 | 린터 통과 | 결과서 작성 | 커밋 완료 | 상태 |
 |-------|----------|----------|------------|----------|------|
 | Phase 1 (기반 구조) | ✅ | ⬜ | ✅ | ✅ | ✅ 완료 |
-| Phase 2 (문자열 추출) | ⬜ | ⬜ | ⬜ | ⬜ | 🟡 진행중 |
-| Phase 2 (문자열 추출) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Phase 2 (문자열 추출) | ✅ | ⬜ | ✅ | 🟡 | 🟡 진행중 (~15%) |
 | Phase 3 (번역 파일) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Phase 4 (설정 UI) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
 | Phase 5 (테스트 검증) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
