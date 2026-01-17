@@ -18,8 +18,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.allday.detoxy.R
 import com.allday.detoxy.presentation.ui.component.GlassDialog
 import com.allday.detoxy.core.utils.GeocoderUtils
 import com.allday.detoxy.core.utils.LocationUtils // Added
@@ -106,10 +108,10 @@ fun ScheduleCreationDialog(
                         searchResults = listOf(infoWithAccuracy) + searchResults
                         searchQuery = info.address
                     }.onFailure {
-                        Toast.makeText(context, "주소를 가져오지 못했지만 좌표를 등록합니다.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_address_fallback), Toast.LENGTH_SHORT).show()
                         val fallbackInfo = GeocoderUtils.LocationInfo(
-                            name = "현재 위치",
-                            address = "위도: ${location.latitude}, 경도: ${location.longitude}",
+                            name = context.getString(R.string.location_current),
+                            address = context.getString(R.string.location_lat_lng_format, location.latitude, location.longitude),
                             latitude = location.latitude,
                             longitude = location.longitude,
                             accuracy = location.accuracy
@@ -117,12 +119,12 @@ fun ScheduleCreationDialog(
                         searchResults = listOf(fallbackInfo) + searchResults
                     }
                 }.onFailure {
-                    Toast.makeText(context, "위치를 찾을 수 없습니다. GPS 설정을 확인해주세요.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.toast_location_not_found), Toast.LENGTH_SHORT).show()
                 }
                 isLocating = false
             }
         } else {
-            Toast.makeText(context, "현재 위치를 찾으려면 위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.toast_location_permission_required), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -151,7 +153,7 @@ fun ScheduleCreationDialog(
                 // 🆕 Use Shared Component
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text(
-                        text = "위치 검색",
+                        text = stringResource(R.string.location_search_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -182,7 +184,7 @@ fun ScheduleCreationDialog(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showLocationSearch = false }) {
-                            Text("취소")
+                            Text(stringResource(R.string.btn_cancel))
                         }
                     }
                 }
@@ -198,9 +200,9 @@ fun ScheduleCreationDialog(
             ) {
                 Text(
                     text = when (currentStep) {
-                        ScheduleCreationStep.LOCATION_CHOICE -> "위치 설정 여부"
-                        ScheduleCreationStep.LOCATION_SEARCH -> "위치 반경 설정" // 제목 변경
-                        ScheduleCreationStep.SCHEDULE_SETUP -> "시간표 만들기"
+                        ScheduleCreationStep.LOCATION_CHOICE -> stringResource(R.string.schedule_creation_location_choice)
+                        ScheduleCreationStep.LOCATION_SEARCH -> stringResource(R.string.schedule_creation_location_radius)
+                        ScheduleCreationStep.SCHEDULE_SETUP -> stringResource(R.string.schedule_creation_create)
                     },
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
@@ -277,7 +279,11 @@ fun ScheduleCreationDialog(
                             }
                         }
                     ) {
-                        Text(if (currentStep == ScheduleCreationStep.LOCATION_CHOICE) "취소" else "이전")
+                        val btnText = if (currentStep == ScheduleCreationStep.LOCATION_CHOICE) 
+                            stringResource(R.string.btn_cancel) 
+                        else 
+                            stringResource(R.string.nav_previous)
+                        Text(btnText)
                     }
                     
                     Spacer(modifier = Modifier.width(8.dp))
@@ -336,9 +342,9 @@ fun ScheduleCreationDialog(
                     ) {
                         Text(
                             when (currentStep) {
-                                ScheduleCreationStep.LOCATION_CHOICE -> "다음"
-                                ScheduleCreationStep.LOCATION_SEARCH -> "다음"
-                                ScheduleCreationStep.SCHEDULE_SETUP -> "만들기"
+                                ScheduleCreationStep.LOCATION_CHOICE -> stringResource(R.string.nav_next)
+                                ScheduleCreationStep.LOCATION_SEARCH -> stringResource(R.string.nav_next)
+                                ScheduleCreationStep.SCHEDULE_SETUP -> stringResource(R.string.btn_create)
                             }
                         )
                     }
@@ -414,7 +420,7 @@ private fun LocationChoiceStep(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "이 시간표를 특정 위치에서만 실행하시겠습니까?",
+            text = stringResource(R.string.schedule_creation_location_question),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -423,16 +429,16 @@ private fun LocationChoiceStep(
         RadioButtonOption(
             selected = !hasLocation,
             onClick = { onHasLocationChange(false) },
-            title = "⚪ 어디서나 적용",
-            description = "위치와 관계없이 지정된 시간에 자동 실행"
+            title = stringResource(R.string.schedule_creation_anywhere),
+            description = stringResource(R.string.schedule_creation_anywhere_desc)
         )
         
         // 특정 위치에서만
         RadioButtonOption(
             selected = hasLocation,
             onClick = { onHasLocationChange(true) },
-            title = "📍 특정 위치에서만",
-            description = "지정한 위치 반경 내에서만 자동 실행"
+            title = stringResource(R.string.schedule_creation_location_only),
+            description = stringResource(R.string.schedule_creation_location_only_desc)
         )
     }
 }
@@ -453,7 +459,7 @@ private fun LocationSearchStep(
     ) {
         // 위치 선택
         Text(
-            text = "위치 선택",
+            text = stringResource(R.string.location_select_title),
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -465,7 +471,7 @@ private fun LocationSearchStep(
             ) {
                 Icon(Icons.Default.Search, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("주소 또는 장소 검색")
+                Text(stringResource(R.string.location_search_placeholder))
             }
         } else {
             Card(
@@ -492,7 +498,7 @@ private fun LocationSearchStep(
                             )
                         }
                         IconButton(onClick = onLocationSelect) {
-                            Icon(Icons.Default.Edit, "변경")
+                            Icon(Icons.Default.Edit, stringResource(R.string.location_change))
                         }
                     }
 
@@ -508,7 +514,7 @@ private fun LocationSearchStep(
                                 onClick = { },
                                 label = { 
                                     Text(
-                                        text = "오차 ±${accuracy.toInt()}m",
+                                        text = stringResource(R.string.location_accuracy_format, accuracy.toInt()),
                                         style = MaterialTheme.typography.labelSmall
                                     ) 
                                 },
@@ -527,7 +533,7 @@ private fun LocationSearchStep(
                                     val intent = Intent(Intent.ACTION_VIEW, uri)
                                     context.startActivity(intent)
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "지도 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.toast_map_app_not_found), Toast.LENGTH_SHORT).show()
                                 }
                             },
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
@@ -540,7 +546,7 @@ private fun LocationSearchStep(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "지도에서 확인",
+                                text = stringResource(R.string.location_open_map),
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
@@ -554,7 +560,7 @@ private fun LocationSearchStep(
             Spacer(Modifier.height(8.dp))
             
             Text(
-                text = "반경: ${radiusMeters}m",
+                text = stringResource(R.string.location_radius_format, radiusMeters),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -567,7 +573,7 @@ private fun LocationSearchStep(
             )
             
             Text(
-                text = "이 반경 내에 진입하면 자동으로 시간표가 활성화됩니다",
+                text = stringResource(R.string.location_radius_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -599,8 +605,8 @@ private fun ScheduleSetupStep(
         OutlinedTextField(
             value = name,
             onValueChange = onNameChange,
-            label = { Text("시간표 이름 *") },
-            placeholder = { Text("예: 업무 시간표, 공부 루틴") },
+            label = { Text(stringResource(R.string.schedule_name_label)) },
+            placeholder = { Text(stringResource(R.string.schedule_name_placeholder)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -609,7 +615,7 @@ private fun ScheduleSetupStep(
         
         // 생성 방식 선택
         Text(
-            text = "시작 방법 선택",
+            text = stringResource(R.string.schedule_creation_method),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -644,7 +650,7 @@ private fun ScheduleSetupStep(
                     ) {
                         Icon(Icons.AutoMirrored.Filled.List, null)
                         Spacer(Modifier.width(4.dp))
-                        Text("템플릿 선택")
+                        Text(stringResource(R.string.schedule_creation_template_select))
                     }
                 } else {
                     SelectedTemplateCard(
@@ -655,7 +661,7 @@ private fun ScheduleSetupStep(
             }
             CreationMode.CUSTOM -> {
                 Text(
-                    text = "시간대 목록",
+                    text = stringResource(R.string.schedule_creation_timeslot_list),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -667,7 +673,7 @@ private fun ScheduleSetupStep(
                         )
                     ) {
                         Text(
-                            text = "시간대를 추가해주세요",
+                            text = stringResource(R.string.schedule_creation_add_timeslot),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(12.dp)
@@ -691,7 +697,7 @@ private fun ScheduleSetupStep(
                 ) {
                     Icon(Icons.Default.Add, null)
                     Spacer(Modifier.width(4.dp))
-                    Text("시간대 추가")
+                    Text(stringResource(R.string.schedule_creation_add_timeslot_btn))
                 }
             }
         }
