@@ -179,7 +179,7 @@
     <string name="coach_high_risk_general">디톡시에 어려움을 겪고 있는 것 같아요.</string>
     <string name="coach_high_risk_distraction">\n특히 %s이(가) 주요 방해 요인입니다.</string>
     <string name="coach_high_risk_title">즉각적인 개입이 필요합니다 🚨</string>
-    <string name="coach_high_risk_message">%s%s\n디톡시 강도를 일시적으로 낮추거나, 야간 차단 시간을 설정해 보세요.</string>
+    <string name="coach_high_risk_message" formatted="false">%s%s\n디톡시 강도를 일시적으로 낮추거나, 야간 차단 시간을 설정해 보세요.</string>
 
     <!-- Action Items -->
     <string name="action_maintain_routine_title">현재 루틴 유지하기</string>

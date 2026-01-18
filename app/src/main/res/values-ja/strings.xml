@@ -1,4 +1,581 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Japanese translations will be added here -->
+    <string name="app_name">ScreenSence</string>
+
+    <!-- ==================== Common / General ==================== -->
+    <!-- Buttons -->
+    <string name="btn_cancel">キャンセル</string>
+    <string name="btn_confirm">確認</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_delete">削除</string>
+    <string name="btn_edit">編集</string>
+    <string name="btn_start">開始</string>
+    <string name="btn_close">閉じる</string>
+    <string name="btn_later">後で</string>
+    <string name="btn_settings">設定</string>
+    <string name="btn_go_to_settings">設定へ移動</string>
+    <string name="btn_go_to_system_settings">システム設定へ移動</string>
+    <string name="btn_manage">管理</string>
+    <string name="btn_add">追加</string>
+    <string name="btn_create">作成</string>
+    <string name="btn_collapse">折りたたむ</string>
+    <string name="btn_expand">展開</string>
+    
+    <!-- Common Labels -->
+    <string name="label_required">必須</string>
+    <string name="label_optional">任意</string>
+    <string name="label_custom">カスタム</string>
+    <string name="label_template">テンプレート</string>
+    <string name="label_recommended">推奨</string>
+    
+    <!-- Time Units -->
+    <string name="time_minutes">分</string>
+    <string name="time_hours">時間</string>
+    <string name="time_seconds">秒</string>
+    <string name="time_remaining">残り時間</string>
+    
+    <!-- Days of Week -->
+    <string name="day_monday">月</string>
+    <string name="day_tuesday">火</string>
+    <string name="day_wednesday">水</string>
+    <string name="day_thursday">木</string>
+    <string name="day_friday">金</string>
+    <string name="day_saturday">土</string>
+    <string name="day_sunday">日</string>
+    <string name="day_weekday">平日</string>
+    <string name="day_weekend">週末</string>
+    <string name="day_everyday">毎日</string>
+    
+    <!-- Common Actions -->
+    <string name="action_edit">編集</string>
+    <string name="action_delete">削除</string>
+
+    <!-- ==================== Navigation / Tabs ==================== -->
+    <string name="tab_timer">タイマー</string>
+    <string name="tab_schedule">スケジュール</string>
+    <string name="tab_report">レポート</string>
+    <string name="tab_settings">設定</string>
+    <string name="tab_todo">タスク管理</string>
+
+    <!-- ==================== Timer Screen ==================== -->
+    <string name="timer_title">集中タイマー</string>
+    <string name="timer_start">開始</string>
+    <string name="timer_stop">タイマー停止</string>
+    <string name="timer_give_up">諦める</string>
+    <string name="timer_starting">タイマー開始中…</string>
+    <string name="timer_remaining_format">残り時間: %1$s</string>
+    <string name="timer_completed">目標達成しました。おめでとうございます！</string>
+    <string name="timer_running_title">集中モード実行中</string>
+    <string name="timer_running_message">タイマーが実行中です。アプリを終了しますか？（タイマーはバックグラウンドで継続します）</string>
+    <string name="timer_background_continue">バックグラウンド実行</string>
+    <string name="timer_preset_save">プリセットとして保存</string>
+    <string name="timer_preset_name">プリセット名</string>
+    <string name="timer_custom_input_hint">直接入力 (1–180分)</string>
+
+    <!-- ==================== Focus Mode / Detoxy Settings ==================== -->
+    <string name="detoxy_control_title">デトックス制御設定</string>
+    <string name="detoxy_preset_title">デトックス強度プリセット</string>
+    <string name="detoxy_block_category_title">ブロックアプリカテゴリ</string>
+    <string name="detoxy_current_summary">現在の設定概要</string>
+    <string name="detoxy_custom_settings">カスタム設定</string>
+    <string name="detoxy_all_apps_except_default">デフォルトブロックアプリ以外のすべてのアプリ</string>
+    <string name="detoxy_messenger_notice">メッセンジャーは緊急連絡用に利用可能です。</string>
+    
+    <!-- Preset Types -->
+    <string name="preset_full_block">完全ブロック</string>
+    <string name="preset_full_block_desc">すべてのアプリをブロック</string>
+    <string name="preset_standard">標準</string>
+    <string name="preset_standard_detoxy">標準デトックス</string>
+    <string name="preset_relaxed">リラックス</string>
+    <string name="preset_relaxed_detoxy">緩和デトックス</string>
+    <string name="timer_mode_standard_desc">SNS、動画、Webをブロック</string>
+    <string name="timer_mode_light_desc">SNSのみブロック</string>
+    
+    <!-- Messenger Block Dialog -->
+    <string name="messenger_block_title">メッセンジャーブロック通知</string>
+    <string name="messenger_block_desc1">メッセンジャーは緊急連絡が必要な場合があるため、デフォルトではブロックされません。</string>
+    <string name="messenger_block_desc2">デジタル依存からの回復に完全なデトックスが必要な場合は、メッセンジャーもブロックできます。</string>
+    <string name="messenger_block_warning">緊急連絡ができなくなる可能性があるため、慎重に選択してください。</string>
+    <string name="messenger_block_confirm">メッセンジャーもブロック</string>
+    <string name="messenger_keep_allowed">許可を維持（推奨）</string>
+
+    <!-- ==================== Permissions ==================== -->
+    <string name="permission_status_title">権限ステータス</string>
+    <string name="permission_app_block">アプリブロック</string>
+    <string name="permission_lock_screen">ロック画面表示</string>
+    <string name="permission_notification_block">通知ブロック（任意）</string>
+    <string name="permission_required">権限を設定</string>
+    <string name="permission_grayscale_title">グレースケール権限が必要</string>
+    <string name="permission_enabled">有効</string>
+    <string name="permission_allowed">許可済み</string>
+    <string name="permission_needs_permission">権限が必要です</string>
+    
+    <!-- Common Actions -->
+    <string name="action_back">戻る</string>
+    <string name="toast_settings_saved">設定が保存されました</string>
+    
+    <!-- Categories -->
+    <string name="category_video">動画</string>
+    <string name="category_other_apps">その他のアプリ</string>
+    <string name="category_no_blocked_apps">ブロックするアプリがありません。</string>
+    <string name="category_blocked_format">%1$sをブロックします。</string>
+    <string name="category_messenger_warning">緊急連絡維持推奨</string>
+    
+    <!-- Schedule Tab Info -->
+    <string name="schedule_tab_info_title">💡 スケジュール管理は別のタブに移動しました</string>
+    
+    <!-- Battery Optimization -->
+    <string name="battery_optimization_exempt">バッテリー最適化から除外済み</string>
+    <string name="battery_optimization_required">バッテリー最適化設定が必要です</string>
+    <string name="battery_optimization_desc">アプリブロック機能を正常に動作させるには、バッテリー最適化から除外する必要があります。</string>
+    <string name="battery_optimization_settings_check">設定を確認</string>
+    <string name="battery_optimization_settings_guide">設定ガイド</string>
+    
+    <!-- ==================== Grayscale Mode ==================== -->
+    <string name="grayscale_title">グレースケールモード</string>
+    <string name="grayscale_auto_enable">集中モード時に自動有効化</string>
+    <string name="grayscale_description">タイマー開始時に画面がグレースケールになります</string>
+    <string name="grayscale_manual_guide">手動グレースケールガイド</string>
+    <string name="grayscale_settings_title">グレースケール設定</string>
+
+    <!-- ==================== Schedule / Auto-Run ==================== -->
+    <string name="schedule_title">スケジュール</string>
+    <string name="schedule_group_title">スケジュールグループ</string>
+    <string name="schedule_group_delete_title">スケジュールグループを削除</string>
+    <string name="schedule_group_delete_message">このスケジュールグループを削除しますか？</string>
+    <string name="schedule_create_first">最初のスケジュールを作成</string>
+    <string name="schedule_create_first_group">最初のグループを作成</string>
+    <string name="schedule_add_time">時間を追加</string>
+    <string name="schedule_name_label">スケジュール名 *</string>
+    <string name="schedule_name_placeholder">例: 仕事スケジュール、勉強ルーティン</string>
+    <string name="schedule_repeat_day">繰り返し曜日</string>
+    <string name="schedule_label_optional">ラベル（任意）</string>
+    <string name="schedule_duration_custom">直接入力 (1-180分)</string>
+    <string name="schedule_template_select">テンプレート選択</string>
+    <string name="schedule_timeslot_add">時間帯を追加</string>
+    <string name="schedule_setting_title">予約設定</string>
+    <string name="schedule_setting_description">設定した時間に自動で集中モードを開始</string>
+    <string name="schedule_go_to_tab">下の[スケジュール]タブでスケジュールを管理してください</string>
+    
+    <!-- Auto-Run -->
+    <string name="autorun_delete_title">削除確認</string>
+
+    <!-- ==================== Coach Recommendation ==================== -->
+    <!-- Recovery Messages -->
+    <string name="coach_recovery_trend_improving">回復率が上昇し続けています！🎉</string>
+    <string name="coach_recovery_trend_stable">安定したデトックスを維持しています。</string>
+    <string name="coach_recovery_trend_declining">最近回復率が少し下がりましたが、まだ良い状態です。</string>
+    <string name="coach_recovery_title">素晴らしい！デトックスが順調です ✨</string>
+    <string name="coach_recovery_message">%s\n現在の習慣を維持しながら、徐々に難易度を上げてみませんか？</string>
+
+    <!-- Warning Messages -->
+    <string name="coach_warning_distraction">%sカテゴリが最大の妨害要因です。</string>
+    <string name="coach_warning_general">注意が必要です。</string>
+    <string name="coach_warning_title">注意が必要です ⚠️</string>
+    <string name="coach_warning_message">%s\nペースを調整し、ブロック時間を増やしてみてください。</string>
+
+    <!-- High Risk Messages -->
+    <string name="coach_high_risk_failure_rate">最近の失敗率が%d%%と非常に高いです。</string>
+    <string name="coach_high_risk_general">デトックスに苦労しているようです。</string>
+    <string name="coach_high_risk_distraction">\n特に%sが主な妨害要因です。</string>
+    <string name="coach_high_risk_title">即座の対応が必要です 🚨</string>
+    <string name="coach_high_risk_message" formatted="false">%s%s\nデトックス強度を一時的に下げるか、夜間ブロック時間を設定してみてください。</string>
+
+    <!-- Action Items -->
+    <string name="action_maintain_routine_title">現在のルーティンを維持</string>
+    <string name="action_maintain_routine_desc">今の習慣を続けましょう</string>
+    <string name="action_increase_difficulty_title">難易度を上げる</string>
+    <string name="action_increase_difficulty_desc">ブロック時間を10分増やしてみましょう</string>
+    <string name="action_add_category_title">新しいカテゴリのブロックを試す</string>
+    <string name="action_add_category_desc">もう一つのカテゴリを追加でブロックしてみましょう</string>
+    
+    <string name="action_reduce_session_time_title">セッション時間を調整</string>
+    <string name="action_reduce_session_time_desc">一時的にセッション時間を減らしてみましょう（例: 25分 → 15分）</string>
+    <string name="action_night_mode_title">夜間ブロック時間を設定</string>
+    <string name="action_night_mode_desc">22時〜7時のSNSブロックルーティンを追加</string>
+    <string name="action_focus_on_distraction_title">%sを集中ブロック</string>
+    <string name="action_focus_on_distraction_desc">%sカテゴリを優先的にブロック</string>
+    
+    <string name="action_emergency_mode_title">緊急デトックスモード</string>
+    <string name="action_emergency_mode_desc">24時間全カテゴリブロックを試してみてください</string>
+    <string name="action_reset_to_basic_title">基本設定に戻す</string>
+    <string name="action_reset_to_basic_desc">目標が難しすぎたかもしれません。5分から再開してみましょう</string>
+    <string name="action_seek_support_title">サポートを求める</string>
+    <string name="action_seek_support_desc">家族や友人に助けを求めることも良い方法です</string>
+    <string name="action_block_distraction_now_title">%sを今すぐブロック</string>
+    <string name="action_block_distraction_now_desc">今すぐ%sアプリを削除するか24時間ブロック</string>
+
+    <!-- Action Types -->
+    <string name="action_type_maintain">維持</string>
+    <string name="action_type_challenge">挑戦</string>
+    <string name="action_type_expand">拡大</string>
+    <string name="action_type_adjust">調整</string>
+    <string name="action_type_routine">ルーティン</string>
+    <string name="action_type_target">集中</string>
+    <string name="action_type_emergency">緊急</string>
+    <string name="action_type_reset">リセット</string>
+    <string name="action_type_support">サポート</string>
+    <string name="action_type_immediate">即時</string>
+
+    <!-- Recommendation Priority -->
+    <string name="priority_low">推奨</string>
+    <string name="priority_medium">注意</string>
+    <string name="priority_high">緊急</string>
+
+    <!-- Risk Levels -->
+    <string name="risk_level_recovery">回復中</string>
+    <string name="risk_level_warning">注意が必要</string>
+    <string name="risk_level_high_risk">高リスク</string>
+    <string name="autorun_label_placeholder">例: 午前の仕事集中</string>
+    <string name="autorun_history_title">自動実行履歴</string>
+    <string name="autorun_filter">フィルター</string>
+    <string name="autorun_filter_settings">フィルター設定</string>
+    <string name="autorun_filter_active">フィルター適用中</string>
+    <string name="autorun_filter_reset">リセット</string>
+    <string name="autorun_filter_trigger_type">トリガータイプ</string>
+    <string name="autorun_filter_result">結果</string>
+    <string name="autorun_filter_date_range">日付範囲</string>
+    <string name="autorun_filter_all">すべて</string>
+    <string name="autorun_filter_time">時間</string>
+    <string name="autorun_filter_location">位置</string>
+    <string name="autorun_filter_success">成功</string>
+    <string name="autorun_filter_skipped">スキップ</string>
+    <string name="autorun_filter_failed">失敗</string>
+    <string name="autorun_filter_this_week">今週</string>
+    <string name="autorun_filter_this_month">今月</string>
+    <string name="autorun_filter_all_period">全期間</string>
+    <string name="autorun_trigger_time">時間ベース</string>
+    <string name="autorun_trigger_location">位置ベース</string>
+    <string name="autorun_empty_title">自動実行履歴がありません</string>
+    <string name="autorun_empty_desc">自動実行がトリガーされると履歴が表示されます</string>
+    
+    <!-- TimeSlot Dialog -->
+    <string name="timeslot_add">時間帯を追加</string>
+    <string name="timeslot_edit">時間帯を編集</string>
+    <string name="timeslot_start_time">開始時間</string>
+    <string name="timeslot_hour">時</string>
+    <string name="timeslot_minute">分</string>
+    <string name="timeslot_duration">期間</string>
+    <string name="timeslot_block_intensity">ブロック強度</string>
+    <string name="timeslot_preset_standard">標準</string>
+    <string name="timeslot_preset_medium">中程度</string>
+    <string name="timeslot_preset_complete">完全</string>
+    <string name="timeslot_preset_standard_block">標準ブロック</string>
+    <string name="timeslot_preset_medium_block">中程度ブロック</string>
+    <string name="timeslot_preset_complete_block">完全ブロック</string>
+    <string name="timeslot_day_selection">曜日選択</string>
+    <string name="timeslot_everyday">毎日</string>
+    <string name="timeslot_weekdays">平日</string>
+    <string name="timeslot_weekend">週末</string>
+    <string name="timeslot_day_mon">月</string>
+    <string name="timeslot_day_tue">火</string>
+    <string name="timeslot_day_wed">水</string>
+    <string name="timeslot_day_thu">木</string>
+    <string name="timeslot_day_fri">金</string>
+    <string name="timeslot_day_sat">土</string>
+    <string name="timeslot_day_sun">日</string>
+
+    <!-- Detoxy Routine -->
+    <string name="detoxy_routine_title">デトックスルーティン（予定）</string>
+    <string name="detoxy_routine_description">毎日決まった時間に自動でデトックスを開始</string>
+
+    <!-- ==================== Todo List ==================== -->
+    <string name="todo_add">タスクを追加（%1$d件残り）</string>
+    <string name="todo_input_placeholder">タスクを入力</string>
+    <string name="todo_today_title">今日のタスク</string>
+
+    <!-- ==================== Overlay / Lock Screen ==================== -->
+    <string name="overlay_show_goal">オーバーレイに目標を表示</string>
+    <string name="overlay_show_goal_desc">ロック画面に集中目標を表示します</string>
+    <string name="overlay_show_todos">詳細タスクを表示</string>
+    <string name="overlay_show_todos_desc">個別のタスク項目を表示します</string>
+    <string name="overlay_hide_goal">目標を隠す（絵文字のみ）</string>
+    <string name="overlay_hide_goal_desc">機密性の高い目標を隠して🎯絵文字のみ表示</string>
+    <string name="overlay_block_message">ブロックされたアプリ使用時にロック画面が表示されます</string>
+
+    <!-- ==================== Location-Based ==================== -->
+    <string name="location_permission_title">位置情報権限</string>
+    <string name="location_add_title">場所を追加</string>
+    <string name="location_edit_title">場所を編集</string>
+    <string name="location_time_based_settings">時間ベース設定へ移動</string>
+    <string name="location_search_title">位置検索</string>
+    <string name="location_select_title">位置選択</string>
+    <string name="location_search_placeholder">住所または場所を検索</string>
+    <string name="location_current">現在地</string>
+    <string name="location_lat_lng_format">緯度: %1$.6f、経度: %2$.6f</string>
+    <string name="location_accuracy_format">精度 ±%1$dm</string>
+    <string name="location_open_map">地図で確認</string>
+    <string name="location_radius_format">半径: %1$dm</string>
+    <!-- Schedule Group Screen -->
+    <string name="title_schedule_group">スケジュールグループ</string>
+    <string name="group_empty_title">スケジュールグループがありません</string>
+    <string name="group_empty_desc">複数のスケジュールをグループ化して\n位置に応じて自動で有効化できます</string>
+    <string name="btn_create_first_group">最初のグループを作成</string>
+    <string name="guide_card_title">💡 スケジュールグループの使い方</string>
+    <string name="guide_card_desc">1. スケジュールグループを作成\n2. 時間ベース自動実行設定でグループを選択\n3. 位置ベース自動実行にグループをリンク\n4. その位置に入るとスケジュールが自動で有効化</string>
+    <string name="dialog_delete_group_title">スケジュールグループを削除</string>
+    <string name="dialog_delete_group_message">このスケジュールグループを削除しますか？</string>
+    <string name="dialog_delete_group_warning">リンクされたスケジュールと位置の参照は解除されますが、設定自体は削除されません。</string>
+    <string name="fab_add_group_desc">スケジュールグループを追加</string>
+    <string name="msg_location_updated">位置情報が更新されました</string>
+    <string name="msg_location_update_failed">位置情報の更新に失敗: %s</string>
+    <string name="label_group_paused">一時停止中</string>
+    <string name="label_time_schedule_count">時間スケジュール %d件</string>
+    <string name="back_button_desc">戻る</string>
+    
+    <string name="location_radius_desc">この半径内に入るとスケジュールが自動で有効化されます</string>
+    <string name="location_change">変更</string>
+    
+    <!-- Schedule Group ViewModel Errors -->
+    <string name="error_group_name_empty">グループ名を入力してください</string>
+    <string name="error_group_create_failed">グループ作成に失敗: %s</string>
+    <string name="error_group_update_failed">グループ更新に失敗: %s</string>
+    <string name="error_group_delete_failed">グループ削除に失敗: %s</string>
+    <string name="error_group_toggle_failed">グループ状態変更に失敗: %s</string>
+    <string name="error_group_activate_failed">スケジュール有効化に失敗: %s</string>
+    <string name="error_group_deactivate_failed">スケジュール無効化に失敗: %s</string>
+    <string name="error_state_change_failed">状態変更に失敗: %s</string>
+    <string name="error_pause_failed">一時停止に失敗: %s</string>
+    <string name="error_linked_autorun_load_failed">リンクされたスケジュールの読み込みに失敗: %s</string>
+    <string name="error_linked_location_load_failed">リンクされた位置の読み込みに失敗: %s</string>
+    <string name="error_location_refresh_failed">位置情報の更新に失敗: %s</string>
+    <string name="error_heatmap_refresh_failed">ヒートマップデータの更新に失敗: %s</string>
+    <string name="error_timeslot_empty">少なくとも1つの時間帯を追加してください</string>
+
+    <!-- TimeBasedAutoRunCard -->
+    <string name="autorun_card_inactive_badge">無効</string>
+    <string name="autorun_card_independent_warning">この時間帯はスケジュールが有効な時のみ実行されます</string>
+    <string name="autorun_delete_dialog_title">自動実行を削除</string>
+    <string name="autorun_delete_dialog_message">この時間帯を削除しますか？</string>
+    <string name="day_mon">月</string>
+    <string name="day_tue">火</string>
+    <string name="day_wed">水</string>
+    <string name="day_thu">木</string>
+    <string name="day_fri">金</string>
+    <string name="day_sat">土</string>
+    <string name="day_sun">日</string>
+    <string name="day_daily">毎日</string>
+    <string name="day_none_selected">曜日が選択されていません</string>
+    <string name="day_info_missing">曜日情報がありません</string>
+
+    <!-- AutoRunHistoryItem -->
+    <string name="history_trigger_time">時間ベース</string>
+    <string name="history_trigger_location">位置ベース</string>
+    <string name="history_trigger_auto">自動実行</string>
+    <string name="history_type_time">時間ベース自動実行</string>
+    <string name="history_type_location">位置ベース自動実行</string>
+    <string name="history_gps_accuracy">GPS精度:</string>
+    <string name="history_dwell_time">滞在時間:</string>
+    <string name="history_result_started">開始</string>
+    <string name="history_result_skipped">スキップ</string>
+    <string name="history_result_failed">失敗</string>
+    <string name="history_reason_permission_denied">権限がありません</string>
+    <string name="history_reason_timer_running">タイマーが既に実行中です</string>
+    <string name="history_reason_location_disabled">位置情報サービスがオフです</string>
+    <string name="history_reason_user_paused">ユーザーが一時停止しました</string>
+    <string name="history_reason_geofence_error">ジオフェンスエラーが発生しました</string>
+    <string name="history_reason_unknown">不明なエラー: %s</string>
+
+    <!-- Preset Display Names -->
+    <string name="preset_full_block_display">完全ブロック</string>
+    <string name="preset_standard_display">標準デトックス</string>
+    <string name="preset_relaxed_display">緩和デトックス</string>
+    
+    <!-- Schedule Creation Dialog -->
+    <string name="schedule_creation_location_choice">位置設定</string>
+    <string name="schedule_creation_location_radius">位置半径設定</string>
+    <string name="schedule_creation_create">スケジュールを作成</string>
+    <string name="schedule_creation_location_question">特定の位置でのみこのスケジュールを実行しますか？</string>
+    <string name="schedule_creation_anywhere">⚪ どこでも適用</string>
+    <string name="schedule_creation_anywhere_desc">位置に関係なく設定時間に自動実行</string>
+    <string name="schedule_creation_location_only">📍 特定の位置のみ</string>
+    <string name="schedule_creation_location_only_desc">指定した位置半径内でのみ自動実行</string>
+    <string name="schedule_creation_method">開始方法を選択</string>
+    <string name="schedule_creation_timeslot_list">時間帯リスト</string>
+    <string name="schedule_creation_add_timeslot">時間帯を追加してください</string>
+    <string name="schedule_creation_add_timeslot_btn">時間帯を追加</string>
+    <string name="schedule_creation_template_select">テンプレート選択</string>
+    
+    <!-- Navigation -->
+    <string name="nav_next">次へ</string>
+    <string name="nav_previous">前へ</string>
+    
+    <!-- Error/Toast Messages -->
+    <string name="toast_address_fallback">住所を取得できませんでしたが、座標を登録します。</string>
+    <string name="toast_location_not_found">位置が見つかりません。GPS設定を確認してください。</string>
+    <string name="toast_location_permission_required">現在地を取得するには位置情報権限が必要です。</string>
+    <string name="toast_map_app_not_found">地図アプリが見つかりません。</string>
+    
+    <!-- Location Edit Dialog -->
+    <string name="location_info_edit_title">位置情報を編集</string>
+    <string name="location_name_label">位置名 *</string>
+    <string name="location_name_placeholder">例: 学校、図書館、カフェ</string>
+    <string name="location_address">住所</string>
+    <string name="location_no_address">住所なし</string>
+    <string name="location_change_address">住所を変更</string>
+    <string name="location_change_help">位置を変更するには、検索ボタンを押して新しい位置を選択してください。</string>
+    <string name="location_auto_settings">自動有効化設定</string>
+    <string name="location_auto_run">位置ベース自動実行</string>
+    <string name="location_auto_run_desc">この位置でジオフェンスを使用</string>
+    <string name="location_enter_activate">入場時に有効化</string>
+    <string name="location_enter_activate_desc">位置に到着したらリンクされたスケジュールをオン</string>
+    <string name="location_exit_deactivate">退場時に無効化</string>
+    <string name="location_exit_deactivate_desc">位置を離れたらリンクされたスケジュールをオフ</string>
+    <string name="location_radius_auto_desc">この半径内に入るとスケジュールが自動で有効化されます。</string>
+
+    <!-- Location Auto-Run Dialog -->
+    <string name="location_add_btn">位置を追加</string>
+    <string name="location_label">ラベル</string>
+    <string name="location_label_placeholder">例: オフィス、図書館</string>
+    <string name="location_radius_title">半径</string>
+    <string name="location_timer_duration">タイマー時間</string>
+    <string name="location_block_intensity">ブロック強度</string>
+    <string name="location_preset_full">完全ブロック</string>
+    <string name="location_preset_full_desc">すべてのアプリをブロック</string>
+    <string name="location_preset_standard">標準デトックス</string>
+    <string name="location_preset_standard_desc">メッセンジャーのみ許可</string>
+    <string name="location_preset_relaxed">緩和モード</string>
+    <string name="location_entry_condition">入場条件</string>
+    <string name="location_dwell_time">滞在時間</string>
+    <string name="location_dwell_desc">位置に到着後N分滞在を確認して自動実行</string>
+    <string name="location_dwell_immediate">即時</string>
+    <string name="location_dwell_minutes">%1$d分</string>
+    <string name="location_confirm_on_arrival">到着時の通知で確認</string>
+    <string name="location_confirm_desc">通知をタップするとタイマーが開始（自動開始OFF）</string>
+    <string name="location_fallback">位置</string>
+
+    <!-- ==================== Report ==================== -->
+    <string name="report_title">レポート</string>
+    <string name="report_summary">概要</string>
+    <string name="report_daily">日次</string>
+    <string name="report_weekly">週次</string>
+    <string name="report_monthly">月次</string>
+
+    <!-- ==================== Coach / Recommendations ==================== -->
+    <string name="coach_keep_going_title">続けましょう</string>
+    <string name="coach_keep_going_desc">今の習慣を続けましょう</string>
+    <string name="coach_increase_difficulty_title">難易度を上げる</string>
+    <string name="coach_increase_difficulty_desc">ブロック時間を10分増やしてみましょう</string>
+    <string name="coach_new_category_title">新しいカテゴリのブロックを試す</string>
+    <string name="coach_new_category_desc">もう一つのカテゴリを追加でブロックしてみましょう</string>
+    <string name="coach_adjust_session_title">セッション時間を調整</string>
+    <string name="coach_adjust_session_desc">一時的にセッション時間を減らしてみましょう（例: 25分 → 15分）</string>
+    <string name="coach_night_block_title">夜間ブロック時間を設定</string>
+    <string name="coach_emergency_title">緊急デトックスモード</string>
+    <string name="coach_reset_title">基本設定に戻す</string>
+    <string name="coach_reset_desc">目標が難しすぎたかもしれません。5分から再開してみましょう</string>
+    <string name="coach_ask_help_title">サポートを求める</string>
+    <string name="coach_ask_help_desc">家族や友人に助けを求めることも良い方法です</string>
+    <string name="coach_remove_app_desc">今すぐ%1$sアプリを削除するか24時間ブロック</string>
+
+    <!-- ==================== Notifications ==================== -->
+    <string name="notification_channel_focus">集中モード</string>
+    <string name="notification_channel_focus_desc">集中タイマー進捗通知</string>
+    <string name="notification_channel_autorun">自動実行</string>
+    <string name="notification_channel_autorun_desc">予約された集中モード通知</string>
+    <string name="notification_start_soon">%1$d分後に集中モードが開始します</string>
+    <string name="notification_action_start">開始</string>
+    <string name="notification_action_snooze">10分後</string>
+    <string name="notification_action_skip">スキップ</string>
+
+    <!-- ==================== Accessibility Service ==================== -->
+    <string name="accessibility_service_description">ScreenSenceは集中タイマー中に特定のアプリ（Instagram、TikTok、YouTube、Facebook）をブロックして集中力向上を支援します。このサービスはブロックされたアプリが開かれるとホーム画面に移動します。</string>
+
+    <!-- ==================== Language Settings ==================== -->
+    <string name="language_settings_title">言語設定</string>
+    <string name="language_system_default">システムデフォルト（自動）</string>
+
+    <!-- ==================== Errors & Warnings ==================== -->
+    <string name="error_permission_denied">権限が拒否されました</string>
+    <string name="error_general">エラーが発生しました</string>
+    <string name="warning_data_loss">データが失われる可能性があります</string>
+
+    <!-- ==================== Empty States ==================== -->
+    <string name="empty_no_schedule">登録されたスケジュールがありません</string>
+    <string name="empty_no_history">履歴がありません</string>
+    <string name="empty_no_todos">タスクがありません</string>
+
+
+    <!-- TimeBasedAutoRunScreen -->
+    <string name="autorun_list_title">予約設定</string>
+    <string name="autorun_list_title_format">%s 予約設定</string>
+    <string name="autorun_manage_schedule">スケジュール管理</string>
+    <string name="autorun_add_timeslot">時間帯を追加</string>
+    <string name="autorun_max_limit_desc">最大10件まで登録可能</string>
+    <string name="autorun_count_format">登録された時間帯 (%1$d/10)</string>
+    <string name="autorun_creation_custom">カスタム</string>
+    <string name="autorun_creation_template">テンプレート</string>
+    <string name="autorun_delete_confirm_time">\"%1$s\"自動実行を削除しますか？\nアラームもキャンセルされます。</string>
+    <string name="autorun_delete_confirm_generic">この自動実行を削除しますか？</string>
+    <string name="msg_schedule_created_global">スケジュールが作成されました（どこでも適用）</string>
+    <string name="msg_schedule_created_location">位置ベースのスケジュールが作成されました</string>
+    
+    <!-- Location Permission Dialogs -->
+    <string name="permission_bg_location_title">バックグラウンド位置情報権限が必要</string>
+    <string name="permission_bg_location_desc">位置ベース自動実行にはバックグラウンド位置情報権限が必要です。</string>
+    <string name="permission_bg_location_guide">次の画面で「常に許可」を選択してください。</string>
+    <string name="permission_bg_location_privacy">この権限は登録した場所（オフィス、学校など）に到着した時のみ使用され、位置データはローカルにのみ保存されます。</string>
+    <string name="permission_location_needed_title">位置情報権限が必要</string>
+    <string name="permission_location_needed_desc">位置情報権限がないと位置ベース自動実行は使用できません。</string>
+    <string name="permission_suggestion_time_based">💡 代わりに時間ベース自動実行を試してみてください！</string>
+    <string name="permission_suggestion_time_based_desc">特定の時間に自動で集中モードを開始できます。</string>
+    <string name="permission_settings_title">設定で権限を許可してください</string>
+    <string name="permission_settings_desc">バックグラウンド位置情報権限を許可するには設定画面に移動する必要があります。</string>
+    <string name="permission_settings_step_1">1. 「権限」タブを選択</string>
+    <string name="permission_settings_step_2">2. 「位置情報」を選択</string>
+    <string name="permission_settings_step_3">3. 「常に許可」を選択</string>
+    <string name="permission_revoked_title">位置情報権限が取り消されました</string>
+    <string name="permission_revoked_desc">位置情報権限が取り消され、位置ベース自動実行が無効になりました。</string>
+    <string name="permission_revoked_guide">再度使用するには、位置情報権限を「常に許可」に設定してください。</string>
+
+    <!-- Timer Screen -->
+    <string name="timer_finished_title">🎉 タイマー完了！</string>
+    <string name="timer_finished_desc">集中時間を正常に完了しました。</string>
+    <string name="timer_start_new">新しいタイマーを開始</string>
+    <string name="timer_failed_title">タイマー断念</string>
+    <string name="timer_failed_desc">次回はもっとうまくできます！</string>
+    <string name="timer_restart">再開</string>
+    <string name="timer_success_title">🎉 集中成功！</string>
+    <string name="timer_goal_achieved">目標達成！</string>
+    <string name="timer_success_desc">集中時間を正常に完了しました。\n良い習慣を続けていきましょう！</string>
+    <string name="permission_accessibility_needed_title">アプリブロック権限が必要</string>
+    <string name="permission_accessibility_needed_desc">集中タイマーを使用するには、アプリブロック（アクセシビリティサービス）を有効にする必要があります。\n\n設定画面で「ScreenSence」を見つけて有効にしてください。</string>
+    <string name="permission_accessibility_disabled_title">⚠️ アプリブロックの再起動が必要</string>
+    <string name="permission_accessibility_disabled_desc">アプリブロック（アクセシビリティサービス）が一時的に停止しました。\n\n1️⃣ 設定画面で「ScreenSence」をオフにしてからオンに戻してください。\n\n2️⃣ この問題が繰り返される場合は、下の「バッテリー設定ガイド」を確認してください。</string>
+    <string name="permission_overlay_needed_title">ロック画面表示権限が必要</string>
+    <string name="permission_overlay_needed_desc">集中タイマーを使用するには、ロック画面表示権限（他のアプリの上に表示）が必要です。\n\n設定画面で権限を許可してください。</string>
+    <string name="btn_battery_guide">🔋 バッテリー設定ガイド</string>
+    <string name="timer_preset_update">プリセットを更新</string>
+    
+    <!-- Report Screen -->
+    <string name="report_screen_title">デトックスレポート</string>
+    <string name="report_total_focus_time">総集中時間</string>
+    <string name="report_success_session">成功セッション</string>
+    <string name="report_current_streak">連続成功</string>
+    <string name="report_total_points">総ポイント</string>
+    <string name="report_daily_success_rate">今日の成功率</string>
+    <string name="report_weekly_insight">週間インサイト</string>
+    <string name="report_daily_session">今日のセッション</string>
+    <string name="report_session_success">成功セッション</string>
+    <string name="report_session_fail">失敗セッション</string>
+    
+    <string name="empty_report_title">最初のデトックスセッションを始めましょう！</string>
+    <string name="empty_report_desc">デトックスセッションを開始すると\nこのようなインサイトを得られます：</string>
+    <string name="empty_report_feature_risk">リスクレベル分析</string>
+    <string name="empty_report_feature_trend">回復率トレンドグラフ</string>
+    <string name="empty_report_feature_distraction">妨害要因トップ3</string>
+    <string name="empty_report_feature_coach">パーソナライズされたコーチ推奨</string>
+    <string name="empty_report_guide">タイマータブから集中モードを開始してください！</string>
+    
+    <!-- Generic Buttons -->
+    <string name="btn_retry_permission">権限を再要求</string>
+    <string name="btn_move_to_time_based">時間ベースへ移動</string>
+
+    <string name="btn_next">次へ</string>
+    <string name="autorun_delete_confirm_title">スケジュールを削除</string>
+    
+    <string name="battery_impact_minimal">最小</string>
+    <string name="battery_impact_percentage_minimal">&lt; 1%/日</string>
+    <string name="battery_impact_desc_time_based">時間ベース自動実行はバッテリーへの影響がほとんどありません。</string>
+    
 </resources>

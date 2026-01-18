@@ -1,4 +1,581 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Spanish translations will be added here -->
+    <string name="app_name">ScreenSence</string>
+
+    <!-- ==================== Common / General ==================== -->
+    <!-- Buttons -->
+    <string name="btn_cancel">Cancelar</string>
+    <string name="btn_confirm">Confirmar</string>
+    <string name="btn_save">Guardar</string>
+    <string name="btn_delete">Eliminar</string>
+    <string name="btn_edit">Editar</string>
+    <string name="btn_start">Iniciar</string>
+    <string name="btn_close">Cerrar</string>
+    <string name="btn_later">Más tarde</string>
+    <string name="btn_settings">Configuración</string>
+    <string name="btn_go_to_settings">Ir a Configuración</string>
+    <string name="btn_go_to_system_settings">Ir a Configuración del Sistema</string>
+    <string name="btn_manage">Administrar</string>
+    <string name="btn_add">Añadir</string>
+    <string name="btn_create">Crear</string>
+    <string name="btn_collapse">Contraer</string>
+    <string name="btn_expand">Expandir</string>
+    
+    <!-- Common Labels -->
+    <string name="label_required">Obligatorio</string>
+    <string name="label_optional">Opcional</string>
+    <string name="label_custom">Personalizado</string>
+    <string name="label_template">Plantilla</string>
+    <string name="label_recommended">Recomendado</string>
+    
+    <!-- Time Units -->
+    <string name="time_minutes">min</string>
+    <string name="time_hours">hr</string>
+    <string name="time_seconds">seg</string>
+    <string name="time_remaining">Tiempo restante</string>
+    
+    <!-- Days of Week -->
+    <string name="day_monday">Lun</string>
+    <string name="day_tuesday">Mar</string>
+    <string name="day_wednesday">Mié</string>
+    <string name="day_thursday">Jue</string>
+    <string name="day_friday">Vie</string>
+    <string name="day_saturday">Sáb</string>
+    <string name="day_sunday">Dom</string>
+    <string name="day_weekday">Días laborables</string>
+    <string name="day_weekend">Fin de semana</string>
+    <string name="day_everyday">Todos los días</string>
+    
+    <!-- Common Actions -->
+    <string name="action_edit">Editar</string>
+    <string name="action_delete">Eliminar</string>
+
+    <!-- ==================== Navigation / Tabs ==================== -->
+    <string name="tab_timer">Temporizador</string>
+    <string name="tab_schedule">Horario</string>
+    <string name="tab_report">Informe</string>
+    <string name="tab_settings">Configuración</string>
+    <string name="tab_todo">Tareas</string>
+
+    <!-- ==================== Timer Screen ==================== -->
+    <string name="timer_title">Temporizador de Enfoque</string>
+    <string name="timer_start">Iniciar</string>
+    <string name="timer_stop">Detener Temporizador</string>
+    <string name="timer_give_up">Abandonar</string>
+    <string name="timer_starting">Iniciando temporizador…</string>
+    <string name="timer_remaining_format">Tiempo restante: %1$s</string>
+    <string name="timer_completed">¡Objetivo cumplido. Felicidades!</string>
+    <string name="timer_running_title">Modo Enfoque Activo</string>
+    <string name="timer_running_message">El temporizador está en ejecución. ¿Salir de la app? (El temporizador continuará en segundo plano)</string>
+    <string name="timer_background_continue">Ejecutar en Segundo Plano</string>
+    <string name="timer_preset_save">Guardar como Preset</string>
+    <string name="timer_preset_name">Nombre del Preset</string>
+    <string name="timer_custom_input_hint">Ingresar manualmente (1–180 min)</string>
+
+    <!-- ==================== Focus Mode / Detoxy Settings ==================== -->
+    <string name="detoxy_control_title">Configuración de Control Detoxy</string>
+    <string name="detoxy_preset_title">Preset de Intensidad Detoxy</string>
+    <string name="detoxy_block_category_title">Categorías de Apps a Bloquear</string>
+    <string name="detoxy_current_summary">Resumen de Configuración Actual</string>
+    <string name="detoxy_custom_settings">Configuración Personalizada</string>
+    <string name="detoxy_all_apps_except_default">Todas las apps excepto las bloqueadas por defecto</string>
+    <string name="detoxy_messenger_notice">Los mensajeros están disponibles para contacto de emergencia.</string>
+    
+    <!-- Preset Types -->
+    <string name="preset_full_block">Bloqueo Total</string>
+    <string name="preset_full_block_desc">Bloquear todas las apps</string>
+    <string name="preset_standard">Estándar</string>
+    <string name="preset_standard_detoxy">Detoxy Estándar</string>
+    <string name="preset_relaxed">Relajado</string>
+    <string name="preset_relaxed_detoxy">Detoxy Relajado</string>
+    <string name="timer_mode_standard_desc">Bloquear SNS, Videos, Web</string>
+    <string name="timer_mode_light_desc">Bloquear solo SNS</string>
+    
+    <!-- Messenger Block Dialog -->
+    <string name="messenger_block_title">Aviso de Bloqueo de Mensajeros</string>
+    <string name="messenger_block_desc1">Los mensajeros no se bloquean por defecto ya que puede ser necesario el contacto de emergencia.</string>
+    <string name="messenger_block_desc2">Si necesitas desintoxicación completa para la recuperación de adicción digital, también puedes bloquear los mensajeros.</string>
+    <string name="messenger_block_warning">Ten cuidado ya que el contacto de emergencia puede no estar disponible.</string>
+    <string name="messenger_block_confirm">Bloquear Mensajeros</string>
+    <string name="messenger_keep_allowed">Mantener Permitido (Recomendado)</string>
+
+    <!-- ==================== Permissions ==================== -->
+    <string name="permission_status_title">Estado de Permisos</string>
+    <string name="permission_app_block">Bloqueo de Apps</string>
+    <string name="permission_lock_screen">Mostrar Pantalla de Bloqueo</string>
+    <string name="permission_notification_block">Bloquear Notificaciones (Opcional)</string>
+    <string name="permission_required">Configurar Permiso</string>
+    <string name="permission_grayscale_title">Se Requiere Permiso de Escala de Grises</string>
+    <string name="permission_enabled">Habilitado</string>
+    <string name="permission_allowed">Permitido</string>
+    <string name="permission_needs_permission">Se requiere permiso</string>
+    
+    <!-- Common Actions -->
+    <string name="action_back">Atrás</string>
+    <string name="toast_settings_saved">Configuración guardada</string>
+    
+    <!-- Categories -->
+    <string name="category_video">Videos</string>
+    <string name="category_other_apps">Otras Apps</string>
+    <string name="category_no_blocked_apps">No hay apps para bloquear.</string>
+    <string name="category_blocked_format">Bloqueando %1$s.</string>
+    <string name="category_messenger_warning">Se recomienda contacto de emergencia</string>
+    
+    <!-- Schedule Tab Info -->
+    <string name="schedule_tab_info_title">💡 La gestión de horarios ahora está en una pestaña separada</string>
+    
+    <!-- Battery Optimization -->
+    <string name="battery_optimization_exempt">Excluido de optimización de batería</string>
+    <string name="battery_optimization_required">Se requiere configuración de optimización de batería</string>
+    <string name="battery_optimization_desc">El bloqueo de apps requiere exclusión de optimización de batería para funcionar correctamente.</string>
+    <string name="battery_optimization_settings_check">Verificar Configuración</string>
+    <string name="battery_optimization_settings_guide">Guía de Configuración</string>
+    
+    <!-- ==================== Grayscale Mode ==================== -->
+    <string name="grayscale_title">Modo Escala de Grises</string>
+    <string name="grayscale_auto_enable">Habilitar automáticamente durante modo enfoque</string>
+    <string name="grayscale_description">La pantalla se vuelve escala de grises al iniciar el temporizador</string>
+    <string name="grayscale_manual_guide">Guía de Escala de Grises Manual</string>
+    <string name="grayscale_settings_title">Configuración de Escala de Grises</string>
+
+    <!-- ==================== Schedule / Auto-Run ==================== -->
+    <string name="schedule_title">Horario</string>
+    <string name="schedule_group_title">Grupo de Horarios</string>
+    <string name="schedule_group_delete_title">Eliminar Grupo de Horarios</string>
+    <string name="schedule_group_delete_message">¿Eliminar este grupo de horarios?</string>
+    <string name="schedule_create_first">Crear Primer Horario</string>
+    <string name="schedule_create_first_group">Crear Primer Grupo</string>
+    <string name="schedule_add_time">Añadir Hora</string>
+    <string name="schedule_name_label">Nombre del Horario *</string>
+    <string name="schedule_name_placeholder">ej., Horario de Trabajo, Rutina de Estudio</string>
+    <string name="schedule_repeat_day">Días de Repetición</string>
+    <string name="schedule_label_optional">Etiqueta (Opcional)</string>
+    <string name="schedule_duration_custom">Ingresar manualmente (1-180 min)</string>
+    <string name="schedule_template_select">Seleccionar Plantilla</string>
+    <string name="schedule_timeslot_add">Añadir Franja Horaria</string>
+    <string name="schedule_setting_title">Configuración de Horario</string>
+    <string name="schedule_setting_description">Iniciar modo enfoque automáticamente a horas establecidas</string>
+    <string name="schedule_go_to_tab">Administra horarios en la pestaña [Horario] abajo</string>
+    
+    <!-- Auto-Run -->
+    <string name="autorun_delete_title">Confirmar Eliminación</string>
+
+    <!-- ==================== Coach Recommendation ==================== -->
+    <!-- Recovery Messages -->
+    <string name="coach_recovery_trend_improving">¡Tu tasa de recuperación sigue mejorando! 🎉</string>
+    <string name="coach_recovery_trend_stable">Mantienes un desintoxicación estable.</string>
+    <string name="coach_recovery_trend_declining">La tasa de recuperación ha bajado un poco, pero sigue siendo buena.</string>
+    <string name="coach_recovery_title">¡Excelente! Tu desintoxicación va bien ✨</string>
+    <string name="coach_recovery_message">%s\n¿Qué tal aumentar la dificultad gradualmente manteniendo los hábitos actuales?</string>
+
+    <!-- Warning Messages -->
+    <string name="coach_warning_distraction">La categoría %s es la mayor distracción.</string>
+    <string name="coach_warning_general">Se requiere atención.</string>
+    <string name="coach_warning_title">Se Necesita Atención ⚠️</string>
+    <string name="coach_warning_message">%s\nIntenta ajustar tu ritmo y aumentar el tiempo de bloqueo.</string>
+
+    <!-- High Risk Messages -->
+    <string name="coach_high_risk_failure_rate">La tasa de fracaso reciente es muy alta: %d%%.</string>
+    <string name="coach_high_risk_general">Parece que tienes problemas con la desintoxicación.</string>
+    <string name="coach_high_risk_distraction">\nEspecialmente %s es una gran distracción.</string>
+    <string name="coach_high_risk_title">Se Necesita Acción Inmediata 🚨</string>
+    <string name="coach_high_risk_message" formatted="false">%s%s\nIntenta reducir temporalmente la intensidad de desintoxicación o establecer horas de bloqueo nocturno.</string>
+
+    <!-- Action Items -->
+    <string name="action_maintain_routine_title">Mantener Rutina Actual</string>
+    <string name="action_maintain_routine_desc">Continúa con tus hábitos actuales</string>
+    <string name="action_increase_difficulty_title">Aumentar Dificultad</string>
+    <string name="action_increase_difficulty_desc">Intenta añadir 10 minutos más al tiempo de bloqueo</string>
+    <string name="action_add_category_title">Probar Bloquear Nueva Categoría</string>
+    <string name="action_add_category_desc">Intenta añadir una categoría más para bloquear</string>
+    
+    <string name="action_reduce_session_time_title">Ajustar Tiempo de Sesión</string>
+    <string name="action_reduce_session_time_desc">Reduce temporalmente el tiempo de sesión (ej., 25min → 15min)</string>
+    <string name="action_night_mode_title">Establecer Hora de Bloqueo Nocturno</string>
+    <string name="action_night_mode_desc">Añade rutina de bloqueo de SNS de 22h a 7h</string>
+    <string name="action_focus_on_distraction_title">Bloqueo Enfocado en %s</string>
+    <string name="action_focus_on_distraction_desc">Prioriza el bloqueo de categoría %s</string>
+    
+    <string name="action_emergency_mode_title">Modo Detoxy de Emergencia</string>
+    <string name="action_emergency_mode_desc">Intenta bloquear todas las categorías por 24 horas</string>
+    <string name="action_reset_to_basic_title">Restablecer a Básico</string>
+    <string name="action_reset_to_basic_desc">Puede que hayas establecido metas muy difíciles. Intenta empezar desde 5 minutos</string>
+    <string name="action_seek_support_title">Buscar Apoyo</string>
+    <string name="action_seek_support_desc">Pedir ayuda a familia o amigos también es un buen enfoque</string>
+    <string name="action_block_distraction_now_title">Bloquear %s Ahora</string>
+    <string name="action_block_distraction_now_desc">Elimina o bloquea la app %s por 24 horas ahora mismo</string>
+
+    <!-- Action Types -->
+    <string name="action_type_maintain">Mantener</string>
+    <string name="action_type_challenge">Desafío</string>
+    <string name="action_type_expand">Expandir</string>
+    <string name="action_type_adjust">Ajustar</string>
+    <string name="action_type_routine">Rutina</string>
+    <string name="action_type_target">Enfoque</string>
+    <string name="action_type_emergency">Emergencia</string>
+    <string name="action_type_reset">Restablecer</string>
+    <string name="action_type_support">Apoyo</string>
+    <string name="action_type_immediate">Inmediato</string>
+
+    <!-- Recommendation Priority -->
+    <string name="priority_low">Sugerido</string>
+    <string name="priority_medium">Precaución</string>
+    <string name="priority_high">Urgente</string>
+
+    <!-- Risk Levels -->
+    <string name="risk_level_recovery">Recuperándose</string>
+    <string name="risk_level_warning">Atención Necesaria</string>
+    <string name="risk_level_high_risk">Alto Riesgo</string>
+    <string name="autorun_label_placeholder">ej., Enfoque Matutino de Trabajo</string>
+    <string name="autorun_history_title">Historial de Ejecución Automática</string>
+    <string name="autorun_filter">Filtro</string>
+    <string name="autorun_filter_settings">Configuración de Filtro</string>
+    <string name="autorun_filter_active">Filtro Aplicado</string>
+    <string name="autorun_filter_reset">Restablecer</string>
+    <string name="autorun_filter_trigger_type">Tipo de Activador</string>
+    <string name="autorun_filter_result">Resultado</string>
+    <string name="autorun_filter_date_range">Rango de Fechas</string>
+    <string name="autorun_filter_all">Todo</string>
+    <string name="autorun_filter_time">Hora</string>
+    <string name="autorun_filter_location">Ubicación</string>
+    <string name="autorun_filter_success">Éxito</string>
+    <string name="autorun_filter_skipped">Omitido</string>
+    <string name="autorun_filter_failed">Fallido</string>
+    <string name="autorun_filter_this_week">Esta Semana</string>
+    <string name="autorun_filter_this_month">Este Mes</string>
+    <string name="autorun_filter_all_period">Todo el Tiempo</string>
+    <string name="autorun_trigger_time">Basado en Tiempo</string>
+    <string name="autorun_trigger_location">Basado en Ubicación</string>
+    <string name="autorun_empty_title">Sin historial de ejecución automática</string>
+    <string name="autorun_empty_desc">El historial aparecerá cuando se active la ejecución automática</string>
+    
+    <!-- TimeSlot Dialog -->
+    <string name="timeslot_add">Añadir Franja Horaria</string>
+    <string name="timeslot_edit">Editar Franja Horaria</string>
+    <string name="timeslot_start_time">Hora de Inicio</string>
+    <string name="timeslot_hour">Hora</string>
+    <string name="timeslot_minute">Minuto</string>
+    <string name="timeslot_duration">Duración</string>
+    <string name="timeslot_block_intensity">Intensidad de Bloqueo</string>
+    <string name="timeslot_preset_standard">Estándar</string>
+    <string name="timeslot_preset_medium">Medio</string>
+    <string name="timeslot_preset_complete">Completo</string>
+    <string name="timeslot_preset_standard_block">Bloqueo Estándar</string>
+    <string name="timeslot_preset_medium_block">Bloqueo Medio</string>
+    <string name="timeslot_preset_complete_block">Bloqueo Completo</string>
+    <string name="timeslot_day_selection">Seleccionar Días</string>
+    <string name="timeslot_everyday">Todos los días</string>
+    <string name="timeslot_weekdays">Días laborables</string>
+    <string name="timeslot_weekend">Fin de semana</string>
+    <string name="timeslot_day_mon">Lun</string>
+    <string name="timeslot_day_tue">Mar</string>
+    <string name="timeslot_day_wed">Mié</string>
+    <string name="timeslot_day_thu">Jue</string>
+    <string name="timeslot_day_fri">Vie</string>
+    <string name="timeslot_day_sat">Sáb</string>
+    <string name="timeslot_day_sun">Dom</string>
+
+    <!-- Detoxy Routine -->
+    <string name="detoxy_routine_title">Rutina Detoxy (Programada)</string>
+    <string name="detoxy_routine_description">Iniciar desintoxicación automáticamente a horas establecidas diariamente</string>
+
+    <!-- ==================== Todo List ==================== -->
+    <string name="todo_add">Añadir Tarea (%1$d restantes)</string>
+    <string name="todo_input_placeholder">Ingresar tarea</string>
+    <string name="todo_today_title">Tareas de Hoy</string>
+
+    <!-- ==================== Overlay / Lock Screen ==================== -->
+    <string name="overlay_show_goal">Mostrar objetivo en overlay</string>
+    <string name="overlay_show_goal_desc">Mostrar objetivo de enfoque en pantalla de bloqueo</string>
+    <string name="overlay_show_todos">Mostrar tareas detalladas</string>
+    <string name="overlay_show_todos_desc">Mostrar elementos de tareas individuales</string>
+    <string name="overlay_hide_goal">Ocultar objetivo (solo emoji)</string>
+    <string name="overlay_hide_goal_desc">Ocultar objetivos sensibles y mostrar solo emoji 🎯</string>
+    <string name="overlay_block_message">La pantalla de bloqueo aparece al usar apps bloqueadas</string>
+
+    <!-- ==================== Location-Based ==================== -->
+    <string name="location_permission_title">Permiso de Ubicación</string>
+    <string name="location_add_title">Añadir Ubicación</string>
+    <string name="location_edit_title">Editar Ubicación</string>
+    <string name="location_time_based_settings">Ir a Configuración Basada en Tiempo</string>
+    <string name="location_search_title">Buscar Ubicación</string>
+    <string name="location_select_title">Seleccionar Ubicación</string>
+    <string name="location_search_placeholder">Buscar dirección o lugar</string>
+    <string name="location_current">Ubicación Actual</string>
+    <string name="location_lat_lng_format">Lat: %1$.6f, Long: %2$.6f</string>
+    <string name="location_accuracy_format">Precisión ±%1$dm</string>
+    <string name="location_open_map">Ver en Mapa</string>
+    <string name="location_radius_format">Radio: %1$dm</string>
+    <!-- Schedule Group Screen -->
+    <string name="title_schedule_group">Grupo de Horarios</string>
+    <string name="group_empty_title">Sin Grupos de Horarios</string>
+    <string name="group_empty_desc">Agrupa múltiples horarios\npara activar automáticamente según ubicación</string>
+    <string name="btn_create_first_group">Crear Primer Grupo</string>
+    <string name="guide_card_title">💡 Cómo Usar Grupos de Horarios</string>
+    <string name="guide_card_desc">1. Crea un grupo de horarios\n2. Selecciona grupo en configuración de ejecución automática basada en tiempo\n3. Vincula grupo a ejecución automática basada en ubicación\n4. Los horarios se activan automáticamente al entrar en la ubicación</string>
+    <string name="dialog_delete_group_title">Eliminar Grupo de Horarios</string>
+    <string name="dialog_delete_group_message">¿Eliminar este grupo de horarios?</string>
+    <string name="dialog_delete_group_warning">Los horarios vinculados y referencias de ubicación se desvinculan, pero la configuración no se elimina.</string>
+    <string name="fab_add_group_desc">Añadir Grupo de Horarios</string>
+    <string name="msg_location_updated">Información de ubicación actualizada</string>
+    <string name="msg_location_update_failed">Actualización de ubicación fallida: %s</string>
+    <string name="label_group_paused">Pausado</string>
+    <string name="label_time_schedule_count">%d horarios de tiempo</string>
+    <string name="back_button_desc">Atrás</string>
+    
+    <string name="location_radius_desc">El horario se activa automáticamente al entrar en este radio</string>
+    <string name="location_change">Cambiar</string>
+    
+    <!-- Schedule Group ViewModel Errors -->
+    <string name="error_group_name_empty">Por favor ingresa un nombre de grupo</string>
+    <string name="error_group_create_failed">Creación de grupo fallida: %s</string>
+    <string name="error_group_update_failed">Actualización de grupo fallida: %s</string>
+    <string name="error_group_delete_failed">Eliminación de grupo fallida: %s</string>
+    <string name="error_group_toggle_failed">Cambio de estado de grupo fallido: %s</string>
+    <string name="error_group_activate_failed">Activación de horario fallida: %s</string>
+    <string name="error_group_deactivate_failed">Desactivación de horario fallida: %s</string>
+    <string name="error_state_change_failed">Cambio de estado fallido: %s</string>
+    <string name="error_pause_failed">Pausa fallida: %s</string>
+    <string name="error_linked_autorun_load_failed">Carga de horario vinculado fallida: %s</string>
+    <string name="error_linked_location_load_failed">Carga de ubicación vinculada fallida: %s</string>
+    <string name="error_location_refresh_failed">Actualización de ubicación fallida: %s</string>
+    <string name="error_heatmap_refresh_failed">Actualización de datos de mapa de calor fallida: %s</string>
+    <string name="error_timeslot_empty">Por favor añade al menos 1 franja horaria</string>
+
+    <!-- TimeBasedAutoRunCard -->
+    <string name="autorun_card_inactive_badge">Inactivo</string>
+    <string name="autorun_card_independent_warning">Esta franja horaria se ejecuta solo cuando el horario está activado</string>
+    <string name="autorun_delete_dialog_title">Eliminar Ejecución Automática</string>
+    <string name="autorun_delete_dialog_message">¿Eliminar esta franja horaria?</string>
+    <string name="day_mon">Lun</string>
+    <string name="day_tue">Mar</string>
+    <string name="day_wed">Mié</string>
+    <string name="day_thu">Jue</string>
+    <string name="day_fri">Vie</string>
+    <string name="day_sat">Sáb</string>
+    <string name="day_sun">Dom</string>
+    <string name="day_daily">Diario</string>
+    <string name="day_none_selected">Sin días seleccionados</string>
+    <string name="day_info_missing">Información de día faltante</string>
+
+    <!-- AutoRunHistoryItem -->
+    <string name="history_trigger_time">Basado en Tiempo</string>
+    <string name="history_trigger_location">Basado en Ubicación</string>
+    <string name="history_trigger_auto">Ejecución Automática</string>
+    <string name="history_type_time">Ejecución Automática Basada en Tiempo</string>
+    <string name="history_type_location">Ejecución Automática Basada en Ubicación</string>
+    <string name="history_gps_accuracy">Precisión GPS:</string>
+    <string name="history_dwell_time">Tiempo de Permanencia:</string>
+    <string name="history_result_started">Iniciado</string>
+    <string name="history_result_skipped">Omitido</string>
+    <string name="history_result_failed">Fallido</string>
+    <string name="history_reason_permission_denied">Permiso denegado</string>
+    <string name="history_reason_timer_running">Temporizador ya en ejecución</string>
+    <string name="history_reason_location_disabled">Servicio de ubicación desactivado</string>
+    <string name="history_reason_user_paused">Usuario pausó</string>
+    <string name="history_reason_geofence_error">Error de geofence ocurrido</string>
+    <string name="history_reason_unknown">Error desconocido: %s</string>
+
+    <!-- Preset Display Names -->
+    <string name="preset_full_block_display">Bloqueo Total</string>
+    <string name="preset_standard_display">Detoxy Estándar</string>
+    <string name="preset_relaxed_display">Detoxy Relajado</string>
+    
+    <!-- Schedule Creation Dialog -->
+    <string name="schedule_creation_location_choice">Configuración de Ubicación</string>
+    <string name="schedule_creation_location_radius">Configuración de Radio de Ubicación</string>
+    <string name="schedule_creation_create">Crear Horario</string>
+    <string name="schedule_creation_location_question">¿Ejecutar este horario solo en una ubicación específica?</string>
+    <string name="schedule_creation_anywhere">⚪ Aplicar en Cualquier Lugar</string>
+    <string name="schedule_creation_anywhere_desc">Ejecución automática a horas establecidas sin importar ubicación</string>
+    <string name="schedule_creation_location_only">📍 Solo Ubicación Específica</string>
+    <string name="schedule_creation_location_only_desc">Ejecución automática solo dentro del radio de ubicación especificado</string>
+    <string name="schedule_creation_method">Elegir Método de Inicio</string>
+    <string name="schedule_creation_timeslot_list">Lista de Franjas Horarias</string>
+    <string name="schedule_creation_add_timeslot">Por favor añade franjas horarias</string>
+    <string name="schedule_creation_add_timeslot_btn">Añadir Franja Horaria</string>
+    <string name="schedule_creation_template_select">Seleccionar Plantilla</string>
+    
+    <!-- Navigation -->
+    <string name="nav_next">Siguiente</string>
+    <string name="nav_previous">Anterior</string>
+    
+    <!-- Error/Toast Messages -->
+    <string name="toast_address_fallback">No se pudo obtener dirección, pero registrando coordenadas.</string>
+    <string name="toast_location_not_found">Ubicación no encontrada. Por favor verifica configuración GPS.</string>
+    <string name="toast_location_permission_required">Se requiere permiso de ubicación para encontrar ubicación actual.</string>
+    <string name="toast_map_app_not_found">App de mapas no encontrada.</string>
+    
+    <!-- Location Edit Dialog -->
+    <string name="location_info_edit_title">Editar Información de Ubicación</string>
+    <string name="location_name_label">Nombre de Ubicación *</string>
+    <string name="location_name_placeholder">ej., Escuela, Biblioteca, Café</string>
+    <string name="location_address">Dirección</string>
+    <string name="location_no_address">Sin dirección</string>
+    <string name="location_change_address">Cambiar Dirección</string>
+    <string name="location_change_help">Para cambiar ubicación, presiona el botón de búsqueda para seleccionar una nueva ubicación.</string>
+    <string name="location_auto_settings">Configuración de Activación Automática</string>
+    <string name="location_auto_run">Ejecución Automática Basada en Ubicación</string>
+    <string name="location_auto_run_desc">Usar Geofence en esta ubicación</string>
+    <string name="location_enter_activate">Activar al Entrar</string>
+    <string name="location_enter_activate_desc">Activar horario vinculado al llegar a la ubicación</string>
+    <string name="location_exit_deactivate">Desactivar al Salir</string>
+    <string name="location_exit_deactivate_desc">Desactivar horario vinculado al dejar la ubicación</string>
+    <string name="location_radius_auto_desc">El horario se activa automáticamente al entrar en este radio.</string>
+
+    <!-- Location Auto-Run Dialog -->
+    <string name="location_add_btn">Añadir Ubicación</string>
+    <string name="location_label">Etiqueta</string>
+    <string name="location_label_placeholder">ej., Oficina, Biblioteca</string>
+    <string name="location_radius_title">Radio</string>
+    <string name="location_timer_duration">Duración del Temporizador</string>
+    <string name="location_block_intensity">Intensidad de Bloqueo</string>
+    <string name="location_preset_full">Bloqueo Total</string>
+    <string name="location_preset_full_desc">Bloquear todas las apps</string>
+    <string name="location_preset_standard">Detoxy Estándar</string>
+    <string name="location_preset_standard_desc">Permitir solo mensajeros</string>
+    <string name="location_preset_relaxed">Modo Relajado</string>
+    <string name="location_entry_condition">Condición de Entrada</string>
+    <string name="location_dwell_time">Tiempo de Permanencia</string>
+    <string name="location_dwell_desc">Ejecución automática después de confirmar N minutos de permanencia en ubicación</string>
+    <string name="location_dwell_immediate">Inmediato</string>
+    <string name="location_dwell_minutes">%1$d min</string>
+    <string name="location_confirm_on_arrival">Confirmar vía Notificación al Llegar</string>
+    <string name="location_confirm_desc">Toca notificación para iniciar temporizador (Inicio automático OFF)</string>
+    <string name="location_fallback">Ubicación</string>
+
+    <!-- ==================== Report ==================== -->
+    <string name="report_title">Informe</string>
+    <string name="report_summary">Resumen</string>
+    <string name="report_daily">Diario</string>
+    <string name="report_weekly">Semanal</string>
+    <string name="report_monthly">Mensual</string>
+
+    <!-- ==================== Coach / Recommendations ==================== -->
+    <string name="coach_keep_going_title">Sigue Adelante</string>
+    <string name="coach_keep_going_desc">Continúa con tus hábitos actuales</string>
+    <string name="coach_increase_difficulty_title">Aumentar Dificultad</string>
+    <string name="coach_increase_difficulty_desc">Intenta añadir 10 minutos más al tiempo de bloqueo</string>
+    <string name="coach_new_category_title">Probar Bloquear Nueva Categoría</string>
+    <string name="coach_new_category_desc">Intenta añadir una categoría más para bloquear</string>
+    <string name="coach_adjust_session_title">Ajustar Tiempo de Sesión</string>
+    <string name="coach_adjust_session_desc">Reduce temporalmente el tiempo de sesión (ej., 25min → 15min)</string>
+    <string name="coach_night_block_title">Establecer Hora de Bloqueo Nocturno</string>
+    <string name="coach_emergency_title">Modo Detoxy de Emergencia</string>
+    <string name="coach_reset_title">Restablecer a Básico</string>
+    <string name="coach_reset_desc">Puede que hayas establecido metas muy difíciles. Intenta empezar desde 5 minutos</string>
+    <string name="coach_ask_help_title">Buscar Apoyo</string>
+    <string name="coach_ask_help_desc">Pedir ayuda a familia o amigos también es un buen enfoque</string>
+    <string name="coach_remove_app_desc">Elimina o bloquea la app %1$s por 24 horas ahora mismo</string>
+
+    <!-- ==================== Notifications ==================== -->
+    <string name="notification_channel_focus">Modo Enfoque</string>
+    <string name="notification_channel_focus_desc">Notificaciones de progreso del temporizador de enfoque</string>
+    <string name="notification_channel_autorun">Ejecución Automática</string>
+    <string name="notification_channel_autorun_desc">Notificaciones de modo enfoque programado</string>
+    <string name="notification_start_soon">El modo enfoque comienza en %1$d minutos</string>
+    <string name="notification_action_start">Iniciar</string>
+    <string name="notification_action_snooze">En 10 min</string>
+    <string name="notification_action_skip">Omitir</string>
+
+    <!-- ==================== Accessibility Service ==================== -->
+    <string name="accessibility_service_description">ScreenSence bloquea ciertas apps (Instagram, TikTok, YouTube, Facebook) durante el temporizador de enfoque para ayudar a mejorar la concentración. Este servicio navega a la pantalla de inicio cuando se abren apps bloqueadas.</string>
+
+    <!-- ==================== Language Settings ==================== -->
+    <string name="language_settings_title">Configuración de Idioma</string>
+    <string name="language_system_default">Predeterminado del Sistema (Auto)</string>
+
+    <!-- ==================== Errors & Warnings ==================== -->
+    <string name="error_permission_denied">Permiso denegado</string>
+    <string name="error_general">Ocurrió un error</string>
+    <string name="warning_data_loss">Los datos pueden perderse</string>
+
+    <!-- ==================== Empty States ==================== -->
+    <string name="empty_no_schedule">Sin horarios registrados</string>
+    <string name="empty_no_history">Sin historial</string>
+    <string name="empty_no_todos">Sin tareas</string>
+
+
+    <!-- TimeBasedAutoRunScreen -->
+    <string name="autorun_list_title">Configuración de Horario</string>
+    <string name="autorun_list_title_format">Configuración de Horario %s</string>
+    <string name="autorun_manage_schedule">Administrar Horario</string>
+    <string name="autorun_add_timeslot">Añadir Franja Horaria</string>
+    <string name="autorun_max_limit_desc">Máximo 10 pueden ser registrados</string>
+    <string name="autorun_count_format">Franjas horarias registradas (%1$d/10)</string>
+    <string name="autorun_creation_custom">Personalizado</string>
+    <string name="autorun_creation_template">Plantilla</string>
+    <string name="autorun_delete_confirm_time">¿Eliminar ejecución automática \"%1$s\"?\nLa alarma también será cancelada.</string>
+    <string name="autorun_delete_confirm_generic">¿Eliminar esta ejecución automática?</string>
+    <string name="msg_schedule_created_global">Horario creado (aplica en cualquier lugar)</string>
+    <string name="msg_schedule_created_location">Horario basado en ubicación creado</string>
+    
+    <!-- Location Permission Dialogs -->
+    <string name="permission_bg_location_title">Se Requiere Permiso de Ubicación en Segundo Plano</string>
+    <string name="permission_bg_location_desc">Se requiere permiso de ubicación en segundo plano para ejecución automática basada en ubicación.</string>
+    <string name="permission_bg_location_guide">Por favor selecciona \'Permitir siempre\' en la siguiente pantalla.</string>
+    <string name="permission_bg_location_privacy">Este permiso solo se usa al llegar a ubicaciones registradas (oficina, escuela, etc.), y los datos de ubicación se almacenan solo localmente.</string>
+    <string name="permission_location_needed_title">Se Requiere Permiso de Ubicación</string>
+    <string name="permission_location_needed_desc">La ejecución automática basada en ubicación no puede usarse sin permiso de ubicación.</string>
+    <string name="permission_suggestion_time_based">💡 ¡Prueba la ejecución automática basada en tiempo!</string>
+    <string name="permission_suggestion_time_based_desc">Inicia modo enfoque automáticamente a horas específicas.</string>
+    <string name="permission_settings_title">Por favor permite el permiso en Configuración</string>
+    <string name="permission_settings_desc">Necesitas ir a Configuración para permitir permiso de ubicación en segundo plano.</string>
+    <string name="permission_settings_step_1">1. Selecciona pestaña \'Permisos\'</string>
+    <string name="permission_settings_step_2">2. Selecciona \'Ubicación\'</string>
+    <string name="permission_settings_step_3">3. Selecciona \'Permitir siempre\'</string>
+    <string name="permission_revoked_title">Permiso de Ubicación Revocado</string>
+    <string name="permission_revoked_desc">El permiso de ubicación ha sido revocado y la ejecución automática basada en ubicación está deshabilitada.</string>
+    <string name="permission_revoked_guide">Para usar de nuevo, configura el permiso de ubicación a \'Permitir siempre\'.</string>
+
+    <!-- Timer Screen -->
+    <string name="timer_finished_title">🎉 ¡Temporizador Completo!</string>
+    <string name="timer_finished_desc">Completaste exitosamente el tiempo de enfoque.</string>
+    <string name="timer_start_new">Iniciar Nuevo Temporizador</string>
+    <string name="timer_failed_title">Temporizador Abandonado</string>
+    <string name="timer_failed_desc">¡Puedes hacerlo mejor la próxima vez!</string>
+    <string name="timer_restart">Reiniciar</string>
+    <string name="timer_success_title">🎉 ¡Éxito de Enfoque!</string>
+    <string name="timer_goal_achieved">¡Objetivo logrado!</string>
+    <string name="timer_success_desc">Completaste exitosamente el tiempo de enfoque.\n¡Sigue construyendo buenos hábitos!</string>
+    <string name="permission_accessibility_needed_title">Se Requiere Permiso de Bloqueo de Apps</string>
+    <string name="permission_accessibility_needed_desc">Para usar el temporizador de enfoque, necesitas habilitar el bloqueo de apps (servicio de accesibilidad).\n\nBusca y habilita \'ScreenSence\' en configuración.</string>
+    <string name="permission_accessibility_disabled_title">⚠️ Se Requiere Reinicio de Bloqueo de Apps</string>
+    <string name="permission_accessibility_disabled_desc">El bloqueo de apps (servicio de accesibilidad) se ha detenido temporalmente.\n\n1️⃣ Desactiva y activa \'ScreenSence\' de nuevo en configuración.\n\n2️⃣ Si esto sigue pasando, revisa \'Guía de Configuración de Batería\' abajo.</string>
+    <string name="permission_overlay_needed_title">Se Requiere Permiso de Pantalla de Bloqueo</string>
+    <string name="permission_overlay_needed_desc">Para usar el temporizador de enfoque, se requiere permiso de pantalla de bloqueo (mostrar sobre otras apps).\n\nPor favor permite en configuración.</string>
+    <string name="btn_battery_guide">🔋 Guía de Configuración de Batería</string>
+    <string name="timer_preset_update">Actualizar Preset</string>
+    
+    <!-- Report Screen -->
+    <string name="report_screen_title">Informe Detoxy</string>
+    <string name="report_total_focus_time">Tiempo Total de Enfoque</string>
+    <string name="report_success_session">Sesiones Exitosas</string>
+    <string name="report_current_streak">Racha Actual</string>
+    <string name="report_total_points">Puntos Totales</string>
+    <string name="report_daily_success_rate">Tasa de Éxito de Hoy</string>
+    <string name="report_weekly_insight">Perspectiva Semanal</string>
+    <string name="report_daily_session">Sesiones de Hoy</string>
+    <string name="report_session_success">Sesiones Exitosas</string>
+    <string name="report_session_fail">Sesiones Fallidas</string>
+    
+    <string name="empty_report_title">¡Inicia tu primera sesión detoxy!</string>
+    <string name="empty_report_desc">Inicia una sesión detoxy para obtener\nperspectivas como estas:</string>
+    <string name="empty_report_feature_risk">Análisis de Nivel de Riesgo</string>
+    <string name="empty_report_feature_trend">Gráfico de Tendencia de Recuperación</string>
+    <string name="empty_report_feature_distraction">Top 3 Distracciones</string>
+    <string name="empty_report_feature_coach">Recomendaciones de Coach Personalizadas</string>
+    <string name="empty_report_guide">¡Inicia modo enfoque desde la pestaña Temporizador!</string>
+    
+    <!-- Generic Buttons -->
+    <string name="btn_retry_permission">Reintentar Permiso</string>
+    <string name="btn_move_to_time_based">Ir a Basado en Tiempo</string>
+
+    <string name="btn_next">Siguiente</string>
+    <string name="autorun_delete_confirm_title">Eliminar Horario</string>
+    
+    <string name="battery_impact_minimal">Mínimo</string>
+    <string name="battery_impact_percentage_minimal">&lt; 1%/día</string>
+    <string name="battery_impact_desc_time_based">La ejecución automática basada en tiempo casi no tiene impacto en la batería.</string>
+    
 </resources>

@@ -1,4 +1,581 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- English translations will be added here -->
+    <string name="app_name">ScreenSence</string>
+
+    <!-- ==================== Common / General ==================== -->
+    <!-- Buttons -->
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_confirm">Confirm</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_edit">Edit</string>
+    <string name="btn_start">Start</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_later">Later</string>
+    <string name="btn_settings">Settings</string>
+    <string name="btn_go_to_settings">Go to Settings</string>
+    <string name="btn_go_to_system_settings">Go to System Settings</string>
+    <string name="btn_manage">Manage</string>
+    <string name="btn_add">Add</string>
+    <string name="btn_create">Create</string>
+    <string name="btn_collapse">Collapse</string>
+    <string name="btn_expand">Expand</string>
+    
+    <!-- Common Labels -->
+    <string name="label_required">Required</string>
+    <string name="label_optional">Optional</string>
+    <string name="label_custom">Custom</string>
+    <string name="label_template">Template</string>
+    <string name="label_recommended">Recommended</string>
+    
+    <!-- Time Units -->
+    <string name="time_minutes">min</string>
+    <string name="time_hours">hr</string>
+    <string name="time_seconds">sec</string>
+    <string name="time_remaining">Time remaining</string>
+    
+    <!-- Days of Week -->
+    <string name="day_monday">Mon</string>
+    <string name="day_tuesday">Tue</string>
+    <string name="day_wednesday">Wed</string>
+    <string name="day_thursday">Thu</string>
+    <string name="day_friday">Fri</string>
+    <string name="day_saturday">Sat</string>
+    <string name="day_sunday">Sun</string>
+    <string name="day_weekday">Weekdays</string>
+    <string name="day_weekend">Weekends</string>
+    <string name="day_everyday">Everyday</string>
+    
+    <!-- Common Actions -->
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+
+    <!-- ==================== Navigation / Tabs ==================== -->
+    <string name="tab_timer">Timer</string>
+    <string name="tab_schedule">Schedule</string>
+    <string name="tab_report">Report</string>
+    <string name="tab_settings">Settings</string>
+    <string name="tab_todo">To-Do</string>
+
+    <!-- ==================== Timer Screen ==================== -->
+    <string name="timer_title">Focus Timer</string>
+    <string name="timer_start">Start</string>
+    <string name="timer_stop">Stop Timer</string>
+    <string name="timer_give_up">Give Up</string>
+    <string name="timer_starting">Starting timer…</string>
+    <string name="timer_remaining_format">Time left: %1$s</string>
+    <string name="timer_completed">Goal achieved. Congratulations!</string>
+    <string name="timer_running_title">Focus Mode Running</string>
+    <string name="timer_running_message">Timer is running. Exit the app? (Timer will continue in the background)</string>
+    <string name="timer_background_continue">Run in Background</string>
+    <string name="timer_preset_save">Save as Preset</string>
+    <string name="timer_preset_name">Preset Name</string>
+    <string name="timer_custom_input_hint">Enter manually (1–180 min)</string>
+
+    <!-- ==================== Focus Mode / Detoxy Settings ==================== -->
+    <string name="detoxy_control_title">Detoxy Control Settings</string>
+    <string name="detoxy_preset_title">Detoxy Intensity Preset</string>
+    <string name="detoxy_block_category_title">Block App Categories</string>
+    <string name="detoxy_current_summary">Current Settings Summary</string>
+    <string name="detoxy_custom_settings">Custom Settings</string>
+    <string name="detoxy_all_apps_except_default">All apps except default blocked apps</string>
+    <string name="detoxy_messenger_notice">Messengers are available for emergency contact.</string>
+    
+    <!-- Preset Types -->
+    <string name="preset_full_block">Full Block</string>
+    <string name="preset_full_block_desc">Block all apps</string>
+    <string name="preset_standard">Standard</string>
+    <string name="preset_standard_detoxy">Standard Detoxy</string>
+    <string name="preset_relaxed">Relaxed</string>
+    <string name="preset_relaxed_detoxy">Relaxed Detoxy</string>
+    <string name="timer_mode_standard_desc">Block SNS, Videos, Web</string>
+    <string name="timer_mode_light_desc">Block SNS only</string>
+    
+    <!-- Messenger Block Dialog -->
+    <string name="messenger_block_title">Messenger Block Notice</string>
+    <string name="messenger_block_desc1">Messengers are not blocked by default as emergency contact may be needed.</string>
+    <string name="messenger_block_desc2">If you need complete detox for digital addiction recovery, you can block messengers too.</string>
+    <string name="messenger_block_warning">Be careful as emergency contact may become unavailable.</string>
+    <string name="messenger_block_confirm">Block Messengers</string>
+    <string name="messenger_keep_allowed">Keep Allowed (Recommended)</string>
+
+    <!-- ==================== Permissions ==================== -->
+    <string name="permission_status_title">Permission Status</string>
+    <string name="permission_app_block">App Blocking</string>
+    <string name="permission_lock_screen">Lock Screen Display</string>
+    <string name="permission_notification_block">Notification Block (Optional)</string>
+    <string name="permission_required">Set Permission</string>
+    <string name="permission_grayscale_title">Grayscale Permission Required</string>
+    <string name="permission_enabled">Enabled</string>
+    <string name="permission_allowed">Allowed</string>
+    <string name="permission_needs_permission">Permission required</string>
+    
+    <!-- Common Actions -->
+    <string name="action_back">Back</string>
+    <string name="toast_settings_saved">Settings saved</string>
+    
+    <!-- Categories -->
+    <string name="category_video">Videos</string>
+    <string name="category_other_apps">Other Apps</string>
+    <string name="category_no_blocked_apps">No apps to block.</string>
+    <string name="category_blocked_format">Blocking %1$s.</string>
+    <string name="category_messenger_warning">Emergency contact recommended</string>
+    
+    <!-- Schedule Tab Info -->
+    <string name="schedule_tab_info_title">💡 Schedule management is now in a separate tab</string>
+    
+    <!-- Battery Optimization -->
+    <string name="battery_optimization_exempt">Excluded from battery optimization</string>
+    <string name="battery_optimization_required">Battery optimization settings required</string>
+    <string name="battery_optimization_desc">App blocking requires exclusion from battery optimization to work properly.</string>
+    <string name="battery_optimization_settings_check">Check Settings</string>
+    <string name="battery_optimization_settings_guide">Settings Guide</string>
+    
+    <!-- ==================== Grayscale Mode ==================== -->
+    <string name="grayscale_title">Grayscale Mode</string>
+    <string name="grayscale_auto_enable">Auto-enable during focus mode</string>
+    <string name="grayscale_description">Screen turns grayscale when timer starts</string>
+    <string name="grayscale_manual_guide">Manual Grayscale Guide</string>
+    <string name="grayscale_settings_title">Grayscale Settings</string>
+
+    <!-- ==================== Schedule / Auto-Run ==================== -->
+    <string name="schedule_title">Schedule</string>
+    <string name="schedule_group_title">Schedule Group</string>
+    <string name="schedule_group_delete_title">Delete Schedule Group</string>
+    <string name="schedule_group_delete_message">Delete this schedule group?</string>
+    <string name="schedule_create_first">Create First Schedule</string>
+    <string name="schedule_create_first_group">Create First Group</string>
+    <string name="schedule_add_time">Add Time</string>
+    <string name="schedule_name_label">Schedule Name *</string>
+    <string name="schedule_name_placeholder">e.g., Work Schedule, Study Routine</string>
+    <string name="schedule_repeat_day">Repeat Days</string>
+    <string name="schedule_label_optional">Label (Optional)</string>
+    <string name="schedule_duration_custom">Enter manually (1-180 min)</string>
+    <string name="schedule_template_select">Select Template</string>
+    <string name="schedule_timeslot_add">Add Time Slot</string>
+    <string name="schedule_setting_title">Schedule Settings</string>
+    <string name="schedule_setting_description">Auto-start focus mode at set times</string>
+    <string name="schedule_go_to_tab">Manage schedules in the [Schedule] tab below</string>
+    
+    <!-- Auto-Run -->
+    <string name="autorun_delete_title">Confirm Delete</string>
+
+    <!-- ==================== Coach Recommendation ==================== -->
+    <!-- Recovery Messages -->
+    <string name="coach_recovery_trend_improving">Your recovery rate keeps improving! 🎉</string>
+    <string name="coach_recovery_trend_stable">You\'re maintaining stable detox.</string>
+    <string name="coach_recovery_trend_declining">Recovery rate has dropped a bit, but still good.</string>
+    <string name="coach_recovery_title">Great! Your detox is going well ✨</string>
+    <string name="coach_recovery_message">%s\nHow about gradually increasing the difficulty while maintaining current habits?</string>
+
+    <!-- Warning Messages -->
+    <string name="coach_warning_distraction">%s category is the biggest distraction.</string>
+    <string name="coach_warning_general">Attention required.</string>
+    <string name="coach_warning_title">Attention Needed ⚠️</string>
+    <string name="coach_warning_message">%s\nTry adjusting your pace and increasing block time.</string>
+
+    <!-- High Risk Messages -->
+    <string name="coach_high_risk_failure_rate">Recent failure rate is very high at %d%%.</string>
+    <string name="coach_high_risk_general">It seems you\'re having trouble with detox.</string>
+    <string name="coach_high_risk_distraction">\nEspecially %s is a major distraction.</string>
+    <string name="coach_high_risk_title">Immediate Action Needed 🚨</string>
+    <string name="coach_high_risk_message" formatted="false">%s%s\nTry temporarily lowering detox intensity or set night block hours.</string>
+
+    <!-- Action Items -->
+    <string name="action_maintain_routine_title">Maintain Current Routine</string>
+    <string name="action_maintain_routine_desc">Keep up your current habits</string>
+    <string name="action_increase_difficulty_title">Increase Difficulty</string>
+    <string name="action_increase_difficulty_desc">Try adding 10 more minutes to block time</string>
+    <string name="action_add_category_title">Try Blocking New Category</string>
+    <string name="action_add_category_desc">Try adding one more category to block</string>
+    
+    <string name="action_reduce_session_time_title">Adjust Session Time</string>
+    <string name="action_reduce_session_time_desc">Temporarily reduce session time (e.g., 25min → 15min)</string>
+    <string name="action_night_mode_title">Set Night Block Time</string>
+    <string name="action_night_mode_desc">Add SNS block routine from 10PM to 7AM</string>
+    <string name="action_focus_on_distraction_title">Focus Block %s</string>
+    <string name="action_focus_on_distraction_desc">Prioritize blocking %s category</string>
+    
+    <string name="action_emergency_mode_title">Emergency Detox Mode</string>
+    <string name="action_emergency_mode_desc">Try 24-hour full category block</string>
+    <string name="action_reset_to_basic_title">Reset to Basics</string>
+    <string name="action_reset_to_basic_desc">You may have set too difficult goals. Try starting from 5 minutes</string>
+    <string name="action_seek_support_title">Seek Support</string>
+    <string name="action_seek_support_desc">Asking family or friends for help is also a good approach</string>
+    <string name="action_block_distraction_now_title">Block %s Now</string>
+    <string name="action_block_distraction_now_desc">Remove or block %s app for 24 hours right now</string>
+
+    <!-- Action Types -->
+    <string name="action_type_maintain">Maintain</string>
+    <string name="action_type_challenge">Challenge</string>
+    <string name="action_type_expand">Expand</string>
+    <string name="action_type_adjust">Adjust</string>
+    <string name="action_type_routine">Routine</string>
+    <string name="action_type_target">Focus</string>
+    <string name="action_type_emergency">Emergency</string>
+    <string name="action_type_reset">Reset</string>
+    <string name="action_type_support">Support</string>
+    <string name="action_type_immediate">Immediate</string>
+
+    <!-- Recommendation Priority -->
+    <string name="priority_low">Suggested</string>
+    <string name="priority_medium">Caution</string>
+    <string name="priority_high">Urgent</string>
+
+    <!-- Risk Levels -->
+    <string name="risk_level_recovery">Recovering</string>
+    <string name="risk_level_warning">Attention Needed</string>
+    <string name="risk_level_high_risk">High Risk</string>
+    <string name="autorun_label_placeholder">e.g., Morning Work Focus</string>
+    <string name="autorun_history_title">Auto-Run History</string>
+    <string name="autorun_filter">Filter</string>
+    <string name="autorun_filter_settings">Filter Settings</string>
+    <string name="autorun_filter_active">Filter Applied</string>
+    <string name="autorun_filter_reset">Reset</string>
+    <string name="autorun_filter_trigger_type">Trigger Type</string>
+    <string name="autorun_filter_result">Result</string>
+    <string name="autorun_filter_date_range">Date Range</string>
+    <string name="autorun_filter_all">All</string>
+    <string name="autorun_filter_time">Time</string>
+    <string name="autorun_filter_location">Location</string>
+    <string name="autorun_filter_success">Success</string>
+    <string name="autorun_filter_skipped">Skipped</string>
+    <string name="autorun_filter_failed">Failed</string>
+    <string name="autorun_filter_this_week">This Week</string>
+    <string name="autorun_filter_this_month">This Month</string>
+    <string name="autorun_filter_all_period">All Time</string>
+    <string name="autorun_trigger_time">Time-based</string>
+    <string name="autorun_trigger_location">Location-based</string>
+    <string name="autorun_empty_title">No auto-run history</string>
+    <string name="autorun_empty_desc">History will appear when auto-run is triggered</string>
+    
+    <!-- TimeSlot Dialog -->
+    <string name="timeslot_add">Add Time Slot</string>
+    <string name="timeslot_edit">Edit Time Slot</string>
+    <string name="timeslot_start_time">Start Time</string>
+    <string name="timeslot_hour">Hour</string>
+    <string name="timeslot_minute">Minute</string>
+    <string name="timeslot_duration">Duration</string>
+    <string name="timeslot_block_intensity">Block Intensity</string>
+    <string name="timeslot_preset_standard">Standard</string>
+    <string name="timeslot_preset_medium">Medium</string>
+    <string name="timeslot_preset_complete">Complete</string>
+    <string name="timeslot_preset_standard_block">Standard Block</string>
+    <string name="timeslot_preset_medium_block">Medium Block</string>
+    <string name="timeslot_preset_complete_block">Complete Block</string>
+    <string name="timeslot_day_selection">Select Days</string>
+    <string name="timeslot_everyday">Everyday</string>
+    <string name="timeslot_weekdays">Weekdays</string>
+    <string name="timeslot_weekend">Weekends</string>
+    <string name="timeslot_day_mon">Mon</string>
+    <string name="timeslot_day_tue">Tue</string>
+    <string name="timeslot_day_wed">Wed</string>
+    <string name="timeslot_day_thu">Thu</string>
+    <string name="timeslot_day_fri">Fri</string>
+    <string name="timeslot_day_sat">Sat</string>
+    <string name="timeslot_day_sun">Sun</string>
+
+    <!-- Detoxy Routine -->
+    <string name="detoxy_routine_title">Detoxy Routine (Scheduled)</string>
+    <string name="detoxy_routine_description">Auto-start detox at set times daily</string>
+
+    <!-- ==================== Todo List ==================== -->
+    <string name="todo_add">Add To-Do (%1$d left)</string>
+    <string name="todo_input_placeholder">Enter to-do</string>
+    <string name="todo_today_title">Today\'s To-Do</string>
+
+    <!-- ==================== Overlay / Lock Screen ==================== -->
+    <string name="overlay_show_goal">Show goal on overlay</string>
+    <string name="overlay_show_goal_desc">Display focus goal on lock screen</string>
+    <string name="overlay_show_todos">Show detailed to-dos</string>
+    <string name="overlay_show_todos_desc">Display individual to-do items</string>
+    <string name="overlay_hide_goal">Hide goal (emoji only)</string>
+    <string name="overlay_hide_goal_desc">Hide sensitive goals and show 🎯 emoji only</string>
+    <string name="overlay_block_message">Lock screen appears when blocked app is used</string>
+
+    <!-- ==================== Location-Based ==================== -->
+    <string name="location_permission_title">Location Permission</string>
+    <string name="location_add_title">Add Location</string>
+    <string name="location_edit_title">Edit Location</string>
+    <string name="location_time_based_settings">Go to Time-Based Settings</string>
+    <string name="location_search_title">Search Location</string>
+    <string name="location_select_title">Select Location</string>
+    <string name="location_search_placeholder">Search address or place</string>
+    <string name="location_current">Current Location</string>
+    <string name="location_lat_lng_format">Lat: %1$.6f, Long: %2$.6f</string>
+    <string name="location_accuracy_format">Accuracy ±%1$dm</string>
+    <string name="location_open_map">View on Map</string>
+    <string name="location_radius_format">Radius: %1$dm</string>
+    <!-- Schedule Group Screen -->
+    <string name="title_schedule_group">Schedule Group</string>
+    <string name="group_empty_title">No Schedule Groups</string>
+    <string name="group_empty_desc">Group multiple schedules\nto auto-activate based on location</string>
+    <string name="btn_create_first_group">Create First Group</string>
+    <string name="guide_card_title">💡 How to Use Schedule Groups</string>
+    <string name="guide_card_desc">1. Create a schedule group\n2. Select group in time-based auto-run settings\n3. Link group to location-based auto-run\n4. Schedules auto-activate when entering the location</string>
+    <string name="dialog_delete_group_title">Delete Schedule Group</string>
+    <string name="dialog_delete_group_message">Delete this schedule group?</string>
+    <string name="dialog_delete_group_warning">Linked schedules and location references will be unlinked, but settings won\'t be deleted.</string>
+    <string name="fab_add_group_desc">Add Schedule Group</string>
+    <string name="msg_location_updated">Location info updated</string>
+    <string name="msg_location_update_failed">Location update failed: %s</string>
+    <string name="label_group_paused">Paused</string>
+    <string name="label_time_schedule_count">%d time schedules</string>
+    <string name="back_button_desc">Back</string>
+    
+    <string name="location_radius_desc">Schedule auto-activates when entering this radius</string>
+    <string name="location_change">Change</string>
+    
+    <!-- Schedule Group ViewModel Errors -->
+    <string name="error_group_name_empty">Please enter a group name</string>
+    <string name="error_group_create_failed">Group creation failed: %s</string>
+    <string name="error_group_update_failed">Group update failed: %s</string>
+    <string name="error_group_delete_failed">Group deletion failed: %s</string>
+    <string name="error_group_toggle_failed">Group status change failed: %s</string>
+    <string name="error_group_activate_failed">Schedule activation failed: %s</string>
+    <string name="error_group_deactivate_failed">Schedule deactivation failed: %s</string>
+    <string name="error_state_change_failed">State change failed: %s</string>
+    <string name="error_pause_failed">Pause failed: %s</string>
+    <string name="error_linked_autorun_load_failed">Linked schedule load failed: %s</string>
+    <string name="error_linked_location_load_failed">Linked location load failed: %s</string>
+    <string name="error_location_refresh_failed">Location refresh failed: %s</string>
+    <string name="error_heatmap_refresh_failed">Heatmap data refresh failed: %s</string>
+    <string name="error_timeslot_empty">Please add at least 1 time slot</string>
+
+    <!-- TimeBasedAutoRunCard -->
+    <string name="autorun_card_inactive_badge">Inactive</string>
+    <string name="autorun_card_independent_warning">This time slot runs only when schedule is activated</string>
+    <string name="autorun_delete_dialog_title">Delete Auto-Run</string>
+    <string name="autorun_delete_dialog_message">Delete this time slot?</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
+    <string name="day_sun">Sun</string>
+    <string name="day_daily">Daily</string>
+    <string name="day_none_selected">No days selected</string>
+    <string name="day_info_missing">Day info missing</string>
+
+    <!-- AutoRunHistoryItem -->
+    <string name="history_trigger_time">Time-based</string>
+    <string name="history_trigger_location">Location-based</string>
+    <string name="history_trigger_auto">Auto-Run</string>
+    <string name="history_type_time">Time-based Auto-Run</string>
+    <string name="history_type_location">Location-based Auto-Run</string>
+    <string name="history_gps_accuracy">GPS Accuracy:</string>
+    <string name="history_dwell_time">Dwell Time:</string>
+    <string name="history_result_started">Started</string>
+    <string name="history_result_skipped">Skipped</string>
+    <string name="history_result_failed">Failed</string>
+    <string name="history_reason_permission_denied">Permission denied</string>
+    <string name="history_reason_timer_running">Timer already running</string>
+    <string name="history_reason_location_disabled">Location service is off</string>
+    <string name="history_reason_user_paused">User paused</string>
+    <string name="history_reason_geofence_error">Geofence error occurred</string>
+    <string name="history_reason_unknown">Unknown error: %s</string>
+
+    <!-- Preset Display Names -->
+    <string name="preset_full_block_display">Full Block</string>
+    <string name="preset_standard_display">Standard Detoxy</string>
+    <string name="preset_relaxed_display">Relaxed Detoxy</string>
+    
+    <!-- Schedule Creation Dialog -->
+    <string name="schedule_creation_location_choice">Location Settings</string>
+    <string name="schedule_creation_location_radius">Location Radius Settings</string>
+    <string name="schedule_creation_create">Create Schedule</string>
+    <string name="schedule_creation_location_question">Run this schedule at a specific location only?</string>
+    <string name="schedule_creation_anywhere">⚪ Apply Anywhere</string>
+    <string name="schedule_creation_anywhere_desc">Auto-run at set times regardless of location</string>
+    <string name="schedule_creation_location_only">📍 Specific Location Only</string>
+    <string name="schedule_creation_location_only_desc">Auto-run only within specified location radius</string>
+    <string name="schedule_creation_method">Choose Start Method</string>
+    <string name="schedule_creation_timeslot_list">Time Slot List</string>
+    <string name="schedule_creation_add_timeslot">Please add time slots</string>
+    <string name="schedule_creation_add_timeslot_btn">Add Time Slot</string>
+    <string name="schedule_creation_template_select">Select Template</string>
+    
+    <!-- Navigation -->
+    <string name="nav_next">Next</string>
+    <string name="nav_previous">Previous</string>
+    
+    <!-- Error/Toast Messages -->
+    <string name="toast_address_fallback">Couldn\'t get address, but registering coordinates.</string>
+    <string name="toast_location_not_found">Location not found. Please check GPS settings.</string>
+    <string name="toast_location_permission_required">Location permission required to find current location.</string>
+    <string name="toast_map_app_not_found">Map app not found.</string>
+    
+    <!-- Location Edit Dialog -->
+    <string name="location_info_edit_title">Edit Location Info</string>
+    <string name="location_name_label">Location Name *</string>
+    <string name="location_name_placeholder">e.g., School, Library, Cafe</string>
+    <string name="location_address">Address</string>
+    <string name="location_no_address">No address</string>
+    <string name="location_change_address">Change Address</string>
+    <string name="location_change_help">To change location, press search button to select a new location.</string>
+    <string name="location_auto_settings">Auto-Activation Settings</string>
+    <string name="location_auto_run">Location-Based Auto-Run</string>
+    <string name="location_auto_run_desc">Use Geofence at this location</string>
+    <string name="location_enter_activate">Activate on Entry</string>
+    <string name="location_enter_activate_desc">Turn on linked schedule when arriving at location</string>
+    <string name="location_exit_deactivate">Deactivate on Exit</string>
+    <string name="location_exit_deactivate_desc">Turn off linked schedule when leaving location</string>
+    <string name="location_radius_auto_desc">Schedule auto-activates when entering this radius.</string>
+
+    <!-- Location Auto-Run Dialog -->
+    <string name="location_add_btn">Add Location</string>
+    <string name="location_label">Label</string>
+    <string name="location_label_placeholder">e.g., Office, Library</string>
+    <string name="location_radius_title">Radius</string>
+    <string name="location_timer_duration">Timer Duration</string>
+    <string name="location_block_intensity">Block Intensity</string>
+    <string name="location_preset_full">Full Block</string>
+    <string name="location_preset_full_desc">Block all apps</string>
+    <string name="location_preset_standard">Standard Detoxy</string>
+    <string name="location_preset_standard_desc">Allow messengers only</string>
+    <string name="location_preset_relaxed">Relaxed Mode</string>
+    <string name="location_entry_condition">Entry Condition</string>
+    <string name="location_dwell_time">Dwell Time</string>
+    <string name="location_dwell_desc">Auto-run after confirming N minutes of stay at location</string>
+    <string name="location_dwell_immediate">Immediate</string>
+    <string name="location_dwell_minutes">%1$d min</string>
+    <string name="location_confirm_on_arrival">Confirm via Notification on Arrival</string>
+    <string name="location_confirm_desc">Tap notification to start timer (Auto-start OFF)</string>
+    <string name="location_fallback">Location</string>
+
+    <!-- ==================== Report ==================== -->
+    <string name="report_title">Report</string>
+    <string name="report_summary">Summary</string>
+    <string name="report_daily">Daily</string>
+    <string name="report_weekly">Weekly</string>
+    <string name="report_monthly">Monthly</string>
+
+    <!-- ==================== Coach / Recommendations ==================== -->
+    <string name="coach_keep_going_title">Keep Going</string>
+    <string name="coach_keep_going_desc">Keep up your current habits</string>
+    <string name="coach_increase_difficulty_title">Increase Difficulty</string>
+    <string name="coach_increase_difficulty_desc">Try adding 10 more minutes to block time</string>
+    <string name="coach_new_category_title">Try Blocking New Category</string>
+    <string name="coach_new_category_desc">Try adding one more category to block</string>
+    <string name="coach_adjust_session_title">Adjust Session Time</string>
+    <string name="coach_adjust_session_desc">Temporarily reduce session time (e.g., 25min → 15min)</string>
+    <string name="coach_night_block_title">Set Night Block Time</string>
+    <string name="coach_emergency_title">Emergency Detox Mode</string>
+    <string name="coach_reset_title">Reset to Basics</string>
+    <string name="coach_reset_desc">You may have set too difficult goals. Try starting from 5 minutes</string>
+    <string name="coach_ask_help_title">Seek Support</string>
+    <string name="coach_ask_help_desc">Asking family or friends for help is also a good approach</string>
+    <string name="coach_remove_app_desc">Remove or block %1$s app for 24 hours right now</string>
+
+    <!-- ==================== Notifications ==================== -->
+    <string name="notification_channel_focus">Focus Mode</string>
+    <string name="notification_channel_focus_desc">Focus timer progress notifications</string>
+    <string name="notification_channel_autorun">Auto-Run</string>
+    <string name="notification_channel_autorun_desc">Scheduled focus mode notifications</string>
+    <string name="notification_start_soon">Focus mode starts in %1$d minutes</string>
+    <string name="notification_action_start">Start</string>
+    <string name="notification_action_snooze">In 10 min</string>
+    <string name="notification_action_skip">Skip</string>
+
+    <!-- ==================== Accessibility Service ==================== -->
+    <string name="accessibility_service_description">ScreenSence blocks certain apps (Instagram, TikTok, YouTube, Facebook) during focus timer to help improve concentration. This service navigates to home screen when blocked apps are opened.</string>
+
+    <!-- ==================== Language Settings ==================== -->
+    <string name="language_settings_title">Language Settings</string>
+    <string name="language_system_default">System Default (Auto)</string>
+
+    <!-- ==================== Errors & Warnings ==================== -->
+    <string name="error_permission_denied">Permission denied</string>
+    <string name="error_general">An error occurred</string>
+    <string name="warning_data_loss">Data may be lost</string>
+
+    <!-- ==================== Empty States ==================== -->
+    <string name="empty_no_schedule">No schedules registered</string>
+    <string name="empty_no_history">No history</string>
+    <string name="empty_no_todos">No to-dos</string>
+
+
+    <!-- TimeBasedAutoRunScreen -->
+    <string name="autorun_list_title">Schedule Settings</string>
+    <string name="autorun_list_title_format">%s Schedule Settings</string>
+    <string name="autorun_manage_schedule">Manage Schedule</string>
+    <string name="autorun_add_timeslot">Add Time Slot</string>
+    <string name="autorun_max_limit_desc">Maximum 10 can be registered</string>
+    <string name="autorun_count_format">Registered time slots (%1$d/10)</string>
+    <string name="autorun_creation_custom">Custom</string>
+    <string name="autorun_creation_template">Template</string>
+    <string name="autorun_delete_confirm_time">Delete "%1$s" auto-run?\nAlarm will also be cancelled.</string>
+    <string name="autorun_delete_confirm_generic">Delete this auto-run?</string>
+    <string name="msg_schedule_created_global">Schedule created (applies anywhere)</string>
+    <string name="msg_schedule_created_location">Location-based schedule created</string>
+    
+    <!-- Location Permission Dialogs -->
+    <string name="permission_bg_location_title">Background Location Permission Required</string>
+    <string name="permission_bg_location_desc">Background location permission is required for location-based auto-run.</string>
+    <string name="permission_bg_location_guide">Please select \'Allow all the time\' on the next screen.</string>
+    <string name="permission_bg_location_privacy">This permission is only used when arriving at registered locations (office, school, etc.), and location data is stored locally only.</string>
+    <string name="permission_location_needed_title">Location Permission Required</string>
+    <string name="permission_location_needed_desc">Location-based auto-run cannot be used without location permission.</string>
+    <string name="permission_suggestion_time_based">💡 Try time-based auto-run instead!</string>
+    <string name="permission_suggestion_time_based_desc">Auto-start focus mode at specific times.</string>
+    <string name="permission_settings_title">Please allow permission in Settings</string>
+    <string name="permission_settings_desc">You need to go to Settings to allow background location permission.</string>
+    <string name="permission_settings_step_1">1. Select \'Permissions\' tab</string>
+    <string name="permission_settings_step_2">2. Select \'Location\'</string>
+    <string name="permission_settings_step_3">3. Select \'Allow all the time\'</string>
+    <string name="permission_revoked_title">Location Permission Revoked</string>
+    <string name="permission_revoked_desc">Location permission has been revoked and location-based auto-run is disabled.</string>
+    <string name="permission_revoked_guide">To use again, set location permission to \'Allow all the time\'.</string>
+
+    <!-- Timer Screen -->
+    <string name="timer_finished_title">🎉 Timer Complete!</string>
+    <string name="timer_finished_desc">You successfully completed focus time.</string>
+    <string name="timer_start_new">Start New Timer</string>
+    <string name="timer_failed_title">Timer Given Up</string>
+    <string name="timer_failed_desc">You can do better next time!</string>
+    <string name="timer_restart">Restart</string>
+    <string name="timer_success_title">🎉 Focus Success!</string>
+    <string name="timer_goal_achieved">Goal achieved!</string>
+    <string name="timer_success_desc">You successfully completed focus time.\nKeep building great habits!</string>
+    <string name="permission_accessibility_needed_title">App Block Permission Required</string>
+    <string name="permission_accessibility_needed_desc">To use focus timer, you need to enable app blocking (accessibility service).\n\nFind and enable \'ScreenSence\' in settings.</string>
+    <string name="permission_accessibility_disabled_title">⚠️ App Block Restart Required</string>
+    <string name="permission_accessibility_disabled_desc">App blocking (accessibility service) has been temporarily stopped.\n\n1️⃣ Turn \'ScreenSence\' off and on again in settings.\n\n2️⃣ If this keeps happening, check \'Battery Settings Guide\' below.</string>
+    <string name="permission_overlay_needed_title">Lock Screen Display Permission Required</string>
+    <string name="permission_overlay_needed_desc">To use focus timer, lock screen display permission (display over other apps) is required.\n\nPlease allow in settings.</string>
+    <string name="btn_battery_guide">🔋 Battery Settings Guide</string>
+    <string name="timer_preset_update">Update Preset</string>
+    
+    <!-- Report Screen -->
+    <string name="report_screen_title">Detoxy Report</string>
+    <string name="report_total_focus_time">Total Focus Time</string>
+    <string name="report_success_session">Successful Sessions</string>
+    <string name="report_current_streak">Current Streak</string>
+    <string name="report_total_points">Total Points</string>
+    <string name="report_daily_success_rate">Today\'s Success Rate</string>
+    <string name="report_weekly_insight">Weekly Insight</string>
+    <string name="report_daily_session">Today\'s Sessions</string>
+    <string name="report_session_success">Successful Sessions</string>
+    <string name="report_session_fail">Failed Sessions</string>
+    
+    <string name="empty_report_title">Start your first detoxy session!</string>
+    <string name="empty_report_desc">Start a detoxy session to get\ninsights like these:</string>
+    <string name="empty_report_feature_risk">Risk Level Analysis</string>
+    <string name="empty_report_feature_trend">Recovery Rate Trend Graph</string>
+    <string name="empty_report_feature_distraction">Top 3 Distractions</string>
+    <string name="empty_report_feature_coach">Personalized Coach Recommendations</string>
+    <string name="empty_report_guide">Start focus mode from the Timer tab!</string>
+    
+    <!-- Generic Buttons -->
+    <string name="btn_retry_permission">Retry Permission</string>
+    <string name="btn_move_to_time_based">Go to Time-Based</string>
+
+    <string name="btn_next">Next</string>
+    <string name="autorun_delete_confirm_title">Delete Schedule</string>
+    
+    <string name="battery_impact_minimal">Minimal</string>
+    <string name="battery_impact_percentage_minimal">&lt; 1%/day</string>
+    <string name="battery_impact_desc_time_based">Time-based auto-run has almost no impact on battery.</string>
+    
 </resources>

@@ -1,4 +1,581 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Chinese Simplified translations will be added here -->
+    <string name="app_name">ScreenSence</string>
+
+    <!-- ==================== Common / General ==================== -->
+    <!-- Buttons -->
+    <string name="btn_cancel">取消</string>
+    <string name="btn_confirm">确认</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_delete">删除</string>
+    <string name="btn_edit">编辑</string>
+    <string name="btn_start">开始</string>
+    <string name="btn_close">关闭</string>
+    <string name="btn_later">稍后</string>
+    <string name="btn_settings">设置</string>
+    <string name="btn_go_to_settings">前往设置</string>
+    <string name="btn_go_to_system_settings">前往系统设置</string>
+    <string name="btn_manage">管理</string>
+    <string name="btn_add">添加</string>
+    <string name="btn_create">创建</string>
+    <string name="btn_collapse">收起</string>
+    <string name="btn_expand">展开</string>
+    
+    <!-- Common Labels -->
+    <string name="label_required">必填</string>
+    <string name="label_optional">可选</string>
+    <string name="label_custom">自定义</string>
+    <string name="label_template">模板</string>
+    <string name="label_recommended">推荐</string>
+    
+    <!-- Time Units -->
+    <string name="time_minutes">分钟</string>
+    <string name="time_hours">小时</string>
+    <string name="time_seconds">秒</string>
+    <string name="time_remaining">剩余时间</string>
+    
+    <!-- Days of Week -->
+    <string name="day_monday">周一</string>
+    <string name="day_tuesday">周二</string>
+    <string name="day_wednesday">周三</string>
+    <string name="day_thursday">周四</string>
+    <string name="day_friday">周五</string>
+    <string name="day_saturday">周六</string>
+    <string name="day_sunday">周日</string>
+    <string name="day_weekday">工作日</string>
+    <string name="day_weekend">周末</string>
+    <string name="day_everyday">每天</string>
+    
+    <!-- Common Actions -->
+    <string name="action_edit">编辑</string>
+    <string name="action_delete">删除</string>
+
+    <!-- ==================== Navigation / Tabs ==================== -->
+    <string name="tab_timer">计时器</string>
+    <string name="tab_schedule">日程</string>
+    <string name="tab_report">报告</string>
+    <string name="tab_settings">设置</string>
+    <string name="tab_todo">待办事项</string>
+
+    <!-- ==================== Timer Screen ==================== -->
+    <string name="timer_title">专注计时器</string>
+    <string name="timer_start">开始</string>
+    <string name="timer_stop">停止计时器</string>
+    <string name="timer_give_up">放弃</string>
+    <string name="timer_starting">正在启动计时器…</string>
+    <string name="timer_remaining_format">剩余时间: %1$s</string>
+    <string name="timer_completed">目标达成。恭喜！</string>
+    <string name="timer_running_title">专注模式运行中</string>
+    <string name="timer_running_message">计时器正在运行。退出应用？（计时器将在后台继续运行）</string>
+    <string name="timer_background_continue">后台运行</string>
+    <string name="timer_preset_save">保存为预设</string>
+    <string name="timer_preset_name">预设名称</string>
+    <string name="timer_custom_input_hint">手动输入 (1–180分钟)</string>
+
+    <!-- ==================== Focus Mode / Detoxy Settings ==================== -->
+    <string name="detoxy_control_title">数字戒断控制设置</string>
+    <string name="detoxy_preset_title">数字戒断强度预设</string>
+    <string name="detoxy_block_category_title">屏蔽应用类别</string>
+    <string name="detoxy_current_summary">当前设置摘要</string>
+    <string name="detoxy_custom_settings">自定义设置</string>
+    <string name="detoxy_all_apps_except_default">除默认屏蔽应用外的所有应用</string>
+    <string name="detoxy_messenger_notice">通讯工具可用于紧急联系。</string>
+    
+    <!-- Preset Types -->
+    <string name="preset_full_block">完全屏蔽</string>
+    <string name="preset_full_block_desc">屏蔽所有应用</string>
+    <string name="preset_standard">标准</string>
+    <string name="preset_standard_detoxy">标准戒断</string>
+    <string name="preset_relaxed">轻松</string>
+    <string name="preset_relaxed_detoxy">轻松戒断</string>
+    <string name="timer_mode_standard_desc">屏蔽SNS、视频、网页</string>
+    <string name="timer_mode_light_desc">仅屏蔽SNS</string>
+    
+    <!-- Messenger Block Dialog -->
+    <string name="messenger_block_title">通讯工具屏蔽通知</string>
+    <string name="messenger_block_desc1">通讯工具默认不屏蔽，因为可能需要紧急联系。</string>
+    <string name="messenger_block_desc2">如果需要完全戒断以恢复数字成瘾，也可以屏蔽通讯工具。</string>
+    <string name="messenger_block_warning">请谨慎选择，因为可能无法进行紧急联系。</string>
+    <string name="messenger_block_confirm">也屏蔽通讯工具</string>
+    <string name="messenger_keep_allowed">保持允许（推荐）</string>
+
+    <!-- ==================== Permissions ==================== -->
+    <string name="permission_status_title">权限状态</string>
+    <string name="permission_app_block">应用屏蔽</string>
+    <string name="permission_lock_screen">锁屏显示</string>
+    <string name="permission_notification_block">通知屏蔽（可选）</string>
+    <string name="permission_required">设置权限</string>
+    <string name="permission_grayscale_title">需要灰度权限</string>
+    <string name="permission_enabled">已启用</string>
+    <string name="permission_allowed">已允许</string>
+    <string name="permission_needs_permission">需要权限</string>
+    
+    <!-- Common Actions -->
+    <string name="action_back">返回</string>
+    <string name="toast_settings_saved">设置已保存</string>
+    
+    <!-- Categories -->
+    <string name="category_video">视频</string>
+    <string name="category_other_apps">其他应用</string>
+    <string name="category_no_blocked_apps">没有要屏蔽的应用。</string>
+    <string name="category_blocked_format">正在屏蔽 %1$s。</string>
+    <string name="category_messenger_warning">建议保持紧急联系</string>
+    
+    <!-- Schedule Tab Info -->
+    <string name="schedule_tab_info_title">💡 日程管理现在在单独的标签页</string>
+    
+    <!-- Battery Optimization -->
+    <string name="battery_optimization_exempt">已从电池优化中排除</string>
+    <string name="battery_optimization_required">需要电池优化设置</string>
+    <string name="battery_optimization_desc">应用屏蔽需要从电池优化中排除才能正常工作。</string>
+    <string name="battery_optimization_settings_check">检查设置</string>
+    <string name="battery_optimization_settings_guide">设置指南</string>
+    
+    <!-- ==================== Grayscale Mode ==================== -->
+    <string name="grayscale_title">灰度模式</string>
+    <string name="grayscale_auto_enable">专注模式时自动启用</string>
+    <string name="grayscale_description">计时器启动时屏幕变为灰度</string>
+    <string name="grayscale_manual_guide">手动灰度指南</string>
+    <string name="grayscale_settings_title">灰度设置</string>
+
+    <!-- ==================== Schedule / Auto-Run ==================== -->
+    <string name="schedule_title">日程</string>
+    <string name="schedule_group_title">日程组</string>
+    <string name="schedule_group_delete_title">删除日程组</string>
+    <string name="schedule_group_delete_message">删除此日程组？</string>
+    <string name="schedule_create_first">创建第一个日程</string>
+    <string name="schedule_create_first_group">创建第一个组</string>
+    <string name="schedule_add_time">添加时间</string>
+    <string name="schedule_name_label">日程名称 *</string>
+    <string name="schedule_name_placeholder">例如：工作日程、学习计划</string>
+    <string name="schedule_repeat_day">重复日期</string>
+    <string name="schedule_label_optional">标签（可选）</string>
+    <string name="schedule_duration_custom">手动输入 (1-180分钟)</string>
+    <string name="schedule_template_select">选择模板</string>
+    <string name="schedule_timeslot_add">添加时段</string>
+    <string name="schedule_setting_title">日程设置</string>
+    <string name="schedule_setting_description">在设定时间自动启动专注模式</string>
+    <string name="schedule_go_to_tab">在下方[日程]标签页管理日程</string>
+    
+    <!-- Auto-Run -->
+    <string name="autorun_delete_title">确认删除</string>
+
+    <!-- ==================== Coach Recommendation ==================== -->
+    <!-- Recovery Messages -->
+    <string name="coach_recovery_trend_improving">你的恢复率持续提升！🎉</string>
+    <string name="coach_recovery_trend_stable">你保持着稳定的数字戒断。</string>
+    <string name="coach_recovery_trend_declining">恢复率有所下降，但仍然很好。</string>
+    <string name="coach_recovery_title">太棒了！你的数字戒断进展顺利 ✨</string>
+    <string name="coach_recovery_message">%s\n在保持当前习惯的同时，试着逐渐增加难度如何？</string>
+
+    <!-- Warning Messages -->
+    <string name="coach_warning_distraction">%s 类别是最大的干扰。</string>
+    <string name="coach_warning_general">需要注意。</string>
+    <string name="coach_warning_title">需要注意 ⚠️</string>
+    <string name="coach_warning_message">%s\n尝试调整节奏并增加屏蔽时间。</string>
+
+    <!-- High Risk Messages -->
+    <string name="coach_high_risk_failure_rate">最近的失败率非常高，达到 %d%%。</string>
+    <string name="coach_high_risk_general">看起来你在数字戒断方面遇到了困难。</string>
+    <string name="coach_high_risk_distraction">\n特别是 %s 是主要干扰。</string>
+    <string name="coach_high_risk_title">需要立即行动 🚨</string>
+    <string name="coach_high_risk_message" formatted="false">%s%s\n尝试暂时降低戒断强度或设置夜间屏蔽时间。</string>
+
+    <!-- Action Items -->
+    <string name="action_maintain_routine_title">保持当前习惯</string>
+    <string name="action_maintain_routine_desc">继续保持你目前的习惯</string>
+    <string name="action_increase_difficulty_title">增加难度</string>
+    <string name="action_increase_difficulty_desc">尝试将屏蔽时间增加10分钟</string>
+    <string name="action_add_category_title">尝试屏蔽新类别</string>
+    <string name="action_add_category_desc">尝试再添加一个类别进行屏蔽</string>
+    
+    <string name="action_reduce_session_time_title">调整会话时间</string>
+    <string name="action_reduce_session_time_desc">暂时减少会话时间（例如：25分钟 → 15分钟）</string>
+    <string name="action_night_mode_title">设置夜间屏蔽时间</string>
+    <string name="action_night_mode_desc">添加晚10点到早7点的SNS屏蔽计划</string>
+    <string name="action_focus_on_distraction_title">重点屏蔽 %s</string>
+    <string name="action_focus_on_distraction_desc">优先屏蔽 %s 类别</string>
+    
+    <string name="action_emergency_mode_title">紧急戒断模式</string>
+    <string name="action_emergency_mode_desc">尝试24小时全类别屏蔽</string>
+    <string name="action_reset_to_basic_title">重置为基础设置</string>
+    <string name="action_reset_to_basic_desc">你可能设定了太难的目标。尝试从5分钟开始</string>
+    <string name="action_seek_support_title">寻求支持</string>
+    <string name="action_seek_support_desc">向家人或朋友寻求帮助也是一个好方法</string>
+    <string name="action_block_distraction_now_title">立即屏蔽 %s</string>
+    <string name="action_block_distraction_now_desc">立即删除或屏蔽 %s 应用24小时</string>
+
+    <!-- Action Types -->
+    <string name="action_type_maintain">保持</string>
+    <string name="action_type_challenge">挑战</string>
+    <string name="action_type_expand">扩展</string>
+    <string name="action_type_adjust">调整</string>
+    <string name="action_type_routine">习惯</string>
+    <string name="action_type_target">专注</string>
+    <string name="action_type_emergency">紧急</string>
+    <string name="action_type_reset">重置</string>
+    <string name="action_type_support">支持</string>
+    <string name="action_type_immediate">立即</string>
+
+    <!-- Recommendation Priority -->
+    <string name="priority_low">建议</string>
+    <string name="priority_medium">注意</string>
+    <string name="priority_high">紧急</string>
+
+    <!-- Risk Levels -->
+    <string name="risk_level_recovery">恢复中</string>
+    <string name="risk_level_warning">需要注意</string>
+    <string name="risk_level_high_risk">高风险</string>
+    <string name="autorun_label_placeholder">例如：上午工作专注</string>
+    <string name="autorun_history_title">自动运行历史</string>
+    <string name="autorun_filter">筛选</string>
+    <string name="autorun_filter_settings">筛选设置</string>
+    <string name="autorun_filter_active">筛选已应用</string>
+    <string name="autorun_filter_reset">重置</string>
+    <string name="autorun_filter_trigger_type">触发类型</string>
+    <string name="autorun_filter_result">结果</string>
+    <string name="autorun_filter_date_range">日期范围</string>
+    <string name="autorun_filter_all">全部</string>
+    <string name="autorun_filter_time">时间</string>
+    <string name="autorun_filter_location">位置</string>
+    <string name="autorun_filter_success">成功</string>
+    <string name="autorun_filter_skipped">跳过</string>
+    <string name="autorun_filter_failed">失败</string>
+    <string name="autorun_filter_this_week">本周</string>
+    <string name="autorun_filter_this_month">本月</string>
+    <string name="autorun_filter_all_period">全部时间</string>
+    <string name="autorun_trigger_time">基于时间</string>
+    <string name="autorun_trigger_location">基于位置</string>
+    <string name="autorun_empty_title">没有自动运行历史</string>
+    <string name="autorun_empty_desc">自动运行触发后将显示历史</string>
+    
+    <!-- TimeSlot Dialog -->
+    <string name="timeslot_add">添加时段</string>
+    <string name="timeslot_edit">编辑时段</string>
+    <string name="timeslot_start_time">开始时间</string>
+    <string name="timeslot_hour">小时</string>
+    <string name="timeslot_minute">分钟</string>
+    <string name="timeslot_duration">时长</string>
+    <string name="timeslot_block_intensity">屏蔽强度</string>
+    <string name="timeslot_preset_standard">标准</string>
+    <string name="timeslot_preset_medium">中等</string>
+    <string name="timeslot_preset_complete">完全</string>
+    <string name="timeslot_preset_standard_block">标准屏蔽</string>
+    <string name="timeslot_preset_medium_block">中等屏蔽</string>
+    <string name="timeslot_preset_complete_block">完全屏蔽</string>
+    <string name="timeslot_day_selection">选择日期</string>
+    <string name="timeslot_everyday">每天</string>
+    <string name="timeslot_weekdays">工作日</string>
+    <string name="timeslot_weekend">周末</string>
+    <string name="timeslot_day_mon">周一</string>
+    <string name="timeslot_day_tue">周二</string>
+    <string name="timeslot_day_wed">周三</string>
+    <string name="timeslot_day_thu">周四</string>
+    <string name="timeslot_day_fri">周五</string>
+    <string name="timeslot_day_sat">周六</string>
+    <string name="timeslot_day_sun">周日</string>
+
+    <!-- Detoxy Routine -->
+    <string name="detoxy_routine_title">数字戒断计划（已安排）</string>
+    <string name="detoxy_routine_description">每天在设定时间自动开始数字戒断</string>
+
+    <!-- ==================== Todo List ==================== -->
+    <string name="todo_add">添加待办（剩余 %1$d 个）</string>
+    <string name="todo_input_placeholder">输入待办事项</string>
+    <string name="todo_today_title">今日待办</string>
+
+    <!-- ==================== Overlay / Lock Screen ==================== -->
+    <string name="overlay_show_goal">在覆盖层显示目标</string>
+    <string name="overlay_show_goal_desc">在锁屏上显示专注目标</string>
+    <string name="overlay_show_todos">显示详细待办</string>
+    <string name="overlay_show_todos_desc">显示各个待办事项</string>
+    <string name="overlay_hide_goal">隐藏目标（仅显示表情）</string>
+    <string name="overlay_hide_goal_desc">隐藏敏感目标，仅显示🎯表情</string>
+    <string name="overlay_block_message">使用屏蔽应用时会显示锁屏</string>
+
+    <!-- ==================== Location-Based ==================== -->
+    <string name="location_permission_title">位置权限</string>
+    <string name="location_add_title">添加位置</string>
+    <string name="location_edit_title">编辑位置</string>
+    <string name="location_time_based_settings">前往基于时间的设置</string>
+    <string name="location_search_title">搜索位置</string>
+    <string name="location_select_title">选择位置</string>
+    <string name="location_search_placeholder">搜索地址或地点</string>
+    <string name="location_current">当前位置</string>
+    <string name="location_lat_lng_format">纬度: %1$.6f, 经度: %2$.6f</string>
+    <string name="location_accuracy_format">精度 ±%1$d米</string>
+    <string name="location_open_map">在地图上查看</string>
+    <string name="location_radius_format">半径: %1$d米</string>
+    <!-- Schedule Group Screen -->
+    <string name="title_schedule_group">日程组</string>
+    <string name="group_empty_title">没有日程组</string>
+    <string name="group_empty_desc">将多个日程分组\n根据位置自动激活</string>
+    <string name="btn_create_first_group">创建第一个组</string>
+    <string name="guide_card_title">💡 如何使用日程组</string>
+    <string name="guide_card_desc">1. 创建日程组\n2. 在基于时间的自动运行设置中选择组\n3. 将组链接到基于位置的自动运行\n4. 进入该位置时日程自动激活</string>
+    <string name="dialog_delete_group_title">删除日程组</string>
+    <string name="dialog_delete_group_message">删除此日程组？</string>
+    <string name="dialog_delete_group_warning">链接的日程和位置引用将被解除，但设置本身不会被删除。</string>
+    <string name="fab_add_group_desc">添加日程组</string>
+    <string name="msg_location_updated">位置信息已更新</string>
+    <string name="msg_location_update_failed">位置更新失败: %s</string>
+    <string name="label_group_paused">已暂停</string>
+    <string name="label_time_schedule_count">%d 个时间日程</string>
+    <string name="back_button_desc">返回</string>
+    
+    <string name="location_radius_desc">进入此半径范围后日程自动激活</string>
+    <string name="location_change">更改</string>
+    
+    <!-- Schedule Group ViewModel Errors -->
+    <string name="error_group_name_empty">请输入组名称</string>
+    <string name="error_group_create_failed">组创建失败: %s</string>
+    <string name="error_group_update_failed">组更新失败: %s</string>
+    <string name="error_group_delete_failed">组删除失败: %s</string>
+    <string name="error_group_toggle_failed">组状态更改失败: %s</string>
+    <string name="error_group_activate_failed">日程激活失败: %s</string>
+    <string name="error_group_deactivate_failed">日程停用失败: %s</string>
+    <string name="error_state_change_failed">状态更改失败: %s</string>
+    <string name="error_pause_failed">暂停失败: %s</string>
+    <string name="error_linked_autorun_load_failed">链接日程加载失败: %s</string>
+    <string name="error_linked_location_load_failed">链接位置加载失败: %s</string>
+    <string name="error_location_refresh_failed">位置刷新失败: %s</string>
+    <string name="error_heatmap_refresh_failed">热图数据刷新失败: %s</string>
+    <string name="error_timeslot_empty">请至少添加1个时段</string>
+
+    <!-- TimeBasedAutoRunCard -->
+    <string name="autorun_card_inactive_badge">未激活</string>
+    <string name="autorun_card_independent_warning">此时段仅在日程激活时运行</string>
+    <string name="autorun_delete_dialog_title">删除自动运行</string>
+    <string name="autorun_delete_dialog_message">删除此时段？</string>
+    <string name="day_mon">周一</string>
+    <string name="day_tue">周二</string>
+    <string name="day_wed">周三</string>
+    <string name="day_thu">周四</string>
+    <string name="day_fri">周五</string>
+    <string name="day_sat">周六</string>
+    <string name="day_sun">周日</string>
+    <string name="day_daily">每日</string>
+    <string name="day_none_selected">未选择日期</string>
+    <string name="day_info_missing">日期信息缺失</string>
+
+    <!-- AutoRunHistoryItem -->
+    <string name="history_trigger_time">基于时间</string>
+    <string name="history_trigger_location">基于位置</string>
+    <string name="history_trigger_auto">自动运行</string>
+    <string name="history_type_time">基于时间的自动运行</string>
+    <string name="history_type_location">基于位置的自动运行</string>
+    <string name="history_gps_accuracy">GPS精度:</string>
+    <string name="history_dwell_time">停留时间:</string>
+    <string name="history_result_started">已启动</string>
+    <string name="history_result_skipped">已跳过</string>
+    <string name="history_result_failed">失败</string>
+    <string name="history_reason_permission_denied">权限被拒绝</string>
+    <string name="history_reason_timer_running">计时器已在运行</string>
+    <string name="history_reason_location_disabled">位置服务已关闭</string>
+    <string name="history_reason_user_paused">用户已暂停</string>
+    <string name="history_reason_geofence_error">地理围栏错误</string>
+    <string name="history_reason_unknown">未知错误: %s</string>
+
+    <!-- Preset Display Names -->
+    <string name="preset_full_block_display">完全屏蔽</string>
+    <string name="preset_standard_display">标准戒断</string>
+    <string name="preset_relaxed_display">轻松戒断</string>
+    
+    <!-- Schedule Creation Dialog -->
+    <string name="schedule_creation_location_choice">位置设置</string>
+    <string name="schedule_creation_location_radius">位置半径设置</string>
+    <string name="schedule_creation_create">创建日程</string>
+    <string name="schedule_creation_location_question">仅在特定位置运行此日程？</string>
+    <string name="schedule_creation_anywhere">⚪ 任何地点适用</string>
+    <string name="schedule_creation_anywhere_desc">无论位置如何，在设定时间自动运行</string>
+    <string name="schedule_creation_location_only">📍 仅限特定位置</string>
+    <string name="schedule_creation_location_only_desc">仅在指定位置半径内自动运行</string>
+    <string name="schedule_creation_method">选择启动方式</string>
+    <string name="schedule_creation_timeslot_list">时段列表</string>
+    <string name="schedule_creation_add_timeslot">请添加时段</string>
+    <string name="schedule_creation_add_timeslot_btn">添加时段</string>
+    <string name="schedule_creation_template_select">选择模板</string>
+    
+    <!-- Navigation -->
+    <string name="nav_next">下一步</string>
+    <string name="nav_previous">上一步</string>
+    
+    <!-- Error/Toast Messages -->
+    <string name="toast_address_fallback">无法获取地址，但正在注册坐标。</string>
+    <string name="toast_location_not_found">找不到位置。请检查GPS设置。</string>
+    <string name="toast_location_permission_required">需要位置权限才能查找当前位置。</string>
+    <string name="toast_map_app_not_found">找不到地图应用。</string>
+    
+    <!-- Location Edit Dialog -->
+    <string name="location_info_edit_title">编辑位置信息</string>
+    <string name="location_name_label">位置名称 *</string>
+    <string name="location_name_placeholder">例如：学校、图书馆、咖啡店</string>
+    <string name="location_address">地址</string>
+    <string name="location_no_address">无地址</string>
+    <string name="location_change_address">更改地址</string>
+    <string name="location_change_help">要更改位置，请按搜索按钮选择新位置。</string>
+    <string name="location_auto_settings">自动激活设置</string>
+    <string name="location_auto_run">基于位置的自动运行</string>
+    <string name="location_auto_run_desc">在此位置使用地理围栏</string>
+    <string name="location_enter_activate">进入时激活</string>
+    <string name="location_enter_activate_desc">到达位置时开启链接的日程</string>
+    <string name="location_exit_deactivate">离开时停用</string>
+    <string name="location_exit_deactivate_desc">离开位置时关闭链接的日程</string>
+    <string name="location_radius_auto_desc">进入此半径范围后日程自动激活。</string>
+
+    <!-- Location Auto-Run Dialog -->
+    <string name="location_add_btn">添加位置</string>
+    <string name="location_label">标签</string>
+    <string name="location_label_placeholder">例如：办公室、图书馆</string>
+    <string name="location_radius_title">半径</string>
+    <string name="location_timer_duration">计时器时长</string>
+    <string name="location_block_intensity">屏蔽强度</string>
+    <string name="location_preset_full">完全屏蔽</string>
+    <string name="location_preset_full_desc">屏蔽所有应用</string>
+    <string name="location_preset_standard">标准戒断</string>
+    <string name="location_preset_standard_desc">仅允许通讯工具</string>
+    <string name="location_preset_relaxed">轻松模式</string>
+    <string name="location_entry_condition">进入条件</string>
+    <string name="location_dwell_time">停留时间</string>
+    <string name="location_dwell_desc">确认在位置停留N分钟后自动运行</string>
+    <string name="location_dwell_immediate">立即</string>
+    <string name="location_dwell_minutes">%1$d分钟</string>
+    <string name="location_confirm_on_arrival">到达时通过通知确认</string>
+    <string name="location_confirm_desc">点击通知启动计时器（自动启动关闭）</string>
+    <string name="location_fallback">位置</string>
+
+    <!-- ==================== Report ==================== -->
+    <string name="report_title">报告</string>
+    <string name="report_summary">摘要</string>
+    <string name="report_daily">每日</string>
+    <string name="report_weekly">每周</string>
+    <string name="report_monthly">每月</string>
+
+    <!-- ==================== Coach / Recommendations ==================== -->
+    <string name="coach_keep_going_title">继续加油</string>
+    <string name="coach_keep_going_desc">保持你目前的习惯</string>
+    <string name="coach_increase_difficulty_title">增加难度</string>
+    <string name="coach_increase_difficulty_desc">尝试将屏蔽时间增加10分钟</string>
+    <string name="coach_new_category_title">尝试屏蔽新类别</string>
+    <string name="coach_new_category_desc">尝试再添加一个类别进行屏蔽</string>
+    <string name="coach_adjust_session_title">调整会话时间</string>
+    <string name="coach_adjust_session_desc">暂时减少会话时间（例如：25分钟 → 15分钟）</string>
+    <string name="coach_night_block_title">设置夜间屏蔽时间</string>
+    <string name="coach_emergency_title">紧急戒断模式</string>
+    <string name="coach_reset_title">重置为基础设置</string>
+    <string name="coach_reset_desc">你可能设定了太难的目标。尝试从5分钟开始</string>
+    <string name="coach_ask_help_title">寻求支持</string>
+    <string name="coach_ask_help_desc">向家人或朋友寻求帮助也是一个好方法</string>
+    <string name="coach_remove_app_desc">立即删除或屏蔽 %1$s 应用24小时</string>
+
+    <!-- ==================== Notifications ==================== -->
+    <string name="notification_channel_focus">专注模式</string>
+    <string name="notification_channel_focus_desc">专注计时器进度通知</string>
+    <string name="notification_channel_autorun">自动运行</string>
+    <string name="notification_channel_autorun_desc">预定专注模式通知</string>
+    <string name="notification_start_soon">专注模式将在 %1$d 分钟后开始</string>
+    <string name="notification_action_start">开始</string>
+    <string name="notification_action_snooze">10分钟后</string>
+    <string name="notification_action_skip">跳过</string>
+
+    <!-- ==================== Accessibility Service ==================== -->
+    <string name="accessibility_service_description">ScreenSence在专注计时器期间屏蔽某些应用（Instagram、TikTok、YouTube、Facebook），帮助提高专注力。此服务在打开屏蔽应用时会导航到主屏幕。</string>
+
+    <!-- ==================== Language Settings ==================== -->
+    <string name="language_settings_title">语言设置</string>
+    <string name="language_system_default">系统默认（自动）</string>
+
+    <!-- ==================== Errors & Warnings ==================== -->
+    <string name="error_permission_denied">权限被拒绝</string>
+    <string name="error_general">发生错误</string>
+    <string name="warning_data_loss">数据可能会丢失</string>
+
+    <!-- ==================== Empty States ==================== -->
+    <string name="empty_no_schedule">没有已注册的日程</string>
+    <string name="empty_no_history">没有历史记录</string>
+    <string name="empty_no_todos">没有待办事项</string>
+
+
+    <!-- TimeBasedAutoRunScreen -->
+    <string name="autorun_list_title">日程设置</string>
+    <string name="autorun_list_title_format">%s 日程设置</string>
+    <string name="autorun_manage_schedule">管理日程</string>
+    <string name="autorun_add_timeslot">添加时段</string>
+    <string name="autorun_max_limit_desc">最多可注册10个</string>
+    <string name="autorun_count_format">已注册时段 (%1$d/10)</string>
+    <string name="autorun_creation_custom">自定义</string>
+    <string name="autorun_creation_template">模板</string>
+    <string name="autorun_delete_confirm_time">删除 \"%1$s\" 自动运行？\n闹钟也将被取消。</string>
+    <string name="autorun_delete_confirm_generic">删除此自动运行？</string>
+    <string name="msg_schedule_created_global">日程已创建（任何地点适用）</string>
+    <string name="msg_schedule_created_location">基于位置的日程已创建</string>
+    
+    <!-- Location Permission Dialogs -->
+    <string name="permission_bg_location_title">需要后台位置权限</string>
+    <string name="permission_bg_location_desc">基于位置的自动运行需要后台位置权限。</string>
+    <string name="permission_bg_location_guide">请在下一个屏幕选择"始终允许"。</string>
+    <string name="permission_bg_location_privacy">此权限仅在到达已注册位置（办公室、学校等）时使用，位置数据仅存储在本地。</string>
+    <string name="permission_location_needed_title">需要位置权限</string>
+    <string name="permission_location_needed_desc">没有位置权限无法使用基于位置的自动运行。</string>
+    <string name="permission_suggestion_time_based">💡 改用基于时间的自动运行！</string>
+    <string name="permission_suggestion_time_based_desc">在特定时间自动启动专注模式。</string>
+    <string name="permission_settings_title">请在设置中允许权限</string>
+    <string name="permission_settings_desc">您需要前往设置以允许后台位置权限。</string>
+    <string name="permission_settings_step_1">1. 选择"权限"选项卡</string>
+    <string name="permission_settings_step_2">2. 选择"位置"</string>
+    <string name="permission_settings_step_3">3. 选择"始终允许"</string>
+    <string name="permission_revoked_title">位置权限已撤销</string>
+    <string name="permission_revoked_desc">位置权限已被撤销，基于位置的自动运行已禁用。</string>
+    <string name="permission_revoked_guide">要再次使用，请将位置权限设置为"始终允许"。</string>
+
+    <!-- Timer Screen -->
+    <string name="timer_finished_title">🎉 计时器完成！</string>
+    <string name="timer_finished_desc">你成功完成了专注时间。</string>
+    <string name="timer_start_new">开始新计时器</string>
+    <string name="timer_failed_title">计时器已放弃</string>
+    <string name="timer_failed_desc">下次你可以做得更好！</string>
+    <string name="timer_restart">重新开始</string>
+    <string name="timer_success_title">🎉 专注成功！</string>
+    <string name="timer_goal_achieved">目标达成！</string>
+    <string name="timer_success_desc">你成功完成了专注时间。\n继续保持好习惯！</string>
+    <string name="permission_accessibility_needed_title">需要应用屏蔽权限</string>
+    <string name="permission_accessibility_needed_desc">要使用专注计时器，您需要启用应用屏蔽（无障碍服务）。\n\n在设置中找到并启用"ScreenSence"。</string>
+    <string name="permission_accessibility_disabled_title">⚠️ 需要重启应用屏蔽</string>
+    <string name="permission_accessibility_disabled_desc">应用屏蔽（无障碍服务）已暂时停止。\n\n1️⃣ 在设置中先关闭再开启"ScreenSence"。\n\n2️⃣ 如果此问题持续发生，请查看下方的"电池设置指南"。</string>
+    <string name="permission_overlay_needed_title">需要锁屏显示权限</string>
+    <string name="permission_overlay_needed_desc">要使用专注计时器，需要锁屏显示权限（在其他应用上方显示）。\n\n请在设置中允许。</string>
+    <string name="btn_battery_guide">🔋 电池设置指南</string>
+    <string name="timer_preset_update">更新预设</string>
+    
+    <!-- Report Screen -->
+    <string name="report_screen_title">数字戒断报告</string>
+    <string name="report_total_focus_time">总专注时间</string>
+    <string name="report_success_session">成功会话</string>
+    <string name="report_current_streak">当前连续成功</string>
+    <string name="report_total_points">总积分</string>
+    <string name="report_daily_success_rate">今日成功率</string>
+    <string name="report_weekly_insight">每周洞察</string>
+    <string name="report_daily_session">今日会话</string>
+    <string name="report_session_success">成功会话</string>
+    <string name="report_session_fail">失败会话</string>
+    
+    <string name="empty_report_title">开始你的第一个戒断会话！</string>
+    <string name="empty_report_desc">开始戒断会话后可获得\n以下洞察：</string>
+    <string name="empty_report_feature_risk">风险等级分析</string>
+    <string name="empty_report_feature_trend">恢复率趋势图</string>
+    <string name="empty_report_feature_distraction">前3大干扰</string>
+    <string name="empty_report_feature_coach">个性化教练建议</string>
+    <string name="empty_report_guide">从计时器标签页开始专注模式！</string>
+    
+    <!-- Generic Buttons -->
+    <string name="btn_retry_permission">重试权限</string>
+    <string name="btn_move_to_time_based">前往基于时间</string>
+
+    <string name="btn_next">下一步</string>
+    <string name="autorun_delete_confirm_title">删除日程</string>
+    
+    <string name="battery_impact_minimal">最小</string>
+    <string name="battery_impact_percentage_minimal">&lt; 1%/天</string>
+    <string name="battery_impact_desc_time_based">基于时间的自动运行对电池几乎没有影响。</string>
+    
 </resources>

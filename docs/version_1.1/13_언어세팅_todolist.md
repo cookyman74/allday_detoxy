@@ -309,34 +309,36 @@
 
 ### 3.1 사전 작업
 
-- [ ] **[REVIEW]** Phase 2 작업 결과서 검토
+- [x] **[REVIEW]** Phase 2 작업 결과서 검토 ✅ 2026-01-18
   - 확인: 추출된 전체 문자열 목록
 
-- [ ] **[ANALYSIS]** 번역 대상 문자열 수 파악
+- [x] **[ANALYSIS]** 번역 대상 문자열 수 파악 ✅ 2026-01-18
   ```bash
   grep -c "<string" app/src/main/res/values/strings.xml
+  # 결과: 465개 문자열
   ```
 
 ### 3.2 본 작업
 
-- [ ] **[TASK-001]** 영어 번역 파일 생성
+- [x] **[TASK-001]** 영어 번역 파일 생성 ✅ 2026-01-18
   - 파일: `app/src/main/res/values-en/strings.xml`
-  - 모든 문자열 영어로 번역
+  - 모든 문자열 영어로 번역 (465개)
 
-- [ ] **[TASK-002]** 스페인어 번역 파일 생성
+- [x] **[TASK-002]** 스페인어 번역 파일 생성 ✅ 2026-01-18
   - 파일: `app/src/main/res/values-es/strings.xml`
-  - 모든 문자열 스페인어로 번역
+  - 모든 문자열 스페인어로 번역 (465개)
 
-- [ ] **[TASK-003]** 일본어 번역 파일 생성
+- [x] **[TASK-003]** 일본어 번역 파일 생성 ✅ 2026-01-18
   - 파일: `app/src/main/res/values-ja/strings.xml`
-  - 모든 문자열 일본어로 번역
+  - 모든 문자열 일본어로 번역 (465개)
 
-- [ ] **[TASK-004]** 중국어(간체) 번역 파일 생성
+- [x] **[TASK-004]** 중국어(간체) 번역 파일 생성 ✅ 2026-01-18
   - 파일: `app/src/main/res/values-b+zh+Hans/strings.xml`
-  - 모든 문자열 중국어 간체로 번역
+  - 모든 문자열 중국어 간체로 번역 (465개)
 
 - [ ] **[TASK-005]** 복수형 처리 (plurals)
   - 영어 등 복수형이 필요한 언어에 `<plurals>` 리소스 추가
+  - 📌 추후 처리 예정 (현재 앱에서 복수형 필요 케이스 적음)
   ```xml
   <plurals name="minutes_remaining">
       <item quantity="one">%d minute remaining</item>
@@ -344,29 +346,31 @@
   </plurals>
   ```
 
-- [ ] **[GREEN]** 빌드 검증
+- [x] **[GREEN]** 빌드 검증 ✅ 2026-01-18
   ```bash
   ./gradlew compileDebugKotlin
+  # BUILD SUCCESSFUL
   ```
 
 ### 3.3 사후 작업
 
-- [ ] **[VERIFY]** 번역 누락 검사
-  - 각 언어별 strings.xml 문자열 수 동일 확인
+- [x] **[VERIFY]** 번역 누락 검사 ✅ 2026-01-18
+  - 각 언어별 strings.xml 문자열 수 동일 확인 (모두 465개)
   ```bash
   for lang in "" "-en" "-es" "-ja" "-b+zh+Hans"; do
     echo "values$lang: $(grep -c '<string' app/src/main/res/values$lang/strings.xml)"
   done
   ```
 
-- [ ] **[VERIFY]** 포맷 파라미터 일치 확인
+- [x] **[VERIFY]** 포맷 파라미터 일치 확인 ✅ 2026-01-18
   - `%s`, `%d` 등 파라미터가 모든 번역에 동일하게 포함되어 있는지 확인
+  - `coach_high_risk_message`에 `formatted="false"` 속성 추가하여 경고 해결
 
-- [ ] **[DOC]** 작업 결과서 작성
-  - 파일: `working_history/version_1.1/언어세팅/Phase3_번역파일_YYYY-MM-DD.md`
+- [x] **[DOC]** 작업 결과서 작성 ✅ 2026-01-18
+  - 파일: `working_history/version_1.1/언어세팅/Phase3_번역파일_2026-01-18.md`
   - 내용: 각 언어별 번역 완료 문자열 수
 
-- [ ] **[COMMIT]** 변경사항 커밋
+- [x] **[COMMIT]** 변경사항 커밋 ✅ 2026-01-18
   ```bash
   git commit -m "feat(i18n): add translations for en, es, ja, zh-Hans"
   ```
