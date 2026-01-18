@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <style name="Theme.AlldayDetoxy" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- AppCompatActivity를 사용하려면 Theme.AppCompat 계열 테마가 필요함 -->
+    <style name="Theme.AlldayDetoxy" parent="Theme.AppCompat.DayNight.NoActionBar" />
 </resources>
