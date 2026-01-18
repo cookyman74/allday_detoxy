@@ -55,7 +55,7 @@ import android.util.Log
  * 타이머 화면과 접근성 권한 체크 기능 포함
  */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : androidx.appcompat.app.AppCompatActivity() {
 
     private val timerViewModel: TimerViewModel by viewModels()
     
