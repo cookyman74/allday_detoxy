@@ -39,6 +39,7 @@ import com.allday.detoxy.presentation.ui.onboarding.WelcomeScreen
 import com.allday.detoxy.presentation.ui.overlay.LockOverlayScreen
 import com.allday.detoxy.presentation.ui.permission.PermissionCheckScreen
 import com.allday.detoxy.presentation.ui.report.ReportScreen
+import com.allday.detoxy.presentation.ui.settings.LanguageSettingsScreen
 import com.allday.detoxy.presentation.ui.settings.focus.DetoxyControlSettingsScreen
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.ui.timer.TimerScreen
@@ -57,10 +58,16 @@ import android.util.Log
 class MainActivity : ComponentActivity() {
 
     private val timerViewModel: TimerViewModel by viewModels()
+    
+    @javax.inject.Inject
+    lateinit var autoRunNotificationManager: com.allday.detoxy.core.manager.AutoRunNotificationManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // 🆕 언어 설정 변경 대응: 알림 채널 이름 갱신
+        autoRunNotificationManager.updateNotificationChannelLocale()
 
         // 🆕 알림 권한 요청 (Android 13+)
         requestNotificationPermissionIfNeeded()
@@ -217,7 +224,8 @@ enum class AutoRunScreenType {
     TIME_BASED,     // 시간 기반 자동 실행
     LOCATION_BASED, // 위치 기반 자동 실행
     // SCHEDULE_GROUP,  // 스케쥴 그룹 목록 (v1.1: 제거 - 스케줄 탭에서 상세 페이지로 직접 이동)
-    SCHEDULE_GROUP_DETAIL  // v1.1: 스케쥴 그룹 상세 페이지
+    SCHEDULE_GROUP_DETAIL,  // v1.1: 스케쥴 그룹 상세 페이지
+    LANGUAGE_SETTINGS // v1.1: 언어 설정 화면
 }
 
 /**
@@ -306,6 +314,12 @@ fun MainScreenWithNavigation() {
                             }
                         )
                     }
+                    // v1.1: 언어 설정 화면
+                    AutoRunScreenType.LANGUAGE_SETTINGS -> {
+                        LanguageSettingsScreen(
+                            onBack = { showAutoRunScreen = AutoRunScreenType.NONE }
+                        )
+                    }
                     // 탭별 화면
                     AutoRunScreenType.NONE -> {
                         when (selectedTab) {
@@ -325,7 +339,8 @@ fun MainScreenWithNavigation() {
                                 onBack = { selectedTab = 0 }  // 집중 타이머로 이동
                             )
                             3 -> DetoxyControlSettingsScreen(  // 기존 2 → 3
-                                onBack = { selectedTab = 0 }  // 뒤로 가기 시 타이머로
+                                onBack = { selectedTab = 0 },  // 뒤로 가기 시 타이머로
+                                onNavigateToLanguageSettings = { showAutoRunScreen = AutoRunScreenType.LANGUAGE_SETTINGS }
                             )
                         }
                     }

@@ -578,4 +578,8 @@
     <string name="battery_impact_percentage_minimal">&lt; 1%/일</string>
     <string name="battery_impact_desc_time_based">시간 기반 자동 실행은 배터리에 거의 영향을 주지 않습니다.</string>
     
+    <!-- Notification Channels -->
+    <string name="notification_channel_auto_run_name">자동 실행 알림</string>
+    <string name="notification_channel_auto_run_desc">시간/위치 기반 자동 실행 알림</string>
+    
 </resources>

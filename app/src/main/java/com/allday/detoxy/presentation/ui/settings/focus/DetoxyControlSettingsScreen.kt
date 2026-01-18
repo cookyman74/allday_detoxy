@@ -36,6 +36,7 @@ import com.allday.detoxy.presentation.ui.component.GlassSurface
 import com.allday.detoxy.presentation.ui.theme.DetoxyTheme
 import com.allday.detoxy.presentation.viewmodel.FocusSettingsViewModel
 import com.allday.detoxy.presentation.viewmodel.FocusSettingsUiState
+import com.allday.detoxy.core.locale.AppLocaleManager
 import com.allday.detoxy.R
 
 /**
@@ -52,6 +53,7 @@ import com.allday.detoxy.R
 @Composable
 fun DetoxyControlSettingsScreen(
     onBack: () -> Unit = {},
+    onNavigateToLanguageSettings: () -> Unit = {},
     viewModel: FocusSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -174,6 +176,11 @@ fun DetoxyControlSettingsScreen(
             
             // 🆕 v0.10.7: 배터리 최적화 설정 섹션
             BatteryOptimizationSection()
+
+            // 🆕 Section 4.5: 언어 설정 (다국어 지원)
+            LanguageSettingsSection(
+                onNavigateToLanguage = onNavigateToLanguageSettings
+            )
 
             // 🆕 Section 5: 흑백 모드 설정 (Phase 5)
             GrayscaleSettingSection(
@@ -1025,5 +1032,54 @@ fun MessengerCategoryDialogPreview() {
             onConfirm = {},
             onDismiss = {}
         )
+    }
+}
+
+/**
+ * 언어 설정 섹션 (Glass 스타일)
+ */
+@Composable
+fun LanguageSettingsSection(
+    onNavigateToLanguage: () -> Unit
+) {
+    val currentTag = AppLocaleManager.getAppLocale()
+    val currentLanguage = AppLocaleManager.findSupportedLanguage(currentTag)
+
+    GlassSurface(
+        modifier = Modifier.fillMaxWidth(),
+        alpha = 0.35f
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "🌐")
+                    Text(
+                        text = stringResource(R.string.language_settings_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                // 현재 설정된 언어 표시
+                Text(
+                    text = "${stringResource(R.string.language_system_default).substringBefore(" ")}: ${currentLanguage.nativeName}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            TextButton(onClick = onNavigateToLanguage) {
+                Text(stringResource(R.string.btn_settings))
+            }
+        }
     }
 }

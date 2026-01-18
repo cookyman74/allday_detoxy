@@ -384,15 +384,15 @@
 
 ### 4.1 사전 작업
 
-- [ ] **[REVIEW]** Phase 3 작업 결과서 검토
+- [x] **[REVIEW]** Phase 3 작업 결과서 검토
 
-- [ ] **[ANALYSIS]** 기존 설정 화면 구조 확인
+- [x] **[ANALYSIS]** 기존 설정 화면 구조 확인
   - 파일: `presentation/ui/settings/` 관련 파일
   - 확인: 기존 스타일, 패턴
 
 ### 4.2 본 작업
 
-- [ ] **[TASK-001]** LanguageSettingsScreen Composable 생성
+- [x] **[TASK-001]** LanguageSettingsScreen Composable 생성
   - 파일: `presentation/ui/settings/LanguageSettingsScreen.kt`
   - UI:
     ```
@@ -404,36 +404,36 @@
     ○ 中文 (简体)
     ```
 
-- [ ] **[TASK-002]** 언어 선택 시 AppLocaleManager 호출
+- [x] **[TASK-002]** 언어 선택 시 AppLocaleManager 호출
   - `AppCompatDelegate.setApplicationLocales()` 사용
   - 선택 즉시 적용
 
-- [ ] **[TASK-003]** 설정 화면에 언어 설정 메뉴 추가
+- [x] **[TASK-003]** 설정 화면에 언어 설정 메뉴 추가
   - 파일: 기존 설정 화면 (일반 설정 또는 앱 설정 섹션)
   - 네비게이션: LanguageSettingsScreen으로 이동
 
-- [ ] **[TASK-004]** NotificationChannel 이름 갱신 로직
+- [x] **[TASK-004]** NotificationChannel 이름 갱신 로직
   - 파일: `core/notification/NotificationHelper.kt`
   - 메서드: `updateNotificationChannelLocale(context)`
   - 언어 변경 시 호출
 
-- [ ] **[GREEN]** 빌드 검증
+- [x] **[GREEN]** 빌드 검증
   ```bash
   ./gradlew compileDebugKotlin
   ```
 
 ### 4.3 사후 작업
 
-- [ ] **[VERIFY]** 언어 변경 즉시 적용 확인
+- [x] **[VERIFY]** 언어 변경 즉시 적용 확인
   - 설정에서 언어 변경 → 앱 전체 UI 언어 변경 확인
 
-- [ ] **[VERIFY]** NotificationChannel 이름 갱신 확인
+- [x] **[VERIFY]** NotificationChannel 이름 갱신 확인
   - 시스템 설정 > 앱 > 알림에서 채널 이름 확인
 
-- [ ] **[DOC]** 작업 결과서 작성
-  - 파일: `working_history/version_1.1/언어세팅/Phase4_설정UI_YYYY-MM-DD.md`
+- [x] **[DOC]** 작업 결과서 작성
+  - 파일: `working_history/version_1.1/언어세팅/Phase4_설정UI_2026-01-18.md`
 
-- [ ] **[COMMIT]** 변경사항 커밋
+- [x] **[COMMIT]** 변경사항 커밋
   ```bash
   git commit -m "feat(settings): add language settings screen"
   ```
@@ -523,8 +523,8 @@
 | Phase 1 (기반 구조) | ✅ | ⬜ | ✅ | ✅ | ✅ 완료 |
 | Phase 2 (문자열 추출) | ✅ | ⬜ | ✅ | 🟡 | 🟡 진행중 (~15%) |
 | Phase 3 (번역 파일) | ✅ | ⬜ | ✅ | ✅ | ✅ 완료 |
-| Phase 4 (설정 UI) | ⬜ | ⬜ | ⬜ | ⬜ | 🟡 진행중 |
-| Phase 5 (테스트 검증) | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ |
+| Phase 4 (설정 UI) | ✅ | ⬜ | ✅ | ✅ | ✅ 완료 |
+| Phase 5 (테스트 검증) | ⬜ | ⬜ | ⬜ | ⬜ | 🟡 진행중 |
 
 ---
 

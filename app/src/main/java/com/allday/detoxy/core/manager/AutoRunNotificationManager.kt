@@ -43,8 +43,8 @@ class AutoRunNotificationManager @Inject constructor(
         
         // Notification Channel
         const val CHANNEL_ID = "auto_run_notifications"
-        private const val CHANNEL_NAME = "자동 실행 알림"
-        private const val CHANNEL_DESCRIPTION = "시간/위치 기반 자동 실행 알림"
+        // private const val CHANNEL_NAME = "자동 실행 알림" (Use R.string)
+        // private const val CHANNEL_DESCRIPTION = "시간/위치 기반 자동 실행 알림" (Use R.string)
         
         // Notification IDs
         private const val NOTIFICATION_ID_PREFIX = 10000
@@ -66,20 +66,36 @@ class AutoRunNotificationManager @Inject constructor(
      *
      * 중요도: HIGH (소리, 진동, 상단 표시)
      */
+    /**
+     * 알림 채널 생성 (Android 8.0+)
+     *
+     * 중요도: HIGH (소리, 진동, 상단 표시)
+     * 언어 변경 시 채널 이름 갱신을 위해 public으로 변경하거나 update 메서드 사용
+     */
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = context.getString(R.string.notification_channel_auto_run_name)
+            val descriptionText = context.getString(R.string.notification_channel_auto_run_desc)
+            
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                name,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = CHANNEL_DESCRIPTION
+                description = descriptionText
                 enableVibration(true)
                 enableLights(true)
                 setShowBadge(true)
             }
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    /**
+     * 언어 변경 시 알림 채널 정보 갱신
+     */
+    fun updateNotificationChannelLocale() {
+        createNotificationChannel()
     }
 
     /**
