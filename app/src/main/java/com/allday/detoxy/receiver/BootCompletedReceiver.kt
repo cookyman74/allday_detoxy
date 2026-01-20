@@ -101,15 +101,30 @@ class BootCompletedReceiver : BroadcastReceiver() {
                     Log.i(TAG, "✅ Time-based auto-run alarms rescheduled successfully")
                 }
                 
-                // 2. 위치 기반 자동 실행 재등록
+                // 2. 위치 기반 자동 실행 재등록 (v1.1.2 개선)
                 val enabledLocationBasedAutoRuns = locationBasedAutoRunDao.getAllEnabled()
                 
                 if (enabledLocationBasedAutoRuns.isEmpty()) {
                     Log.d(TAG, "⏭️ No enabled location-based auto-runs to reschedule")
                 } else {
                     Log.d(TAG, "🔄 Rescheduling ${enabledLocationBasedAutoRuns.size} location-based auto-runs")
-                    geofenceManager.rescheduleAll(enabledLocationBasedAutoRuns)
-                    Log.i(TAG, "✅ Location-based auto-run geofences rescheduled successfully")
+                    
+                    // 🆕 v1.1.2: rescheduleAll 결과 처리
+                    val result = geofenceManager.rescheduleAll(enabledLocationBasedAutoRuns)
+                    
+                    // 영구적 실패 + 스킵만 DB 비활성화 (일시적 실패는 유지)
+                    val idsToDisable = result.failedPermanentIds + result.skippedIds
+                    if (idsToDisable.isNotEmpty()) {
+                        locationBasedAutoRunDao.disableByIds(idsToDisable)
+                        Log.w(TAG, "⚠️ ${idsToDisable.size} locations disabled (permanent failure or limit)")
+                    }
+                    
+                    // 일시적 실패는 로그만 (다음 reschedule에서 재시도)
+                    if (result.failedTempIds.isNotEmpty()) {
+                        Log.w(TAG, "⚠️ ${result.failedTempIds.size} locations failed temporarily, will retry later")
+                    }
+                    
+                    Log.i(TAG, "✅ Location-based auto-run geofences rescheduled: ${result.successIds.size} success")
                 }
                 
                 Log.i(TAG, "🎉 All auto-runs rescheduled successfully")

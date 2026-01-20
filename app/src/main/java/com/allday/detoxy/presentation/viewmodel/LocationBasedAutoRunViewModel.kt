@@ -184,7 +184,9 @@ class LocationBasedAutoRunViewModel @Inject constructor(
      * 권한 상태 확인
      * 
      * 권한 변경 감지 시 Geofence 자동 해제:
-     * - 이전에는 전체 권한이 있었는데 현재는 없는 경우 → 모든 Geofence 해제
+     * - 이전에는 전체 권한이 있었는데 현재는 없는 경우 → 모든 Geofence 해제 + DB 비활성화
+     * 
+     * ⚠️ v1.1.2 핫픽스: removeAllGeofences() 성공 시에만 DB 비활성화 (역불일치 방지)
      */
     fun checkPermissions() {
         val previousHasFullPermission = hasFullLocationPermission.value
@@ -199,8 +201,19 @@ class LocationBasedAutoRunViewModel @Inject constructor(
         // 권한 해제 감지: 이전에는 있었는데 현재는 없음
         if (previousHasFullPermission && !currentHasFullPermission) {
             viewModelScope.launch {
-                Log.w(TAG, "⚠️ Location permission revoked, removing all geofences")
-                geofenceManager.removeAllGeofences()
+                Log.w(TAG, "⚠️ Location permission revoked")
+                
+                // 🆕 v1.1.2: Geofence 제거 성공 여부 확인
+                val removeResult = geofenceManager.removeAllGeofences()
+                
+                if (removeResult.isSuccess) {
+                    // Geofence 제거 성공 시에만 DB 비활성화
+                    repository.disableAll()
+                    Log.i(TAG, "✅ All geofences removed and DB disabled")
+                } else {
+                    // Geofence 제거 실패 시 DB는 그대로 유지 (재시도 유도)
+                    Log.w(TAG, "⚠️ Failed to remove geofences, DB not modified: ${removeResult.exceptionOrNull()?.message}")
+                }
                 
                 // 사용자에게 알림
                 _errorState.value = LocationError.PermissionError(

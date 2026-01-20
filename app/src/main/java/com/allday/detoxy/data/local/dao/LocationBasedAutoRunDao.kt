@@ -199,5 +199,26 @@ interface LocationBasedAutoRunDao {
      */
     @Query("SELECT * FROM location_based_auto_run WHERE deactivateScheduleOnExit = 1 AND isEnabled = 1")
     fun getAutoDeactivateLocations(): Flow<List<LocationBasedAutoRun>>
+
+    // ==================== v1.1.2 핫픽스: DB-Geofence 일관성 보장 ====================
+
+    /**
+     * 모든 위치 기반 자동 실행 비활성화 (v1.1.2 핫픽스)
+     *
+     * 권한 해제 감지 시 Geofence 전체 제거 후 DB도 일괄 비활성화
+     */
+    @Query("UPDATE location_based_auto_run SET isEnabled = 0")
+    suspend fun disableAll()
+
+    /**
+     * 지정된 ID 목록의 위치 기반 자동 실행 비활성화 (v1.1.2 핫픽스)
+     *
+     * rescheduleAll에서 영구적 실패(권한, Play Services) 또는
+     * MAX 초과로 스킵된 항목을 DB에서 비활성화
+     *
+     * @param ids 비활성화할 자동 실행 ID 목록
+     */
+    @Query("UPDATE location_based_auto_run SET isEnabled = 0 WHERE id IN (:ids)")
+    suspend fun disableByIds(ids: List<String>)
 }
 

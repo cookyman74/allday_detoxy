@@ -116,5 +116,16 @@ class LocationBasedAutoRunRepository @Inject constructor(
     suspend fun unlinkFromGroup(scheduleGroupId: String) {
         dao.unlinkFromGroup(scheduleGroupId)
     }
+
+    // ==================== v1.1.2 핫픽스: DB-Geofence 일관성 보장 ====================
+
+    /**
+     * 모든 위치 기반 자동 실행 비활성화 (v1.1.2 핫픽스)
+     *
+     * 권한 해제 감지 시 Geofence 전체 제거 후 DB도 일괄 비활성화
+     */
+    suspend fun disableAll() {
+        dao.disableAll()
+    }
 }
 

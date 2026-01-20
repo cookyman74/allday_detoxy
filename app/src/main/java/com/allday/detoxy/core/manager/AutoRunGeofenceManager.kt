@@ -253,66 +253,117 @@ class AutoRunGeofenceManager @Inject constructor(
     }
     
     /**
-     * 모든 활성화된 Geofence 재등록
+     * rescheduleAll 결과 (v1.1.2 핫픽스)
+     * 
+     * @property successIds 등록 성공한 ID 목록
+     * @property failedPermanentIds 영구적 실패 ID 목록 (권한, Play Services)
+     * @property failedTempIds 일시적 실패 ID 목록 (위치 서비스 OFF 등)
+     * @property skippedIds 제한 초과로 스킵된 ID 목록
+     */
+    data class RescheduleResult(
+        val successIds: List<String>,
+        val failedPermanentIds: List<String>,
+        val failedTempIds: List<String>,
+        val skippedIds: List<String>
+    ) {
+        val isEmpty: Boolean
+            get() = successIds.isEmpty() && failedPermanentIds.isEmpty() && 
+                    failedTempIds.isEmpty() && skippedIds.isEmpty()
+    }
+    
+    /**
+     * 모든 활성화된 Geofence 재등록 (v1.1.2 개선)
      *
      * 앱 재시작(BOOT_COMPLETED) 또는 앱 시작 시 호출되어 모든 활성화된 위치 기반 자동 실행의 Geofence를 재등록합니다.
      *
+     * ## v1.1.2 핫픽스 변경사항
+     * - ⚠️ 모든 enabled ID의 Geofence를 먼저 제거 (스킵된 ID의 잔존 Geofence 방지)
+     * - ⚠️ 실패 사유별 분기 (영구적 실패 vs 일시적 실패)
+     * - ⚠️ RescheduleResult 반환 (호출측에서 DB 상태 업데이트 가능)
+     *
      * 처리 방식:
-     * - 사전 조건 체크 (Play Services, 위치 서비스, 권한) 수행
-     * - 기존 Geofence를 먼저 제거한 후 재등록 (중복 등록 방지)
-     * - 실패한 항목은 로그에 기록하고 계속 진행 (일부 실패해도 나머지 등록)
+     * 1. 모든 enabled ID의 Geofence 제거 (잔존 Geofence 방지)
+     * 2. 상위 MAX_GEOFENCES개만 재등록 (초과분은 스킵)
+     * 3. 실패 사유별 분류 (영구적/일시적)
      *
      * @param enabledLocations 활성화된 위치 기반 자동 실행 리스트
+     * @return RescheduleResult 성공/실패/스킵 ID 목록
      */
-    suspend fun rescheduleAll(enabledLocations: List<LocationBasedAutoRun>) {
+    suspend fun rescheduleAll(enabledLocations: List<LocationBasedAutoRun>): RescheduleResult {
         if (enabledLocations.isEmpty()) {
             Log.i(TAG, "ℹ️ No enabled locations to reschedule")
-            return
+            return RescheduleResult(
+                successIds = emptyList(),
+                failedPermanentIds = emptyList(),
+                failedTempIds = emptyList(),
+                skippedIds = emptyList()
+            )
         }
         
-        // ⚠️ 핫픽스: 최대 MAX_GEOFENCES개만 등록 (초과분은 무시)
-        val locationsToRegister = enabledLocations.take(MAX_GEOFENCES)
-        val skippedCount = enabledLocations.size - locationsToRegister.size
+        val successIds = mutableListOf<String>()
+        val failedPermanentIds = mutableListOf<String>()
+        val failedTempIds = mutableListOf<String>()
         
-        if (skippedCount > 0) {
-            Log.w(TAG, "⚠️ ${skippedCount}개 위치가 제한 초과로 등록 제외됨 (MAX=$MAX_GEOFENCES)")
+        // 🆕 v1.1.2: 모든 enabled ID의 Geofence를 먼저 제거 (스킵된 ID의 잔존 방지)
+        val allEnabledIds = enabledLocations.map { it.id }
+        try {
+            Log.d(TAG, "🗑️ Removing ALL ${allEnabledIds.size} enabled geofences before rescheduling")
+            geofencingClient.removeGeofences(allEnabledIds).await()
+            Log.d(TAG, "✅ All ${allEnabledIds.size} existing geofences removed")
+        } catch (e: Exception) {
+            // 제거 실패해도 계속 진행 (이미 제거되었거나 등록되지 않았을 수 있음)
+            Log.w(TAG, "⚠️ Failed to remove some geofences (may not exist): ${e.message}")
+        }
+        
+        // 상위 MAX_GEOFENCES개만 등록, 나머지는 스킵
+        val locationsToRegister = enabledLocations.take(MAX_GEOFENCES)
+        val skippedIds = enabledLocations.drop(MAX_GEOFENCES).map { it.id }
+        
+        if (skippedIds.isNotEmpty()) {
+            Log.w(TAG, "⚠️ ${skippedIds.size}개 위치가 제한 초과로 등록 제외됨 (MAX=$MAX_GEOFENCES)")
         }
         
         Log.i(TAG, "🔄 Rescheduling ${locationsToRegister.size} geofences (of ${enabledLocations.size} enabled)")
         
-        // 기존 Geofence를 먼저 제거 (중복 등록 방지)
-        val locationIds = locationsToRegister.map { it.id }
-        try {
-            Log.d(TAG, "🗑️ Removing existing geofences before rescheduling: ${locationIds.size} locations")
-            geofencingClient.removeGeofences(locationIds).await()
-            Log.d(TAG, "✅ Existing geofences removed")
-        } catch (e: Exception) {
-            // 제거 실패해도 계속 진행 (이미 제거되었거나 등록되지 않았을 수 있음)
-            Log.w(TAG, "⚠️ Failed to remove existing geofences (may not exist): ${e.message}")
-        }
-        
-        var successCount = 0
-        var failureCount = 0
+        // 🆕 v1.1.2: 사전 조건 체크 (영구적 vs 일시적 분류용)
+        val isPermanentFailure = !isPlayServicesAvailable() || 
+                                  !hasLocationPermission() || 
+                                  !hasBackgroundLocationPermission()
         
         locationsToRegister.forEach { location ->
             // skipCountCheck=true: reschedule 상황에서는 개수 체크 생략
             val result = addGeofence(location, skipCountCheck = true)
             if (result.isSuccess) {
-                successCount++
+                successIds.add(location.id)
                 Log.d(TAG, "✅ Geofence rescheduled: ${location.label} (ID: ${location.id})")
             } else {
-                failureCount++
+                // 🆕 v1.1.2: 실패 사유 분류
                 val error = result.exceptionOrNull()
-                Log.w(TAG, "⚠️ Failed to reschedule geofence for ${location.label}: ${error?.message}")
+                if (isPermanentFailure) {
+                    failedPermanentIds.add(location.id)
+                    Log.w(TAG, "⚠️ Permanent failure for ${location.label}: ${error?.message}")
+                } else {
+                    failedTempIds.add(location.id)  // 위치 서비스 OFF 등 일시적
+                    Log.w(TAG, "⚠️ Temporary failure for ${location.label}: ${error?.message}")
+                }
             }
         }
         
         Log.i(TAG, """
             📊 Geofence reschedule completed:
             - Total: ${enabledLocations.size}
-            - Success: $successCount
-            - Failure: $failureCount
+            - Success: ${successIds.size}
+            - Permanent Failure: ${failedPermanentIds.size}
+            - Temporary Failure: ${failedTempIds.size}
+            - Skipped (limit): ${skippedIds.size}
         """.trimIndent())
+        
+        return RescheduleResult(
+            successIds = successIds,
+            failedPermanentIds = failedPermanentIds,
+            failedTempIds = failedTempIds,
+            skippedIds = skippedIds
+        )
     }
     
     /**
